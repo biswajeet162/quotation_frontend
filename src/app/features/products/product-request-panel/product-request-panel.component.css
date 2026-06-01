@@ -47,6 +47,7 @@
 
 .table-scroll {
   overflow-x: auto;
+  overflow-y: visible;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
 }
@@ -73,6 +74,8 @@
   padding: 0.35rem 0.4rem;
   vertical-align: middle;
   border-bottom: 1px solid #f1f5f9;
+  overflow: visible;
+  position: relative;
 }
 
 .lines-table input {

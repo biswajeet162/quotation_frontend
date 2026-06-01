@@ -1,0 +1,31 @@
+<div class="field-autocomplete">
+  <input
+    #inputEl
+    type="text"
+    [value]="value()"
+    (input)="onInput($event)"
+    (focus)="onFocus()"
+    (click)="onFocus()"
+    (blur)="onBlur()"
+    [placeholder]="placeholder()"
+    [attr.aria-label]="ariaLabel()"
+    [attr.aria-expanded]="dropdownOpen()"
+    [attr.aria-autocomplete]="'list'"
+    autocomplete="off"
+  />
+  @if (dropdownOpen() && suggestions().length > 0) {
+    <ul class="suggestions" role="listbox" [ngStyle]="dropdownStyle()">
+      @for (option of suggestions(); track option) {
+        <li role="option">
+          <button
+            type="button"
+            class="suggestion-item"
+            (mousedown)="selectSuggestion(option, $event)"
+          >
+            {{ option }}
+          </button>
+        </li>
+      }
+    </ul>
+  }
+</div>

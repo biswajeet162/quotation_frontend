@@ -1,25 +1,28 @@
-import { Component, inject, output, signal } from '@angular/core';
+import { Component, inject, OnInit, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { InquiryCartService } from '../../../core/services/inquiry/inquiry-cart.service';
 import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
 import { ProductService } from '../../../core/services/product/product.service';
+import { ProductCatalogLookupService } from '../../../core/services/product/product-catalog-lookup.service';
 import { ProductQueryFormService } from '../../../core/services/product/product-query-form.service';
 import { Inquiry } from '../../../core/models/inquiry.model';
 import { ProductFormDraft, ProductFormRow } from '../../../core/models/product-form.model';
+import { ProductFieldAutocompleteComponent } from '../product-field-autocomplete/product-field-autocomplete.component';
 import { forkJoin, map, of, switchMap } from 'rxjs';
 
 @Component({
   selector: 'app-product-request-panel',
-  imports: [FormsModule],
+  imports: [FormsModule, ProductFieldAutocompleteComponent],
   templateUrl: './product-request-panel.component.html',
   styleUrl: './product-request-panel.component.css',
 })
-export class ProductRequestPanelComponent {
+export class ProductRequestPanelComponent implements OnInit {
   private readonly cart = inject(InquiryCartService);
   private readonly inquiryService = inject(InquiryService);
   private readonly auth = inject(AuthService);
   private readonly productService = inject(ProductService);
+  private readonly catalog = inject(ProductCatalogLookupService);
   readonly formState = inject(ProductQueryFormService);
 
   readonly submitted = output<Inquiry>();
@@ -31,6 +34,10 @@ export class ProductRequestPanelComponent {
 
   readonly rows = this.formState.rows;
   readonly highlight = this.formState.highlight;
+
+  ngOnInit(): void {
+    this.catalog.ensureLoaded();
+  }
 
   addRow(): void {
     this.formState.addRow();

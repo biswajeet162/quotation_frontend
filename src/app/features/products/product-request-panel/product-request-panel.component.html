@@ -34,52 +34,52 @@
           @for (row of rows(); track row.rowId) {
             <tr>
               <td>
-                <input
-                  type="text"
-                  [ngModel]="row.brand"
-                  (ngModelChange)="updateRowField(row.rowId, 'brand', $event)"
+                <app-product-field-autocomplete
+                  field="brand"
+                  [value]="row.brand"
+                  (valueChange)="updateRowField(row.rowId, 'brand', $event)"
                   placeholder="Brand"
-                  [attr.aria-label]="'Brand for row ' + ($index + 1)"
+                  [ariaLabel]="'Brand for row ' + ($index + 1)"
                 />
               </td>
               <td>
-                <input
-                  type="text"
-                  [ngModel]="row.designation"
-                  (ngModelChange)="updateRowField(row.rowId, 'designation', $event)"
+                <app-product-field-autocomplete
+                  field="designation"
+                  [value]="row.designation"
+                  (valueChange)="updateRowField(row.rowId, 'designation', $event)"
                   placeholder="Designation"
-                  [attr.aria-label]="'Designation for row ' + ($index + 1)"
+                  [ariaLabel]="'Designation for row ' + ($index + 1)"
                 />
               </td>
               <td>
-                <input
-                  type="text"
-                  [ngModel]="row.groupName"
-                  (ngModelChange)="updateRowField(row.rowId, 'groupName', $event)"
+                <app-product-field-autocomplete
+                  field="groupName"
+                  [value]="row.groupName"
+                  (valueChange)="updateRowField(row.rowId, 'groupName', $event)"
                   placeholder="Group"
                 />
               </td>
               <td>
-                <input
-                  type="text"
-                  [ngModel]="row.category"
-                  (ngModelChange)="updateRowField(row.rowId, 'category', $event)"
+                <app-product-field-autocomplete
+                  field="category"
+                  [value]="row.category"
+                  (valueChange)="updateRowField(row.rowId, 'category', $event)"
                   placeholder="Category"
                 />
               </td>
               <td>
-                <input
-                  type="text"
-                  [ngModel]="row.description"
-                  (ngModelChange)="updateRowField(row.rowId, 'description', $event)"
+                <app-product-field-autocomplete
+                  field="description"
+                  [value]="row.description"
+                  (valueChange)="updateRowField(row.rowId, 'description', $event)"
                   placeholder="Description"
                 />
               </td>
               <td>
-                <input
-                  type="text"
-                  [ngModel]="row.specifications"
-                  (ngModelChange)="updateRowField(row.rowId, 'specifications', $event)"
+                <app-product-field-autocomplete
+                  field="specifications"
+                  [value]="row.specifications"
+                  (valueChange)="updateRowField(row.rowId, 'specifications', $event)"
                   placeholder="Specs"
                 />
               </td>
