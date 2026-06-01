@@ -1,0 +1,10 @@
+<section class="page-card">
+  <h1>Dashboard</h1>
+  @if (auth.currentUser(); as user) {
+    <p>
+      Signed in as <strong>{{ user.email }}</strong> at
+      <strong>{{ user.companyName }}</strong>.
+    </p>
+  }
+  <p class="muted">Overview widgets and metrics will appear here.</p>
+</section>

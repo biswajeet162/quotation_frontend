@@ -1,0 +1,10 @@
+<header class="app-header">
+  <div class="header-left">
+    <h2 class="page-title">Welcome back</h2>
+    @if (auth.currentUser(); as user) {
+      <p class="user-meta">{{ user.email }} · {{ user.role }}</p>
+    }
+  </div>
+
+  <button type="button" class="btn-logout" (click)="logout()">Sign out</button>
+</header>

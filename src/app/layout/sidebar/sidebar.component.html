@@ -1,0 +1,19 @@
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <span class="brand-mark">Q</span>
+    <span class="brand-text">Quotation</span>
+  </div>
+
+  <nav class="sidebar-nav" aria-label="Main navigation">
+    @for (item of navItems; track item.path) {
+      <a
+        [routerLink]="item.path"
+        routerLinkActive="active"
+        class="nav-link"
+      >
+        <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
+        <span>{{ item.label }}</span>
+      </a>
+    }
+  </nav>
+</aside>

@@ -1,0 +1,37 @@
+.page-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid #e2e8f0;
+}
+
+.page-card h1 {
+  margin: 0 0 1rem;
+  font-size: 1.5rem;
+  color: #0f172a;
+}
+
+.profile-details {
+  margin: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.profile-details div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.profile-details dt {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.profile-details dd {
+  margin: 0;
+  font-size: 1rem;
+  color: #0f172a;
+}

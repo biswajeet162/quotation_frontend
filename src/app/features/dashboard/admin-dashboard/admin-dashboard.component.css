@@ -1,0 +1,21 @@
+.page-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid #e2e8f0;
+}
+
+.page-card h1 {
+  margin: 0 0 0.75rem;
+  font-size: 1.5rem;
+  color: #0f172a;
+}
+
+.page-card p {
+  margin: 0 0 0.5rem;
+  color: #334155;
+}
+
+.muted {
+  color: #64748b !important;
+}
