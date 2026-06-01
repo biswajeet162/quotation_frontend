@@ -1,4 +1,61 @@
 <section class="page-card">
-  <h1>Products</h1>
-  <p class="muted">Product catalog and distributor listings will be implemented here.</p>
+  <header class="page-header">
+    <div>
+      <h1>Products</h1>
+      <p class="muted">Catalog from the quotation system</p>
+    </div>
+    <button type="button" class="btn-secondary" (click)="loadProducts()" [disabled]="loading()">
+      Refresh
+    </button>
+  </header>
+
+  <div class="toolbar">
+    <input
+      type="search"
+      class="search-input"
+      placeholder="Search brand, designation, category…"
+      [ngModel]="searchTerm()"
+      (ngModelChange)="onSearchChange($event)"
+    />
+    <span class="result-count">
+      {{ filteredProducts().length }} of {{ products().length }} products
+    </span>
+  </div>
+
+  @if (loading()) {
+    <p class="state-message">Loading products…</p>
+  } @else if (errorMessage()) {
+    <div class="alert alert-error" role="alert">
+      {{ errorMessage() }}
+    </div>
+  } @else if (filteredProducts().length === 0) {
+    <p class="state-message">No products found.</p>
+  } @else {
+    <div class="table-wrap">
+      <table class="products-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Brand</th>
+            <th>Designation</th>
+            <th>Category</th>
+            <th>Group</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (product of filteredProducts(); track product.id) {
+            <tr>
+              <td>{{ product.id }}</td>
+              <td>{{ product.brand }}</td>
+              <td>{{ product.designation }}</td>
+              <td>{{ product.category || '—' }}</td>
+              <td>{{ product.groupName || '—' }}</td>
+              <td class="description-cell">{{ product.description || '—' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
 </section>
