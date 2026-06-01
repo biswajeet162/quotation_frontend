@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, HostListener, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Product } from '../../../core/models/product.model';
 import { ProductService } from '../../../core/services/product/product.service';
@@ -17,6 +17,10 @@ export class ProductListComponent implements OnInit {
   readonly searchTerm = signal('');
   readonly products = signal<Product[]>([]);
 
+  readonly selectedProduct = signal<Product | null>(null);
+  readonly detailLoading = signal(false);
+  readonly detailError = signal<string | null>(null);
+
   readonly filteredProducts = computed(() => {
     const term = this.searchTerm().trim().toLowerCase();
     const items = this.products();
@@ -34,6 +38,13 @@ export class ProductListComponent implements OnInit {
         p.aliasNames?.toLowerCase().includes(term),
     );
   });
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.selectedProduct() !== null || this.detailLoading()) {
+      this.closeDetail();
+    }
+  }
 
   ngOnInit(): void {
     this.loadProducts();
@@ -57,5 +68,32 @@ export class ProductListComponent implements OnInit {
 
   onSearchChange(value: string): void {
     this.searchTerm.set(value);
+  }
+
+  openProductDetail(product: Product): void {
+    this.detailLoading.set(true);
+    this.detailError.set(null);
+    this.selectedProduct.set(product);
+
+    this.productService.getById(product.id).subscribe({
+      next: (fullProduct) => {
+        this.selectedProduct.set(fullProduct);
+        this.detailLoading.set(false);
+      },
+      error: () => {
+        this.detailLoading.set(false);
+        this.detailError.set('Could not load product details.');
+      },
+    });
+  }
+
+  closeDetail(): void {
+    this.selectedProduct.set(null);
+    this.detailLoading.set(false);
+    this.detailError.set(null);
+  }
+
+  displayValue(value: string | undefined): string {
+    return value?.trim() ? value : '—';
   }
 }

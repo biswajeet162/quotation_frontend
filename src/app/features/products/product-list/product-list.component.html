@@ -45,7 +45,13 @@
         </thead>
         <tbody>
           @for (product of filteredProducts(); track product.id) {
-            <tr>
+            <tr
+              class="product-row"
+              tabindex="0"
+              (click)="openProductDetail(product)"
+              (keydown.enter)="openProductDetail(product)"
+              (keydown.space)="$event.preventDefault(); openProductDetail(product)"
+            >
               <td>{{ product.id }}</td>
               <td>{{ product.brand }}</td>
               <td>{{ product.designation }}</td>
@@ -59,3 +65,80 @@
     </div>
   }
 </section>
+
+@if (selectedProduct(); as product) {
+  <div
+    class="modal-backdrop"
+    role="presentation"
+    (click)="closeDetail()"
+  ></div>
+
+  <div
+    class="modal-dialog"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-labelledby]="'product-detail-title'"
+    (click)="$event.stopPropagation()"
+  >
+    <header class="modal-header">
+      <div>
+        <h2 id="product-detail-title">{{ product.brand }} — {{ product.designation }}</h2>
+        <p class="modal-subtitle">Product #{{ product.id }}</p>
+      </div>
+      <button type="button" class="modal-close" aria-label="Close" (click)="closeDetail()">
+        ×
+      </button>
+    </header>
+
+    <div class="modal-body">
+      @if (detailLoading()) {
+        <p class="state-message">Loading details…</p>
+      } @else if (detailError()) {
+        <div class="alert alert-error" role="alert">{{ detailError() }}</div>
+      } @else {
+        <dl class="detail-grid">
+          <div>
+            <dt>Brand</dt>
+            <dd>{{ displayValue(product.brand) }}</dd>
+          </div>
+          <div>
+            <dt>Designation</dt>
+            <dd>{{ displayValue(product.designation) }}</dd>
+          </div>
+          <div>
+            <dt>Category</dt>
+            <dd>{{ displayValue(product.category) }}</dd>
+          </div>
+          <div>
+            <dt>Group</dt>
+            <dd>{{ displayValue(product.groupName) }}</dd>
+          </div>
+          <div class="detail-full">
+            <dt>Description</dt>
+            <dd>{{ displayValue(product.description) }}</dd>
+          </div>
+          <div class="detail-full">
+            <dt>Specifications</dt>
+            <dd class="detail-pre">{{ displayValue(product.specifications) }}</dd>
+          </div>
+          <div class="detail-full">
+            <dt>Alias names</dt>
+            <dd>{{ displayValue(product.aliasNames) }}</dd>
+          </div>
+          <div>
+            <dt>Created</dt>
+            <dd>{{ displayValue(product.createdAt) }}</dd>
+          </div>
+          <div>
+            <dt>Updated</dt>
+            <dd>{{ displayValue(product.updatedAt) }}</dd>
+          </div>
+        </dl>
+      }
+    </div>
+
+    <footer class="modal-footer">
+      <button type="button" class="btn-secondary" (click)="closeDetail()">Close</button>
+    </footer>
+  </div>
+}
