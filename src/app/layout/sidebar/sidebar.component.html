@@ -4,16 +4,26 @@
     <span class="brand-text">Quotation</span>
   </div>
 
+  @if (auth.currentUser(); as user) {
+    <div class="sidebar-welcome">
+      <p class="welcome-label">Welcome</p>
+      <p class="welcome-email">{{ user.email }}</p>
+    </div>
+  }
+
   <nav class="sidebar-nav" aria-label="Main navigation">
     @for (item of navItems(); track item.path) {
-      <a
-        [routerLink]="item.path"
-        routerLinkActive="active"
-        class="nav-link"
-      >
+      <a [routerLink]="item.path" routerLinkActive="active" class="nav-link">
         <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
         <span>{{ item.label }}</span>
       </a>
     }
   </nav>
+
+  <div class="sidebar-footer">
+    <button type="button" class="nav-link nav-sign-out" (click)="logout()">
+      <span class="nav-icon" aria-hidden="true">⎋</span>
+      <span>Sign out</span>
+    </button>
+  </div>
 </aside>

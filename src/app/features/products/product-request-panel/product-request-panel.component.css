@@ -99,8 +99,11 @@
   text-align: center;
 }
 
-.req {
-  color: #dc2626;
+.preview-empty {
+  text-align: center;
+  color: #64748b;
+  font-size: 0.85rem;
+  padding: 1rem;
 }
 
 .btn-icon-delete {

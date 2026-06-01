@@ -1,6 +1,6 @@
 <div class="request-panel" [class.panel-highlight]="highlight()">
   <div class="panel-toolbar">
-    <button type="button" class="btn-preview" (click)="openPreview()" [disabled]="validRows().length === 0">
+    <button type="button" class="btn-preview" (click)="openPreview()" [disabled]="previewRows().length === 0">
       Preview
     </button>
   </div>
@@ -19,13 +19,13 @@
       <table class="lines-table">
         <thead>
           <tr>
-            <th>Brand <span class="req">*</span></th>
-            <th>Designation <span class="req">*</span></th>
+            <th>Brand</th>
+            <th>Designation</th>
             <th>Group</th>
             <th>Category</th>
             <th>Description</th>
             <th>Specifications</th>
-            <th class="col-qty">Qty <span class="req">*</span></th>
+            <th class="col-qty">Qty</th>
             <th>Notes</th>
             <th class="col-actions" aria-label="Actions"></th>
           </tr>
@@ -154,7 +154,12 @@
             </tr>
           </thead>
           <tbody>
-            @for (row of validRows(); track row.rowId; let i = $index) {
+            @if (previewRows().length === 0) {
+              <tr>
+                <td colspan="9" class="preview-empty">No products to preview.</td>
+              </tr>
+            }
+            @for (row of previewRows(); track row.rowId; let i = $index) {
               <tr>
                 <td>{{ i + 1 }}</td>
                 <td>{{ row.brand }}</td>
@@ -169,7 +174,7 @@
             }
           </tbody>
         </table>
-        <p class="preview-summary">{{ validRows().length }} product(s), qty {{ totalPreviewQty() }}</p>
+        <p class="preview-summary">{{ previewRows().length }} product(s), qty {{ totalPreviewQty() }}</p>
       </div>
       <footer class="preview-footer">
         <button type="button" class="btn-secondary" (click)="closePreview()">Close</button>

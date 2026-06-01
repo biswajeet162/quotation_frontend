@@ -89,7 +89,11 @@ export class ProductQueryFormService {
       !row.groupName.trim() &&
       !row.category.trim() &&
       !row.description.trim() &&
-      !row.catalogProductId
+      !row.specifications.trim() &&
+      !row.aliasNames.trim() &&
+      !row.lineNotes.trim() &&
+      !row.catalogProductId &&
+      row.quantity <= 1
     );
   }
 

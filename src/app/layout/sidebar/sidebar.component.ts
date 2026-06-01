@@ -16,7 +16,7 @@ interface NavItem {
   styleUrl: './sidebar.component.css',
 })
 export class SidebarComponent {
-  private readonly auth = inject(AuthService);
+  protected readonly auth = inject(AuthService);
 
   private readonly allNavItems: NavItem[] = [
     { label: 'Dashboard', path: '/dashboard', icon: '◫' },
@@ -30,4 +30,8 @@ export class SidebarComponent {
     const role = this.auth.currentUser()?.role;
     return this.allNavItems.filter((item) => !item.roles || (role && item.roles.includes(role)));
   });
+
+  logout(): void {
+    this.auth.logout();
+  }
 }

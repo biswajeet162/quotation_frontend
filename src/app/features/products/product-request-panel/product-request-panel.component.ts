@@ -74,12 +74,13 @@ export class ProductRequestPanelComponent {
     this.previewOpen.set(false);
   }
 
-  validRows(): ProductFormRow[] {
-    return this.rows().filter((r) => r.brand.trim() && r.designation.trim());
+  /** Rows with at least one field filled — fully empty rows are excluded from preview. */
+  previewRows(): ProductFormRow[] {
+    return this.rows().filter((r) => !this.formState.isEmptyRow(r));
   }
 
   totalPreviewQty(): number {
-    return this.validRows().reduce((sum, row) => sum + row.quantity, 0);
+    return this.previewRows().reduce((sum, row) => sum + row.quantity, 0);
   }
 
   submitRequest(): void {
@@ -89,17 +90,19 @@ export class ProductRequestPanelComponent {
       return;
     }
 
-    const valid = this.validRows();
+    const valid = this.previewRows();
     if (valid.length === 0) {
-      this.submitError.set('Add at least one product with brand and designation.');
+      this.submitError.set('Add at least one product row with some details.');
       return;
     }
 
-    const incomplete = this.rows().filter(
-      (r) => !this.formState.isEmptyRow(r) && (!r.brand.trim() || !r.designation.trim()),
+    const notSubmittable = valid.filter(
+      (r) => !r.catalogProductId && (!r.brand.trim() || !r.designation.trim()),
     );
-    if (incomplete.length > 0) {
-      this.submitError.set('Each row must have both brand and designation, or be cleared.');
+    if (notSubmittable.length > 0) {
+      this.submitError.set(
+        'Each product row needs brand and designation, or must be added from the catalog.',
+      );
       return;
     }
 
