@@ -1,0 +1,41 @@
+.queries-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.page-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid #e2e8f0;
+}
+
+.page-header h1 {
+  margin: 0 0 1rem;
+  font-size: 1.5rem;
+}
+
+.quotation-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.75rem;
+  padding: 0 0.15rem;
+}
+
+.quotation-form-actions .btn-text-action {
+  border: none;
+  background: none;
+  padding: 0;
+  color: #0f766e;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.quotation-form-actions .btn-text-action:hover {
+  color: #047857;
+}

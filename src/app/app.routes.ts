@@ -31,6 +31,20 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'requests',
+        loadComponent: () =>
+          import('./features/inquiries/my-requests/my-requests.component').then(
+            (m) => m.MyRequestsComponent,
+          ),
+      },
+      {
+        path: 'admin/queries',
+        loadComponent: () =>
+          import('./features/inquiries/admin-query-review/admin-query-review.component').then(
+            (m) => m.AdminQueryReviewComponent,
+          ),
+      },
+      {
         path: 'profile',
         loadComponent: () =>
           import('./features/settings/profile/profile.component').then((m) => m.ProfileComponent),

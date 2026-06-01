@@ -1,0 +1,14 @@
+<div class="queries-page">
+  <section class="page-card form-section">
+    <header class="page-header">
+      <h1>Create quotation</h1>
+    </header>
+
+    <app-product-request-panel #requestPanel (submitted)="onSubmitted()" />
+  </section>
+
+  <div class="quotation-form-actions">
+    <button type="button" class="btn-text-action" (click)="requestPanel.clearForm()">Clear form</button>
+    <button type="button" class="btn-text-action" (click)="requestPanel.addRow()">Add</button>
+  </div>
+</div>

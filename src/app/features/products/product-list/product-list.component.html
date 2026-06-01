@@ -2,7 +2,7 @@
   <header class="page-header">
     <div>
       <h1>Products</h1>
-      <p class="muted">Catalog from the quotation system</p>
+      <p class="muted">Browse and search the product catalog.</p>
     </div>
     <button type="button" class="btn-secondary" (click)="loadProducts()" [disabled]="loading()">
       Refresh
@@ -18,18 +18,30 @@
       (ngModelChange)="onSearchChange($event)"
     />
     <span class="result-count">
-      {{ filteredProducts().length }} of {{ products().length }} products
+      @if (searchLoading()) {
+        Searching…
+      } @else {
+        {{ products().length }} product(s)
+      }
     </span>
   </div>
 
   @if (loading()) {
     <p class="state-message">Loading products…</p>
   } @else if (errorMessage()) {
-    <div class="alert alert-error" role="alert">
-      {{ errorMessage() }}
+    <div class="alert alert-error" role="alert">{{ errorMessage() }}</div>
+  } @else if (showNoMatchState()) {
+    <div class="no-match-card">
+      <h2>No match for “{{ searchTerm() }}”</h2>
+      <p>Nothing in the catalog matches your search.</p>
+      @if (isConsumer()) {
+        <button type="button" class="btn-primary" (click)="goToQueryFromSearch()">
+          Create quotation from search
+        </button>
+      }
     </div>
-  } @else if (filteredProducts().length === 0) {
-    <p class="state-message">No products found.</p>
+  } @else if (products().length === 0) {
+    <p class="state-message">No products in catalog.</p>
   } @else {
     <div class="table-wrap">
       <table class="products-table">
@@ -40,24 +52,31 @@
             <th>Designation</th>
             <th>Category</th>
             <th>Group</th>
-            <th>Description</th>
+            @if (isConsumer()) {
+              <th></th>
+            }
           </tr>
         </thead>
         <tbody>
-          @for (product of filteredProducts(); track product.id) {
+          @for (product of products(); track product.id) {
             <tr
               class="product-row"
               tabindex="0"
-              (click)="openProductDetail(product)"
-              (keydown.enter)="openProductDetail(product)"
-              (keydown.space)="$event.preventDefault(); openProductDetail(product)"
+              (click)="openProductDetail(product, $event)"
+              (keydown.enter)="openProductDetail(product, $event)"
             >
               <td>{{ product.id }}</td>
               <td>{{ product.brand }}</td>
               <td>{{ product.designation }}</td>
               <td>{{ product.category || '—' }}</td>
               <td>{{ product.groupName || '—' }}</td>
-              <td class="description-cell">{{ product.description || '—' }}</td>
+              @if (isConsumer()) {
+                <td class="actions-cell">
+                  <button type="button" class="btn-add" (click)="useInQuery(product, $event)">
+                    Add to quotation
+                  </button>
+                </td>
+              }
             </tr>
           }
         </tbody>
@@ -67,12 +86,7 @@
 </section>
 
 @if (selectedProduct(); as product) {
-  <div
-    class="modal-backdrop"
-    role="presentation"
-    (click)="closeDetail()"
-  ></div>
-
+  <div class="modal-backdrop" role="presentation" (click)="closeDetail()"></div>
   <div
     class="modal-dialog"
     role="dialog"
@@ -85,11 +99,8 @@
         <h2 id="product-detail-title">{{ product.brand }} — {{ product.designation }}</h2>
         <p class="modal-subtitle">Product #{{ product.id }}</p>
       </div>
-      <button type="button" class="modal-close" aria-label="Close" (click)="closeDetail()">
-        ×
-      </button>
+      <button type="button" class="modal-close" aria-label="Close" (click)="closeDetail()">×</button>
     </header>
-
     <div class="modal-body">
       @if (detailLoading()) {
         <p class="state-message">Loading details…</p>
@@ -97,47 +108,25 @@
         <div class="alert alert-error" role="alert">{{ detailError() }}</div>
       } @else {
         <dl class="detail-grid">
-          <div>
-            <dt>Brand</dt>
-            <dd>{{ displayValue(product.brand) }}</dd>
-          </div>
-          <div>
-            <dt>Designation</dt>
-            <dd>{{ displayValue(product.designation) }}</dd>
-          </div>
-          <div>
-            <dt>Category</dt>
-            <dd>{{ displayValue(product.category) }}</dd>
-          </div>
-          <div>
-            <dt>Group</dt>
-            <dd>{{ displayValue(product.groupName) }}</dd>
-          </div>
-          <div class="detail-full">
-            <dt>Description</dt>
-            <dd>{{ displayValue(product.description) }}</dd>
-          </div>
+          <div><dt>Brand</dt><dd>{{ displayValue(product.brand) }}</dd></div>
+          <div><dt>Designation</dt><dd>{{ displayValue(product.designation) }}</dd></div>
+          <div><dt>Category</dt><dd>{{ displayValue(product.category) }}</dd></div>
+          <div><dt>Group</dt><dd>{{ displayValue(product.groupName) }}</dd></div>
+          <div class="detail-full"><dt>Description</dt><dd>{{ displayValue(product.description) }}</dd></div>
           <div class="detail-full">
             <dt>Specifications</dt>
             <dd class="detail-pre">{{ displayValue(product.specifications) }}</dd>
           </div>
-          <div class="detail-full">
-            <dt>Alias names</dt>
-            <dd>{{ displayValue(product.aliasNames) }}</dd>
-          </div>
-          <div>
-            <dt>Created</dt>
-            <dd>{{ displayValue(product.createdAt) }}</dd>
-          </div>
-          <div>
-            <dt>Updated</dt>
-            <dd>{{ displayValue(product.updatedAt) }}</dd>
-          </div>
+          <div class="detail-full"><dt>Alias names</dt><dd>{{ displayValue(product.aliasNames) }}</dd></div>
         </dl>
       }
     </div>
-
     <footer class="modal-footer">
+      @if (isConsumer()) {
+        <button type="button" class="btn-primary" (click)="useInQuery(product, $event); closeDetail()">
+          Add to quotation
+        </button>
+      }
       <button type="button" class="btn-secondary" (click)="closeDetail()">Close</button>
     </footer>
   </div>

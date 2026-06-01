@@ -1,0 +1,147 @@
+<section class="page-card">
+  <header class="page-header">
+    <div>
+      <h1>Review consumer queries</h1>
+      <p class="muted">
+        All catalog-search and new-product queries are stored here. Send to distributors when
+        the query is clear; otherwise ask the consumer for more details.
+      </p>
+    </div>
+    <button type="button" class="btn-secondary" (click)="load()" [disabled]="loading()">
+      Refresh
+    </button>
+  </header>
+
+  <div class="filter-tabs">
+    <button type="button" [class.active]="activeFilter() === 'pending'" (click)="setFilter('pending')">
+      Pending
+    </button>
+    <button
+      type="button"
+      [class.active]="activeFilter() === 'clarification'"
+      (click)="setFilter('clarification')"
+    >
+      Awaiting consumer
+    </button>
+    <button type="button" [class.active]="activeFilter() === 'sent'" (click)="setFilter('sent')">
+      Sent to distributors
+    </button>
+    <button type="button" [class.active]="activeFilter() === 'all'" (click)="setFilter('all')">
+      All
+    </button>
+  </div>
+
+  @if (loading()) {
+    <p class="state-message">Loading queries…</p>
+  } @else if (errorMessage()) {
+    <div class="alert alert-error" role="alert">{{ errorMessage() }}</div>
+  } @else if (filteredInquiries().length === 0) {
+    <p class="state-message">No queries in this filter.</p>
+  } @else {
+    <div class="review-layout">
+      <ul class="query-list">
+        @for (inquiry of filteredInquiries(); track inquiry.id) {
+          <li>
+            <button
+              type="button"
+              class="query-item"
+              [class.selected]="selectedId() === inquiry.id"
+              (click)="selectInquiry(inquiry.id)"
+            >
+              <span class="query-id">{{ inquiry.inquiryId }}</span>
+              <span class="query-title">{{ inquiry.title }}</span>
+              <span class="query-meta">{{ inquiry.companyName }}</span>
+              <span class="source-tag">{{ getRequestSourceLabel(inquiry.requestSource) }}</span>
+            </button>
+          </li>
+        }
+      </ul>
+
+      @if (selectedInquiry(); as inquiry) {
+        <div class="query-detail">
+          <h2>{{ inquiry.title }}</h2>
+          <p class="detail-meta">
+            {{ inquiry.inquiryId }} · {{ inquiry.companyName }} ·
+            {{ getRequestSourceLabel(inquiry.requestSource) }}
+          </p>
+
+          @if (inquiry.searchTerm) {
+            <p><strong>Search term:</strong> {{ inquiry.searchTerm }}</p>
+          }
+
+          @if (inquiry.description) {
+            <p><strong>Consumer notes:</strong> {{ inquiry.description }}</p>
+          }
+
+          <h3>Products</h3>
+          <ul class="product-lines">
+            @for (item of inquiry.items ?? []; track item.id ?? item.productId) {
+              <li>
+                <span class="line-badge" [class.new-product]="item.lineSource === 'NEW_PRODUCT'">
+                  {{ lineSourceLabel(item.lineSource) }}
+                </span>
+                {{ item.productBrand }} {{ item.productName }} — qty {{ item.quantity }}
+                @if (item.notes) {
+                  <span class="muted">({{ item.notes }})</span>
+                }
+              </li>
+            }
+          </ul>
+
+          <p class="status-row">
+            <strong>Status:</strong> {{ inquiry.status }}
+            @if (inquiry.needsClarification) {
+              <span class="badge-warn">Awaiting consumer</span>
+            }
+          </p>
+
+          @if (actionError()) {
+            <div class="alert alert-error" role="alert">{{ actionError() }}</div>
+          }
+
+          @if (inquiry.status === 'NEW') {
+            <div class="admin-actions">
+              <div class="field">
+                <label for="clarification">Message to consumer (if query is unclear)</label>
+                <textarea
+                  id="clarification"
+                  rows="3"
+                  placeholder="What details do you need from the consumer?"
+                  [(ngModel)]="clarificationText"
+                ></textarea>
+              </div>
+              <div class="action-buttons">
+                <button
+                  type="button"
+                  class="btn-warning"
+                  [disabled]="actionLoading()"
+                  (click)="requestClarification()"
+                >
+                  Ask consumer for details
+                </button>
+                <button
+                  type="button"
+                  class="btn-primary"
+                  [disabled]="actionLoading() || inquiry.needsClarification"
+                  (click)="sendToDistributors()"
+                >
+                  {{ actionLoading() ? 'Working…' : 'Send to distributors' }}
+                </button>
+              </div>
+              @if (inquiry.needsClarification) {
+                <p class="hint">
+                  Consumer must respond before you can send to distributors. Update the message
+                  above and click “Ask consumer” again if needed.
+                </p>
+              }
+            </div>
+          } @else if (inquiry.status === 'SENT_TO_DISTRIBUTORS') {
+            <p class="hint success-hint">
+              This query was sent to {{ inquiry.distributors?.length ?? 0 }} distributor(s).
+            </p>
+          }
+        </div>
+      }
+    </div>
+  }
+</section>

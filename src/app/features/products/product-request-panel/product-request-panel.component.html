@@ -1,0 +1,179 @@
+<div class="request-panel" [class.panel-highlight]="highlight()">
+  <div class="panel-toolbar">
+    <button type="button" class="btn-preview" (click)="openPreview()" [disabled]="validRows().length === 0">
+      Preview
+    </button>
+  </div>
+
+  @if (lastSubmitted(); as inquiry) {
+    <div class="success-card" role="status">
+      <p>
+        Quotation <strong>{{ inquiry.inquiryId }}</strong> submitted.
+      </p>
+      <button type="button" class="btn-text" (click)="submitAnother()">Create another quotation</button>
+    </div>
+  }
+
+  <section class="lines-table-section">
+    <div class="table-scroll">
+      <table class="lines-table">
+        <thead>
+          <tr>
+            <th>Brand <span class="req">*</span></th>
+            <th>Designation <span class="req">*</span></th>
+            <th>Group</th>
+            <th>Category</th>
+            <th>Description</th>
+            <th>Specifications</th>
+            <th class="col-qty">Qty <span class="req">*</span></th>
+            <th>Notes</th>
+            <th class="col-actions" aria-label="Actions"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track row.rowId) {
+            <tr>
+              <td>
+                <input
+                  type="text"
+                  [ngModel]="row.brand"
+                  (ngModelChange)="updateRowField(row.rowId, 'brand', $event)"
+                  placeholder="Brand"
+                  [attr.aria-label]="'Brand for row ' + ($index + 1)"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  [ngModel]="row.designation"
+                  (ngModelChange)="updateRowField(row.rowId, 'designation', $event)"
+                  placeholder="Designation"
+                  [attr.aria-label]="'Designation for row ' + ($index + 1)"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  [ngModel]="row.groupName"
+                  (ngModelChange)="updateRowField(row.rowId, 'groupName', $event)"
+                  placeholder="Group"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  [ngModel]="row.category"
+                  (ngModelChange)="updateRowField(row.rowId, 'category', $event)"
+                  placeholder="Category"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  [ngModel]="row.description"
+                  (ngModelChange)="updateRowField(row.rowId, 'description', $event)"
+                  placeholder="Description"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  [ngModel]="row.specifications"
+                  (ngModelChange)="updateRowField(row.rowId, 'specifications', $event)"
+                  placeholder="Specs"
+                />
+              </td>
+              <td class="col-qty">
+                <input
+                  type="number"
+                  min="1"
+                  [ngModel]="row.quantity"
+                  (ngModelChange)="updateRowQuantity(row.rowId, $event)"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  [ngModel]="row.lineNotes"
+                  (ngModelChange)="updateRowField(row.rowId, 'lineNotes', $event)"
+                  placeholder="Notes"
+                />
+              </td>
+              <td class="col-actions">
+                <button
+                  type="button"
+                  class="btn-icon-delete"
+                  (click)="removeRow(row.rowId)"
+                  [disabled]="rows().length === 1 && formState.isEmptyRow(row)"
+                  [attr.aria-label]="'Delete row ' + ($index + 1)"
+                  title="Delete row"
+                >
+                  ✕
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (submitError()) {
+      <div class="alert alert-error" role="alert">{{ submitError() }}</div>
+    }
+  </section>
+</div>
+
+@if (previewOpen()) {
+  <div class="preview-backdrop" (click)="closePreview()" role="presentation">
+    <div
+      class="preview-dialog"
+      role="dialog"
+      aria-labelledby="preview-title"
+      aria-modal="true"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="preview-header">
+        <h3 id="preview-title">Quotation preview</h3>
+        <button type="button" class="btn-icon-close" (click)="closePreview()" aria-label="Close preview">
+          ✕
+        </button>
+      </header>
+      <div class="preview-body">
+        <table class="preview-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Brand</th>
+              <th>Designation</th>
+              <th>Group</th>
+              <th>Category</th>
+              <th>Description</th>
+              <th>Specifications</th>
+              <th>Qty</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of validRows(); track row.rowId; let i = $index) {
+              <tr>
+                <td>{{ i + 1 }}</td>
+                <td>{{ row.brand }}</td>
+                <td>{{ row.designation }}</td>
+                <td>{{ row.groupName || '—' }}</td>
+                <td>{{ row.category || '—' }}</td>
+                <td>{{ row.description || '—' }}</td>
+                <td>{{ row.specifications || '—' }}</td>
+                <td>{{ row.quantity }}</td>
+                <td>{{ row.lineNotes || '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        <p class="preview-summary">{{ validRows().length }} product(s), qty {{ totalPreviewQty() }}</p>
+      </div>
+      <footer class="preview-footer">
+        <button type="button" class="btn-secondary" (click)="closePreview()">Close</button>
+      </footer>
+    </div>
+  </div>
+}

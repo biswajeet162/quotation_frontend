@@ -5,7 +5,7 @@
   </div>
 
   <nav class="sidebar-nav" aria-label="Main navigation">
-    @for (item of navItems; track item.path) {
+    @for (item of navItems(); track item.path) {
       <a
         [routerLink]="item.path"
         routerLinkActive="active"
