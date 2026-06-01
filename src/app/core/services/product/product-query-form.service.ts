@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { formatSpecificationsInline } from '../../../shared/utils/specifications-display.util';
 import { Product } from '../../models/product.model';
 import {
   createProductFormRow,
@@ -117,7 +118,7 @@ export class ProductQueryFormService {
       groupName: product.groupName ?? '',
       category: product.category ?? '',
       description: product.description ?? '',
-      specifications: product.specifications ?? '',
+      specifications: formatSpecificationsInline(product.specifications),
       aliasNames: product.aliasNames ?? '',
       quantity: 1,
       lineNotes: '',

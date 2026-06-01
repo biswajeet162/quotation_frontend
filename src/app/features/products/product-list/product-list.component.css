@@ -303,6 +303,39 @@
   white-space: pre-wrap;
 }
 
+.spec-kv-list {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.spec-kv-row {
+  display: grid;
+  grid-template-columns: minmax(5rem, auto) 1fr;
+  gap: 0.5rem 0.75rem;
+  align-items: baseline;
+}
+
+.spec-kv-list .spec-kv-row dt {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #475569;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.spec-kv-list .spec-kv-row dd {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #0f172a;
+}
+
+.spec-kv-plain {
+  grid-column: 1 / -1;
+}
+
 .description-cell {
   max-width: 280px;
   white-space: nowrap;

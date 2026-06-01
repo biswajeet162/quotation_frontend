@@ -6,6 +6,7 @@ import { ProductService } from '../../../core/services/product/product.service';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { InquiryCartService } from '../../../core/services/inquiry/inquiry-cart.service';
 import { ProductQueryFormService } from '../../../core/services/product/product-query-form.service';
+import { parseSpecifications } from '../../../shared/utils/specifications-display.util';
 
 @Component({
   selector: 'app-product-list',
@@ -134,5 +135,9 @@ export class ProductListComponent implements OnInit {
 
   displayValue(value: string | undefined): string {
     return value?.trim() ? value : '—';
+  }
+
+  specificationEntries(product: Product) {
+    return parseSpecifications(product.specifications);
   }
 }

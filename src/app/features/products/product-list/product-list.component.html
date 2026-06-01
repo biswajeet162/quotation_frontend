@@ -115,7 +115,24 @@
           <div class="detail-full"><dt>Description</dt><dd>{{ displayValue(product.description) }}</dd></div>
           <div class="detail-full">
             <dt>Specifications</dt>
-            <dd class="detail-pre">{{ displayValue(product.specifications) }}</dd>
+            <dd>
+              @if (specificationEntries(product).length === 0) {
+                —
+              } @else {
+                <dl class="spec-kv-list">
+                  @for (entry of specificationEntries(product); track entry.key + entry.value) {
+                    <div class="spec-kv-row">
+                      @if (entry.key) {
+                        <dt>{{ entry.key }}</dt>
+                        <dd>{{ entry.value }}</dd>
+                      } @else {
+                        <dd class="spec-kv-plain">{{ entry.value }}</dd>
+                      }
+                    </div>
+                  }
+                </dl>
+              }
+            </dd>
           </div>
           <div class="detail-full"><dt>Alias names</dt><dd>{{ displayValue(product.aliasNames) }}</dd></div>
         </dl>

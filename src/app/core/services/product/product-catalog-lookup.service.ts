@@ -1,4 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
+import { specificationSuggestionLabels } from '../../../shared/utils/specifications-display.util';
 import { Product } from '../../models/product.model';
 import { ProductService } from './product.service';
 
@@ -77,7 +78,9 @@ export class ProductCatalogLookupService {
       this.add(sets.groupName, product.groupName);
       this.add(sets.category, product.category);
       this.add(sets.description, product.description);
-      this.add(sets.specifications, product.specifications);
+      for (const label of specificationSuggestionLabels(product.specifications)) {
+        sets.specifications.add(label);
+      }
     }
 
     const sort = (values: Set<string>) =>

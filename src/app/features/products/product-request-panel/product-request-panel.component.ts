@@ -8,6 +8,7 @@ import { ProductCatalogLookupService } from '../../../core/services/product/prod
 import { ProductQueryFormService } from '../../../core/services/product/product-query-form.service';
 import { Inquiry } from '../../../core/models/inquiry.model';
 import { ProductFormDraft, ProductFormRow } from '../../../core/models/product-form.model';
+import { formatSpecificationsInline } from '../../../shared/utils/specifications-display.util';
 import { ProductFieldAutocompleteComponent } from '../product-field-autocomplete/product-field-autocomplete.component';
 import { forkJoin, map, of, switchMap } from 'rxjs';
 
@@ -88,6 +89,11 @@ export class ProductRequestPanelComponent implements OnInit {
 
   totalPreviewQty(): number {
     return this.previewRows().reduce((sum, row) => sum + row.quantity, 0);
+  }
+
+  formatSpecs(value: string | undefined): string {
+    const formatted = formatSpecificationsInline(value);
+    return formatted || '—';
   }
 
   submitRequest(): void {
