@@ -6,7 +6,7 @@ export interface LoginRequest {
 export interface AuthResponse {
   token: string;
   type: string;
-  userId: number;
+  userId: string;
   email: string;
   role: string;
   companyId: number;
@@ -14,7 +14,7 @@ export interface AuthResponse {
 }
 
 export interface AuthUser {
-  userId: number;
+  userId: string;
   email: string;
   role: string;
   companyId: number;
