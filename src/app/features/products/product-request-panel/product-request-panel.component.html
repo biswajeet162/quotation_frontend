@@ -179,7 +179,20 @@
     </main>
 
     <footer class="preview-footer">
-      <button type="button" class="btn-secondary" (click)="closePreview()">Back to form</button>
+      <button type="button" class="btn-secondary" (click)="closePreview()" [disabled]="submitting()">
+        Back to form
+      </button>
+      @if (submitError()) {
+        <p class="preview-submit-error" role="alert">{{ submitError() }}</p>
+      }
+      <button
+        type="button"
+        class="btn-submit-query"
+        (click)="submitRequest()"
+        [disabled]="submitting() || previewRows().length === 0"
+      >
+        {{ submitting() ? 'Submitting…' : 'Submit Query' }}
+      </button>
     </footer>
     </div>
   </div>

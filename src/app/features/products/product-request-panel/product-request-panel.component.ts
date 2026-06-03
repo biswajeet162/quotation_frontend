@@ -6,7 +6,7 @@ import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
 import { ProductService } from '../../../core/services/product/product.service';
 import { ProductCatalogLookupService } from '../../../core/services/product/product-catalog-lookup.service';
 import { ProductQueryFormService } from '../../../core/services/product/product-query-form.service';
-import { Inquiry } from '../../../core/models/inquiry.model';
+import { ConsumerInquiryCreated } from '../../../core/models/inquiry.model';
 import { ProductFormDraft, ProductFormRow } from '../../../core/models/product-form.model';
 import { formatSpecificationsInline } from '../../../shared/utils/specifications-display.util';
 import { ProductFieldAutocompleteComponent } from '../product-field-autocomplete/product-field-autocomplete.component';
@@ -26,11 +26,11 @@ export class ProductRequestPanelComponent implements OnInit {
   private readonly catalog = inject(ProductCatalogLookupService);
   readonly formState = inject(ProductQueryFormService);
 
-  readonly submitted = output<Inquiry>();
+  readonly submitted = output<ConsumerInquiryCreated>();
 
   readonly submitting = signal(false);
   readonly submitError = signal<string | null>(null);
-  readonly lastSubmitted = signal<Inquiry | null>(null);
+  readonly lastSubmitted = signal<ConsumerInquiryCreated | null>(null);
   readonly previewOpen = signal(false);
 
   readonly rows = this.formState.rows;
@@ -68,6 +68,7 @@ export class ProductRequestPanelComponent implements OnInit {
   }
 
   openPreview(): void {
+    this.submitError.set(null);
     this.previewOpen.set(true);
     document.body.style.overflow = 'hidden';
   }
@@ -150,20 +151,18 @@ export class ProductRequestPanelComponent implements OnInit {
           const description =
             resolved.length === 1 ? resolved[0].row.description.trim() || undefined : undefined;
 
-          return this.inquiryService.create(
-            {
-              title,
-              description,
-              searchTerm: this.cart.searchTerm().trim() || undefined,
-              items: resolved.map(({ row, productId }) => ({
-                productId,
-                quantity: row.quantity,
-                notes: row.lineNotes.trim() || undefined,
-                lineSource: row.lineSource,
-              })),
-            },
-            user.companyId,
-          );
+          // Single POST /inquiries: one inquiryId, all rows as items[] on the same query.
+          return this.inquiryService.create({
+            title,
+            description,
+            searchTerm: this.cart.searchTerm().trim() || undefined,
+            items: resolved.map(({ row, productId }) => ({
+              productId,
+              quantity: row.quantity,
+              notes: row.lineNotes.trim() || undefined,
+              lineSource: row.lineSource,
+            })),
+          });
         }),
       )
       .subscribe({

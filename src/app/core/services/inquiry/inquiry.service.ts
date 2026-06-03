@@ -1,18 +1,22 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { CreateInquiryRequest, Inquiry, InquiryStatus } from '../../models/inquiry.model';
+import {
+  ConsumerInquiryCreated,
+  CreateInquiryRequest,
+  Inquiry,
+  InquiryStatus,
+} from '../../models/inquiry.model';
 
 @Injectable({ providedIn: 'root' })
 export class InquiryService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${environment.apiUrl}/inquiries`;
 
-  create(request: CreateInquiryRequest, companyId: string): Observable<Inquiry> {
-    return this.http.post<Inquiry>(this.baseUrl, request, {
-      headers: new HttpHeaders({ 'X-Company-Id': String(companyId) }),
-    });
+  /** One inquiry (single inquiryId) with all items in the request body. Company comes from JWT. */
+  create(request: CreateInquiryRequest): Observable<ConsumerInquiryCreated> {
+    return this.http.post<ConsumerInquiryCreated>(this.baseUrl, request);
   }
 
   getByCompany(companyId: string): Observable<Inquiry[]> {

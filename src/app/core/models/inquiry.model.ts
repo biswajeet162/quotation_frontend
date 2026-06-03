@@ -19,6 +19,21 @@ export interface InquiryItem {
   lineSource?: InquiryLineSource;
 }
 
+/** Returned to consumers after POST /inquiries (no admin/line-item payload). */
+export interface ConsumerInquiryCreated {
+  inquiryId: string;
+  status: InquiryStatus;
+}
+
+/** Consumer-safe inquiry summary for GET endpoints. */
+export interface ConsumerInquiry {
+  inquiryId: string;
+  title: string;
+  status: InquiryStatus;
+  needsClarification?: boolean;
+  clarificationMessage?: string;
+}
+
 export interface Inquiry {
   id: string;
   inquiryId: string;
