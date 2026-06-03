@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import {
+  ConsumerInquiry,
   ConsumerInquiryCreated,
   CreateInquiryRequest,
   Inquiry,
@@ -19,8 +20,16 @@ export class InquiryService {
     return this.http.post<ConsumerInquiryCreated>(this.baseUrl, request);
   }
 
+  getMyInquiries(): Observable<ConsumerInquiry[]> {
+    return this.http.get<ConsumerInquiry[]>(`${this.baseUrl}/my`);
+  }
+
   getByCompany(companyId: string): Observable<Inquiry[]> {
     return this.http.get<Inquiry[]>(`${this.baseUrl}/company/${companyId}`);
+  }
+
+  delete(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
 
   getAll(): Observable<Inquiry[]> {

@@ -25,13 +25,20 @@ export interface ConsumerInquiryCreated {
   status: InquiryStatus;
 }
 
-/** Consumer-safe inquiry summary for GET endpoints. */
+/** Consumer-safe inquiry view for GET /inquiries/my and related endpoints. */
 export interface ConsumerInquiry {
+  id: string;
   inquiryId: string;
   title: string;
+  description?: string;
   status: InquiryStatus;
+  requestSource?: InquiryRequestSource;
+  searchTerm?: string;
   needsClarification?: boolean;
   clarificationMessage?: string;
+  items?: InquiryItem[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Inquiry {

@@ -28,7 +28,9 @@ export function getRequestSourceLabel(source?: InquiryRequestSource): string {
   }
 }
 
-export function getConsumerInquiryDisplay(inquiry: Inquiry): InquiryDisplayStatus {
+export function getConsumerInquiryDisplay(
+  inquiry: Pick<Inquiry, 'status' | 'needsClarification'>,
+): InquiryDisplayStatus {
   if (inquiry.needsClarification) {
     return {
       phase: 'action_required',

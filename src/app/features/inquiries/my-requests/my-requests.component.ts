@@ -9,6 +9,6 @@ import { ProductRequestPanelComponent } from '../../products/product-request-pan
 })
 export class MyRequestsComponent {
   onSubmitted(): void {
-    // List view will live on a separate tab later.
+    // Consumer can view submitted requests under Tracking in the sidebar.
   }
 }

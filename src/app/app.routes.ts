@@ -38,6 +38,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'tracking',
+        loadComponent: () =>
+          import(
+            './features/inquiries/inquiry-tracking/inquiry-tracking.component'
+          ).then((m) => m.InquiryTrackingComponent),
+      },
+      {
         path: 'admin/queries',
         loadComponent: () =>
           import('./features/inquiries/admin-query-review/admin-query-review.component').then(
