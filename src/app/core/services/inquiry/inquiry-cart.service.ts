@@ -53,7 +53,7 @@ export class InquiryCartService {
     this.linesSignal.update((lines) => [...lines, line]);
   }
 
-  updateLineQuantity(productId: number, quantity: number): void {
+  updateLineQuantity(productId: string, quantity: number): void {
     if (quantity < 1) {
       this.removeLine(productId);
       return;
@@ -63,13 +63,13 @@ export class InquiryCartService {
     );
   }
 
-  updateLineNotes(productId: number, lineNotes: string): void {
+  updateLineNotes(productId: string, lineNotes: string): void {
     this.linesSignal.update((lines) =>
       lines.map((l) => (l.productId === productId ? { ...l, lineNotes } : l)),
     );
   }
 
-  removeLine(productId: number): void {
+  removeLine(productId: string): void {
     this.linesSignal.update((lines) => lines.filter((l) => l.productId !== productId));
   }
 

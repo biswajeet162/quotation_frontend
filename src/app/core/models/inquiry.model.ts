@@ -10,8 +10,8 @@ export type InquiryRequestSource = 'CATALOG_SEARCH' | 'NEW_PRODUCT_SEARCH' | 'MI
 export type InquiryLineSource = 'CATALOG_MATCH' | 'NEW_PRODUCT';
 
 export interface InquiryItem {
-  id?: number;
-  productId: number;
+  id?: string;
+  productId: string;
   productBrand?: string;
   productName?: string;
   quantity: number;
@@ -20,9 +20,9 @@ export interface InquiryItem {
 }
 
 export interface Inquiry {
-  id: number;
+  id: string;
   inquiryId: string;
-  companyId: number;
+  companyId: string;
   companyName?: string;
   title: string;
   description?: string;
@@ -42,7 +42,7 @@ export interface CreateInquiryRequest {
   description?: string;
   searchTerm?: string;
   items: {
-    productId: number;
+    productId: string;
     quantity: number;
     notes?: string;
     lineSource?: InquiryLineSource;
@@ -60,7 +60,7 @@ export interface FindOrCreateProductRequest {
 }
 
 export interface QuoteCartLine {
-  productId: number;
+  productId: string;
   brand: string;
   designation: string;
   category?: string;

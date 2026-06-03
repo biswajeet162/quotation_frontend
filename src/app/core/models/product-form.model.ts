@@ -1,7 +1,7 @@
 import { InquiryLineSource } from './inquiry.model';
 
 export interface ProductFormDraft {
-  catalogProductId?: number;
+  catalogProductId?: string;
   brand: string;
   designation: string;
   groupName: string;

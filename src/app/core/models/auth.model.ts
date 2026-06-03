@@ -9,7 +9,7 @@ export interface AuthResponse {
   userId: string;
   email: string;
   role: string;
-  companyId: number;
+  companyId: string;
   companyName: string;
 }
 
@@ -17,6 +17,6 @@ export interface AuthUser {
   userId: string;
   email: string;
   role: string;
-  companyId: number;
+  companyId: string;
   companyName: string;
 }

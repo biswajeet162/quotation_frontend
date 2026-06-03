@@ -9,13 +9,13 @@ export class InquiryService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${environment.apiUrl}/inquiries`;
 
-  create(request: CreateInquiryRequest, companyId: number): Observable<Inquiry> {
+  create(request: CreateInquiryRequest, companyId: string): Observable<Inquiry> {
     return this.http.post<Inquiry>(this.baseUrl, request, {
       headers: new HttpHeaders({ 'X-Company-Id': String(companyId) }),
     });
   }
 
-  getByCompany(companyId: number): Observable<Inquiry[]> {
+  getByCompany(companyId: string): Observable<Inquiry[]> {
     return this.http.get<Inquiry[]>(`${this.baseUrl}/company/${companyId}`);
   }
 
@@ -27,11 +27,11 @@ export class InquiryService {
     return this.http.get<Inquiry[]>(`${this.baseUrl}/status/${status}`);
   }
 
-  submitToDistributors(id: number): Observable<Inquiry> {
+  submitToDistributors(id: string): Observable<Inquiry> {
     return this.http.post<Inquiry>(`${this.baseUrl}/${id}/submit-to-distributors`, {});
   }
 
-  requestClarification(id: number, message: string): Observable<Inquiry> {
+  requestClarification(id: string, message: string): Observable<Inquiry> {
     return this.http.post<Inquiry>(`${this.baseUrl}/${id}/request-clarification`, { message });
   }
 }

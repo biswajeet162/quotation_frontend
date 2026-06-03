@@ -21,7 +21,7 @@ export class AdminQueryReviewComponent {
   readonly errorMessage = signal<string | null>(null);
   readonly inquiries = signal<Inquiry[]>([]);
   readonly activeFilter = signal<AdminFilter>('pending');
-  readonly selectedId = signal<number | null>(null);
+  readonly selectedId = signal<string | null>(null);
   readonly actionLoading = signal(false);
   readonly actionError = signal<string | null>(null);
   readonly clarificationText = signal('');
@@ -84,7 +84,7 @@ export class AdminQueryReviewComponent {
     this.selectedId.set(first?.id ?? null);
   }
 
-  selectInquiry(id: number): void {
+  selectInquiry(id: string): void {
     this.selectedId.set(id);
     this.actionError.set(null);
     const inquiry = this.inquiries().find((q) => q.id === id);
