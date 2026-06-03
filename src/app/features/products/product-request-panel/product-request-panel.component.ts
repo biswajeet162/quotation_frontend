@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, output, signal } from '@angular/core';
+import { Component, HostListener, inject, OnInit, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { InquiryCartService } from '../../../core/services/inquiry/inquiry-cart.service';
@@ -40,6 +40,13 @@ export class ProductRequestPanelComponent implements OnInit {
     this.catalog.ensureLoaded();
   }
 
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.previewOpen()) {
+      this.closePreview();
+    }
+  }
+
   addRow(): void {
     this.formState.addRow();
   }
@@ -62,24 +69,26 @@ export class ProductRequestPanelComponent implements OnInit {
 
   openPreview(): void {
     this.previewOpen.set(true);
+    document.body.style.overflow = 'hidden';
   }
 
   closePreview(): void {
     this.previewOpen.set(false);
+    document.body.style.overflow = '';
   }
 
   clearForm(): void {
     this.formState.resetRows();
     this.submitError.set(null);
     this.lastSubmitted.set(null);
-    this.previewOpen.set(false);
+    this.closePreview();
   }
 
   submitAnother(): void {
     this.lastSubmitted.set(null);
     this.formState.resetRows();
     this.submitError.set(null);
-    this.previewOpen.set(false);
+    this.closePreview();
   }
 
   /** Rows with at least one field filled — fully empty rows are excluded from preview. */
@@ -162,7 +171,7 @@ export class ProductRequestPanelComponent implements OnInit {
           this.submitting.set(false);
           this.cart.clear();
           this.formState.resetRows();
-          this.previewOpen.set(false);
+          this.closePreview();
           this.lastSubmitted.set(inquiry);
           this.submitted.emit(inquiry);
         },

@@ -1,10 +1,4 @@
 <div class="request-panel" [class.panel-highlight]="highlight()">
-  <div class="panel-toolbar">
-    <button type="button" class="btn-preview" (click)="openPreview()" [disabled]="previewRows().length === 0">
-      Preview
-    </button>
-  </div>
-
   @if (lastSubmitted(); as inquiry) {
     <div class="success-card" role="status">
       <p>
@@ -124,21 +118,28 @@
 </div>
 
 @if (previewOpen()) {
-  <div class="preview-backdrop" (click)="closePreview()" role="presentation">
+  <div class="preview-overlay" (click)="closePreview()" role="presentation">
     <div
-      class="preview-dialog"
+      class="preview-panel"
       role="dialog"
       aria-labelledby="preview-title"
       aria-modal="true"
       (click)="$event.stopPropagation()"
     >
-      <header class="preview-header">
-        <h3 id="preview-title">Quotation preview</h3>
-        <button type="button" class="btn-icon-close" (click)="closePreview()" aria-label="Close preview">
-          ✕
-        </button>
-      </header>
-      <div class="preview-body">
+    <header class="preview-header">
+      <div>
+        <h1 id="preview-title">Quotation preview</h1>
+        <p class="preview-summary">
+          {{ previewRows().length }} product(s), total qty {{ totalPreviewQty() }}
+        </p>
+      </div>
+      <button type="button" class="btn-icon-close" (click)="closePreview()" aria-label="Close preview">
+        ✕
+      </button>
+    </header>
+
+    <main class="preview-body">
+      <div class="preview-table-wrap">
         <table class="preview-table">
           <thead>
             <tr>
@@ -174,11 +175,12 @@
             }
           </tbody>
         </table>
-        <p class="preview-summary">{{ previewRows().length }} product(s), qty {{ totalPreviewQty() }}</p>
       </div>
-      <footer class="preview-footer">
-        <button type="button" class="btn-secondary" (click)="closePreview()">Close</button>
-      </footer>
+    </main>
+
+    <footer class="preview-footer">
+      <button type="button" class="btn-secondary" (click)="closePreview()">Back to form</button>
+    </footer>
     </div>
   </div>
 }
