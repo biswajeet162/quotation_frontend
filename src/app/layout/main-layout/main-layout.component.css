@@ -1,12 +1,17 @@
 .app-shell {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
   background: #f1f5f9;
 }
 
 .app-content {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   padding: 1.5rem;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }

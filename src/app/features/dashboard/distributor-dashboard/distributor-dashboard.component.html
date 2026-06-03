@@ -1,0 +1,11 @@
+<section class="dashboard page-card">
+  <h1>Dashboard</h1>
+  @if (auth.currentUser(); as user) {
+    <p>
+      Signed in as <strong>{{ user.email }}</strong> at
+      <strong>{{ user.companyName }}</strong>.
+    </p>
+  }
+  <p class="muted">Distributor metrics and inquiry responses will be expanded here.</p>
+  <a routerLink="/products" class="btn-link">Browse product catalog →</a>
+</section>

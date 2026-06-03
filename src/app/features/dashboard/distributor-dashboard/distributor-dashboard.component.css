@@ -1,0 +1,27 @@
+.page-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid #e2e8f0;
+}
+
+.page-card h1 {
+  margin: 0 0 0.75rem;
+  font-size: 1.5rem;
+}
+
+.muted {
+  color: #64748b;
+}
+
+.btn-link {
+  display: inline-block;
+  margin-top: 1rem;
+  font-weight: 600;
+  color: #0f766e;
+  text-decoration: none;
+}
+
+.btn-link:hover {
+  text-decoration: underline;
+}

@@ -1,0 +1,102 @@
+<section class="dashboard">
+  <header class="dashboard-header">
+    <div>
+      <h1>Dashboard</h1>
+      @if (auth.currentUser(); as user) {
+        <p class="subtitle">
+          {{ user.companyName }} · {{ user.email }}
+        </p>
+      }
+      <p class="muted">Summary of your quotation requests and where they stand in the pipeline.</p>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/requests" class="btn-primary">Create quotation</a>
+      <a routerLink="/tracking" class="btn-secondary">View tracking</a>
+    </div>
+  </header>
+
+  @if (loading()) {
+    <p class="state-message">Loading your summary…</p>
+  } @else if (errorMessage()) {
+    <div class="alert-error" role="alert">{{ errorMessage() }}</div>
+  } @else {
+    <div class="kpi-grid">
+      <article class="kpi-card kpi-highlight">
+        <span class="kpi-label">Total requests</span>
+        <span class="kpi-value">{{ total() }}</span>
+      </article>
+      <article class="kpi-card">
+        <span class="kpi-label">Submitted</span>
+        <span class="kpi-value">{{ submitted() }}</span>
+        <span class="kpi-hint">Received, being processed</span>
+      </article>
+      <article class="kpi-card kpi-warn">
+        <span class="kpi-label">Action required</span>
+        <span class="kpi-value">{{ actionRequired() }}</span>
+        <span class="kpi-hint">We need more information</span>
+      </article>
+      <article class="kpi-card">
+        <span class="kpi-label">In progress</span>
+        <span class="kpi-value">{{ inProgress() }}</span>
+        <span class="kpi-hint">With distributors or preparing quote</span>
+      </article>
+      <article class="kpi-card kpi-success">
+        <span class="kpi-label">Ready / closed</span>
+        <span class="kpi-value">{{ completed() }}</span>
+      </article>
+    </div>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Recent requests</h2>
+        <a routerLink="/tracking" class="link-action">See all →</a>
+      </div>
+
+      @if (recent().length === 0) {
+        <p class="muted panel-empty">
+          You have not submitted any quotation requests yet.
+          <a routerLink="/requests">Create your first quotation</a>.
+        </p>
+      } @else {
+        <ul class="recent-list">
+          @for (inquiry of recent(); track inquiry.id) {
+            <li>
+              <div class="recent-main">
+                <span class="recent-id">{{ inquiry.inquiryId }}</span>
+                <span class="recent-title">{{ inquiry.title }}</span>
+                <span class="recent-meta">
+                  {{ getRequestSourceLabel(inquiry.requestSource) }} ·
+                  {{ formatDate(inquiry.createdAt) }}
+                </span>
+              </div>
+              <span
+                class="status-pill"
+                [class]="'tone-' + getConsumerInquiryDisplay(inquiry).tone"
+              >
+                {{ getConsumerInquiryDisplay(inquiry).label }}
+              </span>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    <nav class="quick-nav" aria-label="Quick navigation">
+      <a routerLink="/requests" class="quick-card">
+        <span class="quick-icon">◎</span>
+        <span class="quick-title">Create quotation</span>
+        <span class="quick-desc">Search catalog and submit a new request</span>
+      </a>
+      <a routerLink="/tracking" class="quick-card">
+        <span class="quick-icon">◷</span>
+        <span class="quick-title">Tracking</span>
+        <span class="quick-desc">Full history, filters, and details</span>
+      </a>
+      <a routerLink="/products" class="quick-card">
+        <span class="quick-icon">▣</span>
+        <span class="quick-title">Browse products</span>
+        <span class="quick-desc">Explore the catalog before you quote</span>
+      </a>
+    </nav>
+  }
+</section>

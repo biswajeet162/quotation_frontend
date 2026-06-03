@@ -1,10 +1,251 @@
-<section class="page-card">
-  <h1>Dashboard</h1>
-  @if (auth.currentUser(); as user) {
-    <p>
-      Signed in as <strong>{{ user.email }}</strong> at
-      <strong>{{ user.companyName }}</strong>.
-    </p>
+<section class="dashboard">
+  <header class="dashboard-header">
+    <div>
+      <h1>Admin dashboard</h1>
+      @if (auth.currentUser(); as user) {
+        <p class="subtitle">
+          {{ user.companyName }} · {{ user.email }}
+        </p>
+      }
+      <p class="muted">Full operational view across consumers, distributors, products, and quotation pipeline.</p>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/admin/queries" class="btn-primary">Review queries</a>
+      <button type="button" class="btn-secondary" (click)="load()" [disabled]="loading()">
+        Refresh
+      </button>
+    </div>
+  </header>
+
+  @if (loading()) {
+    <p class="state-message">Loading metrics…</p>
+  } @else if (errorMessage()) {
+    <div class="alert-error" role="alert">{{ errorMessage() }}</div>
+  } @else {
+    @if (overview(); as data) {
+    <div class="kpi-grid">
+      <article class="kpi-card kpi-highlight">
+        <span class="kpi-label">Total inquiries</span>
+        <span class="kpi-value">{{ data.totalInquiries }}</span>
+        <span class="kpi-hint">All consumer quotation requests</span>
+      </article>
+      <article class="kpi-card">
+        <span class="kpi-label">Pending review</span>
+        <span class="kpi-value">{{ data.pendingReview }}</span>
+        <span class="kpi-hint">New, awaiting admin action</span>
+      </article>
+      <article class="kpi-card kpi-warn">
+        <span class="kpi-label">Awaiting consumer</span>
+        <span class="kpi-value">{{ data.awaitingClarification }}</span>
+        <span class="kpi-hint">Clarification requested</span>
+      </article>
+      <article class="kpi-card">
+        <span class="kpi-label">With distributors</span>
+        <span class="kpi-value">{{ data.sentToDistributors }}</span>
+        <span class="kpi-hint">Sent for distributor quotes</span>
+      </article>
+      <article class="kpi-card">
+        <span class="kpi-label">Responses in</span>
+        <span class="kpi-value">{{ data.responsesReceived }}</span>
+        <span class="kpi-hint">Distributor responses received</span>
+      </article>
+      <article class="kpi-card kpi-success">
+        <span class="kpi-label">Final / closed</span>
+        <span class="kpi-value">{{ data.finalSent + data.closed }}</span>
+        <span class="kpi-hint">{{ data.finalSent }} ready · {{ data.closed }} closed</span>
+      </article>
+      <article class="kpi-card">
+        <span class="kpi-label">Catalog products</span>
+        <span class="kpi-value">{{ data.totalProducts }}</span>
+        <span class="kpi-hint">{{ data.distributorProductLinks }} distributor links</span>
+      </article>
+      <article class="kpi-card">
+        <span class="kpi-label">Inquiry line items</span>
+        <span class="kpi-value">{{ data.totalInquiryLines }}</span>
+        <span class="kpi-hint">Products requested across all inquiries</span>
+      </article>
+    </div>
+
+    <div class="panels-row">
+      <section class="panel">
+        <h2>Inquiries by status</h2>
+        <ul class="bar-chart">
+          @for (row of data.inquiriesByStatus; track row.status) {
+            <li>
+              <div class="bar-row">
+                <span class="bar-label">{{ row.label }}</span>
+                <span class="bar-count">{{ row.count }}</span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill" [style.width]="statusBarWidth(row.count)"></div>
+              </div>
+            </li>
+          }
+        </ul>
+      </section>
+
+      <section class="panel">
+        <h2>Request source mix</h2>
+        <ul class="bar-chart">
+          <li>
+            <div class="bar-row">
+              <span class="bar-label">Catalog search</span>
+              <span class="bar-count">{{ data.catalogSearchInquiries }}</span>
+            </div>
+            <div class="bar-track">
+              <div
+                class="bar-fill bar-teal"
+                [style.width]="sourceBarWidth(data.catalogSearchInquiries)"
+              ></div>
+            </div>
+          </li>
+          <li>
+            <div class="bar-row">
+              <span class="bar-label">New product search</span>
+              <span class="bar-count">{{ data.newProductSearchInquiries }}</span>
+            </div>
+            <div class="bar-track">
+              <div
+                class="bar-fill bar-amber"
+                [style.width]="sourceBarWidth(data.newProductSearchInquiries)"
+              ></div>
+            </div>
+          </li>
+          <li>
+            <div class="bar-row">
+              <span class="bar-label">Mixed</span>
+              <span class="bar-count">{{ data.mixedInquiries }}</span>
+            </div>
+            <div class="bar-track">
+              <div
+                class="bar-fill bar-slate"
+                [style.width]="sourceBarWidth(data.mixedInquiries)"
+              ></div>
+            </div>
+          </li>
+        </ul>
+      </section>
+
+      <section class="panel">
+        <h2>Organizations & users</h2>
+        <dl class="metrics-dl">
+          <div>
+            <dt>Consumer companies</dt>
+            <dd>{{ data.consumerCompanies }}</dd>
+          </div>
+          <div>
+            <dt>Distributor companies</dt>
+            <dd>{{ data.distributorCompanies }}</dd>
+          </div>
+          <div>
+            <dt>Active users</dt>
+            <dd>{{ data.activeUsers }}</dd>
+          </div>
+          <div>
+            <dt>Consumer users</dt>
+            <dd>{{ data.consumerUsers }}</dd>
+          </div>
+          <div>
+            <dt>Distributor users</dt>
+            <dd>{{ data.distributorUsers }}</dd>
+          </div>
+          <div>
+            <dt>Distributor quotations</dt>
+            <dd>{{ data.distributorQuotations }}</dd>
+          </div>
+          <div>
+            <dt>Final quotations</dt>
+            <dd>{{ data.finalQuotations }}</dd>
+          </div>
+        </dl>
+      </section>
+    </div>
+
+    <div class="tables-row">
+      <section class="panel panel-wide">
+        <div class="panel-head">
+          <h2>Recent inquiry activity</h2>
+          <a routerLink="/admin/queries" class="link-action">View all →</a>
+        </div>
+        @if (data.recentInquiries.length === 0) {
+          <p class="muted panel-empty">No inquiries yet.</p>
+        } @else {
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Reference</th>
+                  <th>Consumer</th>
+                  <th>Title</th>
+                  <th>Source</th>
+                  <th>Lines</th>
+                  <th>Status</th>
+                  <th>Submitted</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of data.recentInquiries; track row.id) {
+                  <tr>
+                    <td class="mono">{{ row.inquiryId }}</td>
+                    <td>{{ row.companyName ?? '—' }}</td>
+                    <td>{{ row.title }}</td>
+                    <td>{{ getRequestSourceLabel(row.requestSource) }}</td>
+                    <td>{{ row.itemCount }}</td>
+                    <td>
+                      <span class="status-tag" [class.warn]="row.needsClarification">
+                        @if (row.needsClarification) {
+                          Awaiting consumer
+                        } @else {
+                          {{ formatStatus(row.status) }}
+                        }
+                      </span>
+                    </td>
+                    <td class="nowrap">{{ formatDate(row.createdAt) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+
+      <section class="panel">
+        <h2>Top consumers by volume</h2>
+        @if (data.topConsumers.length === 0) {
+          <p class="muted panel-empty">No consumer activity yet.</p>
+        } @else {
+          <ul class="rank-list">
+            @for (row of data.topConsumers; track row.companyId; let i = $index) {
+              <li>
+                <span class="rank">{{ i + 1 }}</span>
+                <div class="rank-body">
+                  <span class="rank-name">{{ row.companyName }}</span>
+                  <span class="rank-meta">
+                    {{ row.inquiryCount }} request{{ row.inquiryCount === 1 ? '' : 's' }}
+                    @if (row.pendingCount > 0) {
+                      · {{ row.pendingCount }} pending
+                    }
+                  </span>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    </div>
+
+    <nav class="quick-nav" aria-label="Quick navigation">
+      <a routerLink="/admin/queries" class="quick-card">
+        <span class="quick-icon">◉</span>
+        <span class="quick-title">Review queries</span>
+        <span class="quick-desc">{{ data.pendingReview }} pending · {{ data.awaitingClarification }} awaiting consumer</span>
+      </a>
+      <a routerLink="/products" class="quick-card">
+        <span class="quick-icon">▣</span>
+        <span class="quick-title">Product catalog</span>
+        <span class="quick-desc">{{ data.totalProducts }} products in system</span>
+      </a>
+    </nav>
+    }
   }
-  <p class="muted">Overview widgets and metrics will appear here.</p>
 </section>
