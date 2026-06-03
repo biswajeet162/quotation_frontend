@@ -41,6 +41,16 @@ export interface ConsumerInquiry {
   updatedAt?: string;
 }
 
+export interface InquiryDistributor {
+  id?: string;
+  companyId: string;
+  companyName?: string;
+  emailSent?: boolean;
+  emailSentAt?: string;
+  responseReceived?: boolean;
+  responseReceivedAt?: string;
+}
+
 export interface Inquiry {
   id: string;
   inquiryId: string;
@@ -54,7 +64,7 @@ export interface Inquiry {
   requestSource?: InquiryRequestSource;
   searchTerm?: string;
   items?: InquiryItem[];
-  distributors?: unknown[];
+  distributors?: InquiryDistributor[];
   createdAt?: string;
   updatedAt?: string;
 }

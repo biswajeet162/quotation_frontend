@@ -1,0 +1,68 @@
+<div class="workflow-overlay" (click)="close()" role="presentation">
+  <div
+    class="workflow-dialog"
+    role="dialog"
+    aria-labelledby="workflow-title"
+    aria-modal="true"
+    (click)="$event.stopPropagation()"
+  >
+    <header class="workflow-header">
+      <div>
+        <h2 id="workflow-title">Quotation workflow</h2>
+        <p class="workflow-ref">{{ inquiry().inquiryId }} · {{ inquiry().companyName }}</p>
+        <p class="workflow-title">{{ inquiry().title }}</p>
+      </div>
+      <button type="button" class="btn-close" (click)="close()" aria-label="Close workflow">✕</button>
+    </header>
+
+    <div class="workflow-meta">
+      <span>{{ getRequestSourceLabel(inquiry().requestSource) }}</span>
+      <span class="meta-sep">·</span>
+      <span>Status: {{ inquiry().status }}</span>
+      @if (inquiry().createdAt; as createdAt) {
+        <span class="meta-sep">·</span>
+        <span>Started {{ formatWorkflowDate(createdAt) }}</span>
+      }
+    </div>
+
+    <ol class="workflow-timeline">
+      @for (step of steps(); track step.id; let last = $last) {
+        <li class="timeline-step" [class]="'state-' + step.state">
+          <div class="step-marker" aria-hidden="true">
+            @switch (step.state) {
+              @case ('completed') {
+                <span class="marker-icon">✓</span>
+              }
+              @case ('current') {
+                <span class="marker-icon marker-pulse">●</span>
+              }
+              @case ('skipped') {
+                <span class="marker-icon">−</span>
+              }
+              @default {
+                <span class="marker-icon">○</span>
+              }
+            }
+          </div>
+          @if (!last) {
+            <div class="step-connector" aria-hidden="true"></div>
+          }
+          <div class="step-body">
+            <div class="step-head">
+              <h3>{{ step.label }}</h3>
+              <span class="step-badge">{{ workflowStateLabel(step.state) }}</span>
+            </div>
+            <p class="step-desc">{{ step.description }}</p>
+            @if (step.detail) {
+              <p class="step-detail">{{ step.detail }}</p>
+            }
+          </div>
+        </li>
+      }
+    </ol>
+
+    <footer class="workflow-footer">
+      <button type="button" class="btn-secondary" (click)="close()">Close</button>
+    </footer>
+  </div>
+</div>

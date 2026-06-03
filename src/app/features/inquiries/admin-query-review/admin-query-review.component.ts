@@ -1,16 +1,15 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, HostListener, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Inquiry } from '../../../core/models/inquiry.model';
 import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
-import {
-  getRequestSourceLabel,
-} from '../../../shared/utils/inquiry-display.util';
+import { InquiryWorkflowDialogComponent } from '../../../shared/components/inquiry-workflow-dialog/inquiry-workflow-dialog.component';
+import { getRequestSourceLabel } from '../../../shared/utils/inquiry-display.util';
 
 type AdminFilter = 'all' | 'pending' | 'clarification' | 'sent';
 
 @Component({
   selector: 'app-admin-query-review',
-  imports: [FormsModule],
+  imports: [FormsModule, InquiryWorkflowDialogComponent],
   templateUrl: './admin-query-review.component.html',
   styleUrl: './admin-query-review.component.css',
 })
@@ -25,6 +24,7 @@ export class AdminQueryReviewComponent {
   readonly actionLoading = signal(false);
   readonly actionError = signal<string | null>(null);
   readonly clarificationText = signal('');
+  readonly workflowOpen = signal(false);
 
   readonly filteredInquiries = computed(() => {
     const list = this.inquiries();
@@ -51,6 +51,13 @@ export class AdminQueryReviewComponent {
   });
 
   readonly getRequestSourceLabel = getRequestSourceLabel;
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.workflowOpen()) {
+      this.closeWorkflow();
+    }
+  }
 
   ngOnInit(): void {
     this.load();
@@ -87,8 +94,19 @@ export class AdminQueryReviewComponent {
   selectInquiry(id: string): void {
     this.selectedId.set(id);
     this.actionError.set(null);
+    this.workflowOpen.set(false);
     const inquiry = this.inquiries().find((q) => q.id === id);
     this.clarificationText.set(inquiry?.clarificationMessage ?? '');
+  }
+
+  openWorkflow(): void {
+    if (this.selectedInquiry()) {
+      this.workflowOpen.set(true);
+    }
+  }
+
+  closeWorkflow(): void {
+    this.workflowOpen.set(false);
   }
 
   sendToDistributors(): void {

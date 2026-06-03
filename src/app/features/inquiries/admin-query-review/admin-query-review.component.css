@@ -118,15 +118,41 @@
   padding: 1.25rem;
 }
 
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
 .query-detail h2 {
   margin: 0 0 0.35rem;
   font-size: 1.15rem;
 }
 
 .detail-meta {
-  margin: 0 0 1rem;
+  margin: 0;
   font-size: 0.85rem;
   color: #64748b;
+}
+
+.btn-workflow {
+  flex-shrink: 0;
+  padding: 0.5rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: #f0fdfa;
+  border: 1px solid #99f6e4;
+  color: #0f766e;
+  white-space: nowrap;
+}
+
+.btn-workflow:hover {
+  background: #ccfbf1;
+  border-color: #5eead4;
 }
 
 .product-lines {

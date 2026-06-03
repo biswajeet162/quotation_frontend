@@ -59,11 +59,18 @@
 
       @if (selectedInquiry(); as inquiry) {
         <div class="query-detail">
-          <h2>{{ inquiry.title }}</h2>
-          <p class="detail-meta">
-            {{ inquiry.inquiryId }} · {{ inquiry.companyName }} ·
-            {{ getRequestSourceLabel(inquiry.requestSource) }}
-          </p>
+          <div class="detail-header">
+            <div>
+              <h2>{{ inquiry.title }}</h2>
+              <p class="detail-meta">
+                {{ inquiry.inquiryId }} · {{ inquiry.companyName }} ·
+                {{ getRequestSourceLabel(inquiry.requestSource) }}
+              </p>
+            </div>
+            <button type="button" class="btn-workflow" (click)="openWorkflow()">
+              View workflow
+            </button>
+          </div>
 
           @if (inquiry.searchTerm) {
             <p><strong>Search term:</strong> {{ inquiry.searchTerm }}</p>
@@ -145,3 +152,7 @@
     </div>
   }
 </section>
+
+@if (workflowOpen() && selectedInquiry(); as inquiry) {
+  <app-inquiry-workflow-dialog [inquiry]="inquiry" (closed)="closeWorkflow()" />
+}
