@@ -13,6 +13,13 @@ export interface InquiryTimelineAttachment {
   url: string;
 }
 
+export interface InquiryTimelineReplyTo {
+  id: string;
+  actorName?: string;
+  actorRole?: string;
+  preview: string;
+}
+
 export interface InquiryTimelineEntry {
   id: string;
   occurredAt: string;
@@ -25,6 +32,7 @@ export interface InquiryTimelineEntry {
   fromCompanyName?: string;
   toCompanyName?: string;
   attachments?: InquiryTimelineAttachment[];
+  replyTo?: InquiryTimelineReplyTo;
 }
 
 export interface InquiryTimeline {

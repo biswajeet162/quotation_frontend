@@ -391,10 +391,12 @@
   margin-top: 0;
 }
 
-.chat-bubble-media-only .chat-time {
-  display: block;
+.chat-bubble-media-only .chat-bubble-footer {
   margin-top: 0.2rem;
   padding: 0 0.25rem;
+}
+
+.chat-bubble-media-only .chat-bubble-footer .chat-time {
   font-size: 0.62rem;
   opacity: 0.65;
   text-align: right;
@@ -414,6 +416,14 @@
   line-height: 1.2;
 }
 
+.chat-bubble-audio-only .chat-bubble-footer {
+  margin-top: 0.1rem;
+}
+
+.chat-bubble-audio-only .chat-bubble-footer .chat-time {
+  text-align: right;
+}
+
 .chat-attachments {
   display: flex;
   flex-direction: column;
@@ -427,13 +437,13 @@
   max-width: 100%;
 }
 
-.chat-bubble:has(app-chat-audio-player) .chat-time {
-  margin-top: 0.12rem;
+.chat-bubble:has(app-chat-audio-player) .chat-bubble-footer .chat-time {
+  margin-top: 0;
   font-size: 0.62rem;
   opacity: 0.65;
 }
 
-.chat-row-admin .chat-bubble:has(app-chat-audio-player) .chat-time {
+.chat-row-admin .chat-bubble:has(app-chat-audio-player) .chat-bubble-footer .chat-time {
   color: rgba(255, 255, 255, 0.75);
 }
 
@@ -442,6 +452,163 @@
   margin-top: 0.35rem;
   font-size: 0.68rem;
   opacity: 0.72;
+}
+
+.chat-bubble-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.chat-bubble-footer .chat-time {
+  margin-top: 0;
+}
+
+.chat-bubble-audio-only .chat-bubble-footer,
+.chat-bubble-media-only .chat-bubble-footer {
+  margin-top: 0.12rem;
+}
+
+.chat-bubble-audio-only .chat-bubble-footer .chat-time,
+.chat-bubble-media-only .chat-bubble-footer .chat-time {
+  font-size: 0.62rem;
+  opacity: 0.65;
+}
+
+.chat-reply-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.45rem;
+  height: 1.45rem;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  opacity: 0.55;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+@media (hover: hover) {
+  .chat-reply-btn {
+    opacity: 0;
+  }
+
+  .chat-bubble:hover .chat-reply-btn,
+  .chat-reply-btn:focus-visible {
+    opacity: 0.72;
+  }
+}
+
+.chat-reply-btn:hover {
+  opacity: 1;
+  background: rgba(15, 23, 42, 0.08);
+}
+
+.chat-row-admin .chat-reply-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.chat-reply-btn svg {
+  width: 0.85rem;
+  height: 0.85rem;
+  fill: currentColor;
+}
+
+.chat-quote {
+  display: block;
+  width: 100%;
+  margin: 0 0 0.45rem;
+  padding: 0.4rem 0.55rem;
+  border: none;
+  border-left: 3px solid #0f766e;
+  border-radius: 8px;
+  background: rgba(15, 118, 110, 0.08);
+  text-align: left;
+  cursor: pointer;
+}
+
+.chat-row-admin .chat-quote {
+  border-left-color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.chat-quote-author {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  margin-bottom: 0.12rem;
+  opacity: 0.88;
+}
+
+.chat-quote-text {
+  display: block;
+  font-size: 0.76rem;
+  line-height: 1.35;
+  opacity: 0.82;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.chat-row-highlight .chat-bubble {
+  box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.35);
+}
+
+.compose-reply-preview {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin-bottom: 0.55rem;
+  padding: 0.45rem 0.55rem;
+  border-left: 3px solid #0f766e;
+  border-radius: 8px;
+  background: #ecfdf5;
+}
+
+.compose-reply-content {
+  min-width: 0;
+  flex: 1;
+}
+
+.compose-reply-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #0f766e;
+  margin-bottom: 0.1rem;
+}
+
+.compose-reply-text {
+  display: block;
+  font-size: 0.78rem;
+  color: #334155;
+  line-height: 1.35;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.compose-reply-clear {
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #64748b;
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.compose-reply-clear:hover {
+  background: rgba(15, 23, 42, 0.06);
+  color: #0f172a;
 }
 
 .pending-attachments li.pending-audio-item {

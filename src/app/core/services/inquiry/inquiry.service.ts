@@ -37,18 +37,26 @@ export class InquiryService {
     return this.http.get<InquiryTimeline>(`${this.baseUrl}/${id}/timeline`);
   }
 
-  postMessage(id: string, message: string): Observable<ConsumerInquiry> {
-    return this.http.post<ConsumerInquiry>(`${this.baseUrl}/${id}/messages`, { message });
+  postMessage(id: string, message: string, replyToMessageId?: string): Observable<ConsumerInquiry> {
+    const body: { message: string; replyToMessageId?: string } = { message };
+    if (replyToMessageId) {
+      body.replyToMessageId = replyToMessageId;
+    }
+    return this.http.post<ConsumerInquiry>(`${this.baseUrl}/${id}/messages`, body);
   }
 
   postMessageWithAttachments(
     id: string,
     message: string,
     attachments: File[],
+    replyToMessageId?: string,
   ): Observable<ConsumerInquiry> {
     const formData = new FormData();
     if (message.trim()) {
       formData.append('message', message.trim());
+    }
+    if (replyToMessageId) {
+      formData.append('replyToMessageId', replyToMessageId);
     }
     for (const file of attachments) {
       formData.append('attachments', file, file.name);

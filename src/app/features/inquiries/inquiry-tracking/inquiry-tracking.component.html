@@ -138,6 +138,7 @@
                   @for (entry of chatMessages(); track entry.id) {
                     <div
                       class="chat-row"
+                      [id]="'chat-msg-' + entry.id"
                       [class.chat-row-consumer]="isConsumerMessage(entry)"
                       [class.chat-row-admin]="isAdminMessage(entry)"
                     >
@@ -146,6 +147,18 @@
                         [class.chat-bubble-audio-only]="isAudioOnlyMessage(entry)"
                         [class.chat-bubble-media-only]="isMediaOnlyMessage(entry)"
                       >
+                        @if (entry.replyTo) {
+                          <button
+                            type="button"
+                            class="chat-quote"
+                            (click)="scrollToQuotedMessage(entry.replyTo!.id, $event)"
+                          >
+                            <span class="chat-quote-author">{{
+                              replyAuthorLabel(entry.replyTo!)
+                            }}</span>
+                            <span class="chat-quote-text">{{ entry.replyTo!.preview }}</span>
+                          </button>
+                        }
                         @if (entry.message) {
                           <p class="chat-text">{{ entry.message }}</p>
                         }
@@ -156,7 +169,24 @@
                             }
                           </div>
                         }
-                        <span class="chat-time">{{ formatChatTime(entry.occurredAt) }}</span>
+                        <div class="chat-bubble-footer">
+                          <span class="chat-time">{{ formatChatTime(entry.occurredAt) }}</span>
+                          @if (canMessage(inquiry) && canReplyTo(entry)) {
+                            <button
+                              type="button"
+                              class="chat-reply-btn"
+                              aria-label="Reply to this message"
+                              title="Reply"
+                              (click)="startReply(entry, $event)"
+                            >
+                              <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path
+                                  d="M9 17H5l-1 4 4-1v-4Zm8-2.5a4.5 4.5 0 0 0-6.36-6.36L7 7.5V4.5L3 8.5l4 4V9.5l3.14-3.14A2.5 2.5 0 0 1 17 14.5Z"
+                                />
+                              </svg>
+                            </button>
+                          }
+                        </div>
                       </div>
                     </div>
                   }
@@ -227,6 +257,23 @@
 
                 @if (messageError()) {
                   <div class="alert alert-error compose-error" role="alert">{{ messageError() }}</div>
+                }
+
+                @if (replyTarget()) {
+                  <div class="compose-reply-preview">
+                    <div class="compose-reply-content">
+                      <span class="compose-reply-label">Replying to {{ replyTargetAuthorLabel(replyTarget()!) }}</span>
+                      <span class="compose-reply-text">{{ buildReplyPreview(replyTarget()!) }}</span>
+                    </div>
+                    <button
+                      type="button"
+                      class="compose-reply-clear"
+                      aria-label="Cancel reply"
+                      (click)="clearReplyTarget()"
+                    >
+                      ×
+                    </button>
+                  </div>
                 }
 
                 @if (!recording()) {

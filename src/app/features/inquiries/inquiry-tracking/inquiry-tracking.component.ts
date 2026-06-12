@@ -12,6 +12,12 @@ import {
   getConsumerInquiryDisplay,
   getRequestSourceLabel,
 } from '../../../shared/utils/inquiry-display.util';
+import {
+  buildReplyPreview,
+  canReplyToTimelineEntry,
+  replyAuthorLabel,
+  replyTargetAuthorLabel,
+} from '../../../shared/utils/chat-reply.util';
 
 type StatusFilter = 'all' | InquiryStatus | 'ACTION_REQUIRED';
 
@@ -50,6 +56,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   readonly messageText = signal('');
   readonly messageLoading = signal(false);
   readonly messageError = signal<string | null>(null);
+  readonly replyTarget = signal<InquiryTimelineEntry | null>(null);
   readonly pendingAttachments = signal<PendingAttachment[]>([]);
   readonly recording = signal(false);
   readonly recordingSeconds = signal(0);
@@ -136,6 +143,11 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     () => this.messageText().trim().length > 0 || this.pendingAttachments().length > 0,
   );
 
+  readonly canReplyTo = canReplyToTimelineEntry;
+  readonly buildReplyPreview = buildReplyPreview;
+  readonly replyAuthorLabel = replyAuthorLabel;
+  readonly replyTargetAuthorLabel = replyTargetAuthorLabel;
+
   readonly getRequestSourceLabel = getRequestSourceLabel;
   readonly getConsumerInquiryDisplay = getConsumerInquiryDisplay;
 
@@ -213,6 +225,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     this.deleteError.set(null);
     this.messageError.set(null);
     this.messageText.set('');
+    this.clearReplyTarget();
     this.timelineEntries.set([]);
     this.loadTimeline();
   }
@@ -285,6 +298,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     const inquiry = this.selectedInquiry();
     const message = this.messageText().trim();
     const attachments = this.pendingAttachments().map((item) => item.file);
+    const replyToMessageId = this.replyTarget()?.id;
 
     if (!inquiry || (!message && attachments.length === 0)) {
       this.messageError.set('Enter a message or attach a file before sending.');
@@ -296,13 +310,19 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
 
     const request =
       attachments.length > 0
-        ? this.inquiryService.postMessageWithAttachments(inquiry.id, message, attachments)
-        : this.inquiryService.postMessage(inquiry.id, message);
+        ? this.inquiryService.postMessageWithAttachments(
+            inquiry.id,
+            message,
+            attachments,
+            replyToMessageId,
+          )
+        : this.inquiryService.postMessage(inquiry.id, message, replyToMessageId);
 
     request.subscribe({
       next: (updated) => {
         this.messageLoading.set(false);
         this.messageText.set('');
+        this.clearReplyTarget();
         this.clearPendingAttachments();
         this.inquiries.update((list) => list.map((q) => (q.id === updated.id ? updated : q)));
         this.focusComposeInput();
@@ -563,6 +583,29 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
 
   canMessage(inquiry: ConsumerInquiry): boolean {
     return inquiry.status !== 'CLOSED';
+  }
+
+  startReply(entry: InquiryTimelineEntry, event: Event): void {
+    event.stopPropagation();
+    if (!this.canReplyTo(entry)) {
+      return;
+    }
+    this.replyTarget.set(entry);
+    this.messageError.set(null);
+    this.focusComposeInput();
+  }
+
+  clearReplyTarget(): void {
+    this.replyTarget.set(null);
+  }
+
+  scrollToQuotedMessage(messageId: string, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const element = document.getElementById(`chat-msg-${messageId}`);
+    element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    element?.classList.add('chat-row-highlight');
+    setTimeout(() => element?.classList.remove('chat-row-highlight'), 1400);
   }
 
   canDelete(inquiry: ConsumerInquiry): boolean {
