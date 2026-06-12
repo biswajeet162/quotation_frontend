@@ -1,4 +1,4 @@
-import { Component, computed, HostListener, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, computed, ElementRef, HostListener, inject, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ConsumerInquiry, InquiryStatus } from '../../../core/models/inquiry.model';
 import {
@@ -43,6 +43,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   readonly selectedId = signal<string | null>(null);
 
   readonly timelineLoading = signal(false);
+  readonly timelineRefreshing = signal(false);
   readonly timelineError = signal<string | null>(null);
   readonly timelineEntries = signal<InquiryTimelineEntry[]>([]);
 
@@ -57,6 +58,9 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   readonly deleteLoading = signal(false);
   readonly deleteError = signal<string | null>(null);
   readonly deleteConfirmOpen = signal(false);
+
+  private readonly detailScrollRef = viewChild<ElementRef<HTMLElement>>('detailScroll');
+  private readonly messageInputRef = viewChild<ElementRef<HTMLTextAreaElement>>('messageInput');
 
   private mediaRecorder: MediaRecorder | null = null;
   private recordingChunks: Blob[] = [];
@@ -209,6 +213,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     this.deleteError.set(null);
     this.messageError.set(null);
     this.messageText.set('');
+    this.timelineEntries.set([]);
     this.loadTimeline();
   }
 
@@ -225,19 +230,28 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     }
   }
 
-  loadTimeline(): void {
+  loadTimeline(options?: { silent?: boolean; scrollToBottom?: boolean; preserveScroll?: boolean }): void {
     const inquiry = this.selectedInquiry();
     if (!inquiry) {
       return;
     }
 
-    this.timelineLoading.set(true);
+    const scrollEl = this.detailScrollRef()?.nativeElement;
+    const previousScrollTop = scrollEl?.scrollTop ?? 0;
+    const silent = options?.silent ?? false;
+
+    if (silent) {
+      this.timelineRefreshing.set(true);
+    } else {
+      this.timelineLoading.set(true);
+    }
     this.timelineError.set(null);
 
     this.inquiryService.getTimeline(inquiry.id).subscribe({
       next: (timeline) => {
         this.timelineEntries.set(timeline.entries);
         this.timelineLoading.set(false);
+        this.timelineRefreshing.set(false);
         this.inquiries.update((list) =>
           list.map((q) =>
             q.id === inquiry.id
@@ -249,10 +263,20 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
               : q,
           ),
         );
+
+        if (options?.scrollToBottom) {
+          this.scrollDetailToBottom();
+          this.focusComposeInput();
+        } else if (options?.preserveScroll && scrollEl) {
+          scrollEl.scrollTop = previousScrollTop;
+        }
       },
       error: () => {
         this.timelineLoading.set(false);
-        this.timelineError.set('Could not load messages.');
+        this.timelineRefreshing.set(false);
+        if (!silent) {
+          this.timelineError.set('Could not load messages.');
+        }
       },
     });
   }
@@ -281,7 +305,8 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
         this.messageText.set('');
         this.clearPendingAttachments();
         this.inquiries.update((list) => list.map((q) => (q.id === updated.id ? updated : q)));
-        this.loadTimeline();
+        this.focusComposeInput();
+        this.loadTimeline({ silent: true, scrollToBottom: true });
       },
       error: (err) => {
         this.messageLoading.set(false);
@@ -701,5 +726,26 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
       }
     }
     this.pendingAttachments.set([]);
+  }
+
+  private scrollDetailToBottom(): void {
+    requestAnimationFrame(() => {
+      const scrollEl = this.detailScrollRef()?.nativeElement;
+      if (scrollEl) {
+        scrollEl.scrollTop = scrollEl.scrollHeight;
+      }
+      requestAnimationFrame(() => {
+        const el = this.detailScrollRef()?.nativeElement;
+        if (el) {
+          el.scrollTop = el.scrollHeight;
+        }
+      });
+    });
+  }
+
+  private focusComposeInput(): void {
+    requestAnimationFrame(() => {
+      this.messageInputRef()?.nativeElement?.focus();
+    });
   }
 }

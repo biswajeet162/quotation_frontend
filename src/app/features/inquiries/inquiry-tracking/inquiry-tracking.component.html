@@ -78,7 +78,7 @@
             </div>
           </div>
 
-          <div class="detail-scroll">
+          <div #detailScroll class="detail-scroll">
             <div class="detail-summary">
               @if (inquiry.searchTerm) {
                 <p class="detail-note"><strong>Search term:</strong> {{ inquiry.searchTerm }}</p>
@@ -120,16 +120,16 @@
                 <button
                   type="button"
                   class="btn-text"
-                  (click)="loadTimeline()"
-                  [disabled]="timelineLoading()"
+                  (click)="loadTimeline({ silent: true, preserveScroll: true })"
+                  [disabled]="timelineLoading() || timelineRefreshing()"
                 >
-                  Refresh
+                  {{ timelineRefreshing() ? 'Refreshing…' : 'Refresh' }}
                 </button>
               </div>
 
-              @if (timelineLoading()) {
+              @if (timelineLoading() && chatMessages().length === 0) {
                 <p class="activity-empty">Loading messages…</p>
-              } @else if (timelineError()) {
+              } @else if (timelineError() && chatMessages().length === 0) {
                 <div class="alert alert-error" role="alert">{{ timelineError() }}</div>
               } @else if (chatMessages().length === 0) {
                 <p class="activity-empty">No messages yet. Send a message below to contact admin.</p>
@@ -257,6 +257,7 @@
                   />
 
                   <textarea
+                    #messageInput
                     id="consumer-message"
                     class="chat-input"
                     rows="1"
