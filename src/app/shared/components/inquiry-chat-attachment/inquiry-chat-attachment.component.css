@@ -102,6 +102,15 @@
   background: #f1f5f9;
   border: 1px solid #e2e8f0;
   max-width: min(240px, 100%);
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.chat-document:hover {
+  background: #e8eef5;
 }
 
 :host-context(.chat-row-admin) .chat-document {
@@ -158,6 +167,26 @@
 
 :host-context(.chat-row-admin) .doc-action {
   color: rgba(255, 255, 255, 0.78);
+}
+
+.doc-open-icon {
+  flex-shrink: 0;
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  color: #64748b;
+}
+
+.doc-open-icon svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+:host-context(.chat-row-admin) .doc-open-icon {
+  color: rgba(255, 255, 255, 0.82);
 }
 
 .media-lightbox {

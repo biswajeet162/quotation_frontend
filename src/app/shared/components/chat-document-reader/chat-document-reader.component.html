@@ -1,0 +1,35 @@
+<div
+  class="doc-reader-overlay"
+  role="dialog"
+  aria-modal="true"
+  [attr.aria-label]="fileName() + ' document reader'"
+>
+  <header class="doc-reader-header">
+    <div class="doc-reader-title-wrap">
+      <span class="doc-reader-type">{{ typeLabel() }}</span>
+      <h2 class="doc-reader-title">{{ fileName() }}</h2>
+    </div>
+    <div class="doc-reader-actions">
+      @if (downloadUrl()) {
+        <button type="button" class="doc-reader-btn" (click)="download()">Download</button>
+      }
+      <button type="button" class="doc-reader-close" aria-label="Close document reader" (click)="close()">
+        ×
+      </button>
+    </div>
+  </header>
+
+  <div #readerBody class="doc-reader-body">
+    @if (rendering()) {
+      <p class="doc-reader-status">Opening document…</p>
+    }
+    @if (renderError()) {
+      <div class="doc-reader-error">
+        <p>{{ renderError() }}</p>
+        @if (downloadUrl()) {
+          <button type="button" class="doc-reader-btn" (click)="download()">Download file</button>
+        }
+      </div>
+    }
+  </div>
+</div>

@@ -63,13 +63,7 @@
       />
     }
     @case ('DOCUMENT') {
-      <a
-        class="chat-document"
-        [href]="objectUrl()!"
-        [download]="attachment().fileName"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
+      <button type="button" class="chat-document" (click)="openDocumentReader($event)">
         <span class="doc-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24">
             <path
@@ -79,13 +73,34 @@
         </span>
         <span class="doc-info">
           <span class="doc-name">{{ attachment().fileName }}</span>
-          <span class="doc-action">Tap to download</span>
+          <span class="doc-action">Tap to open</span>
         </span>
-      </a>
+        <span class="doc-open-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M3 9V3h6M15 3h6v6M21 15v6h-6M9 21H3v-6M4 4l4 4M20 4l-4 4M20 20l-4-4M4 20l4-4"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+          </svg>
+        </span>
+      </button>
     }
   }
   @if (attachment().mediaType !== 'AUDIO' && attachment().mediaType !== 'DOCUMENT') {
     <span class="attachment-name">{{ attachment().fileName }}</span>
+  }
+
+  @if (documentReaderOpen() && attachmentBlob()) {
+    <app-chat-document-reader
+      [blob]="attachmentBlob()!"
+      [fileName]="attachment().fileName"
+      [contentType]="attachment().contentType"
+      [downloadUrl]="objectUrl()"
+      (closed)="closeDocumentReader()"
+    />
   }
 
   @if (viewerOpen() && (attachment().mediaType === 'IMAGE' || attachment().mediaType === 'VIDEO')) {

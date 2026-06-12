@@ -11,10 +11,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { InquiryTimelineAttachment } from '../../../core/models/inquiry-timeline.model';
 import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
 import { ChatAudioPlayerComponent } from '../chat-audio-player/chat-audio-player.component';
+import { ChatDocumentReaderComponent } from '../chat-document-reader/chat-document-reader.component';
 
 @Component({
   selector: 'app-inquiry-chat-attachment',
-  imports: [ChatAudioPlayerComponent],
+  imports: [ChatAudioPlayerComponent, ChatDocumentReaderComponent],
   templateUrl: './inquiry-chat-attachment.component.html',
   styleUrl: './inquiry-chat-attachment.component.css',
 })
@@ -27,7 +28,9 @@ export class InquiryChatAttachmentComponent implements OnInit {
   readonly loading = signal(true);
   readonly error = signal(false);
   readonly objectUrl = signal<string | null>(null);
+  readonly attachmentBlob = signal<Blob | null>(null);
   readonly viewerOpen = signal(false);
+  readonly documentReaderOpen = signal(false);
 
   ngOnInit(): void {
     this.inquiryService
@@ -38,6 +41,7 @@ export class InquiryChatAttachmentComponent implements OnInit {
           const typedBlob = blob.type
             ? blob
             : new Blob([blob], { type: this.attachment().contentType || 'application/octet-stream' });
+          this.attachmentBlob.set(typedBlob);
           this.objectUrl.set(URL.createObjectURL(typedBlob));
           this.loading.set(false);
         },
@@ -68,12 +72,26 @@ export class InquiryChatAttachmentComponent implements OnInit {
     this.viewerOpen.set(true);
   }
 
+  openDocumentReader(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.documentReaderOpen.set(true);
+  }
+
+  closeDocumentReader(): void {
+    this.documentReaderOpen.set(false);
+  }
+
   closeViewer(): void {
     this.viewerOpen.set(false);
   }
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
+    if (this.documentReaderOpen()) {
+      this.closeDocumentReader();
+      return;
+    }
     if (this.viewerOpen()) {
       this.closeViewer();
     }
