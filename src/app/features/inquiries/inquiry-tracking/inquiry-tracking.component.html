@@ -142,68 +142,70 @@
                       [class.chat-row-consumer]="isConsumerMessage(entry)"
                       [class.chat-row-admin]="isAdminMessage(entry)"
                     >
-                      <div
-                        class="chat-bubble"
-                        [class.chat-bubble-audio-only]="isAudioOnlyMessage(entry)"
-                        [class.chat-bubble-media-only]="isMediaOnlyMessage(entry)"
-                      >
-                        @if (entry.replyTo) {
-                          <button
-                            type="button"
-                            class="chat-quote"
-                            (click)="scrollToQuotedMessage(entry.replyTo, $event)"
-                          >
-                            <span class="chat-quote-author">{{
-                              replyAuthorLabel(entry.replyTo!)
-                            }}</span>
-                            <span class="chat-quote-text">{{ entry.replyTo!.preview }}</span>
-                          </button>
-                        }
-                        @if (entry.message) {
-                          <p class="chat-text">{{ entry.message }}</p>
-                        }
-                        @if (entry.attachments?.length) {
-                          <div class="chat-attachments">
-                            @for (attachment of entry.attachments; track attachment.id) {
-                              <div class="chat-attachment-item" [id]="'chat-att-' + attachment.id">
-                                <app-inquiry-chat-attachment [attachment]="attachment" />
-                                @if (canMessage(inquiry) && canReplyTo(entry)) {
-                                  <button
-                                    type="button"
-                                    class="chat-attachment-reply-btn"
-                                    aria-label="Reply to this attachment"
-                                    title="Reply"
-                                    (click)="startReplyToAttachment(entry, attachment, $event)"
-                                  >
-                                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                                      <path
-                                        d="M9 17H5l-1 4 4-1v-4Zm8-2.5a4.5 4.5 0 0 0-6.36-6.36L7 7.5V4.5L3 8.5l4 4V9.5l3.14-3.14A2.5 2.5 0 0 1 17 14.5Z"
-                                      />
-                                    </svg>
-                                  </button>
-                                }
-                              </div>
-                            }
-                          </div>
-                        }
-                        <div class="chat-bubble-footer">
-                          <span class="chat-time">{{ formatChatTime(entry.occurredAt) }}</span>
-                          @if (canMessage(inquiry) && canReplyTo(entry) && shouldShowBubbleReply(entry)) {
+                      <div class="chat-message-item">
+                        <div
+                          class="chat-bubble"
+                          [class.chat-bubble-audio-only]="isAudioOnlyMessage(entry)"
+                          [class.chat-bubble-media-only]="isMediaOnlyMessage(entry)"
+                        >
+                          @if (entry.replyTo) {
                             <button
                               type="button"
-                              class="chat-reply-btn"
-                              aria-label="Reply to this message"
-                              title="Reply"
-                              (click)="startReply(entry, $event)"
+                              class="chat-quote"
+                              (click)="scrollToQuotedMessage(entry.replyTo, $event)"
                             >
-                              <svg viewBox="0 0 24 24" aria-hidden="true">
-                                <path
-                                  d="M9 17H5l-1 4 4-1v-4Zm8-2.5a4.5 4.5 0 0 0-6.36-6.36L7 7.5V4.5L3 8.5l4 4V9.5l3.14-3.14A2.5 2.5 0 0 1 17 14.5Z"
-                                />
-                              </svg>
+                              <span class="chat-quote-author">{{
+                                replyAuthorLabel(entry.replyTo!)
+                              }}</span>
+                              <span class="chat-quote-text">{{ entry.replyTo!.preview }}</span>
                             </button>
                           }
+                          @if (entry.message) {
+                            <p class="chat-text">{{ entry.message }}</p>
+                          }
+                          @if (entry.attachments?.length) {
+                            <div class="chat-attachments">
+                              @for (attachment of entry.attachments; track attachment.id) {
+                                <div class="chat-attachment-item" [id]="'chat-att-' + attachment.id">
+                                  <app-inquiry-chat-attachment [attachment]="attachment" />
+                                  @if (canMessage(inquiry) && canReplyTo(entry)) {
+                                    <button
+                                      type="button"
+                                      class="chat-attachment-reply-btn"
+                                      aria-label="Reply to this attachment"
+                                      title="Reply"
+                                      (click)="startReplyToAttachment(entry, attachment, $event)"
+                                    >
+                                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path
+                                          d="M9 17H5l-1 4 4-1v-4Zm8-2.5a4.5 4.5 0 0 0-6.36-6.36L7 7.5V4.5L3 8.5l4 4V9.5l3.14-3.14A2.5 2.5 0 0 1 17 14.5Z"
+                                        />
+                                      </svg>
+                                    </button>
+                                  }
+                                </div>
+                              }
+                            </div>
+                          }
+                          <div class="chat-bubble-footer">
+                            <span class="chat-time">{{ formatChatTime(entry.occurredAt) }}</span>
+                          </div>
                         </div>
+                        @if (canMessage(inquiry) && canReplyTo(entry) && shouldShowBubbleReply(entry)) {
+                          <button
+                            type="button"
+                            class="chat-message-reply-btn"
+                            aria-label="Reply to this message"
+                            title="Reply"
+                            (click)="startReply(entry, $event)"
+                          >
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                              <path
+                                d="M9 17H5l-1 4 4-1v-4Zm8-2.5a4.5 4.5 0 0 0-6.36-6.36L7 7.5V4.5L3 8.5l4 4V9.5l3.14-3.14A2.5 2.5 0 0 1 17 14.5Z"
+                              />
+                            </svg>
+                          </button>
+                        }
                       </div>
                     </div>
                   }

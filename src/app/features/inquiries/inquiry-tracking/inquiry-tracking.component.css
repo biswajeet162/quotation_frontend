@@ -336,6 +336,21 @@
   width: 100%;
 }
 
+.chat-message-item {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  max-width: min(92%, 480px);
+}
+
+.chat-row-consumer .chat-message-item {
+  margin-right: auto;
+}
+
+.chat-row-admin .chat-message-item {
+  margin-left: auto;
+}
+
 .chat-row-consumer {
   justify-content: flex-start;
 }
@@ -345,6 +360,8 @@
 }
 
 .chat-bubble {
+  flex: 1 1 auto;
+  min-width: 0;
   max-width: min(78%, 420px);
   padding: 0.65rem 0.85rem;
   border-radius: 14px;
@@ -432,47 +449,37 @@
 }
 
 .chat-attachment-item {
-  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 .chat-attachment-reply-btn {
-  position: absolute;
-  top: 0.35rem;
-  left: 0.35rem;
-  z-index: 2;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.55rem;
-  height: 1.55rem;
+  flex-shrink: 0;
+  width: 2.35rem;
+  height: 2.35rem;
   padding: 0;
   border: none;
   border-radius: 999px;
-  background: rgba(15, 23, 42, 0.55);
-  color: #fff;
+  background: #e2e8f0;
+  color: #334155;
   cursor: pointer;
-  opacity: 0.88;
-  transition: opacity 0.15s ease, background 0.15s ease;
-}
-
-@media (hover: hover) {
-  .chat-attachment-reply-btn {
-    opacity: 0;
-  }
-
-  .chat-attachment-item:hover .chat-attachment-reply-btn,
-  .chat-attachment-reply-btn:focus-visible {
-    opacity: 1;
-  }
+  opacity: 0.92;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
 
 .chat-attachment-reply-btn:hover {
-  background: rgba(15, 23, 42, 0.78);
+  background: #0f766e;
+  color: #fff;
+  transform: scale(1.04);
 }
 
 .chat-attachment-reply-btn svg {
-  width: 0.82rem;
-  height: 0.82rem;
+  width: 1.25rem;
+  height: 1.25rem;
   fill: currentColor;
 }
 
@@ -508,8 +515,7 @@
 .chat-bubble-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
+  justify-content: flex-end;
   margin-top: 0.35rem;
 }
 
@@ -528,46 +534,32 @@
   opacity: 0.65;
 }
 
-.chat-reply-btn {
+.chat-message-reply-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.45rem;
-  height: 1.45rem;
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
   padding: 0;
   border: none;
   border-radius: 999px;
-  background: transparent;
-  color: inherit;
-  opacity: 0.55;
+  background: #e2e8f0;
+  color: #334155;
   cursor: pointer;
-  flex-shrink: 0;
-  transition: opacity 0.15s ease, background 0.15s ease;
+  opacity: 0.92;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
 
-@media (hover: hover) {
-  .chat-reply-btn {
-    opacity: 0;
-  }
-
-  .chat-bubble:hover .chat-reply-btn,
-  .chat-reply-btn:focus-visible {
-    opacity: 0.72;
-  }
+.chat-message-reply-btn:hover {
+  background: #0f766e;
+  color: #fff;
+  transform: scale(1.04);
 }
 
-.chat-reply-btn:hover {
-  opacity: 1;
-  background: rgba(15, 23, 42, 0.08);
-}
-
-.chat-row-admin .chat-reply-btn:hover {
-  background: rgba(255, 255, 255, 0.16);
-}
-
-.chat-reply-btn svg {
-  width: 0.85rem;
-  height: 0.85rem;
+.chat-message-reply-btn svg {
+  width: 1.35rem;
+  height: 1.35rem;
   fill: currentColor;
 }
 
