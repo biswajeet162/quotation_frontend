@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
+import { InquiryTimeline } from '../../models/inquiry-timeline.model';
 import {
   ConsumerInquiry,
   ConsumerInquiryCreated,
@@ -30,6 +31,20 @@ export class InquiryService {
 
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  }
+
+  getTimeline(id: string): Observable<InquiryTimeline> {
+    return this.http.get<InquiryTimeline>(`${this.baseUrl}/${id}/timeline`);
+  }
+
+  postMessage(id: string, message: string): Observable<ConsumerInquiry> {
+    return this.http.post<ConsumerInquiry>(`${this.baseUrl}/${id}/messages`, { message });
+  }
+
+  replyToClarification(id: string, message: string): Observable<ConsumerInquiry> {
+    return this.http.post<ConsumerInquiry>(`${this.baseUrl}/${id}/clarification-reply`, {
+      message,
+    });
   }
 
   getAll(): Observable<Inquiry[]> {

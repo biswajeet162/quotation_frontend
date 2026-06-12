@@ -154,5 +154,9 @@
 </section>
 
 @if (workflowOpen() && selectedInquiry(); as inquiry) {
-  <app-inquiry-workflow-dialog [inquiry]="inquiry" (closed)="closeWorkflow()" />
+  <app-inquiry-workflow-dialog
+    [inquiry]="inquiry"
+    (closed)="closeWorkflow()"
+    (refreshed)="load()"
+  />
 }

@@ -3,8 +3,7 @@
     <div>
       <h1>Tracking</h1>
       <p class="muted">
-        All quotation requests submitted by your company. Search or filter by status; open a
-        request to see full details.
+        Your quotation requests. Select one to view details, activity, and message the admin team.
       </p>
     </div>
     <button type="button" class="btn-secondary" (click)="load()" [disabled]="loading()">
@@ -58,155 +57,198 @@
             >
               <span class="query-id">{{ inquiry.inquiryId }}</span>
               <span class="query-title">{{ inquiry.title }}</span>
-              <span
-                class="status-pill"
-                [class]="'tone-' + getConsumerInquiryDisplay(inquiry).tone"
-              >
-                {{ getConsumerInquiryDisplay(inquiry).label }}
-              </span>
+              <span class="query-meta">{{ getConsumerInquiryDisplay(inquiry).label }}</span>
+              <span class="source-tag">{{ getRequestSourceLabel(inquiry.requestSource) }}</span>
             </button>
           </li>
         }
       </ul>
 
       @if (selectedInquiry(); as inquiry) {
-        @let display = getConsumerInquiryDisplay(inquiry);
         <div class="query-detail">
-          <div class="detail-header">
-            <div>
-              <h2>{{ inquiry.title }}</h2>
-              <p class="detail-meta">
-                {{ inquiry.inquiryId }} · {{ getRequestSourceLabel(inquiry.requestSource) }} ·
-                Submitted {{ formatDate(inquiry.createdAt) }}
-              </p>
-            </div>
-            @if (canDelete(inquiry)) {
-              <button
-                type="button"
-                class="btn-danger"
-                [disabled]="deleteLoading()"
-                (click)="openDeleteConfirm()"
-              >
-                Delete request
-              </button>
-            }
-          </div>
-
-          <div class="status-banner" [class]="'tone-' + display.tone">
-            <strong>{{ display.label }}</strong>
-            <p>{{ display.description }}</p>
-          </div>
-
-          @if (inquiry.searchTerm) {
-            <p><strong>Search term:</strong> {{ inquiry.searchTerm }}</p>
-          }
-
-          @if (inquiry.description) {
-            <p><strong>Your notes:</strong> {{ inquiry.description }}</p>
-          }
-
-          @if (inquiry.needsClarification && inquiry.clarificationMessage) {
-            <div class="clarification-box" role="status">
-              <strong>Message from our team</strong>
-              <p>{{ inquiry.clarificationMessage }}</p>
-            </div>
-          }
-
-          <h3>Products</h3>
-          <ul class="product-lines">
-            @for (item of inquiry.items ?? []; track item.id ?? item.productId) {
-              <li>
-                <span class="line-badge" [class.new-product]="item.lineSource === 'NEW_PRODUCT'">
-                  {{ lineSourceLabel(item.lineSource) }}
-                </span>
-                {{ item.productBrand }} {{ item.productName }} — qty {{ item.quantity }}
-                @if (item.notes) {
-                  <span class="muted">({{ item.notes }})</span>
+            <div class="detail-header">
+              <div>
+                <h2>{{ inquiry.title }}</h2>
+                <p class="detail-meta">
+                  {{ inquiry.inquiryId }} · {{ getRequestSourceLabel(inquiry.requestSource) }} ·
+                  Submitted {{ formatDate(inquiry.createdAt) }}
+                </p>
+              </div>
+              <div class="detail-header-actions">
+                @if (canDelete(inquiry)) {
+                  <button type="button" class="btn-delete" (click)="openDeleteConfirm()">
+                    Delete request
+                  </button>
                 }
-              </li>
-            }
-          </ul>
+                <button type="button" class="btn-workflow" (click)="openWorkflow()">
+                  View workflow
+                </button>
+              </div>
+            </div>
 
-          <p class="status-row muted">
-            <strong>System status:</strong> {{ inquiry.status }}
-            @if (inquiry.updatedAt) {
-              · Last updated {{ formatDate(inquiry.updatedAt) }}
+            @if (inquiry.searchTerm) {
+              <p><strong>Search term:</strong> {{ inquiry.searchTerm }}</p>
             }
-          </p>
 
-          @if (!canDelete(inquiry)) {
-            <p class="hint">
-              This request can no longer be deleted because it has already moved past the initial
-              review stage.
+            @if (inquiry.description) {
+              <p><strong>Your notes:</strong> {{ inquiry.description }}</p>
+            }
+
+            @if (inquiry.needsClarification && inquiry.clarificationMessage) {
+              <div class="clarification-box" role="status">
+                <strong>Message from admin</strong>
+                <p>{{ inquiry.clarificationMessage }}</p>
+              </div>
+            }
+
+            <h3>Products</h3>
+            <ul class="product-lines">
+              @for (item of inquiry.items ?? []; track item.id ?? item.productId) {
+                <li>
+                  <span class="line-badge" [class.new-product]="item.lineSource === 'NEW_PRODUCT'">
+                    {{ lineSourceLabel(item.lineSource) }}
+                  </span>
+                  {{ item.productBrand }} {{ item.productName }} — qty {{ item.quantity }}
+                  @if (item.notes) {
+                    <span class="muted">({{ item.notes }})</span>
+                  }
+                </li>
+              }
+            </ul>
+
+            <p class="status-row">
+              <strong>Status:</strong> {{ inquiry.status }}
+              @if (inquiry.needsClarification) {
+                <span class="badge-warn">Action required</span>
+              }
             </p>
-          }
 
-          @if (deleteError()) {
-            <div class="alert alert-error" role="alert">{{ deleteError() }}</div>
-          }
+            <section class="activity-section">
+              <div class="activity-head">
+                <h3>Activity</h3>
+                <button
+                  type="button"
+                  class="btn-text"
+                  (click)="loadTimeline()"
+                  [disabled]="timelineLoading()"
+                >
+                  Refresh
+                </button>
+              </div>
+
+              @if (timelineLoading()) {
+                <p class="activity-empty">Loading activity…</p>
+              } @else if (timelineError()) {
+                <div class="alert alert-error" role="alert">{{ timelineError() }}</div>
+              } @else if (timelineEntries().length === 0) {
+                <p class="activity-empty">No messages yet. Use the form below to contact admin.</p>
+              } @else {
+                <ul class="activity-feed">
+                  @for (entry of timelineEntries(); track entry.id) {
+                    <li [class.consumer-msg]="entry.actorRole === 'CONSUMER'">
+                      <div class="feed-meta">
+                        <span class="feed-time">{{ formatDate(entry.occurredAt) }}</span>
+                        <span class="feed-actor">{{ actorLabel(entry) }}</span>
+                      </div>
+                      <p class="feed-title">{{ entry.title }}</p>
+                      @if (entry.message) {
+                        <p class="feed-message">{{ entry.message }}</p>
+                      } @else if (entry.detail) {
+                        <p class="feed-message muted">{{ entry.detail }}</p>
+                      }
+                    </li>
+                  }
+                </ul>
+              }
+            </section>
+
+            @if (canMessage(inquiry)) {
+              <div class="consumer-actions">
+                <div class="field">
+                  <label for="consumer-message">{{ messageFieldLabel() }}</label>
+                  <textarea
+                    id="consumer-message"
+                    rows="3"
+                    [placeholder]="messagePlaceholder()"
+                    [ngModel]="messageText()"
+                    (ngModelChange)="messageText.set($event)"
+                    [disabled]="messageLoading()"
+                  ></textarea>
+                </div>
+                @if (messageError()) {
+                  <div class="alert alert-error" role="alert">{{ messageError() }}</div>
+                }
+                <div class="action-buttons">
+                  <button
+                    type="button"
+                    class="btn-primary"
+                    [disabled]="messageLoading() || !messageText().trim()"
+                    (click)="sendMessage()"
+                  >
+                    {{ messageLoading() ? 'Sending…' : 'Send to admin' }}
+                  </button>
+                </div>
+                @if (inquiry.needsClarification) {
+                  <p class="hint">
+                    Admin is waiting for your reply. Send your clarification using the form above.
+                  </p>
+                }
+              </div>
+            } @else {
+              <p class="closed-hint">This request is closed. New messages cannot be sent.</p>
+            }
         </div>
       }
     </div>
   }
 </section>
 
+@if (workflowOpen() && selectedInquiry(); as inquiry) {
+  <app-inquiry-workflow-dialog
+    [inquiry]="workflowInquiry(inquiry)"
+    (closed)="closeWorkflow()"
+    (refreshed)="onWorkflowRefreshed()"
+  />
+}
+
 @if (deleteConfirmOpen() && selectedInquiry(); as toDelete) {
-    <div class="confirm-overlay" (click)="closeDeleteConfirm()" role="presentation">
-      <div
-        class="confirm-dialog"
-        role="alertdialog"
-        aria-labelledby="delete-confirm-title"
-        aria-describedby="delete-confirm-desc"
-        aria-modal="true"
-        (click)="$event.stopPropagation()"
-      >
-        <div class="confirm-icon" aria-hidden="true">!</div>
-
-        <h2 id="delete-confirm-title">Delete this quotation request?</h2>
-        <p id="delete-confirm-desc" class="confirm-lead">
-          This will permanently remove the request and all product lines listed below. You cannot
-          undo this action.
-        </p>
-
-        <div class="confirm-summary">
-          <div class="confirm-summary-row">
-            <span class="confirm-label">Reference</span>
-            <span class="confirm-value">{{ toDelete.inquiryId }}</span>
-          </div>
-          <div class="confirm-summary-row">
-            <span class="confirm-label">Title</span>
-            <span class="confirm-value">{{ toDelete.title }}</span>
-          </div>
-          <div class="confirm-summary-row">
-            <span class="confirm-label">Products</span>
-            <span class="confirm-value">
-              {{ productLineCount(toDelete) }} line{{ productLineCount(toDelete) === 1 ? '' : 's' }}
-            </span>
-          </div>
+  <div class="confirm-overlay" (click)="closeDeleteConfirm()" role="presentation">
+    <div
+      class="confirm-dialog"
+      role="alertdialog"
+      aria-labelledby="delete-confirm-title"
+      aria-modal="true"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="confirm-icon" aria-hidden="true">!</div>
+      <h2 id="delete-confirm-title">Delete this quotation request?</h2>
+      <p class="confirm-lead">
+        This will permanently remove the request and all product lines. You cannot undo this.
+      </p>
+      <div class="confirm-summary">
+        <div class="confirm-summary-row">
+          <span class="confirm-label">Reference</span>
+          <span class="confirm-value">{{ toDelete.inquiryId }}</span>
         </div>
-
-        @if (deleteError()) {
-          <div class="alert alert-error confirm-alert" role="alert">{{ deleteError() }}</div>
-        }
-
-        <div class="confirm-actions">
-          <button
-            type="button"
-            class="btn-secondary"
-            [disabled]="deleteLoading()"
-            (click)="closeDeleteConfirm()"
-          >
-            Keep request
-          </button>
-          <button
-            type="button"
-            class="btn-danger-solid"
-            [disabled]="deleteLoading()"
-            (click)="confirmDelete()"
-          >
-            {{ deleteLoading() ? 'Deleting…' : 'Yes, delete' }}
-          </button>
+        <div class="confirm-summary-row">
+          <span class="confirm-label">Title</span>
+          <span class="confirm-value">{{ toDelete.title }}</span>
         </div>
       </div>
+      @if (deleteError()) {
+        <div class="alert alert-error confirm-alert" role="alert">{{ deleteError() }}</div>
+      }
+      <div class="confirm-actions">
+        <button type="button" class="btn-secondary" (click)="closeDeleteConfirm()">Keep request</button>
+        <button
+          type="button"
+          class="btn-danger-solid"
+          [disabled]="deleteLoading()"
+          (click)="confirmDelete()"
+        >
+          {{ deleteLoading() ? 'Deleting…' : 'Yes, delete' }}
+        </button>
+      </div>
     </div>
+  </div>
 }

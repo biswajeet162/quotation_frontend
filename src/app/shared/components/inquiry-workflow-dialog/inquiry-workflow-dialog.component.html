@@ -8,8 +8,13 @@
   >
     <header class="workflow-header">
       <div>
-        <h2 id="workflow-title">Quotation workflow</h2>
-        <p class="workflow-ref">{{ inquiry().inquiryId }} · {{ inquiry().companyName }}</p>
+        <h2 id="workflow-title">Quotation workflow & activity</h2>
+        <p class="workflow-ref">
+          {{ inquiry().inquiryId }}
+          @if ($any(inquiry()).companyName) {
+            · {{ $any(inquiry()).companyName }}
+          }
+        </p>
         <p class="workflow-title">{{ inquiry().title }}</p>
       </div>
       <button type="button" class="btn-close" (click)="close()" aria-label="Close workflow">✕</button>
@@ -25,41 +30,67 @@
       }
     </div>
 
-    <ol class="workflow-timeline">
-      @for (step of steps(); track step.id; let last = $last) {
-        <li class="timeline-step" [class]="'state-' + step.state">
-          <div class="step-marker" aria-hidden="true">
-            @switch (step.state) {
-              @case ('completed') {
-                <span class="marker-icon">✓</span>
-              }
-              @case ('current') {
-                <span class="marker-icon marker-pulse">●</span>
-              }
-              @case ('skipped') {
-                <span class="marker-icon">−</span>
-              }
-              @default {
-                <span class="marker-icon">○</span>
-              }
-            }
-          </div>
-          @if (!last) {
-            <div class="step-connector" aria-hidden="true"></div>
+    <div class="workflow-body">
+      <section class="pipeline-section">
+        <h3>Pipeline overview</h3>
+        <ul class="pipeline-mini">
+          @for (step of pipelineSteps(); track step.id) {
+            <li [class]="'state-' + step.state">
+              <span class="mini-dot" aria-hidden="true"></span>
+              <span class="mini-label">{{ step.label }}</span>
+            </li>
           }
-          <div class="step-body">
-            <div class="step-head">
-              <h3>{{ step.label }}</h3>
-              <span class="step-badge">{{ workflowStateLabel(step.state) }}</span>
-            </div>
-            <p class="step-desc">{{ step.description }}</p>
-            @if (step.detail) {
-              <p class="step-detail">{{ step.detail }}</p>
+        </ul>
+      </section>
+
+      <section class="activity-section">
+        <div class="activity-head">
+          <h3>Activity timeline</h3>
+          <button type="button" class="btn-text" (click)="loadTimeline()" [disabled]="loading()">
+            Refresh
+          </button>
+        </div>
+
+        @if (loading()) {
+          <p class="state-message">Loading activity…</p>
+        } @else if (errorMessage()) {
+          <div class="alert-error" role="alert">{{ errorMessage() }}</div>
+        } @else if (entries().length === 0) {
+          <p class="state-message">No activity recorded yet for this request.</p>
+        } @else {
+          <ol class="activity-timeline">
+            @for (entry of entries(); track entry.id) {
+              <li [class]="'entry-' + entry.kind.toLowerCase()" [class.entry-has-message]="!!entry.message">
+                <div class="entry-time">{{ formatWorkflowDate(entry.occurredAt) }}</div>
+                <div class="entry-card">
+                  <div class="entry-head">
+                    <span class="entry-kind">{{ kindLabel(entry.kind) }}</span>
+                    <strong>{{ entry.title }}</strong>
+                  </div>
+                  <p class="entry-actor">
+                    {{ actorLabel(entry) }}
+                    @if (entry.fromCompanyName && entry.toCompanyName) {
+                      <span class="muted">
+                        · {{ entry.fromCompanyName }} → {{ entry.toCompanyName }}
+                      </span>
+                    }
+                  </p>
+                  @if (entry.message) {
+                    <blockquote class="entry-message">{{ entry.message }}</blockquote>
+                  }
+                  @if (entry.detail && !entry.message) {
+                    <p class="entry-detail">{{ entry.detail }}</p>
+                  }
+                  @if (entry.detail && entry.message) {
+                    <p class="entry-detail muted">{{ entry.detail }}</p>
+                  }
+                </div>
+              </li>
             }
-          </div>
-        </li>
-      }
-    </ol>
+          </ol>
+        }
+      </section>
+    </div>
 
     <footer class="workflow-footer">
       <button type="button" class="btn-secondary" (click)="close()">Close</button>
