@@ -14,6 +14,8 @@ import {
 import {
   documentTypeLabel,
   DocumentViewerKind,
+  documentPreviewSizeMessage,
+  isDocumentTooLargeForPreview,
   resolveDocumentViewerKind,
 } from '../../utils/document-viewer.util';
 
@@ -87,6 +89,12 @@ export class ChatDocumentReaderComponent {
     if (!blob.size) {
       this.rendering.set(false);
       this.renderError.set('This file appears to be empty.');
+      return;
+    }
+
+    if (isDocumentTooLargeForPreview(blob.size)) {
+      this.rendering.set(false);
+      this.renderError.set(documentPreviewSizeMessage());
       return;
     }
 

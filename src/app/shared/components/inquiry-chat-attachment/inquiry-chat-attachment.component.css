@@ -189,6 +189,56 @@
   color: rgba(255, 255, 255, 0.82);
 }
 
+.document-notice {
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: 8px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  max-width: min(240px, 100%);
+}
+
+.document-notice p {
+  margin: 0 0 0.45rem;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: #9a3412;
+}
+
+.document-notice-download {
+  border: 1px solid #fdba74;
+  border-radius: 6px;
+  background: #fff;
+  color: #c2410c;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.document-notice-download:hover {
+  background: #ffedd5;
+}
+
+:host-context(.chat-row-admin) .document-notice {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+:host-context(.chat-row-admin) .document-notice p {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+:host-context(.chat-row-admin) .document-notice-download {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #fff;
+}
+
+:host-context(.chat-row-admin) .document-notice-download:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
 .media-lightbox {
   position: fixed;
   inset: 0;

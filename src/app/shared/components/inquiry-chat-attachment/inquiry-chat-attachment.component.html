@@ -73,7 +73,7 @@
         </span>
         <span class="doc-info">
           <span class="doc-name">{{ attachment().fileName }}</span>
-          <span class="doc-action">Tap to open</span>
+          <span class="doc-action">{{ documentActionLabel() }}</span>
         </span>
         <span class="doc-open-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24">
@@ -87,6 +87,14 @@
           </svg>
         </span>
       </button>
+      @if (documentNotice()) {
+        <div class="document-notice" role="status">
+          <p>{{ documentNotice() }}</p>
+          <button type="button" class="document-notice-download" (click)="downloadDocument($event)">
+            Download file
+          </button>
+        </div>
+      }
     }
   }
   @if (attachment().mediaType !== 'AUDIO' && attachment().mediaType !== 'DOCUMENT') {

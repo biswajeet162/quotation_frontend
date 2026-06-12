@@ -1,5 +1,6 @@
 import {
   Component,
+  computed,
   DestroyRef,
   HostListener,
   inject,
@@ -10,6 +11,10 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { InquiryTimelineAttachment } from '../../../core/models/inquiry-timeline.model';
 import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
+import {
+  documentPreviewSizeMessage,
+  isDocumentTooLargeForPreview,
+} from '../../utils/document-viewer.util';
 import { ChatAudioPlayerComponent } from '../chat-audio-player/chat-audio-player.component';
 import { ChatDocumentReaderComponent } from '../chat-document-reader/chat-document-reader.component';
 
@@ -31,6 +36,12 @@ export class InquiryChatAttachmentComponent implements OnInit {
   readonly attachmentBlob = signal<Blob | null>(null);
   readonly viewerOpen = signal(false);
   readonly documentReaderOpen = signal(false);
+  readonly documentNotice = signal<string | null>(null);
+
+  readonly documentTooLarge = computed(() => {
+    const blob = this.attachmentBlob();
+    return blob ? isDocumentTooLargeForPreview(blob.size) : false;
+  });
 
   ngOnInit(): void {
     this.inquiryService
@@ -75,7 +86,31 @@ export class InquiryChatAttachmentComponent implements OnInit {
   openDocumentReader(event: Event): void {
     event.preventDefault();
     event.stopPropagation();
+    this.documentNotice.set(null);
+
+    if (this.documentTooLarge()) {
+      this.documentNotice.set(documentPreviewSizeMessage());
+      return;
+    }
+
     this.documentReaderOpen.set(true);
+  }
+
+  downloadDocument(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const url = this.objectUrl();
+    if (!url) {
+      return;
+    }
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = this.attachment().fileName;
+    anchor.click();
+  }
+
+  documentActionLabel(): string {
+    return this.documentTooLarge() ? 'Download to open' : 'Tap to open';
   }
 
   closeDocumentReader(): void {

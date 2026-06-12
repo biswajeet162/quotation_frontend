@@ -1,5 +1,26 @@
 export type DocumentViewerKind = 'pdf' | 'docx' | 'excel' | 'pptx' | 'text' | 'unsupported';
 
+/** Maximum document size loaded in the in-app preview (2 MB). */
+export const MAX_DOCUMENT_PREVIEW_BYTES = 2 * 1024 * 1024;
+
+export function isDocumentTooLargeForPreview(sizeBytes: number): boolean {
+  return sizeBytes > MAX_DOCUMENT_PREVIEW_BYTES;
+}
+
+export function documentPreviewSizeMessage(): string {
+  return 'This file is larger than 2 MB. Download it to open on your device.';
+}
+
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  }
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 function extension(fileName: string): string {
   const dot = fileName.lastIndexOf('.');
   return dot >= 0 ? fileName.slice(dot + 1).toLowerCase() : '';
