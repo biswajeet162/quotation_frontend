@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { ConsumerInquiry, InquiryStatus } from '../../../core/models/inquiry.model';
 import {
   InquiryTimelineEntry,
+  InquiryTimelineAttachment,
   TimelineAttachmentMediaType,
 } from '../../../core/models/inquiry-timeline.model';
 import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
@@ -15,8 +16,12 @@ import {
 import {
   buildReplyPreview,
   canReplyToTimelineEntry,
+  ChatReplyTarget,
+  quotedMessageElementId,
   replyAuthorLabel,
   replyTargetAuthorLabel,
+  replyTargetLabel,
+  shouldShowBubbleReply,
 } from '../../../shared/utils/chat-reply.util';
 
 type StatusFilter = 'all' | InquiryStatus | 'ACTION_REQUIRED';
@@ -56,7 +61,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   readonly messageText = signal('');
   readonly messageLoading = signal(false);
   readonly messageError = signal<string | null>(null);
-  readonly replyTarget = signal<InquiryTimelineEntry | null>(null);
+  readonly replyTarget = signal<ChatReplyTarget | null>(null);
   readonly pendingAttachments = signal<PendingAttachment[]>([]);
   readonly recording = signal(false);
   readonly recordingSeconds = signal(0);
@@ -147,6 +152,8 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   readonly buildReplyPreview = buildReplyPreview;
   readonly replyAuthorLabel = replyAuthorLabel;
   readonly replyTargetAuthorLabel = replyTargetAuthorLabel;
+  readonly replyTargetLabel = replyTargetLabel;
+  readonly shouldShowBubbleReply = shouldShowBubbleReply;
 
   readonly getRequestSourceLabel = getRequestSourceLabel;
   readonly getConsumerInquiryDisplay = getConsumerInquiryDisplay;
@@ -298,7 +305,8 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     const inquiry = this.selectedInquiry();
     const message = this.messageText().trim();
     const attachments = this.pendingAttachments().map((item) => item.file);
-    const replyToMessageId = this.replyTarget()?.id;
+    const replyToMessageId = this.replyTarget()?.attachment ? undefined : this.replyTarget()?.entry.id;
+    const replyToAttachmentId = this.replyTarget()?.attachment?.id;
 
     if (!inquiry || (!message && attachments.length === 0)) {
       this.messageError.set('Enter a message or attach a file before sending.');
@@ -315,8 +323,14 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
             message,
             attachments,
             replyToMessageId,
+            replyToAttachmentId,
           )
-        : this.inquiryService.postMessage(inquiry.id, message, replyToMessageId);
+        : this.inquiryService.postMessage(
+            inquiry.id,
+            message,
+            replyToMessageId,
+            replyToAttachmentId,
+          );
 
     request.subscribe({
       next: (updated) => {
@@ -590,7 +604,21 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     if (!this.canReplyTo(entry)) {
       return;
     }
-    this.replyTarget.set(entry);
+    this.replyTarget.set({ entry });
+    this.messageError.set(null);
+    this.focusComposeInput();
+  }
+
+  startReplyToAttachment(
+    entry: InquiryTimelineEntry,
+    attachment: InquiryTimelineAttachment,
+    event: Event,
+  ): void {
+    event.stopPropagation();
+    if (!this.canReplyTo(entry)) {
+      return;
+    }
+    this.replyTarget.set({ entry, attachment });
     this.messageError.set(null);
     this.focusComposeInput();
   }
@@ -599,10 +627,13 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     this.replyTarget.set(null);
   }
 
-  scrollToQuotedMessage(messageId: string, event: Event): void {
+  scrollToQuotedMessage(replyTo: InquiryTimelineEntry['replyTo'], event: Event): void {
+    if (!replyTo) {
+      return;
+    }
     event.preventDefault();
     event.stopPropagation();
-    const element = document.getElementById(`chat-msg-${messageId}`);
+    const element = document.getElementById(quotedMessageElementId(replyTo));
     element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     element?.classList.add('chat-row-highlight');
     setTimeout(() => element?.classList.remove('chat-row-highlight'), 1400);

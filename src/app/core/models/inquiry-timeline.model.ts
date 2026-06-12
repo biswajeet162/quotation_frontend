@@ -18,6 +18,9 @@ export interface InquiryTimelineReplyTo {
   actorName?: string;
   actorRole?: string;
   preview: string;
+  attachmentId?: string;
+  mediaType?: TimelineAttachmentMediaType;
+  fileName?: string;
 }
 
 export interface InquiryTimelineEntry {

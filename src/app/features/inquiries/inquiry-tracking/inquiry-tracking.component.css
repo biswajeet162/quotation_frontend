@@ -431,6 +431,57 @@
   margin-top: 0.35rem;
 }
 
+.chat-attachment-item {
+  position: relative;
+}
+
+.chat-attachment-reply-btn {
+  position: absolute;
+  top: 0.35rem;
+  left: 0.35rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.55rem;
+  height: 1.55rem;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.55);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0.88;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+@media (hover: hover) {
+  .chat-attachment-reply-btn {
+    opacity: 0;
+  }
+
+  .chat-attachment-item:hover .chat-attachment-reply-btn,
+  .chat-attachment-reply-btn:focus-visible {
+    opacity: 1;
+  }
+}
+
+.chat-attachment-reply-btn:hover {
+  background: rgba(15, 23, 42, 0.78);
+}
+
+.chat-attachment-reply-btn svg {
+  width: 0.82rem;
+  height: 0.82rem;
+  fill: currentColor;
+}
+
+.chat-attachment-item.chat-row-highlight,
+.chat-row-highlight .chat-attachment-item {
+  box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.35);
+  border-radius: 8px;
+}
+
 .chat-attachments app-inquiry-chat-attachment {
   display: block;
   width: fit-content;

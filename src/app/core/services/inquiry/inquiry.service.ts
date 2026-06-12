@@ -37,10 +37,22 @@ export class InquiryService {
     return this.http.get<InquiryTimeline>(`${this.baseUrl}/${id}/timeline`);
   }
 
-  postMessage(id: string, message: string, replyToMessageId?: string): Observable<ConsumerInquiry> {
-    const body: { message: string; replyToMessageId?: string } = { message };
+  postMessage(
+    id: string,
+    message: string,
+    replyToMessageId?: string,
+    replyToAttachmentId?: string,
+  ): Observable<ConsumerInquiry> {
+    const body: {
+      message: string;
+      replyToMessageId?: string;
+      replyToAttachmentId?: string;
+    } = { message };
     if (replyToMessageId) {
       body.replyToMessageId = replyToMessageId;
+    }
+    if (replyToAttachmentId) {
+      body.replyToAttachmentId = replyToAttachmentId;
     }
     return this.http.post<ConsumerInquiry>(`${this.baseUrl}/${id}/messages`, body);
   }
@@ -50,6 +62,7 @@ export class InquiryService {
     message: string,
     attachments: File[],
     replyToMessageId?: string,
+    replyToAttachmentId?: string,
   ): Observable<ConsumerInquiry> {
     const formData = new FormData();
     if (message.trim()) {
@@ -57,6 +70,9 @@ export class InquiryService {
     }
     if (replyToMessageId) {
       formData.append('replyToMessageId', replyToMessageId);
+    }
+    if (replyToAttachmentId) {
+      formData.append('replyToAttachmentId', replyToAttachmentId);
     }
     for (const file of attachments) {
       formData.append('attachments', file, file.name);
