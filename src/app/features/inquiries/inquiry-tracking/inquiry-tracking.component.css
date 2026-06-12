@@ -8,8 +8,8 @@
 
 .page-card {
   background: #fff;
-  border-radius: 12px;
-  padding: 1.5rem;
+  border-radius: 10px;
+  padding: 0.75rem;
   border: 1px solid #e2e8f0;
   flex: 1;
   min-height: 0;
@@ -21,14 +21,15 @@
 .page-header {
   display: flex;
   justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
   flex-shrink: 0;
 }
 
 .page-card h1 {
-  margin: 0 0 0.25rem;
-  font-size: 1.5rem;
+  margin: 0;
+  font-size: 1.25rem;
 }
 
 .muted {
@@ -39,8 +40,8 @@
 .toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: 0.65rem;
+  margin-bottom: 0.5rem;
   align-items: flex-end;
   flex-shrink: 0;
 }
@@ -75,8 +76,8 @@
 
 .review-layout {
   display: grid;
-  grid-template-columns: 300px 1fr;
-  gap: 1rem;
+  grid-template-columns: 280px 1fr;
+  gap: 0.65rem;
   flex: 1;
   min-height: 0;
   overflow: hidden;
@@ -164,7 +165,7 @@
   justify-content: space-between;
   gap: 1rem;
   align-items: flex-start;
-  padding: 1.25rem 1.25rem 0.85rem;
+  padding: 0.85rem 1rem 0.65rem;
   flex-shrink: 0;
   border-bottom: 1px solid #e2e8f0;
 }
@@ -173,7 +174,7 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 0 1.25rem 1rem;
+  padding: 0 1rem 0.75rem;
 }
 
 .detail-summary {
@@ -297,14 +298,14 @@
 }
 
 .messages-section {
-  margin-top: 1.25rem;
-  padding: 1rem 0 0.5rem;
+  margin-top: 1rem;
+  padding: 0.85rem 0 0.35rem;
   border-top: 2px solid #e2e8f0;
   background: linear-gradient(to bottom, #f8fafc 0%, #fff 2.5rem);
-  margin-left: -1.25rem;
-  margin-right: -1.25rem;
-  padding-left: 1.25rem;
-  padding-right: 1.25rem;
+  margin-left: -1rem;
+  margin-right: -1rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
 }
 
 .messages-divider {
@@ -678,7 +679,7 @@
 .consumer-actions {
   flex-shrink: 0;
   margin-top: 0;
-  padding: 0.75rem 1.25rem 1.25rem;
+  padding: 0.65rem 1rem 0.85rem;
   border-top: 1px solid #e2e8f0;
   background: #fff;
 }
@@ -721,7 +722,7 @@
 .closed-hint {
   flex-shrink: 0;
   margin: 0;
-  padding: 0.85rem 1.25rem 1.25rem;
+  padding: 0.65rem 1rem 0.85rem;
   border-top: 1px solid #e2e8f0;
   font-size: 0.85rem;
   color: #64748b;
