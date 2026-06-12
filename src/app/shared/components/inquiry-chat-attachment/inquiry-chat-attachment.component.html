@@ -20,8 +20,29 @@
         [showLabel]="false"
       />
     }
+    @case ('DOCUMENT') {
+      <a
+        class="chat-document"
+        [href]="objectUrl()!"
+        [download]="attachment().fileName"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <span class="doc-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Zm-1 2.5L18.5 9H13V4.5ZM7 13h10v2H7v-2Zm0 4h7v2H7v-2Z"
+            />
+          </svg>
+        </span>
+        <span class="doc-info">
+          <span class="doc-name">{{ attachment().fileName }}</span>
+          <span class="doc-action">Tap to download</span>
+        </span>
+      </a>
+    }
   }
-  @if (attachment().mediaType !== 'AUDIO') {
+  @if (attachment().mediaType !== 'AUDIO' && attachment().mediaType !== 'DOCUMENT') {
     <span class="attachment-name">{{ attachment().fileName }}</span>
   }
 }

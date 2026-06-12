@@ -307,6 +307,10 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
 
   onVideoSelected(event: Event): void {
     this.onFilesSelectedWithType(event, 'VIDEO');
+  } 
+
+  onDocumentSelected(event: Event): void {
+    this.onFilesSelectedWithType(event, 'DOCUMENT');
   }
 
   private onFilesSelectedWithType(event: Event, expected: TimelineAttachmentMediaType): void {
@@ -319,9 +323,13 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     for (const file of Array.from(files)) {
       const mediaType = this.resolveMediaType(file);
       if (mediaType !== expected) {
-        this.messageError.set(
-          expected === 'IMAGE' ? 'Please choose an image file.' : 'Please choose a video file.',
-        );
+        const label =
+          expected === 'IMAGE'
+            ? 'Please choose an image file.'
+            : expected === 'VIDEO'
+              ? 'Please choose a video file.'
+              : 'Please choose a document file (PDF, Word, Excel, etc.).';
+        this.messageError.set(label);
         continue;
       }
       this.addPendingFile(file);
@@ -497,6 +505,8 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
         return '🎬';
       case 'AUDIO':
         return '🎤';
+      case 'DOCUMENT':
+        return '📄';
       default:
         return '📎';
     }
@@ -600,7 +610,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   private addPendingFile(file: File): void {
     const mediaType = this.resolveMediaType(file);
     if (!mediaType) {
-      this.messageError.set('Unsupported file type. Use image, video, or audio.');
+      this.messageError.set('Unsupported file type. Use image, video, audio, or document.');
       return;
     }
 
@@ -621,6 +631,9 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   }
 
   private resolveMediaType(file: File): TimelineAttachmentMediaType | null {
+    if (this.isDocumentType(file.type, file.name)) {
+      return 'DOCUMENT';
+    }
     if (file.type.startsWith('image/')) {
       return 'IMAGE';
     }
@@ -634,13 +647,41 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     if (/\.(jpe?g|png|gif|webp)$/.test(lower)) {
       return 'IMAGE';
     }
-    if (/\.(mp4|webm|mov)$/.test(lower)) {
+    if (/\.(mp4|mov)$/.test(lower)) {
       return 'VIDEO';
     }
-    if (/\.(mp3|wav|ogg|m4a|webm)$/.test(lower)) {
+    if (/\.(mp3|wav|ogg|m4a)$/.test(lower)) {
       return 'AUDIO';
     }
+    if (/\.webm$/.test(lower)) {
+      return file.type.startsWith('audio/') ? 'AUDIO' : 'VIDEO';
+    }
     return null;
+  }
+
+  private isDocumentType(contentType: string, fileName: string): boolean {
+    const lower = fileName.toLowerCase();
+    if (/\.(pdf|doc|docx|xls|xlsx|ppt|pptx|pps|ppsx|txt|csv|rtf|odt|ods)$/i.test(lower)) {
+      return true;
+    }
+    const docMimePrefixes = [
+      'application/pdf',
+      'application/x-pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument',
+      'application/vnd.ms-excel',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.ms-word',
+      'application/rtf',
+      'application/vnd.oasis.opendocument',
+      'text/plain',
+      'text/csv',
+    ];
+    if (docMimePrefixes.some((prefix) => contentType.startsWith(prefix))) {
+      return true;
+    }
+    return (!contentType || contentType === 'application/octet-stream') &&
+      /\.(pdf|doc|docx|xls|xlsx|ppt|pptx|pps|ppsx)$/i.test(lower);
   }
 
   private clearPendingAttachments(): void {

@@ -246,6 +246,14 @@
                     multiple
                     (change)="onVideoSelected($event)"
                   />
+                  <input
+                    #documentInput
+                    type="file"
+                    class="visually-hidden"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.pps,.ppsx,.txt,.csv,.rtf,.odt,.ods"
+                    multiple
+                    (change)="onDocumentSelected($event)"
+                  />
 
                   <textarea
                     id="consumer-message"
@@ -285,6 +293,21 @@
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path
                         d="M17 10.5V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3.5l4 2.5v-7l-4 2.5ZM15 17H5V7h10v10Z"
+                      />
+                    </svg>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="btn-icon"
+                    (click)="documentInput.click()"
+                    [disabled]="messageLoading()"
+                    aria-label="Attach document"
+                    title="Document"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Zm-1 2.5L18.5 9H13V4.5ZM7 13h10v2H7v-2Zm0 4h7v2H7v-2Z"
                       />
                     </svg>
                   </button>
