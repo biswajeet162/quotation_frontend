@@ -75,9 +75,6 @@
                   Delete request
                 </button>
               }
-              <button type="button" class="btn-workflow" (click)="openWorkflow()">
-                View workflow
-              </button>
             </div>
           </div>
 
@@ -340,14 +337,6 @@
     </div>
   }
 </section>
-
-@if (workflowOpen() && selectedInquiry(); as inquiry) {
-  <app-inquiry-workflow-dialog
-    [inquiry]="workflowInquiry(inquiry)"
-    (closed)="closeWorkflow()"
-    (refreshed)="onWorkflowRefreshed()"
-  />
-}
 
 @if (deleteConfirmOpen() && selectedInquiry(); as toDelete) {
   <div class="confirm-overlay" (click)="closeDeleteConfirm()" role="presentation">

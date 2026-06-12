@@ -216,23 +216,6 @@
   border-color: #f87171;
 }
 
-.btn-workflow {
-  flex-shrink: 0;
-  padding: 0.5rem 0.85rem;
-  border-radius: 8px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  cursor: pointer;
-  background: #f0fdfa;
-  border: 1px solid #99f6e4;
-  color: #0f766e;
-  white-space: nowrap;
-}
-
-.btn-workflow:hover {
-  background: #ccfbf1;
-}
-
 .query-detail h2 {
   margin: 0 0 0.35rem;
   font-size: 1.15rem;

@@ -1,15 +1,13 @@
 import { Component, computed, HostListener, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ConsumerInquiry, Inquiry, InquiryStatus } from '../../../core/models/inquiry.model';
+import { ConsumerInquiry, InquiryStatus } from '../../../core/models/inquiry.model';
 import {
   InquiryTimelineEntry,
   TimelineAttachmentMediaType,
 } from '../../../core/models/inquiry-timeline.model';
 import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
-import { InquiryWorkflowDialogComponent } from '../../../shared/components/inquiry-workflow-dialog/inquiry-workflow-dialog.component';
 import { InquiryChatAttachmentComponent } from '../../../shared/components/inquiry-chat-attachment/inquiry-chat-attachment.component';
 import { ChatAudioPlayerComponent } from '../../../shared/components/chat-audio-player/chat-audio-player.component';
-import { AuthService } from '../../../core/services/auth/auth.service';
 import {
   getConsumerInquiryDisplay,
   getRequestSourceLabel,
@@ -28,7 +26,6 @@ interface PendingAttachment {
   selector: 'app-inquiry-tracking',
   imports: [
     FormsModule,
-    InquiryWorkflowDialogComponent,
     InquiryChatAttachmentComponent,
     ChatAudioPlayerComponent,
   ],
@@ -37,7 +34,6 @@ interface PendingAttachment {
 })
 export class InquiryTrackingComponent implements OnInit, OnDestroy {
   private readonly inquiryService = inject(InquiryService);
-  private readonly auth = inject(AuthService);
 
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
@@ -61,7 +57,6 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   readonly deleteLoading = signal(false);
   readonly deleteError = signal<string | null>(null);
   readonly deleteConfirmOpen = signal(false);
-  readonly workflowOpen = signal(false);
 
   private mediaRecorder: MediaRecorder | null = null;
   private recordingChunks: Blob[] = [];
@@ -158,9 +153,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
-    if (this.workflowOpen()) {
-      this.closeWorkflow();
-    } else if (this.deleteConfirmOpen()) {
+    if (this.deleteConfirmOpen()) {
       this.closeDeleteConfirm();
     }
   }
@@ -529,40 +522,6 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
 
   canDelete(inquiry: ConsumerInquiry): boolean {
     return inquiry.status === 'NEW';
-  }
-
-  openWorkflow(): void {
-    if (this.selectedInquiry()) {
-      this.workflowOpen.set(true);
-    }
-  }
-
-  closeWorkflow(): void {
-    this.workflowOpen.set(false);
-  }
-
-  onWorkflowRefreshed(): void {
-    this.load();
-  }
-
-  workflowInquiry(inquiry: ConsumerInquiry): Inquiry {
-    const user = this.auth.currentUser();
-    return {
-      id: inquiry.id,
-      inquiryId: inquiry.inquiryId,
-      companyId: user?.companyId ?? '',
-      companyName: user?.companyName,
-      title: inquiry.title,
-      description: inquiry.description,
-      status: inquiry.status,
-      needsClarification: inquiry.needsClarification,
-      clarificationMessage: inquiry.clarificationMessage,
-      requestSource: inquiry.requestSource,
-      searchTerm: inquiry.searchTerm,
-      items: inquiry.items,
-      createdAt: inquiry.createdAt,
-      updatedAt: inquiry.updatedAt,
-    };
   }
 
   openDeleteConfirm(): void {
