@@ -5,12 +5,54 @@
 } @else if (objectUrl()) {
   @switch (attachment().mediaType) {
     @case ('IMAGE') {
-      <img [src]="objectUrl()!" [alt]="attachment().fileName" class="chat-image" loading="lazy" />
+      <div class="media-frame">
+        <img
+          [src]="objectUrl()!"
+          [alt]="attachment().fileName"
+          class="chat-image"
+          loading="lazy"
+          (click)="openViewer($event)"
+        />
+        <button
+          type="button"
+          class="media-expand-btn"
+          aria-label="View full size"
+          (click)="openViewer($event)"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M3 9V3h6M15 3h6v6M21 15v6h-6M9 21H3v-6M4 4l4 4M20 4l-4 4M20 20l-4-4M4 20l4-4"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+          </svg>
+        </button>
+      </div>
     }
     @case ('VIDEO') {
-      <video [src]="objectUrl()!" class="chat-video" controls preload="metadata">
-        Your browser does not support video playback.
-      </video>
+      <div class="media-frame">
+        <video [src]="objectUrl()!" class="chat-video" controls preload="metadata">
+          Your browser does not support video playback.
+        </video>
+        <button
+          type="button"
+          class="media-expand-btn"
+          aria-label="View full size"
+          (click)="openViewer($event)"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M3 9V3h6M15 3h6v6M21 15v6h-6M9 21H3v-6M4 4l4 4M20 4l-4 4M20 20l-4-4M4 20l4-4"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+          </svg>
+        </button>
+      </div>
     }
     @case ('AUDIO') {
       <app-chat-audio-player
@@ -44,5 +86,42 @@
   }
   @if (attachment().mediaType !== 'AUDIO' && attachment().mediaType !== 'DOCUMENT') {
     <span class="attachment-name">{{ attachment().fileName }}</span>
+  }
+
+  @if (viewerOpen() && (attachment().mediaType === 'IMAGE' || attachment().mediaType === 'VIDEO')) {
+    <div
+      class="media-lightbox"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Full size preview"
+      (click)="closeViewer()"
+    >
+      <button
+        type="button"
+        class="lightbox-close"
+        aria-label="Close preview"
+        (click)="closeViewer(); $event.stopPropagation()"
+      >
+        ×
+      </button>
+      @if (attachment().mediaType === 'IMAGE') {
+        <img
+          [src]="objectUrl()!"
+          [alt]="attachment().fileName"
+          class="lightbox-image"
+          (click)="$event.stopPropagation()"
+        />
+      } @else {
+        <video
+          [src]="objectUrl()!"
+          class="lightbox-video"
+          controls
+          autoplay
+          (click)="$event.stopPropagation()"
+        >
+          Your browser does not support video playback.
+        </video>
+      }
+    </div>
   }
 }

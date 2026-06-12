@@ -1,6 +1,7 @@
 import {
   Component,
   DestroyRef,
+  HostListener,
   inject,
   input,
   OnInit,
@@ -26,6 +27,7 @@ export class InquiryChatAttachmentComponent implements OnInit {
   readonly loading = signal(true);
   readonly error = signal(false);
   readonly objectUrl = signal<string | null>(null);
+  readonly viewerOpen = signal(false);
 
   ngOnInit(): void {
     this.inquiryService
@@ -59,5 +61,21 @@ export class InquiryChatAttachmentComponent implements OnInit {
       return 'Voice message';
     }
     return name;
+  }
+
+  openViewer(event: Event): void {
+    event.stopPropagation();
+    this.viewerOpen.set(true);
+  }
+
+  closeViewer(): void {
+    this.viewerOpen.set(false);
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.viewerOpen()) {
+      this.closeViewer();
+    }
   }
 }

@@ -526,6 +526,16 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     return !hasText && attachments.length > 0 && attachments.every((a) => a.mediaType === 'AUDIO');
   }
 
+  isMediaOnlyMessage(entry: InquiryTimelineEntry): boolean {
+    const hasText = !!entry.message?.trim();
+    const attachments = entry.attachments ?? [];
+    return (
+      !hasText &&
+      attachments.length > 0 &&
+      attachments.every((a) => a.mediaType === 'IMAGE' || a.mediaType === 'VIDEO')
+    );
+  }
+
   canMessage(inquiry: ConsumerInquiry): boolean {
     return inquiry.status !== 'CLOSED';
   }

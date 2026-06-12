@@ -358,6 +358,12 @@
   padding: 0.45rem 0.6rem 0.35rem;
 }
 
+.chat-bubble.chat-bubble-media-only {
+  width: fit-content;
+  max-width: min(82%, 300px);
+  padding: 0.3rem;
+}
+
 .chat-row-consumer .chat-bubble {
   background: #fff;
   border: 1px solid #cbd5e1;
@@ -380,8 +386,23 @@
   padding-bottom: 0.35rem;
 }
 
-.chat-bubble-audio-only .chat-attachments {
+.chat-bubble-audio-only .chat-attachments,
+.chat-bubble-media-only .chat-attachments {
   margin-top: 0;
+}
+
+.chat-bubble-media-only .chat-time {
+  display: block;
+  margin-top: 0.2rem;
+  padding: 0 0.25rem;
+  font-size: 0.62rem;
+  opacity: 0.65;
+  text-align: right;
+  line-height: 1.2;
+}
+
+.chat-bubble-media-only .attachment-name {
+  display: none;
 }
 
 .chat-bubble-audio-only .chat-time {
@@ -402,6 +423,7 @@
 
 .chat-attachments app-inquiry-chat-attachment {
   display: block;
+  width: fit-content;
   max-width: 100%;
 }
 

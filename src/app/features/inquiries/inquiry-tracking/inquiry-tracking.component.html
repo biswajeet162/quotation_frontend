@@ -144,6 +144,7 @@
                       <div
                         class="chat-bubble"
                         [class.chat-bubble-audio-only]="isAudioOnlyMessage(entry)"
+                        [class.chat-bubble-media-only]="isMediaOnlyMessage(entry)"
                       >
                         @if (entry.message) {
                           <p class="chat-text">{{ entry.message }}</p>
