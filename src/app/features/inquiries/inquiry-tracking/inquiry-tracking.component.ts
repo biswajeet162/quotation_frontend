@@ -1,4 +1,4 @@
-import { Component, computed, HostListener, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, HostListener, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ConsumerInquiry, Inquiry, InquiryStatus } from '../../../core/models/inquiry.model';
 import {
@@ -8,6 +8,7 @@ import {
 import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
 import { InquiryWorkflowDialogComponent } from '../../../shared/components/inquiry-workflow-dialog/inquiry-workflow-dialog.component';
 import { InquiryChatAttachmentComponent } from '../../../shared/components/inquiry-chat-attachment/inquiry-chat-attachment.component';
+import { ChatAudioPlayerComponent } from '../../../shared/components/chat-audio-player/chat-audio-player.component';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import {
   getConsumerInquiryDisplay,
@@ -25,11 +26,16 @@ interface PendingAttachment {
 
 @Component({
   selector: 'app-inquiry-tracking',
-  imports: [FormsModule, InquiryWorkflowDialogComponent, InquiryChatAttachmentComponent],
+  imports: [
+    FormsModule,
+    InquiryWorkflowDialogComponent,
+    InquiryChatAttachmentComponent,
+    ChatAudioPlayerComponent,
+  ],
   templateUrl: './inquiry-tracking.component.html',
   styleUrl: './inquiry-tracking.component.css',
 })
-export class InquiryTrackingComponent implements OnInit {
+export class InquiryTrackingComponent implements OnInit, OnDestroy {
   private readonly inquiryService = inject(InquiryService);
   private readonly auth = inject(AuthService);
 
@@ -49,6 +55,8 @@ export class InquiryTrackingComponent implements OnInit {
   readonly messageError = signal<string | null>(null);
   readonly pendingAttachments = signal<PendingAttachment[]>([]);
   readonly recording = signal(false);
+  readonly recordingSeconds = signal(0);
+  readonly recordingLevels = signal<number[]>(Array.from({ length: 24 }, () => 0.15));
 
   readonly deleteLoading = signal(false);
   readonly deleteError = signal<string | null>(null);
@@ -57,6 +65,15 @@ export class InquiryTrackingComponent implements OnInit {
 
   private mediaRecorder: MediaRecorder | null = null;
   private recordingChunks: Blob[] = [];
+  private recordingStream: MediaStream | null = null;
+  private audioContext: AudioContext | null = null;
+  private analyser: AnalyserNode | null = null;
+  private levelAnimationId: number | null = null;
+  private durationTimerId: ReturnType<typeof setInterval> | null = null;
+  private recordingStartedAt = 0;
+  private discardRecording = false;
+  private recordingMimeType = 'audio/webm';
+  private readonly recordingBarCount = 24;
 
   readonly statusOptions: { value: StatusFilter; label: string }[] = [
     { value: 'all', label: 'All statuses' },
@@ -152,6 +169,10 @@ export class InquiryTrackingComponent implements OnInit {
     this.load();
   }
 
+  ngOnDestroy(): void {
+    this.cleanupRecordingResources(false);
+  }
+
   load(): void {
     this.loading.set(true);
     this.errorMessage.set(null);
@@ -189,8 +210,8 @@ export class InquiryTrackingComponent implements OnInit {
   }
 
   selectInquiry(id: string): void {
+    this.cancelVoiceRecording();
     this.clearPendingAttachments();
-    this.stopVoiceRecording();
     this.selectedId.set(id);
     this.deleteError.set(null);
     this.messageError.set(null);
@@ -323,36 +344,145 @@ export class InquiryTrackingComponent implements OnInit {
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      this.recordingStream = stream;
       this.recordingChunks = [];
-      this.mediaRecorder = new MediaRecorder(stream);
+      this.discardRecording = false;
+
+      this.audioContext = new AudioContext();
+      await this.audioContext.resume();
+      const source = this.audioContext.createMediaStreamSource(stream);
+      this.analyser = this.audioContext.createAnalyser();
+      this.analyser.fftSize = 256;
+      this.analyser.smoothingTimeConstant = 0.75;
+      source.connect(this.analyser);
+
+      const mimeType = this.resolveRecordingMimeType();
+      this.mediaRecorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
+      this.recordingMimeType = this.mediaRecorder.mimeType || mimeType || 'audio/webm';
+
       this.mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           this.recordingChunks.push(event.data);
         }
       };
       this.mediaRecorder.onstop = () => {
-        stream.getTracks().forEach((track) => track.stop());
-        if (this.recordingChunks.length === 0) {
+        const chunks = this.recordingChunks;
+        this.recordingChunks = [];
+        this.cleanupRecordingResources(false);
+
+        if (this.discardRecording || chunks.length === 0) {
+          this.discardRecording = false;
           return;
         }
-        const blob = new Blob(this.recordingChunks, { type: 'audio/webm' });
-        const file = new File([blob], `voice-${Date.now()}.webm`, { type: 'audio/webm' });
+
+        const type = this.recordingMimeType;
+        const blob = new Blob(chunks, { type });
+        const ext = type.includes('ogg') ? 'ogg' : 'webm';
+        const file = new File([blob], `voice-${Date.now()}.${ext}`, { type });
         this.addPendingFile(file);
-        this.recordingChunks = [];
+        this.discardRecording = false;
       };
-      this.mediaRecorder.start();
+
+      this.mediaRecorder.start(250);
+      this.recordingStartedAt = Date.now();
+      this.recordingSeconds.set(0);
+      this.recordingLevels.set(Array.from({ length: this.recordingBarCount }, () => 0.15));
       this.recording.set(true);
       this.messageError.set(null);
+
+      this.durationTimerId = setInterval(() => {
+        this.recordingSeconds.set(Math.floor((Date.now() - this.recordingStartedAt) / 1000));
+      }, 200);
+      this.startLevelMonitor();
     } catch {
+      this.cleanupRecordingResources(false);
       this.messageError.set('Microphone access was denied or unavailable.');
     }
   }
 
   stopVoiceRecording(): void {
-    if (this.mediaRecorder && this.recording()) {
+    if (!this.mediaRecorder || !this.recording()) {
+      return;
+    }
+    this.recording.set(false);
+    if (this.mediaRecorder.state !== 'inactive') {
+      this.mediaRecorder.requestData();
       this.mediaRecorder.stop();
-      this.mediaRecorder = null;
-      this.recording.set(false);
+    }
+    this.mediaRecorder = null;
+  }
+
+  cancelVoiceRecording(): void {
+    if (!this.recording()) {
+      return;
+    }
+    this.discardRecording = true;
+    this.stopVoiceRecording();
+  }
+
+  formatRecordingTime(seconds: number): string {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  private resolveRecordingMimeType(): string | undefined {
+    const candidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4'];
+    return candidates.find((type) => MediaRecorder.isTypeSupported(type));
+  }
+
+  private startLevelMonitor(): void {
+    if (!this.analyser) {
+      return;
+    }
+
+    const data = new Uint8Array(this.analyser.frequencyBinCount);
+    const tick = () => {
+      if (!this.analyser || !this.recording()) {
+        return;
+      }
+
+      this.analyser.getByteFrequencyData(data);
+      const step = Math.max(1, Math.floor(data.length / this.recordingBarCount));
+      const levels = Array.from({ length: this.recordingBarCount }, (_, index) => {
+        const start = index * step;
+        let sum = 0;
+        for (let i = 0; i < step && start + i < data.length; i++) {
+          sum += data[start + i];
+        }
+        const avg = sum / step / 255;
+        return Math.max(0.12, Math.min(1, avg * 2.8 + 0.08));
+      });
+      this.recordingLevels.set(levels);
+      this.levelAnimationId = requestAnimationFrame(tick);
+    };
+
+    tick();
+  }
+
+  private cleanupRecordingResources(resetDiscardFlag: boolean): void {
+    if (this.levelAnimationId != null) {
+      cancelAnimationFrame(this.levelAnimationId);
+      this.levelAnimationId = null;
+    }
+    if (this.durationTimerId != null) {
+      clearInterval(this.durationTimerId);
+      this.durationTimerId = null;
+    }
+    this.recordingStream?.getTracks().forEach((track) => track.stop());
+    this.recordingStream = null;
+    if (this.audioContext) {
+      void this.audioContext.close();
+      this.audioContext = null;
+    }
+    this.analyser = null;
+    this.recording.set(false);
+    this.recordingSeconds.set(0);
+    this.recordingLevels.set(Array.from({ length: this.recordingBarCount }, () => 0.15));
+    if (resetDiscardFlag) {
+      this.discardRecording = false;
     }
   }
 
@@ -385,6 +515,12 @@ export class InquiryTrackingComponent implements OnInit {
 
   isAdminMessage(entry: InquiryTimelineEntry): boolean {
     return entry.actorRole === 'ADMIN';
+  }
+
+  isAudioOnlyMessage(entry: InquiryTimelineEntry): boolean {
+    const hasText = !!entry.message?.trim();
+    const attachments = entry.attachments ?? [];
+    return !hasText && attachments.length > 0 && attachments.every((a) => a.mediaType === 'AUDIO');
   }
 
   canMessage(inquiry: ConsumerInquiry): boolean {
@@ -509,7 +645,10 @@ export class InquiryTrackingComponent implements OnInit {
       return;
     }
 
-    const previewUrl = mediaType === 'IMAGE' ? URL.createObjectURL(file) : undefined;
+    const previewUrl =
+      mediaType === 'IMAGE' || mediaType === 'AUDIO' || mediaType === 'VIDEO'
+        ? URL.createObjectURL(file)
+        : undefined;
     this.pendingAttachments.update((items) => [
       ...items,
       {

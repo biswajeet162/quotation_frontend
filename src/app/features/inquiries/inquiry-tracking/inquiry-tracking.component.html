@@ -144,7 +144,10 @@
                       [class.chat-row-consumer]="isConsumerMessage(entry)"
                       [class.chat-row-admin]="isAdminMessage(entry)"
                     >
-                      <div class="chat-bubble">
+                      <div
+                        class="chat-bubble"
+                        [class.chat-bubble-audio-only]="isAudioOnlyMessage(entry)"
+                      >
                         @if (entry.message) {
                           <p class="chat-text">{{ entry.message }}</p>
                         }
@@ -169,18 +172,24 @@
                 @if (pendingAttachments().length > 0) {
                   <ul class="pending-attachments">
                     @for (item of pendingAttachments(); track item.id) {
-                      <li>
+                      <li [class.pending-audio-item]="item.mediaType === 'AUDIO'">
                         @if (item.previewUrl && item.mediaType === 'IMAGE') {
                           <img [src]="item.previewUrl" alt="" class="pending-thumb" />
+                        } @else if (item.previewUrl && item.mediaType === 'AUDIO') {
+                          <app-chat-audio-player
+                            [src]="item.previewUrl"
+                            label="Voice message"
+                            [compact]="true"
+                          />
                         } @else {
                           <span class="pending-icon">{{ pendingIcon(item.mediaType) }}</span>
+                          <span class="pending-name">{{ item.file.name }}</span>
                         }
-                        <span class="pending-name">{{ item.file.name }}</span>
                         <button
                           type="button"
                           class="pending-remove"
                           (click)="removePendingAttachment(item.id)"
-                          [disabled]="messageLoading()"
+                          [disabled]="messageLoading() || recording()"
                           aria-label="Remove attachment"
                         >
                           ×
@@ -190,10 +199,39 @@
                   </ul>
                 }
 
+                @if (recording()) {
+                  <div class="voice-recording-panel" role="status" aria-live="polite">
+                    <span class="rec-dot" aria-hidden="true"></span>
+                    <span class="rec-time">{{ formatRecordingTime(recordingSeconds()) }}</span>
+                    <div class="rec-wave" aria-hidden="true">
+                      @for (level of recordingLevels(); track $index) {
+                        <span class="rec-bar" [style.height.%]="level * 100"></span>
+                      }
+                    </div>
+                    <button
+                      type="button"
+                      class="btn-rec-cancel"
+                      (click)="cancelVoiceRecording()"
+                      [disabled]="messageLoading()"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      class="btn-rec-done"
+                      (click)="stopVoiceRecording()"
+                      [disabled]="messageLoading()"
+                    >
+                      Done
+                    </button>
+                  </div>
+                }
+
                 @if (messageError()) {
                   <div class="alert alert-error compose-error" role="alert">{{ messageError() }}</div>
                 }
 
+                @if (!recording()) {
                 <div class="chat-compose-bar">
                   <input
                     #imageInput
@@ -254,35 +292,20 @@
                     </svg>
                   </button>
 
-                  @if (recording()) {
-                    <button
-                      type="button"
-                      class="btn-icon btn-icon-recording"
-                      (click)="stopVoiceRecording()"
-                      [disabled]="messageLoading()"
-                      aria-label="Stop recording"
-                      title="Stop recording"
-                    >
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <rect x="7" y="7" width="10" height="10" rx="1.5" />
-                      </svg>
-                    </button>
-                  } @else {
-                    <button
-                      type="button"
-                      class="btn-icon"
-                      (click)="startVoiceRecording()"
-                      [disabled]="messageLoading()"
-                      aria-label="Record voice"
-                      title="Voice"
-                    >
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path
-                          d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z"
-                        />
-                      </svg>
-                    </button>
-                  }
+                  <button
+                    type="button"
+                    class="btn-icon"
+                    (click)="startVoiceRecording()"
+                    [disabled]="messageLoading()"
+                    aria-label="Record voice"
+                    title="Voice"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z"
+                      />
+                    </svg>
+                  </button>
 
                   <button
                     type="button"
@@ -301,6 +324,7 @@
                     }
                   </button>
                 </div>
+                }
 
                 @if (inquiry.needsClarification) {
                   <p class="hint">

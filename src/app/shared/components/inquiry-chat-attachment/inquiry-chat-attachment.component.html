@@ -13,10 +13,15 @@
       </video>
     }
     @case ('AUDIO') {
-      <audio [src]="objectUrl()!" class="chat-audio" controls preload="metadata">
-        Your browser does not support audio playback.
-      </audio>
+      <app-chat-audio-player
+        [src]="objectUrl()!"
+        [label]="attachmentLabel()"
+        [compact]="true"
+        [showLabel]="false"
+      />
     }
   }
-  <span class="attachment-name">{{ attachment().fileName }}</span>
+  @if (attachment().mediaType !== 'AUDIO') {
+    <span class="attachment-name">{{ attachment().fileName }}</span>
+  }
 }

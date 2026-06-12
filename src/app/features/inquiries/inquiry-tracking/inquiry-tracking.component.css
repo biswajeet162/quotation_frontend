@@ -370,6 +370,11 @@
   word-break: break-word;
 }
 
+.chat-bubble.chat-bubble-audio-only {
+  max-width: min(68%, 210px);
+  padding: 0.45rem 0.6rem 0.35rem;
+}
+
 .chat-row-consumer .chat-bubble {
   background: #fff;
   border: 1px solid #cbd5e1;
@@ -388,6 +393,23 @@
   white-space: pre-wrap;
 }
 
+.chat-row-consumer .chat-bubble:has(app-chat-audio-player) {
+  padding-bottom: 0.35rem;
+}
+
+.chat-bubble-audio-only .chat-attachments {
+  margin-top: 0;
+}
+
+.chat-bubble-audio-only .chat-time {
+  display: block;
+  margin-top: 0.1rem;
+  font-size: 0.62rem;
+  opacity: 0.65;
+  text-align: right;
+  line-height: 1.2;
+}
+
 .chat-attachments {
   display: flex;
   flex-direction: column;
@@ -395,8 +417,19 @@
   margin-top: 0.35rem;
 }
 
-.chat-row-admin .attachment-name {
-  color: rgba(255, 255, 255, 0.85);
+.chat-attachments app-inquiry-chat-attachment {
+  display: block;
+  max-width: 100%;
+}
+
+.chat-bubble:has(app-chat-audio-player) .chat-time {
+  margin-top: 0.12rem;
+  font-size: 0.62rem;
+  opacity: 0.65;
+}
+
+.chat-row-admin .chat-bubble:has(app-chat-audio-player) .chat-time {
+  color: rgba(255, 255, 255, 0.75);
 }
 
 .chat-time {
@@ -404,6 +437,111 @@
   margin-top: 0.35rem;
   font-size: 0.68rem;
   opacity: 0.72;
+}
+
+.pending-attachments li.pending-audio-item {
+  flex: 1 1 100%;
+  align-items: center;
+  padding: 0.45rem 0.5rem;
+}
+
+.pending-audio-item app-chat-audio-player {
+  flex: 1;
+  min-width: 0;
+}
+
+.voice-recording-panel {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.65rem 0.75rem;
+  margin-bottom: 0.5rem;
+  border-radius: 28px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
+.rec-dot {
+  flex-shrink: 0;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: #dc2626;
+  animation: rec-blink 1s ease-in-out infinite;
+}
+
+@keyframes rec-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.rec-time {
+  flex-shrink: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #b91c1c;
+  min-width: 2.5rem;
+}
+
+.rec-wave {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  height: 2rem;
+  padding: 0 0.15rem;
+}
+
+.rec-bar {
+  flex: 1;
+  min-width: 2px;
+  max-width: 5px;
+  border-radius: 2px;
+  background: #f87171;
+  align-self: center;
+  transition: height 0.08s ease-out;
+}
+
+.btn-rec-cancel,
+.btn-rec-done {
+  flex-shrink: 0;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.btn-rec-cancel {
+  background: #fff;
+  border-color: #fecaca;
+  color: #64748b;
+}
+
+.btn-rec-done {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #fff;
+}
+
+.btn-rec-cancel:hover:not(:disabled),
+.btn-rec-done:hover:not(:disabled) {
+  opacity: 0.92;
+}
+
+.btn-rec-cancel:disabled,
+.btn-rec-done:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .compose-toolbar {

@@ -1,0 +1,152 @@
+:host {
+  display: block;
+  max-width: 100%;
+}
+
+.audio-player {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.45rem;
+  border-radius: 999px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  width: 100%;
+  max-width: 220px;
+}
+
+:host-context(.chat-attachments) {
+  max-width: min(200px, 100%);
+}
+
+:host-context(.chat-attachments) .audio-player {
+  max-width: none;
+  padding: 0.1rem 0;
+  border: none;
+  background: transparent;
+  border-radius: 0;
+  gap: 0.35rem;
+}
+
+:host-context(.chat-row-admin) .audio-player {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+:host-context(.chat-row-admin.chat-attachments) .audio-player,
+:host-context(.chat-attachments) :host-context(.chat-row-admin) .audio-player {
+  background: transparent;
+  border: none;
+}
+
+:host-context(.chat-row-admin) .play-btn {
+  background: #fff;
+  color: #0f766e;
+}
+
+.play-btn {
+  flex-shrink: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: #0f766e;
+  color: #fff;
+}
+
+.play-btn svg {
+  width: 0.8rem;
+  height: 0.8rem;
+  fill: currentColor;
+}
+
+.play-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.wave-track {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  height: 1.35rem;
+}
+
+.wave-bar {
+  flex: 1;
+  min-width: 1px;
+  max-width: 3px;
+  border-radius: 1px;
+  background: #94a3b8;
+  align-self: center;
+  transition: background 0.12s ease;
+}
+
+:host-context(.chat-row-admin) .wave-bar {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.wave-bar.played {
+  background: #0f766e;
+}
+
+:host-context(.chat-row-admin) .wave-bar.played {
+  background: #fff;
+}
+
+.audio-time {
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  min-width: 1.85rem;
+  text-align: right;
+  color: #64748b;
+}
+
+:host-context(.chat-row-admin) .audio-time {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.audio-label {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.65rem;
+  opacity: 0.75;
+}
+
+:host-context(.pending-audio-item) .audio-player {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  max-width: none;
+  padding: 0.35rem 0.45rem;
+}
+
+:host-context(.pending-audio-item) .audio-label {
+  display: none;
+}
+
+.audio-player.compact {
+  padding: 0.25rem 0.35rem;
+  gap: 0.3rem;
+}
+
+.audio-player.compact .play-btn {
+  width: 1.55rem;
+  height: 1.55rem;
+}
+
+.audio-player.compact .wave-track {
+  height: 1.15rem;
+}
+
+:host-context(.chat-attachments) .audio-player.compact {
+  padding: 0.1rem 0;
+}

@@ -9,9 +9,11 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { InquiryTimelineAttachment } from '../../../core/models/inquiry-timeline.model';
 import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
+import { ChatAudioPlayerComponent } from '../chat-audio-player/chat-audio-player.component';
 
 @Component({
   selector: 'app-inquiry-chat-attachment',
+  imports: [ChatAudioPlayerComponent],
   templateUrl: './inquiry-chat-attachment.component.html',
   styleUrl: './inquiry-chat-attachment.component.css',
 })
@@ -31,7 +33,10 @@ export class InquiryChatAttachmentComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (blob) => {
-          this.objectUrl.set(URL.createObjectURL(blob));
+          const typedBlob = blob.type
+            ? blob
+            : new Blob([blob], { type: this.attachment().contentType || 'application/octet-stream' });
+          this.objectUrl.set(URL.createObjectURL(typedBlob));
           this.loading.set(false);
         },
         error: () => {
@@ -46,5 +51,13 @@ export class InquiryChatAttachmentComponent implements OnInit {
         URL.revokeObjectURL(url);
       }
     });
+  }
+
+  attachmentLabel(): string {
+    const name = this.attachment().fileName ?? '';
+    if (/^voice-/i.test(name)) {
+      return 'Voice message';
+    }
+    return name;
   }
 }

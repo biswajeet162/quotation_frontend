@@ -2,6 +2,10 @@
   display: block;
 }
 
+:host-context(.chat-attachments) {
+  max-width: min(200px, 100%);
+}
+
 .chat-image {
   display: block;
   max-width: min(280px, 100%);

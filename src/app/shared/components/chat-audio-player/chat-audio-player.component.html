@@ -1,0 +1,45 @@
+<div class="audio-player" [class.compact]="compact()">
+  <button
+    type="button"
+    class="play-btn"
+    (click)="togglePlay()"
+    [disabled]="!ready() && !src()"
+    [attr.aria-label]="playing() ? 'Pause voice message' : 'Play voice message'"
+  >
+    @if (playing()) {
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="6" y="5" width="4" height="14" rx="1" />
+        <rect x="14" y="5" width="4" height="14" rx="1" />
+      </svg>
+    } @else {
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M8 5v14l11-7L8 5Z" />
+      </svg>
+    }
+  </button>
+
+  <div class="wave-track" aria-hidden="true">
+    @for (height of waveform; track $index) {
+      <span
+        class="wave-bar"
+        [style.height.%]="height * 100"
+        [class.played]="$index / waveform.length * 100 <= progressPercent()"
+      ></span>
+    }
+  </div>
+
+  <span class="audio-time">{{ displayTime() }}</span>
+
+  <audio
+    #audio
+    [src]="src()"
+    preload="metadata"
+    (loadedmetadata)="onLoadedMetadata()"
+    (timeupdate)="onTimeUpdate()"
+    (ended)="onEnded()"
+  ></audio>
+</div>
+
+@if (showLabel() && label()) {
+  <span class="audio-label">{{ label() }}</span>
+}
