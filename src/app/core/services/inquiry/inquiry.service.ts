@@ -41,6 +41,32 @@ export class InquiryService {
     return this.http.post<ConsumerInquiry>(`${this.baseUrl}/${id}/messages`, { message });
   }
 
+  postMessageWithAttachments(
+    id: string,
+    message: string,
+    attachments: File[],
+  ): Observable<ConsumerInquiry> {
+    const formData = new FormData();
+    if (message.trim()) {
+      formData.append('message', message.trim());
+    }
+    for (const file of attachments) {
+      formData.append('attachments', file, file.name);
+    }
+    return this.http.post<ConsumerInquiry>(`${this.baseUrl}/${id}/messages`, formData);
+  }
+
+  getAttachmentContentUrl(relativeUrl: string): string {
+    const path = relativeUrl.startsWith('/') ? relativeUrl.slice(1) : relativeUrl;
+    return `${environment.apiUrl}/${path}`;
+  }
+
+  fetchAttachmentBlob(relativeUrl: string): Observable<Blob> {
+    return this.http.get(this.getAttachmentContentUrl(relativeUrl), {
+      responseType: 'blob',
+    });
+  }
+
   replyToClarification(id: string, message: string): Observable<ConsumerInquiry> {
     return this.http.post<ConsumerInquiry>(`${this.baseUrl}/${id}/clarification-reply`, {
       message,

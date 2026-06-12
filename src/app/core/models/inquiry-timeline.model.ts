@@ -2,6 +2,17 @@ import { InquiryStatus } from './inquiry.model';
 
 export type TimelineEntryKind = 'MESSAGE' | 'MILESTONE' | 'STATUS' | 'DISTRIBUTOR';
 
+export type TimelineAttachmentMediaType = 'IMAGE' | 'VIDEO' | 'AUDIO';
+
+export interface InquiryTimelineAttachment {
+  id: string;
+  fileName: string;
+  contentType: string;
+  mediaType: TimelineAttachmentMediaType;
+  /** Relative API path, e.g. /inquiries/attachments/{id}/content */
+  url: string;
+}
+
 export interface InquiryTimelineEntry {
   id: string;
   occurredAt: string;
@@ -13,6 +24,7 @@ export interface InquiryTimelineEntry {
   actorRole?: string;
   fromCompanyName?: string;
   toCompanyName?: string;
+  attachments?: InquiryTimelineAttachment[];
 }
 
 export interface InquiryTimeline {

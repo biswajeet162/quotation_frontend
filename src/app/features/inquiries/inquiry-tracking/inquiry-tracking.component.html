@@ -66,6 +66,7 @@
 
       @if (selectedInquiry(); as inquiry) {
         <div class="query-detail">
+          <div class="detail-summary">
             <div class="detail-header">
               <div>
                 <h2>{{ inquiry.title }}</h2>
@@ -87,18 +88,11 @@
             </div>
 
             @if (inquiry.searchTerm) {
-              <p><strong>Search term:</strong> {{ inquiry.searchTerm }}</p>
+              <p class="detail-note"><strong>Search term:</strong> {{ inquiry.searchTerm }}</p>
             }
 
             @if (inquiry.description) {
-              <p><strong>Your notes:</strong> {{ inquiry.description }}</p>
-            }
-
-            @if (inquiry.needsClarification && inquiry.clarificationMessage) {
-              <div class="clarification-box" role="status">
-                <strong>Message from admin</strong>
-                <p>{{ inquiry.clarificationMessage }}</p>
-              </div>
+              <p class="detail-note"><strong>Your notes:</strong> {{ inquiry.description }}</p>
             }
 
             <h3>Products</h3>
@@ -122,10 +116,11 @@
                 <span class="badge-warn">Action required</span>
               }
             </p>
+          </div>
 
-            <section class="activity-section">
+          <section class="chat-section">
               <div class="activity-head">
-                <h3>Activity</h3>
+                <h3>Messages</h3>
                 <button
                   type="button"
                   class="btn-text"
@@ -137,60 +132,185 @@
               </div>
 
               @if (timelineLoading()) {
-                <p class="activity-empty">Loading activity…</p>
+                <div class="chat-thread chat-thread-state">
+                  <p class="activity-empty">Loading messages…</p>
+                </div>
               } @else if (timelineError()) {
-                <div class="alert alert-error" role="alert">{{ timelineError() }}</div>
-              } @else if (timelineEntries().length === 0) {
-                <p class="activity-empty">No messages yet. Use the form below to contact admin.</p>
+                <div class="chat-thread chat-thread-state">
+                  <div class="alert alert-error" role="alert">{{ timelineError() }}</div>
+                </div>
+              } @else if (chatMessages().length === 0) {
+                <div class="chat-thread chat-thread-state">
+                  <p class="activity-empty">No messages yet. Send a message below to contact admin.</p>
+                </div>
               } @else {
-                <ul class="activity-feed">
-                  @for (entry of timelineEntries(); track entry.id) {
-                    <li [class.consumer-msg]="entry.actorRole === 'CONSUMER'">
-                      <div class="feed-meta">
-                        <span class="feed-time">{{ formatDate(entry.occurredAt) }}</span>
-                        <span class="feed-actor">{{ actorLabel(entry) }}</span>
+                <div class="chat-thread">
+                  @for (entry of chatMessages(); track entry.id) {
+                    <div
+                      class="chat-row"
+                      [class.chat-row-consumer]="isConsumerMessage(entry)"
+                      [class.chat-row-admin]="isAdminMessage(entry)"
+                    >
+                      <div class="chat-bubble">
+                        @if (entry.message) {
+                          <p class="chat-text">{{ entry.message }}</p>
+                        }
+                        @if (entry.attachments?.length) {
+                          <div class="chat-attachments">
+                            @for (attachment of entry.attachments; track attachment.id) {
+                              <app-inquiry-chat-attachment [attachment]="attachment" />
+                            }
+                          </div>
+                        }
+                        <span class="chat-time">{{ formatChatTime(entry.occurredAt) }}</span>
                       </div>
-                      <p class="feed-title">{{ entry.title }}</p>
-                      @if (entry.message) {
-                        <p class="feed-message">{{ entry.message }}</p>
-                      } @else if (entry.detail) {
-                        <p class="feed-message muted">{{ entry.detail }}</p>
-                      }
-                    </li>
+                    </div>
                   }
-                </ul>
+                </div>
               }
             </section>
 
             @if (canMessage(inquiry)) {
               <div class="consumer-actions">
-                <div class="field">
-                  <label for="consumer-message">{{ messageFieldLabel() }}</label>
+                @if (pendingAttachments().length > 0) {
+                  <ul class="pending-attachments">
+                    @for (item of pendingAttachments(); track item.id) {
+                      <li>
+                        @if (item.previewUrl && item.mediaType === 'IMAGE') {
+                          <img [src]="item.previewUrl" alt="" class="pending-thumb" />
+                        } @else {
+                          <span class="pending-icon">{{ pendingIcon(item.mediaType) }}</span>
+                        }
+                        <span class="pending-name">{{ item.file.name }}</span>
+                        <button
+                          type="button"
+                          class="pending-remove"
+                          (click)="removePendingAttachment(item.id)"
+                          [disabled]="messageLoading()"
+                          aria-label="Remove attachment"
+                        >
+                          ×
+                        </button>
+                      </li>
+                    }
+                  </ul>
+                }
+
+                @if (messageError()) {
+                  <div class="alert alert-error compose-error" role="alert">{{ messageError() }}</div>
+                }
+
+                <div class="chat-compose-bar">
+                  <input
+                    #imageInput
+                    type="file"
+                    class="visually-hidden"
+                    accept="image/*"
+                    multiple
+                    (change)="onImageSelected($event)"
+                  />
+                  <input
+                    #videoInput
+                    type="file"
+                    class="visually-hidden"
+                    accept="video/*"
+                    multiple
+                    (change)="onVideoSelected($event)"
+                  />
+
                   <textarea
                     id="consumer-message"
-                    rows="3"
+                    class="chat-input"
+                    rows="1"
                     [placeholder]="messagePlaceholder()"
+                    [attr.aria-label]="messageFieldLabel()"
                     [ngModel]="messageText()"
                     (ngModelChange)="messageText.set($event)"
                     [disabled]="messageLoading()"
+                    (keydown.enter)="onComposeEnter($event)"
                   ></textarea>
-                </div>
-                @if (messageError()) {
-                  <div class="alert alert-error" role="alert">{{ messageError() }}</div>
-                }
-                <div class="action-buttons">
+
                   <button
                     type="button"
-                    class="btn-primary"
-                    [disabled]="messageLoading() || !messageText().trim()"
-                    (click)="sendMessage()"
+                    class="btn-icon"
+                    (click)="imageInput.click()"
+                    [disabled]="messageLoading()"
+                    aria-label="Attach image"
+                    title="Image"
                   >
-                    {{ messageLoading() ? 'Sending…' : 'Send to admin' }}
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2ZM8.5 13.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5Z"
+                      />
+                    </svg>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="btn-icon"
+                    (click)="videoInput.click()"
+                    [disabled]="messageLoading()"
+                    aria-label="Attach video"
+                    title="Video"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        d="M17 10.5V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3.5l4 2.5v-7l-4 2.5ZM15 17H5V7h10v10Z"
+                      />
+                    </svg>
+                  </button>
+
+                  @if (recording()) {
+                    <button
+                      type="button"
+                      class="btn-icon btn-icon-recording"
+                      (click)="stopVoiceRecording()"
+                      [disabled]="messageLoading()"
+                      aria-label="Stop recording"
+                      title="Stop recording"
+                    >
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="7" y="7" width="10" height="10" rx="1.5" />
+                      </svg>
+                    </button>
+                  } @else {
+                    <button
+                      type="button"
+                      class="btn-icon"
+                      (click)="startVoiceRecording()"
+                      [disabled]="messageLoading()"
+                      aria-label="Record voice"
+                      title="Voice"
+                    >
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path
+                          d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z"
+                        />
+                      </svg>
+                    </button>
+                  }
+
+                  <button
+                    type="button"
+                    class="btn-send"
+                    [disabled]="messageLoading() || !canSendMessage()"
+                    (click)="sendMessage()"
+                    aria-label="Send to admin"
+                    title="Send"
+                  >
+                    @if (messageLoading()) {
+                      <span class="send-spinner" aria-hidden="true"></span>
+                    } @else {
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2 .01 7Z" />
+                      </svg>
+                    }
                   </button>
                 </div>
+
                 @if (inquiry.needsClarification) {
                   <p class="hint">
-                    Admin is waiting for your reply. Send your clarification using the form above.
+                    Admin is waiting for your reply. Send your clarification using the bar above.
                   </p>
                 }
               </div>

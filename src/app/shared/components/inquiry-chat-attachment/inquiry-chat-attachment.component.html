@@ -1,0 +1,22 @@
+@if (loading()) {
+  <span class="attachment-loading">Loading…</span>
+} @else if (error()) {
+  <span class="attachment-error">Could not load attachment</span>
+} @else if (objectUrl()) {
+  @switch (attachment().mediaType) {
+    @case ('IMAGE') {
+      <img [src]="objectUrl()!" [alt]="attachment().fileName" class="chat-image" loading="lazy" />
+    }
+    @case ('VIDEO') {
+      <video [src]="objectUrl()!" class="chat-video" controls preload="metadata">
+        Your browser does not support video playback.
+      </video>
+    }
+    @case ('AUDIO') {
+      <audio [src]="objectUrl()!" class="chat-audio" controls preload="metadata">
+        Your browser does not support audio playback.
+      </audio>
+    }
+  }
+  <span class="attachment-name">{{ attachment().fileName }}</span>
+}
