@@ -639,6 +639,17 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     setTimeout(() => element?.classList.remove('chat-row-highlight'), 1400);
   }
 
+  goToDetailTop(): void {
+    this.detailScrollRef()?.nativeElement?.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  goToDetailBottom(): void {
+    const scrollEl = this.detailScrollRef()?.nativeElement;
+    if (scrollEl) {
+      scrollEl.scrollTo({ top: scrollEl.scrollHeight, behavior: 'smooth' });
+    }
+  }
+
   canDelete(inquiry: ConsumerInquiry): boolean {
     return inquiry.status === 'NEW';
   }

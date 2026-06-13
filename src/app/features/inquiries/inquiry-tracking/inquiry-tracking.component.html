@@ -78,7 +78,20 @@
             </div>
           </div>
 
-          <div #detailScroll class="detail-scroll">
+          <div class="detail-scroll-wrap">
+            <button
+              type="button"
+              class="scroll-nav-btn scroll-nav-top"
+              aria-label="Go to top"
+              title="Top"
+              (click)="goToDetailTop()"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M7.41 14.59 12 10.17l4.59 4.42L18 13l-6-6-6 6 1.41 1.59Z" />
+              </svg>
+            </button>
+
+            <div #detailScroll class="detail-scroll">
             <div class="detail-summary">
               @if (inquiry.searchTerm) {
                 <p class="detail-note"><strong>Search term:</strong> {{ inquiry.searchTerm }}</p>
@@ -212,6 +225,19 @@
                 </div>
               }
             </section>
+          </div>
+
+            <button
+              type="button"
+              class="scroll-nav-btn scroll-nav-bottom"
+              aria-label="Go to bottom"
+              title="Bottom"
+              (click)="goToDetailBottom()"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M7.41 9.41 12 13.83l4.59-4.42L18 11l-6 6-6-6 1.41-1.59Z" />
+              </svg>
+            </button>
           </div>
 
           @if (canMessage(inquiry)) {
