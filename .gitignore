@@ -40,3 +40,64 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Media, documents & archives
+# Video
+*.mp4
+*.webm
+*.avi
+*.mov
+*.mkv
+*.flv
+*.wmv
+*.m4v
+*.3gp
+*.ogv
+# Audio
+*.mp3
+*.wav
+*.wma
+*.aac
+*.m4a
+*.flac
+*.ogg
+*.opus
+# Images
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.svg
+*.ico
+*.bmp
+*.tiff
+*.tif
+*.heic
+*.heif
+*.avif
+*.psd
+*.raw
+# Documents
+*.pdf
+*.doc
+*.docx
+*.xls
+*.xlsx
+*.ppt
+*.pptx
+*.txt
+*.csv
+*.rtf
+*.odt
+*.ods
+*.odp
+*.pps
+*.ppsx
+# Archives
+*.zip
+*.rar
+*.7z
+*.tar
+*.gz
+*.bz2

@@ -56,22 +56,30 @@ export function buildEntryReplyPreview(entry: InquiryTimelineEntry): string {
   return entry.title || 'Message';
 }
 
-export function replyAuthorLabel(replyTo: InquiryTimelineReplyTo): string {
+export type ChatViewerRole = 'ADMIN' | 'CONSUMER';
+
+export function replyAuthorLabel(
+  replyTo: InquiryTimelineReplyTo,
+  viewer: ChatViewerRole = 'CONSUMER',
+): string {
   if (replyTo.actorRole === 'ADMIN') {
-    return 'Admin';
+    return viewer === 'ADMIN' ? 'You' : 'Admin';
   }
   if (replyTo.actorRole === 'CONSUMER') {
-    return 'You';
+    return viewer === 'CONSUMER' ? 'You' : replyTo.actorName || 'Consumer';
   }
   return replyTo.actorName || 'Message';
 }
 
-export function replyTargetAuthorLabel(target: ChatReplyTarget): string {
+export function replyTargetAuthorLabel(
+  target: ChatReplyTarget,
+  viewer: ChatViewerRole = 'CONSUMER',
+): string {
   if (target.entry.actorRole === 'ADMIN') {
-    return 'Admin';
+    return viewer === 'ADMIN' ? 'You' : 'Admin';
   }
   if (target.entry.actorRole === 'CONSUMER') {
-    return 'You';
+    return viewer === 'CONSUMER' ? 'You' : target.entry.actorName || 'Consumer';
   }
   return target.entry.actorName || 'Message';
 }

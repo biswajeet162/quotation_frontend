@@ -112,4 +112,56 @@ export class InquiryService {
   requestClarification(id: string, message: string): Observable<Inquiry> {
     return this.http.post<Inquiry>(`${this.baseUrl}/${id}/request-clarification`, { message });
   }
+
+  postAdminMessage(
+    id: string,
+    message: string,
+    replyToMessageId?: string,
+    replyToAttachmentId?: string,
+    markAwaitingConsumer?: boolean,
+  ): Observable<Inquiry> {
+    const body: {
+      message: string;
+      replyToMessageId?: string;
+      replyToAttachmentId?: string;
+      markAwaitingConsumer?: boolean;
+    } = { message };
+    if (replyToMessageId) {
+      body.replyToMessageId = replyToMessageId;
+    }
+    if (replyToAttachmentId) {
+      body.replyToAttachmentId = replyToAttachmentId;
+    }
+    if (markAwaitingConsumer) {
+      body.markAwaitingConsumer = true;
+    }
+    return this.http.post<Inquiry>(`${this.baseUrl}/${id}/admin-messages`, body);
+  }
+
+  postAdminMessageWithAttachments(
+    id: string,
+    message: string,
+    attachments: File[],
+    replyToMessageId?: string,
+    replyToAttachmentId?: string,
+    markAwaitingConsumer?: boolean,
+  ): Observable<Inquiry> {
+    const formData = new FormData();
+    if (message.trim()) {
+      formData.append('message', message.trim());
+    }
+    if (replyToMessageId) {
+      formData.append('replyToMessageId', replyToMessageId);
+    }
+    if (replyToAttachmentId) {
+      formData.append('replyToAttachmentId', replyToAttachmentId);
+    }
+    if (markAwaitingConsumer) {
+      formData.append('markAwaitingConsumer', 'true');
+    }
+    for (const file of attachments) {
+      formData.append('attachments', file, file.name);
+    }
+    return this.http.post<Inquiry>(`${this.baseUrl}/${id}/admin-messages`, formData);
+  }
 }
