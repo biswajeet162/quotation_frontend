@@ -8,11 +8,14 @@ export type ConsumerInquiryPhase =
   | 'final_sent'
   | 'closed';
 
+export type InquiryListStep = 'grey' | 'yellow' | 'green';
+
 export interface InquiryDisplayStatus {
   phase: ConsumerInquiryPhase;
   label: string;
   description: string;
   tone: 'neutral' | 'warning' | 'success' | 'info';
+  listStep: InquiryListStep;
 }
 
 export function getRequestSourceLabel(source?: InquiryRequestSource): string {
@@ -28,15 +31,55 @@ export function getRequestSourceLabel(source?: InquiryRequestSource): string {
   }
 }
 
+export function getInquiryListStep(inquiry: Pick<Inquiry, 'status'>): InquiryListStep {
+  if (inquiry.status === 'CLOSED') {
+    return 'green';
+  }
+  if (
+    inquiry.status === 'SENT_TO_DISTRIBUTORS' ||
+    inquiry.status === 'RESPONSES_RECEIVED' ||
+    inquiry.status === 'FINAL_SENT'
+  ) {
+    return 'yellow';
+  }
+  return 'grey';
+}
+
+export function getAdminInquiryListLabel(
+  inquiry: Pick<Inquiry, 'status' | 'needsClarification'>,
+): string {
+  if (inquiry.needsClarification) {
+    return 'Action required';
+  }
+
+  switch (inquiry.status) {
+    case 'NEW':
+      return 'Submitted';
+    case 'SENT_TO_DISTRIBUTORS':
+      return 'With distributors';
+    case 'RESPONSES_RECEIVED':
+      return 'Responses received';
+    case 'FINAL_SENT':
+      return 'Quotation ready';
+    case 'CLOSED':
+      return 'Closed';
+    default:
+      return inquiry.status;
+  }
+}
+
 export function getConsumerInquiryDisplay(
   inquiry: Pick<Inquiry, 'status' | 'needsClarification'>,
 ): InquiryDisplayStatus {
+  const listStep = getInquiryListStep(inquiry);
+
   if (inquiry.needsClarification) {
     return {
       phase: 'action_required',
       label: 'More information needed',
       description: 'Please see the message below and update your quotation request if needed.',
       tone: 'warning',
+      listStep,
     };
   }
 
@@ -47,6 +90,7 @@ export function getConsumerInquiryDisplay(
         label: 'Submitted',
         description: 'Your quotation request has been received and is being processed.',
         tone: 'neutral',
+        listStep,
       };
     case 'SENT_TO_DISTRIBUTORS':
       return {
@@ -54,6 +98,7 @@ export function getConsumerInquiryDisplay(
         label: 'Checking our inventory',
         description: 'We are checking product availability for your request.',
         tone: 'warning',
+        listStep,
       };
     case 'RESPONSES_RECEIVED':
       return {
@@ -61,6 +106,7 @@ export function getConsumerInquiryDisplay(
         label: 'Preparing your quotation',
         description: 'We are preparing your quotation.',
         tone: 'info',
+        listStep,
       };
     case 'FINAL_SENT':
       return {
@@ -68,13 +114,15 @@ export function getConsumerInquiryDisplay(
         label: 'Quotation ready',
         description: 'Your quotation is ready.',
         tone: 'success',
+        listStep,
       };
     case 'CLOSED':
       return {
         phase: 'closed',
         label: 'Closed',
         description: 'This quotation is closed.',
-        tone: 'neutral',
+        tone: 'success',
+        listStep,
       };
     default:
       return {
@@ -82,6 +130,7 @@ export function getConsumerInquiryDisplay(
         label: inquiry.status,
         description: '',
         tone: 'neutral',
+        listStep,
       };
   }
 }

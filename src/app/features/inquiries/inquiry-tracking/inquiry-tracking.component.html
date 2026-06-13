@@ -48,11 +48,14 @@
               type="button"
               class="query-item"
               [class.selected]="selectedId() === inquiry.id"
+              [class.step-grey]="getInquiryListStep(inquiry) === 'grey'"
+              [class.step-yellow]="getInquiryListStep(inquiry) === 'yellow'"
+              [class.step-green]="getInquiryListStep(inquiry) === 'green'"
+              [attr.aria-label]="inquiry.title + ' — ' + getConsumerInquiryDisplay(inquiry).label"
               (click)="selectInquiry(inquiry.id)"
             >
               <span class="query-id">{{ inquiry.inquiryId }}</span>
               <span class="query-title">{{ inquiry.title }}</span>
-              <span class="query-meta">{{ getConsumerInquiryDisplay(inquiry).label }}</span>
               <span class="source-tag">{{ getRequestSourceLabel(inquiry.requestSource) }}</span>
             </button>
           </li>

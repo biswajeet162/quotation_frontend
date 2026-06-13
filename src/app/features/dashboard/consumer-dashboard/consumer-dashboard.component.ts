@@ -5,6 +5,7 @@ import { AuthService } from '../../../core/services/auth/auth.service';
 import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
 import {
   getConsumerInquiryDisplay,
+  getInquiryListStep,
   getRequestSourceLabel,
 } from '../../../shared/utils/inquiry-display.util';
 
@@ -24,6 +25,7 @@ export class ConsumerDashboardComponent implements OnInit {
 
   readonly getRequestSourceLabel = getRequestSourceLabel;
   readonly getConsumerInquiryDisplay = getConsumerInquiryDisplay;
+  readonly getInquiryListStep = getInquiryListStep;
 
   readonly total = computed(() => this.inquiries().length);
 

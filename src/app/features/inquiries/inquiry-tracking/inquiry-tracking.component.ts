@@ -11,6 +11,7 @@ import { InquiryChatAttachmentComponent } from '../../../shared/components/inqui
 import { ChatAudioPlayerComponent } from '../../../shared/components/chat-audio-player/chat-audio-player.component';
 import {
   getConsumerInquiryDisplay,
+  getInquiryListStep,
   getRequestSourceLabel,
 } from '../../../shared/utils/inquiry-display.util';
 import {
@@ -168,6 +169,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
 
   readonly getRequestSourceLabel = getRequestSourceLabel;
   readonly getConsumerInquiryDisplay = getConsumerInquiryDisplay;
+  readonly getInquiryListStep = getInquiryListStep;
 
   readonly messageFieldLabel = computed(() => {
     const inquiry = this.selectedInquiry();

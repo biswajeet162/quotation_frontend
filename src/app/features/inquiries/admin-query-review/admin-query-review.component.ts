@@ -19,7 +19,11 @@ import {
 import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
 import { InquiryChatAttachmentComponent } from '../../../shared/components/inquiry-chat-attachment/inquiry-chat-attachment.component';
 import { ChatAudioPlayerComponent } from '../../../shared/components/chat-audio-player/chat-audio-player.component';
-import { getRequestSourceLabel } from '../../../shared/utils/inquiry-display.util';
+import {
+  getAdminInquiryListLabel,
+  getInquiryListStep,
+  getRequestSourceLabel,
+} from '../../../shared/utils/inquiry-display.util';
 import {
   canReplyToTimelineEntry,
   ChatReplyTarget,
@@ -165,6 +169,8 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   readonly noticeDisplayDetail = (entry: InquiryTimelineEntry) =>
     noticeDisplayDetail(entry, 'ADMIN');
   readonly getRequestSourceLabel = getRequestSourceLabel;
+  readonly getInquiryListStep = getInquiryListStep;
+  readonly getAdminInquiryListLabel = getAdminInquiryListLabel;
 
   readonly messageFieldLabel = computed(() => 'Message to consumer');
   readonly messagePlaceholder = computed(() => 'Type your message to the consumer…');

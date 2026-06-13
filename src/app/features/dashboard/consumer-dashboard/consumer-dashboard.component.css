@@ -145,8 +145,21 @@
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
-  padding: 0.75rem 0;
+  padding: 0.75rem;
   border-bottom: 1px solid #f1f5f9;
+  border-radius: 8px;
+}
+
+.recent-list li.step-grey {
+  background: #f1f5f9;
+}
+
+.recent-list li.step-yellow {
+  background: #fef3c7;
+}
+
+.recent-list li.step-green {
+  background: #d1fae5;
 }
 
 .recent-main {
@@ -172,34 +185,6 @@
 .recent-meta {
   font-size: 0.78rem;
   color: #64748b;
-}
-
-.status-pill {
-  flex-shrink: 0;
-  font-size: 0.68rem;
-  font-weight: 600;
-  padding: 0.2rem 0.5rem;
-  border-radius: 999px;
-}
-
-.tone-neutral {
-  background: #f1f5f9;
-  color: #475569;
-}
-
-.tone-warning {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.tone-info {
-  background: #e0f2fe;
-  color: #0369a1;
-}
-
-.tone-success {
-  background: #d1fae5;
-  color: #047857;
 }
 
 .panel-empty a {
