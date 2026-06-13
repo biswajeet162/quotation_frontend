@@ -189,10 +189,39 @@ export class InquiryService {
     inquiryId: string,
     distributorCompanyId: string,
     message: string,
+    replyToMessageId?: string,
+    replyToAttachmentId?: string,
   ): Observable<Inquiry> {
     return this.http.post<Inquiry>(
       `${this.baseUrl}/${inquiryId}/distributors/${distributorCompanyId}/messages`,
-      { message },
+      { message, replyToMessageId, replyToAttachmentId },
+    );
+  }
+
+  postDistributorMessageWithAttachments(
+    inquiryId: string,
+    distributorCompanyId: string,
+    message: string,
+    attachments: File[],
+    replyToMessageId?: string,
+    replyToAttachmentId?: string,
+  ): Observable<Inquiry> {
+    const formData = new FormData();
+    if (message.trim()) {
+      formData.append('message', message.trim());
+    }
+    if (replyToMessageId) {
+      formData.append('replyToMessageId', replyToMessageId);
+    }
+    if (replyToAttachmentId) {
+      formData.append('replyToAttachmentId', replyToAttachmentId);
+    }
+    for (const file of attachments) {
+      formData.append('attachments', file, file.name);
+    }
+    return this.http.post<Inquiry>(
+      `${this.baseUrl}/${inquiryId}/distributors/${distributorCompanyId}/messages`,
+      formData,
     );
   }
 }

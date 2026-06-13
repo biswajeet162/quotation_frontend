@@ -68,6 +68,9 @@ export function replyAuthorLabel(
   if (replyTo.actorRole === 'CONSUMER') {
     return viewer === 'CONSUMER' ? 'You' : replyTo.actorName || 'Consumer';
   }
+  if (replyTo.actorRole === 'DISTRIBUTOR') {
+    return viewer === 'ADMIN' ? replyTo.actorName || 'Distributor' : 'You';
+  }
   return replyTo.actorName || 'Message';
 }
 
@@ -80,6 +83,9 @@ export function replyTargetAuthorLabel(
   }
   if (target.entry.actorRole === 'CONSUMER') {
     return viewer === 'CONSUMER' ? 'You' : target.entry.actorName || 'Consumer';
+  }
+  if (target.entry.actorRole === 'DISTRIBUTOR') {
+    return viewer === 'ADMIN' ? target.entry.actorName || 'Distributor' : 'You';
   }
   return target.entry.actorName || 'Message';
 }
