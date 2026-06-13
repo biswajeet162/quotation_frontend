@@ -1,5 +1,3 @@
-@import '../../inquiries/inquiry-chat-panel.css';
-
 :host {
   display: flex;
   flex-direction: column;
