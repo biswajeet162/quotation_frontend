@@ -73,7 +73,7 @@
               <button
                 type="button"
                 class="btn-primary"
-                [disabled]="actionLoading() || inquiry.needsClarification"
+                [disabled]="actionLoading()"
                 (click)="sendToDistributors()"
               >
                 {{ actionLoading() ? 'Working…' : 'Send to distributors' }}
@@ -266,9 +266,6 @@
                     />
                     Awaiting consumer response
                   </label>
-                  @if (inquiry.needsClarification) {
-                    <span class="hint">Consumer must reply before sending to distributors.</span>
-                  }
                 </div>
               }
 
