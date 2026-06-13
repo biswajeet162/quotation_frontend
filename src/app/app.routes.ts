@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { guestGuard } from './core/guards/guest.guard';
+import { roleGuard } from './core/guards/role.guard';
 
 export const routes: Routes = [
   {
@@ -27,6 +28,15 @@ export const routes: Routes = [
           import('./features/products/product-list/product-list.component').then(
             (m) => m.ProductListComponent,
           ),
+        canActivate: [roleGuard(['ADMIN', 'CONSUMER'])],
+      },
+      {
+        path: 'distributor/products',
+        loadComponent: () =>
+          import('./features/distributor/distributor-products/distributor-products.component').then(
+            (m) => m.DistributorProductsComponent,
+          ),
+        canActivate: [roleGuard(['DISTRIBUTOR'])],
       },
       {
         path: 'requests',
@@ -34,6 +44,7 @@ export const routes: Routes = [
           import('./features/inquiries/my-requests/my-requests.component').then(
             (m) => m.MyRequestsComponent,
           ),
+        canActivate: [roleGuard(['CONSUMER'])],
       },
       {
         path: 'tracking',
@@ -41,6 +52,7 @@ export const routes: Routes = [
           import(
             './features/inquiries/inquiry-tracking/inquiry-tracking.component'
           ).then((m) => m.InquiryTrackingComponent),
+        canActivate: [roleGuard(['CONSUMER'])],
       },
       {
         path: 'admin/queries',
@@ -48,6 +60,7 @@ export const routes: Routes = [
           import('./features/inquiries/admin-query-review/admin-query-review.component').then(
             (m) => m.AdminQueryReviewComponent,
           ),
+        canActivate: [roleGuard(['ADMIN'])],
       },
       {
         path: 'profile',

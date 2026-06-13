@@ -1,37 +1,104 @@
-.page-card {
-  background: #fff;
-  border-radius: 12px;
+.profile-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.profile-hero {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
   padding: 1.5rem;
-  border: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, #f0fdfa 0%, #fff 55%);
+  border: 1px solid #99f6e4;
+  border-radius: 12px;
 }
 
-.page-card h1 {
-  margin: 0 0 1rem;
-  font-size: 1.5rem;
-  color: #0f172a;
-}
-
-.profile-details {
-  margin: 0;
+.profile-avatar {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 999px;
   display: grid;
+  place-items: center;
+  background: #0f766e;
+  color: #fff;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.profile-hero h1 {
+  margin: 0 0 0.2rem;
+  font-size: 1.5rem;
+}
+
+.profile-subtitle {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.92rem;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 1rem;
 }
 
-.profile-details div {
-  display: grid;
-  gap: 0.25rem;
+.profile-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem;
 }
 
-.profile-details dt {
-  font-size: 0.8rem;
-  font-weight: 600;
+.profile-card h2 {
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: #64748b;
 }
 
+.profile-details {
+  margin: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.profile-details div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.profile-details dt {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #94a3b8;
+}
+
 .profile-details dd {
   margin: 0;
-  font-size: 1rem;
+  font-size: 0.95rem;
   color: #0f172a;
+  line-height: 1.45;
+}
+
+.profile-note p {
+  margin: 0;
+  color: #475569;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.state-message {
+  color: #64748b;
+}
+
+.alert-error {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
 }

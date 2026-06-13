@@ -1,27 +1,251 @@
-.page-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 1.5rem;
-  border: 1px solid #e2e8f0;
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
 }
 
-.page-card h1 {
-  margin: 0 0 0.75rem;
+.dashboard-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.dashboard-header h1 {
+  margin: 0 0 0.25rem;
   font-size: 1.5rem;
 }
 
+.subtitle {
+  margin: 0 0 0.35rem;
+  font-size: 0.9rem;
+  color: #334155;
+}
+
 .muted {
+  margin: 0;
+  font-size: 0.88rem;
   color: #64748b;
 }
 
-.btn-link {
-  display: inline-block;
-  margin-top: 1rem;
-  font-weight: 600;
-  color: #0f766e;
-  text-decoration: none;
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
-.btn-link:hover {
-  text-decoration: underline;
+.btn-primary,
+.btn-secondary {
+  padding: 0.55rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: #0f766e;
+  color: #fff;
+}
+
+.btn-secondary {
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+}
+
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.state-message {
+  color: #64748b;
+}
+
+.alert-error {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.85rem;
+}
+
+.kpi-card {
+  padding: 1rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.kpi-highlight {
+  border-color: #99f6e4;
+  background: linear-gradient(135deg, #f0fdfa 0%, #fff 100%);
+}
+
+.kpi-warn {
+  border-color: #fcd34d;
+  background: #fffbeb;
+}
+
+.kpi-success {
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+
+.kpi-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.kpi-value {
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.kpi-hint {
+  font-size: 0.72rem;
+  color: #64748b;
+}
+
+.panel {
+  padding: 1.25rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.panel-head h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.panel-empty {
+  margin: 0;
+}
+
+.recent-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.recent-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid #f1f5f9;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.recent-list li.responded {
+  background: #f0fdf4;
+}
+
+.recent-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.recent-id {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #64748b;
+  font-family: ui-monospace, monospace;
+}
+
+.recent-title {
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: #0f172a;
+}
+
+.recent-meta {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.status-chip {
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-chip.done {
+  background: #d1fae5;
+  color: #047857;
+}
+
+.quick-nav {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.85rem;
+}
+
+.quick-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.quick-card:hover {
+  border-color: #99f6e4;
+  box-shadow: 0 4px 14px rgba(15, 118, 110, 0.08);
+}
+
+.quick-icon {
+  font-size: 1.1rem;
+  color: #0f766e;
+}
+
+.quick-title {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.quick-desc {
+  font-size: 0.8rem;
+  color: #64748b;
 }

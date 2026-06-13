@@ -2,7 +2,7 @@
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.1.7.f
 
-##d Development server
+##d Development serverd
 
 To start a local development server, run:tds
 dd

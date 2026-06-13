@@ -1,11 +1,93 @@
-<section class="dashboard page-card">
-  <h1>Dashboard</h1>
-  @if (auth.currentUser(); as user) {
-    <p>
-      Signed in as <strong>{{ user.email }}</strong> at
-      <strong>{{ user.companyName }}</strong>.
-    </p>
+<section class="dashboard">
+  <header class="dashboard-header">
+    <div>
+      <h1>Distributor dashboard</h1>
+      @if (auth.currentUser(); as user) {
+        <p class="subtitle">{{ user.companyName }} · {{ user.email }}</p>
+      }
+      <p class="muted">
+        Quotations routed from the admin team. Consumer details are never shown here.
+      </p>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/distributor/products" class="btn-primary">Manage products</a>
+      <button type="button" class="btn-secondary" (click)="load()" [disabled]="loading()">
+        Refresh
+      </button>
+    </div>
+  </header>
+
+  @if (loading()) {
+    <p class="state-message">Loading your summary…</p>
+  } @else if (errorMessage()) {
+    <div class="alert-error" role="alert">{{ errorMessage() }}</div>
+  } @else {
+    @if (overview(); as data) {
+      <div class="kpi-grid">
+      <article class="kpi-card kpi-highlight">
+        <span class="kpi-label">Quotations received</span>
+        <span class="kpi-value">{{ data.totalInquiriesReceived }}</span>
+        <span class="kpi-hint">From admin mediation</span>
+      </article>
+      <article class="kpi-card kpi-warn">
+        <span class="kpi-label">Awaiting response</span>
+        <span class="kpi-value">{{ data.pendingResponses }}</span>
+        <span class="kpi-hint">Pending your quote</span>
+      </article>
+      <article class="kpi-card kpi-success">
+        <span class="kpi-label">Responded</span>
+        <span class="kpi-value">{{ data.responded }}</span>
+      </article>
+      <article class="kpi-card">
+        <span class="kpi-label">Catalog products</span>
+        <span class="kpi-value">{{ data.totalProducts }}</span>
+        <span class="kpi-hint">{{ data.activeProducts }} active</span>
+      </article>
+    </div>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Recent quotation requests</h2>
+      </div>
+
+      @if (data.recentInquiries.length === 0) {
+        <p class="muted panel-empty">
+          No quotation requests yet. Add products to your catalog so admin can route matching
+          inquiries to you.
+        </p>
+      } @else {
+        <ul class="recent-list">
+          @for (item of data.recentInquiries; track item.assignmentId) {
+            <li [class.responded]="item.responseReceived">
+              <div class="recent-main">
+                <span class="recent-id">{{ item.reference }}</span>
+                <span class="recent-title">{{ item.title }}</span>
+                <span class="recent-meta">
+                  {{ item.itemCount }} line{{ item.itemCount === 1 ? '' : 's' }} ·
+                  {{ formatDate(item.receivedAt) }}
+                </span>
+              </div>
+              <span class="status-chip" [class.done]="item.responseReceived">
+                {{ item.responseReceived ? 'Responded' : 'Pending' }}
+              </span>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    <nav class="quick-nav" aria-label="Quick navigation">
+      <a routerLink="/distributor/products" class="quick-card">
+        <span class="quick-icon">▣</span>
+        <span class="quick-title">My products</span>
+        <span class="quick-desc">Add and edit products visible in the shared catalog</span>
+      </a>
+      <a routerLink="/profile" class="quick-card">
+        <span class="quick-icon">◇</span>
+        <span class="quick-title">Company profile</span>
+        <span class="quick-desc">Your account and distributor company details</span>
+      </a>
+    </nav>
+    }
   }
-  <p class="muted">Distributor metrics and inquiry responses will be expanded here.</p>
-  <a routerLink="/products" class="btn-link">Browse product catalog →</a>
 </section>

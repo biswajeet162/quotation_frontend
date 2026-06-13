@@ -15,6 +15,9 @@ import { DistributorDashboardComponent } from './distributor-dashboard/distribut
       @case ('CONSUMER') {
         <app-consumer-dashboard />
       }
+      @case ('DISTRIBUTOR') {
+        <app-distributor-dashboard />
+      }
       @default {
         <app-distributor-dashboard />
       }

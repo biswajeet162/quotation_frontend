@@ -1,0 +1,275 @@
+<section class="page-card">
+  <header class="page-header">
+    <div>
+      <h1>My products</h1>
+      <p class="muted">
+        Products you add appear in the shared catalog for admin and consumers. You manage pricing
+        and stock for your company only.
+      </p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn-primary" (click)="openCreate()">Add product</button>
+      <button type="button" class="btn-secondary" (click)="load()" [disabled]="loading()">
+        Refresh
+      </button>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="search-field">
+      <label for="product-search">Search</label>
+      <input
+        id="product-search"
+        type="search"
+        placeholder="Brand, designation, category…"
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)"
+      />
+    </div>
+    <label class="toggle-field">
+      <input
+        type="checkbox"
+        [ngModel]="showInactive()"
+        (ngModelChange)="showInactive.set($event)"
+      />
+      Show inactive
+    </label>
+  </div>
+
+  @if (loading()) {
+    <p class="state-message">Loading your products…</p>
+  } @else if (errorMessage()) {
+    <div class="alert-error" role="alert">{{ errorMessage() }}</div>
+  } @else if (filteredProducts().length === 0) {
+    <p class="state-message">
+      @if (products().length === 0) {
+        No products yet. Add your first product to appear in the shared catalog.
+      } @else {
+        No products match your search.
+      }
+    </p>
+  } @else {
+    <div class="table-wrap">
+      <table class="products-table">
+        <thead>
+          <tr>
+            <th>Brand</th>
+            <th>Designation</th>
+            <th>Category</th>
+            <th>RSP</th>
+            <th>Stock</th>
+            <th>Lead time</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (product of filteredProducts(); track product.id) {
+            <tr [class.inactive-row]="product.isActive === false">
+              <td>{{ product.brand }}</td>
+              <td>{{ product.designation }}</td>
+              <td>{{ product.category || '—' }}</td>
+              <td>{{ product.rsp ?? '—' }}</td>
+              <td>{{ product.stockQuantity ?? 0 }}</td>
+              <td>{{ product.leadTimeDays ?? '—' }} days</td>
+              <td>
+                <span class="status-chip" [class.inactive]="product.isActive === false">
+                  {{ product.isActive === false ? 'Inactive' : 'Active' }}
+                </span>
+              </td>
+              <td class="actions-cell">
+                <button type="button" class="btn-text" (click)="openEdit(product)">Edit</button>
+                <button type="button" class="btn-text" (click)="toggleActive(product)">
+                  {{ product.isActive === false ? 'Activate' : 'Deactivate' }}
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>
+
+@if (formOpen()) {
+  <div class="modal-backdrop" role="presentation" (click)="closeForm()"></div>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="product-form-title">
+    <header class="modal-header">
+      <h2 id="product-form-title">
+        {{ formMode() === 'create' ? 'Add product' : 'Edit product' }}
+      </h2>
+      <button type="button" class="btn-icon-close" (click)="closeForm()" aria-label="Close">
+        ×
+      </button>
+    </header>
+
+    <form class="modal-body" (ngSubmit)="saveForm()">
+      @if (actionError()) {
+        <div class="alert-error" role="alert">{{ actionError() }}</div>
+      }
+
+      <div class="form-grid">
+        <div class="form-field">
+          <label for="brand">Brand *</label>
+          <input
+            id="brand"
+            type="text"
+            required
+            [ngModel]="form().brand"
+            (ngModelChange)="updateFormField('brand', $event)"
+            name="brand"
+          />
+        </div>
+        <div class="form-field">
+          <label for="designation">Designation *</label>
+          <input
+            id="designation"
+            type="text"
+            required
+            [ngModel]="form().designation"
+            (ngModelChange)="updateFormField('designation', $event)"
+            name="designation"
+          />
+        </div>
+        <div class="form-field">
+          <label for="category">Category</label>
+          <input
+            id="category"
+            type="text"
+            [ngModel]="form().category"
+            (ngModelChange)="updateFormField('category', $event)"
+            name="category"
+          />
+        </div>
+        <div class="form-field">
+          <label for="groupName">Group</label>
+          <input
+            id="groupName"
+            type="text"
+            [ngModel]="form().groupName"
+            (ngModelChange)="updateFormField('groupName', $event)"
+            name="groupName"
+          />
+        </div>
+        <div class="form-field">
+          <label for="rsp">RSP</label>
+          <input
+            id="rsp"
+            type="number"
+            min="0"
+            step="0.01"
+            [ngModel]="form().rsp"
+            (ngModelChange)="updateFormField('rsp', $event)"
+            name="rsp"
+          />
+        </div>
+        <div class="form-field">
+          <label for="stockQuantity">Stock quantity</label>
+          <input
+            id="stockQuantity"
+            type="number"
+            min="0"
+            [ngModel]="form().stockQuantity"
+            (ngModelChange)="updateFormField('stockQuantity', $event)"
+            name="stockQuantity"
+          />
+        </div>
+        <div class="form-field">
+          <label for="leadTimeDays">Lead time (days)</label>
+          <input
+            id="leadTimeDays"
+            type="number"
+            min="0"
+            [ngModel]="form().leadTimeDays"
+            (ngModelChange)="updateFormField('leadTimeDays', $event)"
+            name="leadTimeDays"
+          />
+        </div>
+        <div class="form-field">
+          <label for="minOrderQuantity">Min order qty</label>
+          <input
+            id="minOrderQuantity"
+            type="number"
+            min="1"
+            [ngModel]="form().minOrderQuantity"
+            (ngModelChange)="updateFormField('minOrderQuantity', $event)"
+            name="minOrderQuantity"
+          />
+        </div>
+        <div class="form-field">
+          <label for="discountPercentage">Discount %</label>
+          <input
+            id="discountPercentage"
+            type="number"
+            min="0"
+            step="0.01"
+            [ngModel]="form().discountPercentage"
+            (ngModelChange)="updateFormField('discountPercentage', $event)"
+            name="discountPercentage"
+          />
+        </div>
+        <div class="form-field">
+          <label for="gstPercentage">GST %</label>
+          <input
+            id="gstPercentage"
+            type="number"
+            min="0"
+            step="0.01"
+            [ngModel]="form().gstPercentage"
+            (ngModelChange)="updateFormField('gstPercentage', $event)"
+            name="gstPercentage"
+          />
+        </div>
+        <div class="form-field">
+          <label for="priceValidTill">Price valid till</label>
+          <input
+            id="priceValidTill"
+            type="date"
+            [ngModel]="form().priceValidTill"
+            (ngModelChange)="updateFormField('priceValidTill', $event)"
+            name="priceValidTill"
+          />
+        </div>
+        <div class="form-field form-field-wide">
+          <label for="description">Description</label>
+          <textarea
+            id="description"
+            rows="2"
+            [ngModel]="form().description"
+            (ngModelChange)="updateFormField('description', $event)"
+            name="description"
+          ></textarea>
+        </div>
+        <div class="form-field form-field-wide">
+          <label for="specifications">Specifications</label>
+          <textarea
+            id="specifications"
+            rows="2"
+            [ngModel]="form().specifications"
+            (ngModelChange)="updateFormField('specifications', $event)"
+            name="specifications"
+          ></textarea>
+        </div>
+        <div class="form-field form-field-wide">
+          <label for="extraInfo">Extra info</label>
+          <textarea
+            id="extraInfo"
+            rows="2"
+            [ngModel]="form().extraInfo"
+            (ngModelChange)="updateFormField('extraInfo', $event)"
+            name="extraInfo"
+          ></textarea>
+        </div>
+      </div>
+
+      <footer class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="closeForm()" [disabled]="saving()">
+          Cancel
+        </button>
+        <button type="submit" class="btn-primary" [disabled]="saving()">
+          {{ saving() ? 'Saving…' : formMode() === 'create' ? 'Add product' : 'Save changes' }}
+        </button>
+      </footer>
+    </form>
+  </div>
+}

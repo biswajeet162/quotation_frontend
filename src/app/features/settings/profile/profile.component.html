@@ -1,23 +1,115 @@
-<section class="page-card">
-  <h1>Profile</h1>
-  @if (auth.currentUser(); as user) {
-    <dl class="profile-details">
-      <div>
-        <dt>Email</dt>
-        <dd>{{ user.email }}</dd>
+<section class="profile-page">
+  <header class="profile-hero">
+    <div class="profile-avatar" aria-hidden="true">
+      @if (auth.currentUser(); as user) {
+        {{ (user.companyName || 'U').charAt(0).toUpperCase() }}
+      }
+    </div>
+    <div>
+      <h1>Profile</h1>
+      @if (auth.currentUser(); as user) {
+        <p class="profile-subtitle">
+          {{ user.companyName }} · {{ roleLabel(user.role) }}
+        </p>
+      }
+    </div>
+  </header>
+
+  @if (isDistributor()) {
+    @if (loading()) {
+      <p class="state-message">Loading profile…</p>
+    } @else if (errorMessage()) {
+      <div class="alert-error" role="alert">{{ errorMessage() }}</div>
+    } @else {
+      @if (distributorProfile(); as profile) {
+        <div class="profile-grid">
+          <section class="profile-card">
+            <h2>Account</h2>
+            <dl class="profile-details">
+              <div>
+                <dt>Name</dt>
+                <dd>{{ profile.userName }}</dd>
+              </div>
+              <div>
+                <dt>Email</dt>
+                <dd>{{ profile.email }}</dd>
+              </div>
+              <div>
+                <dt>Role</dt>
+                <dd>{{ roleLabel(profile.role) }}</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="profile-card">
+            <h2>Distributor company</h2>
+            <dl class="profile-details">
+              <div>
+                <dt>Company</dt>
+                <dd>{{ profile.companyName }}</dd>
+              </div>
+              <div>
+                <dt>Company email</dt>
+                <dd>{{ profile.companyEmail }}</dd>
+              </div>
+              <div>
+                <dt>Phone</dt>
+                <dd>{{ profile.companyPhone }}</dd>
+              </div>
+              <div>
+                <dt>GST</dt>
+                <dd>{{ profile.gstNumber || '—' }}</dd>
+              </div>
+              <div>
+                <dt>Address</dt>
+                <dd>
+                  @if (profile.address || profile.city || profile.state || profile.country) {
+                    {{ profile.address || '' }}
+                    @if (profile.city) {
+                      <br />{{ profile.city }}
+                    }
+                    @if (profile.state || profile.country) {
+                      <br />{{ profile.state }} {{ profile.country }}
+                    }
+                  } @else {
+                    —
+                  }
+                </dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="profile-card profile-note">
+            <h2>Privacy</h2>
+            <p>
+              As a distributor you only see quotation requests routed by the admin team. Consumer
+              identities are never shared with your account.
+            </p>
+          </section>
+        </div>
+      }
+    }
+  } @else {
+    @if (auth.currentUser(); as user) {
+      <div class="profile-grid">
+        <section class="profile-card">
+          <h2>Account</h2>
+          <dl class="profile-details">
+            <div>
+              <dt>Email</dt>
+              <dd>{{ user.email }}</dd>
+            </div>
+            <div>
+              <dt>Role</dt>
+              <dd>{{ roleLabel(user.role) }}</dd>
+            </div>
+            <div>
+              <dt>Company</dt>
+              <dd>{{ user.companyName }}</dd>
+            </div>
+          </dl>
+        </section>
       </div>
-      <div>
-        <dt>Role</dt>
-        <dd>{{ user.role }}</dd>
-      </div>
-      <div>
-        <dt>Company</dt>
-        <dd>{{ user.companyName }}</dd>
-      </div>
-      <div>
-        <dt>User ID</dt>
-        <dd>{{ user.userId }}</dd>
-      </div>
-    </dl>
+    }
   }
 </section>
