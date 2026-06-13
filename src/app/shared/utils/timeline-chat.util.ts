@@ -21,6 +21,12 @@ export function noticeDisplayLabel(
   entry: InquiryTimelineEntry,
   viewer: TimelineViewerRole,
 ): string {
+  if (entry.noticeCode === 'SENT_TO_DISTRIBUTOR') {
+    const distributorName = entry.detail?.trim();
+    return viewer === 'ADMIN' && distributorName
+      ? `Sent to ${distributorName}`
+      : 'Checking our inventory';
+  }
   if (
     entry.noticeCode === 'SENT_TO_DISTRIBUTORS' ||
     entry.title === 'Sent to distributors'
@@ -34,6 +40,9 @@ export function noticeDisplayDetail(
   entry: InquiryTimelineEntry,
   viewer: TimelineViewerRole,
 ): string | null {
+  if (entry.noticeCode === 'SENT_TO_DISTRIBUTOR') {
+    return null;
+  }
   if (
     entry.noticeCode === 'SENT_TO_DISTRIBUTORS' ||
     entry.title === 'Sent to distributors'

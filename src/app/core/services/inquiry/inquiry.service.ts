@@ -7,8 +7,10 @@ import {
   ConsumerInquiry,
   ConsumerInquiryCreated,
   CreateInquiryRequest,
+  DistributorOption,
   Inquiry,
   InquiryStatus,
+  SubmitToDistributorsRequest,
 } from '../../models/inquiry.model';
 
 @Injectable({ providedIn: 'root' })
@@ -105,8 +107,13 @@ export class InquiryService {
     return this.http.get<Inquiry[]>(`${this.baseUrl}/status/${status}`);
   }
 
-  submitToDistributors(id: string): Observable<Inquiry> {
-    return this.http.post<Inquiry>(`${this.baseUrl}/${id}/submit-to-distributors`, {});
+  submitToDistributors(id: string, distributorCompanyIds: string[]): Observable<Inquiry> {
+    const body: SubmitToDistributorsRequest = { distributorCompanyIds };
+    return this.http.post<Inquiry>(`${this.baseUrl}/${id}/submit-to-distributors`, body);
+  }
+
+  getDistributorOptions(id: string): Observable<DistributorOption[]> {
+    return this.http.get<DistributorOption[]>(`${this.baseUrl}/${id}/distributor-options`);
   }
 
   requestClarification(id: string, message: string): Observable<Inquiry> {

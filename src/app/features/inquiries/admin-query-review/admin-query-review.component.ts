@@ -9,7 +9,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Inquiry, InquiryStatus } from '../../../core/models/inquiry.model';
+import { DistributorOption, Inquiry, InquiryStatus } from '../../../core/models/inquiry.model';
 import {
   InquiryTimelineAttachment,
   InquiryTimelineEntry,
@@ -67,6 +67,12 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   readonly actionLoading = signal(false);
   readonly actionError = signal<string | null>(null);
   readonly markAwaitingConsumer = signal(true);
+
+  readonly distributorPickerOpen = signal(false);
+  readonly distributorOptionsLoading = signal(false);
+  readonly distributorOptionsError = signal<string | null>(null);
+  readonly distributorOptions = signal<DistributorOption[]>([]);
+  readonly selectedDistributorIds = signal<Set<string>>(new Set());
 
   readonly timelineLoading = signal(false);
   readonly timelineRefreshing = signal(false);
@@ -151,6 +157,8 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
     }
     return this.inquiries().find((q) => q.id === id) ?? null;
   });
+
+  readonly selectedDistributorCount = computed(() => this.selectedDistributorIds().size);
 
   readonly chatTimelineEntries = computed(() =>
     buildChatTimelineEntries(this.timelineEntries()),
@@ -364,19 +372,81 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
       return;
     }
 
+    this.distributorPickerOpen.set(true);
+    this.distributorOptionsError.set(null);
+    this.selectedDistributorIds.set(new Set());
+    this.loadDistributorOptions(inquiry.id);
+  }
+
+  closeDistributorPicker(): void {
+    if (this.actionLoading()) {
+      return;
+    }
+    this.distributorPickerOpen.set(false);
+    this.distributorOptionsError.set(null);
+  }
+
+  loadDistributorOptions(inquiryId: string): void {
+    this.distributorOptionsLoading.set(true);
+    this.distributorOptionsError.set(null);
+
+    this.inquiryService.getDistributorOptions(inquiryId).subscribe({
+      next: (options) => {
+        this.distributorOptions.set(options);
+        this.distributorOptionsLoading.set(false);
+      },
+      error: (err) => {
+        this.distributorOptionsLoading.set(false);
+        this.distributorOptionsError.set(
+          err?.error?.message ?? 'Could not load distributors.',
+        );
+      },
+    });
+  }
+
+  toggleDistributorSelection(companyId: string, checked: boolean): void {
+    this.selectedDistributorIds.update((current) => {
+      const next = new Set(current);
+      if (checked) {
+        next.add(companyId);
+      } else {
+        next.delete(companyId);
+      }
+      return next;
+    });
+  }
+
+  isDistributorSelected(companyId: string): boolean {
+    return this.selectedDistributorIds().has(companyId);
+  }
+
+  confirmSendToDistributors(): void {
+    const inquiry = this.selectedInquiry();
+    if (!inquiry) {
+      return;
+    }
+
+    const selected = Array.from(this.selectedDistributorIds());
+    if (selected.length === 0) {
+      this.distributorOptionsError.set('Select at least one distributor.');
+      return;
+    }
+
     this.actionLoading.set(true);
     this.actionError.set(null);
+    this.distributorOptionsError.set(null);
 
-    this.inquiryService.submitToDistributors(inquiry.id).subscribe({
+    this.inquiryService.submitToDistributors(inquiry.id, selected).subscribe({
       next: (updated) => {
         this.replaceInquiry(updated);
         this.actionLoading.set(false);
+        this.distributorPickerOpen.set(false);
         this.loadTimeline({ silent: true, scrollToBottom: true });
       },
       error: (err) => {
         this.actionLoading.set(false);
-        this.actionError.set(
-          err?.error?.message ?? 'Could not send to distributors. Check product distributor coverage.',
+        this.distributorOptionsError.set(
+          err?.error?.message ?? 'Could not send to distributors.',
         );
       },
     });

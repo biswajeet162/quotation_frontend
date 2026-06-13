@@ -490,3 +490,130 @@
     </div>
   }
 </section>
+
+@if (distributorPickerOpen()) {
+  <div
+    class="modal-backdrop"
+    role="presentation"
+    (click)="closeDistributorPicker()"
+  ></div>
+  <div
+    class="distributor-picker-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="distributor-picker-title"
+  >
+    <header class="modal-header">
+      <div>
+        <h2 id="distributor-picker-title">Select distributors</h2>
+        <p class="modal-subtitle">
+          Choose one or more distributors to receive this quotation request. Matching logic will be
+          added later — all distributors are listed for now.
+        </p>
+      </div>
+      <button
+        type="button"
+        class="btn-icon-close"
+        (click)="closeDistributorPicker()"
+        aria-label="Close"
+      >
+        ×
+      </button>
+    </header>
+
+    <div class="modal-body">
+      @if (distributorOptionsError()) {
+        <div class="alert alert-error" role="alert">{{ distributorOptionsError() }}</div>
+      }
+
+      @if (distributorOptionsLoading()) {
+        <p class="state-message">Loading distributors…</p>
+      } @else if (distributorOptions().length === 0) {
+        <p class="state-message">No active distributors found.</p>
+      } @else {
+        <ul class="distributor-option-list">
+          @for (option of distributorOptions(); track option.companyId) {
+            <li class="distributor-option-card">
+              <label class="distributor-option-head">
+                <input
+                  type="checkbox"
+                  [checked]="isDistributorSelected(option.companyId)"
+                  (change)="toggleDistributorSelection(option.companyId, $any($event.target).checked)"
+                />
+                <div class="distributor-option-meta">
+                  <span class="distributor-name">{{ option.companyName }}</span>
+                  <span class="distributor-contact">
+                    {{ option.email || '—' }}
+                    @if (option.phone) {
+                      · {{ option.phone }}
+                    }
+                    @if (option.city) {
+                      · {{ option.city }}
+                    }
+                  </span>
+                  <span class="distributor-product-count">
+                    {{ option.productCount }} product{{ option.productCount === 1 ? '' : 's' }} in catalog
+                  </span>
+                </div>
+              </label>
+
+              @if (option.products.length > 0) {
+                <div class="distributor-products-wrap">
+                  <table class="distributor-products-table">
+                    <thead>
+                      <tr>
+                        <th>Brand</th>
+                        <th>Designation</th>
+                        <th>Category</th>
+                        <th>RSP</th>
+                        <th>Stock</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (product of option.products; track product.productId) {
+                        <tr>
+                          <td>{{ product.brand }}</td>
+                          <td>{{ product.designation }}</td>
+                          <td>{{ product.category || '—' }}</td>
+                          <td>{{ product.rsp ?? '—' }}</td>
+                          <td>{{ product.stockQuantity ?? 0 }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              } @else {
+                <p class="distributor-no-products">No active products listed yet.</p>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </div>
+
+    <footer class="modal-footer">
+      <span class="selection-summary">
+        {{ selectedDistributorCount() }} distributor{{ selectedDistributorCount() === 1 ? '' : 's' }}
+        selected
+      </span>
+      <div class="modal-footer-actions">
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="closeDistributorPicker()"
+          [disabled]="actionLoading()"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="btn-primary"
+          (click)="confirmSendToDistributors()"
+          [disabled]="actionLoading() || selectedDistributorCount() === 0"
+        >
+          {{ actionLoading() ? 'Sending…' : 'Send to distributors' }}
+        </button>
+      </div>
+    </footer>
+  </div>
+}

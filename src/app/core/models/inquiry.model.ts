@@ -100,3 +100,30 @@ export interface QuoteCartLine {
   lineNotes: string;
   lineSource: InquiryLineSource;
 }
+
+export interface DistributorProductOption {
+  productId: string;
+  brand: string;
+  designation: string;
+  category?: string;
+  groupName?: string;
+  rsp?: number;
+  stockQuantity?: number;
+  leadTimeDays?: number;
+}
+
+export interface DistributorOption {
+  companyId: string;
+  companyName: string;
+  email?: string;
+  phone?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  productCount: number;
+  products: DistributorProductOption[];
+}
+
+export interface SubmitToDistributorsRequest {
+  distributorCompanyIds: string[];
+}
