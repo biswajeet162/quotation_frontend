@@ -1,3 +1,5 @@
+import { InquiryItem, InquiryRequestSource, InquiryStatus } from './inquiry.model';
+
 export interface DistributorDashboardOverview {
   totalProducts: number;
   activeProducts: number;
@@ -9,11 +11,27 @@ export interface DistributorDashboardOverview {
 
 export interface DistributorInquirySummary {
   assignmentId: string;
+  inquiryUuid: string;
   reference: string;
   title: string;
   itemCount: number;
+  status: InquiryStatus;
   responseReceived: boolean;
   receivedAt?: string;
+}
+
+export interface DistributorInquiry {
+  id: string;
+  inquiryId: string;
+  title: string;
+  status: InquiryStatus;
+  requestSource?: InquiryRequestSource;
+  searchTerm?: string;
+  items?: InquiryItem[];
+  assignmentId: string;
+  responseReceived: boolean;
+  receivedAt?: string;
+  createdAt?: string;
 }
 
 export interface DistributorProfile {

@@ -10,7 +10,8 @@
       </p>
     </div>
     <div class="header-actions">
-      <a routerLink="/distributor/products" class="btn-primary">Manage products</a>
+      <a routerLink="/distributor/tracking" class="btn-primary">Open tracking</a>
+      <a routerLink="/distributor/products" class="btn-secondary">Manage products</a>
       <button type="button" class="btn-secondary" (click)="load()" [disabled]="loading()">
         Refresh
       </button>
@@ -59,6 +60,11 @@
         <ul class="recent-list">
           @for (item of data.recentInquiries; track item.assignmentId) {
             <li [class.responded]="item.responseReceived">
+              <a
+                class="recent-link"
+                [routerLink]="['/distributor/tracking']"
+                [queryParams]="item.inquiryUuid ? { inquiry: item.inquiryUuid } : {}"
+              >
               <div class="recent-main">
                 <span class="recent-id">{{ item.reference }}</span>
                 <span class="recent-title">{{ item.title }}</span>
@@ -70,6 +76,7 @@
               <span class="status-chip" [class.done]="item.responseReceived">
                 {{ item.responseReceived ? 'Responded' : 'Pending' }}
               </span>
+              </a>
             </li>
           }
         </ul>
@@ -77,6 +84,11 @@
     </section>
 
     <nav class="quick-nav" aria-label="Quick navigation">
+      <a routerLink="/distributor/tracking" class="quick-card">
+        <span class="quick-icon">◷</span>
+        <span class="quick-title">Tracking</span>
+        <span class="quick-desc">View requests and chat with the admin team</span>
+      </a>
       <a routerLink="/distributor/products" class="quick-card">
         <span class="quick-icon">▣</span>
         <span class="quick-title">My products</span>

@@ -22,6 +22,7 @@ export class SidebarComponent {
     { label: 'Dashboard', path: '/dashboard', icon: '◫' },
     { label: 'Products', path: '/products', icon: '▣', roles: ['ADMIN', 'CONSUMER'] },
     { label: 'My products', path: '/distributor/products', icon: '▣', roles: ['DISTRIBUTOR'] },
+    { label: 'Tracking', path: '/distributor/tracking', icon: '◷', roles: ['DISTRIBUTOR'] },
     { label: 'Create quotation', path: '/requests', icon: '◎', roles: ['CONSUMER'] },
     { label: 'Tracking', path: '/tracking', icon: '◷', roles: ['CONSUMER'] },
     { label: 'Review queries', path: '/admin/queries', icon: '◉', roles: ['ADMIN'] },

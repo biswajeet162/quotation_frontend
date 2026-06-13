@@ -56,7 +56,7 @@ export function buildEntryReplyPreview(entry: InquiryTimelineEntry): string {
   return entry.title || 'Message';
 }
 
-export type ChatViewerRole = 'ADMIN' | 'CONSUMER';
+export type ChatViewerRole = 'ADMIN' | 'CONSUMER' | 'DISTRIBUTOR';
 
 export function replyAuthorLabel(
   replyTo: InquiryTimelineReplyTo,
@@ -69,7 +69,7 @@ export function replyAuthorLabel(
     return viewer === 'CONSUMER' ? 'You' : replyTo.actorName || 'Consumer';
   }
   if (replyTo.actorRole === 'DISTRIBUTOR') {
-    return viewer === 'ADMIN' ? replyTo.actorName || 'Distributor' : 'You';
+    return viewer === 'DISTRIBUTOR' ? 'You' : replyTo.actorName || 'Distributor';
   }
   return replyTo.actorName || 'Message';
 }
@@ -85,7 +85,7 @@ export function replyTargetAuthorLabel(
     return viewer === 'CONSUMER' ? 'You' : target.entry.actorName || 'Consumer';
   }
   if (target.entry.actorRole === 'DISTRIBUTOR') {
-    return viewer === 'ADMIN' ? target.entry.actorName || 'Distributor' : 'You';
+    return viewer === 'DISTRIBUTOR' ? 'You' : target.entry.actorName || 'Distributor';
   }
   return target.entry.actorName || 'Message';
 }

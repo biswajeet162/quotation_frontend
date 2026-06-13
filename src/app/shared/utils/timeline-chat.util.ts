@@ -1,6 +1,6 @@
 import { InquiryTimelineEntry } from '../../core/models/inquiry-timeline.model';
 
-export type TimelineViewerRole = 'ADMIN' | 'CONSUMER';
+export type TimelineViewerRole = 'ADMIN' | 'CONSUMER' | 'DISTRIBUTOR';
 
 export function buildChatTimelineEntries(entries: InquiryTimelineEntry[]): InquiryTimelineEntry[] {
   return entries
@@ -23,6 +23,9 @@ export function noticeDisplayLabel(
 ): string {
   if (entry.noticeCode === 'SENT_TO_DISTRIBUTOR') {
     const distributorName = entry.detail?.trim();
+    if (viewer === 'DISTRIBUTOR') {
+      return 'Quotation request received';
+    }
     return viewer === 'ADMIN' && distributorName
       ? `Sent to ${distributorName}`
       : 'Checking our inventory';
