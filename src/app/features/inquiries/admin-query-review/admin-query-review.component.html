@@ -129,12 +129,6 @@
               @if (actionError()) {
                 <div class="alert alert-error" role="alert">{{ actionError() }}</div>
               }
-
-              @if (inquiry.status === 'SENT_TO_DISTRIBUTORS') {
-                <p class="hint success-hint">
-                  This query was sent to {{ inquiry.distributors?.length ?? 0 }} distributor(s).
-                </p>
-              }
             </div>
 
             <section class="messages-section">
@@ -153,15 +147,24 @@
                 </button>
               </div>
 
-              @if (timelineLoading() && chatMessages().length === 0) {
+              @if (timelineLoading() && chatTimelineEntries().length === 0) {
                 <p class="activity-empty">Loading messages…</p>
-              } @else if (timelineError() && chatMessages().length === 0) {
+              } @else if (timelineError() && chatTimelineEntries().length === 0) {
                 <div class="alert alert-error" role="alert">{{ timelineError() }}</div>
-              } @else if (chatMessages().length === 0) {
+              } @else if (chatTimelineEntries().length === 0) {
                 <p class="activity-empty">No messages yet. Send a message below to contact the consumer.</p>
               } @else {
                 <div class="chat-thread">
-                  @for (entry of chatMessages(); track entry.id) {
+                  @for (entry of chatTimelineEntries(); track entry.id) {
+                    @if (isTimelineNotice(entry)) {
+                      <div class="chat-status-notice" [id]="'chat-msg-' + entry.id">
+                        <span class="chat-status-notice-label">{{ noticeDisplayLabel(entry) }}</span>
+                        @if (noticeDisplayDetail(entry); as detail) {
+                          <span class="chat-status-notice-detail">{{ detail }}</span>
+                        }
+                        <span class="chat-status-notice-time">{{ formatChatTime(entry.occurredAt) }}</span>
+                      </div>
+                    } @else {
                     <div
                       class="chat-row"
                       [id]="'chat-msg-' + entry.id"
@@ -234,6 +237,7 @@
                         }
                       </div>
                     </div>
+                    }
                   }
                 </div>
               }

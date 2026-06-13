@@ -23,6 +23,12 @@ import {
   replyTargetLabel,
   shouldShowBubbleReply,
 } from '../../../shared/utils/chat-reply.util';
+import {
+  buildChatTimelineEntries,
+  isTimelineNotice,
+  noticeDisplayDetail,
+  noticeDisplayLabel,
+} from '../../../shared/utils/timeline-chat.util';
 
 type StatusFilter = 'all' | InquiryStatus | 'ACTION_REQUIRED';
 
@@ -90,7 +96,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     { value: 'all', label: 'All statuses' },
     { value: 'NEW', label: 'New / submitted' },
     { value: 'ACTION_REQUIRED', label: 'Action required' },
-    { value: 'SENT_TO_DISTRIBUTORS', label: 'With distributors' },
+    { value: 'SENT_TO_DISTRIBUTORS', label: 'Checking inventory' },
     { value: 'RESPONSES_RECEIVED', label: 'Responses received' },
     { value: 'FINAL_SENT', label: 'Quotation ready' },
     { value: 'CLOSED', label: 'Closed' },
@@ -140,8 +146,8 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     return this.inquiries().find((q) => q.id === id) ?? null;
   });
 
-  readonly chatMessages = computed(() =>
-    this.timelineEntries().filter((entry) => entry.kind === 'MESSAGE'),
+  readonly chatTimelineEntries = computed(() =>
+    buildChatTimelineEntries(this.timelineEntries()),
   );
 
   readonly canSendMessage = computed(
@@ -154,6 +160,11 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   readonly replyTargetAuthorLabel = replyTargetAuthorLabel;
   readonly replyTargetLabel = replyTargetLabel;
   readonly shouldShowBubbleReply = shouldShowBubbleReply;
+  readonly isTimelineNotice = isTimelineNotice;
+  readonly noticeDisplayLabel = (entry: InquiryTimelineEntry) =>
+    noticeDisplayLabel(entry, 'CONSUMER');
+  readonly noticeDisplayDetail = (entry: InquiryTimelineEntry) =>
+    noticeDisplayDetail(entry, 'CONSUMER');
 
   readonly getRequestSourceLabel = getRequestSourceLabel;
   readonly getConsumerInquiryDisplay = getConsumerInquiryDisplay;

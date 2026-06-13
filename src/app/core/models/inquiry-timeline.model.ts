@@ -1,6 +1,6 @@
 import { InquiryStatus } from './inquiry.model';
 
-export type TimelineEntryKind = 'MESSAGE' | 'MILESTONE' | 'STATUS' | 'DISTRIBUTOR';
+export type TimelineEntryKind = 'MESSAGE' | 'MILESTONE' | 'STATUS' | 'DISTRIBUTOR' | 'NOTICE';
 
 export type TimelineAttachmentMediaType = 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT';
 
@@ -27,6 +27,7 @@ export interface InquiryTimelineEntry {
   id: string;
   occurredAt: string;
   kind: TimelineEntryKind;
+  noticeCode?: string;
   title: string;
   detail?: string;
   message?: string;

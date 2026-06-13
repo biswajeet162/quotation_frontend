@@ -51,15 +51,15 @@ export function getConsumerInquiryDisplay(
     case 'SENT_TO_DISTRIBUTORS':
       return {
         phase: 'sent_to_distributors',
-        label: 'With distributors',
-        description: 'Your quotation request was sent to distributors.',
-        tone: 'info',
+        label: 'Checking our inventory',
+        description: 'We are checking product availability for your request.',
+        tone: 'warning',
       };
     case 'RESPONSES_RECEIVED':
       return {
         phase: 'responses_received',
-        label: 'Responses received',
-        description: 'Distributors have responded. Your quotation is being prepared.',
+        label: 'Preparing your quotation',
+        description: 'We are preparing your quotation.',
         tone: 'info',
       };
     case 'FINAL_SENT':

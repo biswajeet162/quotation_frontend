@@ -29,6 +29,12 @@ import {
   replyTargetLabel,
   shouldShowBubbleReply,
 } from '../../../shared/utils/chat-reply.util';
+import {
+  buildChatTimelineEntries,
+  isTimelineNotice,
+  noticeDisplayDetail,
+  noticeDisplayLabel,
+} from '../../../shared/utils/timeline-chat.util';
 
 type StatusFilter = 'all' | InquiryStatus | 'ACTION_REQUIRED';
 
@@ -142,8 +148,8 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
     return this.inquiries().find((q) => q.id === id) ?? null;
   });
 
-  readonly chatMessages = computed(() =>
-    this.timelineEntries().filter((entry) => entry.kind === 'MESSAGE'),
+  readonly chatTimelineEntries = computed(() =>
+    buildChatTimelineEntries(this.timelineEntries()),
   );
 
   readonly canSendMessage = computed(
@@ -153,6 +159,11 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   readonly canReplyTo = canReplyToTimelineEntry;
   readonly replyTargetLabel = replyTargetLabel;
   readonly shouldShowBubbleReply = shouldShowBubbleReply;
+  readonly isTimelineNotice = isTimelineNotice;
+  readonly noticeDisplayLabel = (entry: InquiryTimelineEntry) =>
+    noticeDisplayLabel(entry, 'ADMIN');
+  readonly noticeDisplayDetail = (entry: InquiryTimelineEntry) =>
+    noticeDisplayDetail(entry, 'ADMIN');
   readonly getRequestSourceLabel = getRequestSourceLabel;
 
   readonly messageFieldLabel = computed(() => 'Message to consumer');
@@ -354,7 +365,7 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
       next: (updated) => {
         this.replaceInquiry(updated);
         this.actionLoading.set(false);
-        this.markAwaitingConsumer.set(false);
+        this.loadTimeline({ silent: true, scrollToBottom: true });
       },
       error: (err) => {
         this.actionLoading.set(false);

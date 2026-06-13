@@ -814,3 +814,40 @@
   font-size: 0.85rem;
   margin-top: 0.75rem;
 }
+
+.chat-status-notice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  width: 100%;
+  margin: 0.4rem 0;
+  padding: 0.7rem 0.95rem;
+  border-radius: 12px;
+  background: rgba(254, 243, 199, 0.94);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(251, 191, 36, 0.65);
+  box-shadow: 0 3px 14px rgba(245, 158, 11, 0.18);
+  text-align: center;
+}
+
+.chat-status-notice-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #92400e;
+  letter-spacing: 0.01em;
+}
+
+.chat-status-notice-detail {
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: #a16207;
+  max-width: 36rem;
+}
+
+.chat-status-notice-time {
+  font-size: 0.65rem;
+  color: #b45309;
+  opacity: 0.82;
+}
