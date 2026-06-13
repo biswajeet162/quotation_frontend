@@ -481,16 +481,17 @@
 }
 
 .chat-row-consumer .chat-bubble {
-  background: #fff;
-  border: 1px solid #cbd5e1;
+  background: #0f766e;
+  border: none;
   border-bottom-left-radius: 4px;
-  color: #0f172a;
+  color: #fff;
 }
 
 .chat-row-admin .chat-bubble {
-  background: #0f766e;
+  background: #fff;
+  border: 1px solid #cbd5e1;
   border-bottom-right-radius: 4px;
-  color: #fff;
+  color: #0f172a;
 }
 
 .chat-text {
@@ -600,8 +601,12 @@
   opacity: 0.65;
 }
 
-.chat-row-admin .chat-bubble:has(app-chat-audio-player) .chat-bubble-footer .chat-time {
+.chat-row-consumer .chat-bubble:has(app-chat-audio-player) .chat-bubble-footer .chat-time {
   color: rgba(255, 255, 255, 0.75);
+}
+
+.chat-row-admin .chat-bubble:has(app-chat-audio-player) .chat-bubble-footer .chat-time {
+  color: inherit;
 }
 
 .chat-time {
@@ -675,9 +680,14 @@
   cursor: pointer;
 }
 
-.chat-row-admin .chat-quote {
+.chat-row-consumer .chat-quote {
   border-left-color: rgba(255, 255, 255, 0.85);
   background: rgba(255, 255, 255, 0.12);
+}
+
+.chat-row-admin .chat-quote {
+  border-left-color: #0f766e;
+  background: rgba(15, 118, 110, 0.08);
 }
 
 .chat-quote-author {
