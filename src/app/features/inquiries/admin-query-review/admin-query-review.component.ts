@@ -180,6 +180,14 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   readonly getInquiryListStep = getInquiryListStep;
   readonly getAdminInquiryListLabel = getAdminInquiryListLabel;
 
+  assignedDistributorCount(inquiry: Inquiry): number {
+    return inquiry.distributors?.length ?? 0;
+  }
+
+  distributorChatsHref(inquiryId: string): string {
+    return `/admin/queries/${inquiryId}/distributors`;
+  }
+
   readonly messageFieldLabel = computed(() => 'Message to consumer');
   readonly messagePlaceholder = computed(() => 'Type your message to the consumer…');
 

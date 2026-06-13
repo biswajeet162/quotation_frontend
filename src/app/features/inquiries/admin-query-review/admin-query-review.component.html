@@ -109,6 +109,30 @@
               }
 
               <h3>Products</h3>
+
+              @if (assignedDistributorCount(inquiry) > 0) {
+                <p class="distributor-sent-row">
+                  <span class="distributor-sent-count">
+                    Sent to {{ assignedDistributorCount(inquiry) }}
+                    distributor{{ assignedDistributorCount(inquiry) === 1 ? '' : 's' }}
+                  </span>
+                  <a
+                    class="external-link"
+                    [href]="distributorChatsHref(inquiry.id)"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Open distributor chats in a new tab"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3ZM5 5h6V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6h-2v6H5V5Z"
+                      />
+                    </svg>
+                    Open distributor chats
+                  </a>
+                </p>
+              }
+
               <ul class="product-lines">
                 @for (item of inquiry.items ?? []; track item.id ?? item.productId) {
                   <li>

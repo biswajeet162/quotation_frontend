@@ -103,6 +103,10 @@ export class InquiryService {
     return this.http.get<Inquiry[]>(this.baseUrl);
   }
 
+  getById(id: string): Observable<Inquiry> {
+    return this.http.get<Inquiry>(`${this.baseUrl}/${id}`);
+  }
+
   getByStatus(status: InquiryStatus): Observable<Inquiry[]> {
     return this.http.get<Inquiry[]>(`${this.baseUrl}/status/${status}`);
   }
@@ -170,5 +174,25 @@ export class InquiryService {
       formData.append('attachments', file, file.name);
     }
     return this.http.post<Inquiry>(`${this.baseUrl}/${id}/admin-messages`, formData);
+  }
+
+  getDistributorChannelTimeline(
+    inquiryId: string,
+    distributorCompanyId: string,
+  ): Observable<InquiryTimeline> {
+    return this.http.get<InquiryTimeline>(
+      `${this.baseUrl}/${inquiryId}/distributors/${distributorCompanyId}/timeline`,
+    );
+  }
+
+  postDistributorMessage(
+    inquiryId: string,
+    distributorCompanyId: string,
+    message: string,
+  ): Observable<Inquiry> {
+    return this.http.post<Inquiry>(
+      `${this.baseUrl}/${inquiryId}/distributors/${distributorCompanyId}/messages`,
+      { message },
+    );
   }
 }

@@ -1,0 +1,162 @@
+<section class="page-card distributor-chats-page">
+  <header class="page-header">
+    <div>
+      <h1>Distributor chats</h1>
+      @if (inquiry(); as inquiry) {
+        <p class="page-subtitle">
+          {{ inquiry.inquiryId }} · {{ inquiry.title }} · {{ inquiry.companyName }}
+        </p>
+      }
+      <p class="muted">Private admin ↔ distributor threads for this quotation. Consumer is not shown here.</p>
+    </div>
+    <button
+      type="button"
+      class="btn-secondary"
+      (click)="inquiry() && loadInquiry(inquiry()!.id)"
+      [disabled]="loading()"
+    >
+      Refresh
+    </button>
+  </header>
+
+  @if (loading()) {
+    <p class="state-message">Loading distributor chats…</p>
+  } @else if (errorMessage()) {
+    <div class="alert alert-error" role="alert">{{ errorMessage() }}</div>
+  } @else {
+    @if (inquiry(); as inquiry) {
+    @if (distributors().length === 0) {
+      <p class="state-message">This request has not been sent to any distributors yet.</p>
+    } @else {
+      <div class="review-layout">
+        <ul class="query-list distributor-list">
+          @for (distributor of distributors(); track distributor.companyId) {
+            <li>
+              <button
+                type="button"
+                class="query-item"
+                [class.selected]="selectedDistributorCompanyId() === distributor.companyId"
+                (click)="selectDistributor(distributor.companyId)"
+              >
+                <span class="query-title">{{ distributorLabel(distributor) }}</span>
+                <span class="query-meta">
+                  @if (distributor.responseReceived) {
+                    Responded
+                  } @else {
+                    Pending response
+                  }
+                </span>
+              </button>
+            </li>
+          }
+        </ul>
+
+        @if (selectedDistributor(); as distributor) {
+          <div class="query-detail">
+            <div class="detail-header">
+              <div>
+                <h2>{{ distributorLabel(distributor) }}</h2>
+                <p class="detail-meta">
+                  Admin ↔ distributor channel · {{ inquiry.inquiryId }}
+                </p>
+              </div>
+            </div>
+
+            <div class="detail-scroll">
+              <div class="detail-summary">
+                <h3>Products in this request</h3>
+                <ul class="product-lines">
+                  @for (item of inquiry.items ?? []; track item.id ?? item.productId) {
+                    <li>
+                      <span class="line-badge" [class.new-product]="item.lineSource === 'NEW_PRODUCT'">
+                        {{ lineSourceLabel(item.lineSource) }}
+                      </span>
+                      {{ item.productBrand }} {{ item.productName }} — qty {{ item.quantity }}
+                      @if (item.notes) {
+                        <span class="muted">({{ item.notes }})</span>
+                      }
+                    </li>
+                  }
+                </ul>
+              </div>
+
+              <section class="messages-section">
+                <div class="messages-divider">
+                  <span class="messages-divider-label">Messages</span>
+                </div>
+
+                @if (timelineLoading() && chatTimelineEntries().length === 0) {
+                  <p class="activity-empty">Loading messages…</p>
+                } @else if (timelineError() && chatTimelineEntries().length === 0) {
+                  <div class="alert alert-error" role="alert">{{ timelineError() }}</div>
+                } @else if (chatTimelineEntries().length === 0) {
+                  <p class="activity-empty">
+                    No messages yet with {{ distributorLabel(distributor) }}.
+                  </p>
+                } @else {
+                  <div class="chat-thread">
+                    @for (entry of chatTimelineEntries(); track entry.id) {
+                      @if (isTimelineNotice(entry)) {
+                        <div class="chat-status-notice">
+                          <span class="chat-status-notice-label">{{ noticeDisplayLabel(entry) }}</span>
+                          @if (noticeDisplayDetail(entry); as detail) {
+                            <span class="chat-status-notice-detail">{{ detail }}</span>
+                          }
+                          <span class="chat-status-notice-time">{{ formatChatTime(entry.occurredAt) }}</span>
+                        </div>
+                      } @else {
+                        <div
+                          class="chat-row"
+                          [class.chat-row-admin]="isAdminMessage(entry)"
+                          [class.chat-row-consumer]="isDistributorMessage(entry)"
+                        >
+                          <div class="chat-message-item">
+                            <div class="chat-bubble">
+                              @if (entry.message) {
+                                <p class="chat-text">{{ entry.message }}</p>
+                              }
+                              <div class="chat-bubble-footer">
+                                <span class="chat-time">{{ formatChatTime(entry.occurredAt) }}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      }
+                    }
+                  </div>
+                }
+              </section>
+            </div>
+
+            @if (canMessage(inquiry)) {
+              <div class="chat-compose-bar">
+                @if (messageError()) {
+                  <div class="alert alert-error" role="alert">{{ messageError() }}</div>
+                }
+                <textarea
+                  rows="2"
+                  placeholder="Message to {{ distributorLabel(distributor) }}…"
+                  [ngModel]="messageText()"
+                  (ngModelChange)="messageText.set($event)"
+                  (keydown.enter)="onComposeEnter($event)"
+                  [disabled]="messageLoading()"
+                ></textarea>
+                <button
+                  type="button"
+                  class="btn-primary compose-send"
+                  (click)="sendMessage()"
+                  [disabled]="messageLoading() || !messageText().trim()"
+                >
+                  {{ messageLoading() ? 'Sending…' : 'Send' }}
+                </button>
+              </div>
+            } @else {
+              <p class="closed-hint">This request is closed. New distributor messages cannot be sent.</p>
+            }
+          </div>
+        }
+      </div>
+    }
+    }
+  }
+</section>

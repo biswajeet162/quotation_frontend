@@ -281,6 +281,44 @@
   font-size: 0.95rem;
 }
 
+.distributor-sent-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 1rem;
+  margin: 0 0 0.65rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+}
+
+.distributor-sent-count {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #92400e;
+}
+
+.external-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #0f766e;
+  text-decoration: none;
+}
+
+.external-link:hover {
+  text-decoration: underline;
+}
+
+.external-link svg {
+  width: 1rem;
+  height: 1rem;
+  fill: currentColor;
+}
+
 .detail-note {
   margin: 0.35rem 0;
   font-size: 0.85rem;
