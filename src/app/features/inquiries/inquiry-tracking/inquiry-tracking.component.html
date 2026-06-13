@@ -129,17 +129,6 @@
                 <span class="messages-divider-label">Messages</span>
               </div>
 
-              <div class="messages-head">
-                <button
-                  type="button"
-                  class="btn-text"
-                  (click)="loadTimeline({ silent: true, preserveScroll: true })"
-                  [disabled]="timelineLoading() || timelineRefreshing()"
-                >
-                  {{ timelineRefreshing() ? 'Refreshing…' : 'Refresh' }}
-                </button>
-              </div>
-
               @if (timelineLoading() && chatTimelineEntries().length === 0) {
                 <p class="activity-empty">Loading messages…</p>
               } @else if (timelineError() && chatTimelineEntries().length === 0) {
@@ -359,6 +348,22 @@
                     multiple
                     (change)="onDocumentSelected($event)"
                   />
+
+                  <button
+                    type="button"
+                    class="btn-icon btn-icon-refresh"
+                    [class.is-refreshing]="timelineRefreshing()"
+                    (click)="refreshMessages()"
+                    [disabled]="timelineLoading() || timelineRefreshing() || messageLoading()"
+                    aria-label="Refresh messages"
+                    title="Refresh messages"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 8 8h-2a6 6 0 1 1-1.76-4.24l-2.35 2.35H16V4h-4.41l2.35 2.35A7.96 7.96 0 0 1 17.65 6.35Z"
+                      />
+                    </svg>
+                  </button>
 
                   <textarea
                     #messageInput

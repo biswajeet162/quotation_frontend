@@ -917,6 +917,16 @@
   cursor: not-allowed;
 }
 
+.btn-icon-refresh.is-refreshing svg {
+  animation: spin-refresh 0.8s linear infinite;
+}
+
+@keyframes spin-refresh {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .btn-icon-recording {
   color: #dc2626;
   animation: pulse-recording 1.2s ease-in-out infinite;

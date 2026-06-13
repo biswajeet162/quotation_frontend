@@ -655,10 +655,11 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   }
 
   goToDetailBottom(): void {
-    const scrollEl = this.detailScrollRef()?.nativeElement;
-    if (scrollEl) {
-      scrollEl.scrollTo({ top: scrollEl.scrollHeight, behavior: 'smooth' });
-    }
+    this.loadTimeline({ silent: true, scrollToBottom: true });
+  }
+
+  refreshMessages(): void {
+    this.loadTimeline({ silent: true, preserveScroll: true });
   }
 
   canDelete(inquiry: ConsumerInquiry): boolean {
