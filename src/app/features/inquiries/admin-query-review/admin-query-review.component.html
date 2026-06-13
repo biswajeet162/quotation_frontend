@@ -6,31 +6,39 @@
     </button>
   </header>
 
-  <div class="filter-tabs">
-    <button type="button" [class.active]="activeFilter() === 'pending'" (click)="setFilter('pending')">
-      Pending
-    </button>
-    <button
-      type="button"
-      [class.active]="activeFilter() === 'clarification'"
-      (click)="setFilter('clarification')"
-    >
-      Awaiting consumer
-    </button>
-    <button type="button" [class.active]="activeFilter() === 'sent'" (click)="setFilter('sent')">
-      Sent to distributors
-    </button>
-    <button type="button" [class.active]="activeFilter() === 'all'" (click)="setFilter('all')">
-      All
-    </button>
+  <div class="toolbar">
+    <div class="search-field">
+      <label for="admin-inquiry-search">Search</label>
+      <input
+        id="admin-inquiry-search"
+        type="search"
+        placeholder="Reference, title, company, product, notes…"
+        [ngModel]="searchQuery()"
+        (ngModelChange)="onSearchChange($event)"
+      />
+    </div>
+    <div class="status-field">
+      <label for="admin-status-filter">Status</label>
+      <select
+        id="admin-status-filter"
+        [ngModel]="statusFilter()"
+        (ngModelChange)="onStatusFilterChange($event)"
+      >
+        @for (opt of statusOptions; track opt.value) {
+          <option [value]="opt.value">{{ opt.label }}</option>
+        }
+      </select>
+    </div>
   </div>
 
   @if (loading()) {
     <p class="state-message">Loading queries…</p>
   } @else if (errorMessage()) {
     <div class="alert alert-error" role="alert">{{ errorMessage() }}</div>
+  } @else if (inquiries().length === 0) {
+    <p class="state-message">No consumer queries yet.</p>
   } @else if (filteredInquiries().length === 0) {
-    <p class="state-message">No queries in this filter.</p>
+    <p class="state-message">No queries match your search or status filter.</p>
   } @else {
     <div class="review-layout">
       <ul class="query-list">

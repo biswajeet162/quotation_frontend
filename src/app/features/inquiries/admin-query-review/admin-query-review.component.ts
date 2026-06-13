@@ -9,7 +9,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Inquiry } from '../../../core/models/inquiry.model';
+import { Inquiry, InquiryStatus } from '../../../core/models/inquiry.model';
 import {
   InquiryTimelineAttachment,
   InquiryTimelineEntry,
@@ -30,7 +30,7 @@ import {
   shouldShowBubbleReply,
 } from '../../../shared/utils/chat-reply.util';
 
-type AdminFilter = 'all' | 'pending' | 'clarification' | 'sent';
+type StatusFilter = 'all' | InquiryStatus | 'ACTION_REQUIRED';
 
 interface PendingAttachment {
   id: string;
@@ -51,7 +51,8 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
   readonly inquiries = signal<Inquiry[]>([]);
-  readonly activeFilter = signal<AdminFilter>('pending');
+  readonly searchQuery = signal('');
+  readonly statusFilter = signal<StatusFilter>('all');
   readonly selectedId = signal<string | null>(null);
   readonly actionLoading = signal(false);
   readonly actionError = signal<string | null>(null);
@@ -86,20 +87,51 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   private recordingMimeType = 'audio/webm';
   private readonly recordingBarCount = 24;
 
-  readonly filteredInquiries = computed(() => {
-    const list = this.inquiries();
-    const filter = this.activeFilter();
+  readonly statusOptions: { value: StatusFilter; label: string }[] = [
+    { value: 'all', label: 'All statuses' },
+    { value: 'NEW', label: 'New / submitted' },
+    { value: 'ACTION_REQUIRED', label: 'Action required' },
+    { value: 'SENT_TO_DISTRIBUTORS', label: 'With distributors' },
+    { value: 'RESPONSES_RECEIVED', label: 'Responses received' },
+    { value: 'FINAL_SENT', label: 'Quotation ready' },
+    { value: 'CLOSED', label: 'Closed' },
+  ];
 
-    switch (filter) {
-      case 'pending':
-        return list.filter((q) => q.status === 'NEW' && !q.needsClarification);
-      case 'clarification':
-        return list.filter((q) => q.needsClarification);
-      case 'sent':
-        return list.filter((q) => q.status === 'SENT_TO_DISTRIBUTORS' || q.status === 'RESPONSES_RECEIVED');
-      default:
-        return list;
-    }
+  readonly filteredInquiries = computed(() => {
+    const query = this.searchQuery().trim().toLowerCase();
+    const status = this.statusFilter();
+
+    return this.inquiries().filter((inquiry) => {
+      if (status === 'ACTION_REQUIRED') {
+        if (!inquiry.needsClarification) {
+          return false;
+        }
+      } else if (status !== 'all' && inquiry.status !== status) {
+        return false;
+      }
+
+      if (!query) {
+        return true;
+      }
+
+      const haystack = [
+        inquiry.inquiryId,
+        inquiry.title,
+        inquiry.companyName,
+        inquiry.description,
+        inquiry.searchTerm,
+        ...(inquiry.items ?? []).flatMap((item) => [
+          item.productBrand,
+          item.productName,
+          item.notes,
+        ]),
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      return haystack.includes(query);
+    });
   });
 
   readonly selectedInquiry = computed(() => {
@@ -152,10 +184,8 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
         const stillVisible =
           current != null && this.filteredInquiries().some((q) => q.id === current);
         if (!stillVisible) {
-          const first = this.filteredInquiries()[0];
-          this.selectedId.set(first?.id ?? null);
-        }
-        if (this.selectedId()) {
+          this.syncSelection();
+        } else if (this.selectedId()) {
           this.loadTimeline();
         }
       },
@@ -166,12 +196,30 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
     });
   }
 
-  setFilter(filter: AdminFilter): void {
-    this.activeFilter.set(filter);
-    const first = this.filteredInquiries()[0];
-    this.selectedId.set(first?.id ?? null);
+  onSearchChange(value: string): void {
+    this.searchQuery.set(value);
+    this.syncSelection();
+  }
+
+  onStatusFilterChange(value: string): void {
+    this.statusFilter.set(value as StatusFilter);
+    this.syncSelection();
+  }
+
+  private syncSelection(): void {
+    const visible = this.filteredInquiries();
+    const current = this.selectedId();
+    if (current != null && visible.some((q) => q.id === current)) {
+      return;
+    }
+    this.clearPendingAttachments();
+    this.selectedId.set(visible[0]?.id ?? null);
     if (this.selectedId()) {
+      const inquiry = this.inquiries().find((q) => q.id === this.selectedId());
+      this.markAwaitingConsumer.set(inquiry?.status === 'NEW');
       this.loadTimeline();
+    } else {
+      this.timelineEntries.set([]);
     }
   }
 
