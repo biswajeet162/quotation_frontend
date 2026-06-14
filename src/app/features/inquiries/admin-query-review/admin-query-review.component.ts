@@ -9,6 +9,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { DistributorOption, Inquiry, InquiryStatus } from '../../../core/models/inquiry.model';
 import {
   InquiryTimelineAttachment,
@@ -57,6 +58,7 @@ interface PendingAttachment {
 })
 export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   private readonly inquiryService = inject(InquiryService);
+  private readonly router = inject(Router);
 
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
@@ -184,8 +186,11 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
     return inquiry.distributors?.length ?? 0;
   }
 
-  distributorChatsHref(inquiryId: string): string {
-    return `/admin/queries/${inquiryId}/distributors`;
+  openDistributorChats(inquiryId: string): void {
+    const url = this.router.serializeUrl(
+      this.router.createUrlTree(['/admin/queries', inquiryId, 'distributors']),
+    );
+    window.open(url, '_blank', 'noopener,noreferrer');
   }
 
   readonly messageFieldLabel = computed(() => 'Message to consumer');
