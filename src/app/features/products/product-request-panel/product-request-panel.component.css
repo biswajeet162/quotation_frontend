@@ -121,6 +121,18 @@
   border-radius: 10px;
 }
 
+.success-email-note {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+  color: #0f766e;
+}
+
+.success-email-warning {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+  color: #b45309;
+}
+
 .btn-text {
   border: none;
   background: none;

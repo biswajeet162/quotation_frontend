@@ -23,6 +23,8 @@ export interface InquiryItem {
 export interface ConsumerInquiryCreated {
   inquiryId: string;
   status: InquiryStatus;
+  acknowledgementEmailSent?: boolean;
+  acknowledgementEmailMessage?: string;
 }
 
 /** Consumer-safe inquiry view for GET /inquiries/my and related endpoints. */

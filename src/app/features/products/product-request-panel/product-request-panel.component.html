@@ -4,6 +4,11 @@
       <p>
         Quotation <strong>{{ inquiry.inquiryId }}</strong> submitted.
       </p>
+      @if (inquiry.acknowledgementEmailSent) {
+        <p class="success-email-note">{{ inquiry.acknowledgementEmailMessage }}</p>
+      } @else if (inquiry.acknowledgementEmailMessage) {
+        <p class="success-email-warning" role="alert">{{ inquiry.acknowledgementEmailMessage }}</p>
+      }
       <button type="button" class="btn-text" (click)="submitAnother()">Create another quotation</button>
     </div>
   }

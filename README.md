@@ -4,7 +4,7 @@ This project was generated using [Angular CLI](https://github.com/angular/cangul
 
 ##d Development serverd
 
-To start a local development server, run:tds
+To start a local development servefr, run:tds
 dd
 ```bashfc
 ng serve
