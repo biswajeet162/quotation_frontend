@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { STORAGE_KEYS } from '../../constants/storage.constants';
-import { AuthResponse, AuthUser, LoginRequest } from '../../models/auth.model';
+import { AuthResponse, AuthUser, LoginRequest, SignUpRequest, SignUpResponse } from '../../models/auth.model';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -17,15 +17,33 @@ export class AuthService {
 
   login(credentials: LoginRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${environment.apiUrl}/auth/login`, credentials).pipe(
-      tap((response) => this.persistSession(response)),
+      tap((response) => this.applyAuthResponse(response)),
     );
   }
 
+  signUp(request: SignUpRequest): Observable<SignUpResponse> {
+    return this.http.post<SignUpResponse>(`${environment.apiUrl}/auth/signup`, request);
+  }
+
+  verifyEmail(token: string): Observable<AuthResponse> {
+    return this.http
+      .get<AuthResponse>(`${environment.apiUrl}/auth/verify-email`, { params: { token } })
+      .pipe(tap((response) => this.applyAuthResponse(response)));
+  }
+
+  applyAuthResponse(response: AuthResponse): void {
+    this.persistSession(response);
+  }
+
   logout(): void {
+    this.clearSession();
+    void this.router.navigate(['/login']);
+  }
+
+  clearSession(): void {
     localStorage.removeItem(STORAGE_KEYS.token);
     localStorage.removeItem(STORAGE_KEYS.user);
     this.currentUserSignal.set(null);
-    void this.router.navigate(['/login']);
   }
 
   getToken(): string | null {

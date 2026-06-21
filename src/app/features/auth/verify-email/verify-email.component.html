@@ -1,0 +1,20 @@
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <h1>Email verification</h1>
+    </div>
+
+    @if (loading()) {
+      <p class="status-text">Verifying your email…</p>
+    } @else if (errorMessage()) {
+      <div class="alert alert-error" role="alert">
+        {{ errorMessage() }}
+      </div>
+      <p class="auth-footer">
+        <a routerLink="/signup">Sign up again</a>
+        ·
+        <a routerLink="/login">Sign in</a>
+      </p>
+    }
+  </div>
+</div>

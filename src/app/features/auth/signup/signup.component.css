@@ -1,4 +1,4 @@
-.login-page {
+.auth-page {
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -7,7 +7,7 @@
   background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f766e 100%);
 }
 
-.login-card {
+.auth-card {
   width: 100%;
   max-width: 420px;
   background: #ffffff;
@@ -16,19 +16,19 @@
   box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
 }
 
-.login-brand h1 {
+.auth-brand h1 {
   margin: 0 0 0.5rem;
   font-size: 1.5rem;
   color: #0f172a;
 }
 
-.login-brand p {
+.auth-brand p {
   margin: 0 0 1.5rem;
   color: #64748b;
   font-size: 0.9rem;
 }
 
-.login-form {
+.auth-form {
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -76,6 +76,12 @@
   border: 1px solid #fecaca;
 }
 
+.alert-success {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
 .btn-primary {
   margin-top: 0.5rem;
   padding: 0.75rem 1rem;
@@ -97,23 +103,48 @@
   cursor: not-allowed;
 }
 
-.login-hint {
-  margin: 1.25rem 0 0;
-  text-align: center;
-  font-size: 0.8rem;
-  color: #94a3b8;
+.btn-secondary {
+  margin-top: 1rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #334155;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
 }
 
-.login-hint a {
+.btn-secondary:hover {
+  background: #f8fafc;
+}
+
+.auth-footer {
+  margin: 1.25rem 0 0;
+  text-align: center;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.auth-footer a {
   color: #0f766e;
   font-weight: 600;
   text-decoration: none;
 }
 
-.login-hint a:hover {
+.auth-footer a:hover {
   text-decoration: underline;
 }
 
-.demo-hint {
-  margin-top: 0.5rem;
+.success-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.success-detail {
+  margin: 0.75rem 0 0;
+  font-size: 0.9rem;
+  color: #475569;
+  line-height: 1.5;
 }

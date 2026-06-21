@@ -11,6 +11,17 @@ export const routes: Routes = [
     canActivate: [guestGuard],
   },
   {
+    path: 'signup',
+    loadComponent: () =>
+      import('./features/auth/signup/signup.component').then((m) => m.SignupComponent),
+    canActivate: [guestGuard],
+  },
+  {
+    path: 'verify-email',
+    loadComponent: () =>
+      import('./features/auth/verify-email/verify-email.component').then((m) => m.VerifyEmailComponent),
+  },
+  {
     path: '',
     loadComponent: () =>
       import('./layout/main-layout/main-layout.component').then((m) => m.MainLayoutComponent),
