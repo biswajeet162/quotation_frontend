@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { STORAGE_KEYS } from '../../constants/storage.constants';
-import { AuthResponse, AuthUser, ForgotPasswordRequest, GoogleSignUpRequest, LoginRequest, MessageResponse, ResetPasswordRequest, SignUpRequest, SignUpResponse } from '../../models/auth.model';
+import { AuthResponse, AuthUser, ForgotPasswordRequest, GoogleSignUpRequest, LoginRequest, MessageResponse, PublicAuthConfig, ResetPasswordRequest, SignUpRequest, SignUpResponse } from '../../models/auth.model';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -14,6 +14,10 @@ export class AuthService {
   private readonly currentUserSignal = signal<AuthUser | null>(this.loadUserFromStorage());
 
   readonly currentUser = this.currentUserSignal.asReadonly();
+
+  getPublicConfig(): Observable<PublicAuthConfig> {
+    return this.http.get<PublicAuthConfig>(`${environment.apiUrl}/auth/config`);
+  }
 
   login(credentials: LoginRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${environment.apiUrl}/auth/login`, credentials).pipe(

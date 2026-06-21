@@ -1,14 +1,9 @@
 import { Injectable } from '@angular/core';
-import { environment } from '../../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class GoogleSignInService {
   private scriptLoaded = false;
   private loadPromise: Promise<void> | null = null;
-
-  isConfigured(): boolean {
-    return !!environment.googleClientId?.trim();
-  }
 
   loadScript(): Promise<void> {
     if (this.scriptLoaded) {
@@ -43,16 +38,17 @@ export class GoogleSignInService {
 
   async renderSignUpButton(
     container: HTMLElement,
+    clientId: string,
     onCredential: (credential: string) => void,
   ): Promise<void> {
-    if (!this.isConfigured()) {
+    if (!clientId.trim()) {
       return;
     }
 
     await this.loadScript();
 
     google.accounts.id.initialize({
-      client_id: environment.googleClientId,
+      client_id: clientId,
       callback: (response) => onCredential(response.credential),
     });
 

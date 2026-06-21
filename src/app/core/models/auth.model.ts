@@ -28,6 +28,11 @@ export interface MessageResponse {
   message: string;
 }
 
+export interface PublicAuthConfig {
+  googleClientId: string | null;
+  googleSignUpEnabled: boolean;
+}
+
 export interface GoogleSignUpRequest {
   idToken: string;
 }

@@ -1,6 +1,7 @@
-import { AfterViewInit, Component, ElementRef, inject, signal, ViewChild } from '@angular/core';
+import { AfterViewChecked, Component, ElementRef, inject, OnInit, signal, ViewChild } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { environment } from '../../../../environments/environment';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { GoogleSignInService } from '../../../core/services/auth/google-sign-in.service';
 
@@ -19,7 +20,7 @@ function passwordsMatchValidator(control: AbstractControl): ValidationErrors | n
   templateUrl: './signup.component.html',
   styleUrl: './signup.component.css',
 })
-export class SignupComponent implements AfterViewInit {
+export class SignupComponent implements OnInit, AfterViewChecked {
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
   private readonly googleSignIn = inject(GoogleSignInService);
@@ -31,7 +32,10 @@ export class SignupComponent implements AfterViewInit {
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
   readonly registeredEmail = signal<string | null>(null);
-  readonly googleSignInEnabled = signal(this.googleSignIn.isConfigured());
+  readonly googleConfigured = signal(false);
+
+  private googleClientId = '';
+  private googleButtonRendered = false;
 
   readonly form = this.fb.nonNullable.group(
     {
@@ -42,8 +46,27 @@ export class SignupComponent implements AfterViewInit {
     { validators: passwordsMatchValidator },
   );
 
-  ngAfterViewInit(): void {
-    void this.initGoogleSignUpButton();
+  ngOnInit(): void {
+    this.auth.getPublicConfig().subscribe({
+      next: (config) => {
+        this.applyGoogleClientId(config.googleClientId?.trim() || environment.googleClientId?.trim() || '');
+      },
+      error: () => {
+        this.applyGoogleClientId(environment.googleClientId?.trim() || '');
+      },
+    });
+  }
+
+  ngAfterViewChecked(): void {
+    if (this.googleConfigured() && !this.googleButtonRendered) {
+      void this.renderGoogleButton();
+    }
+  }
+
+  onGooglePlaceholderClick(): void {
+    this.errorMessage.set(
+      'Google sign-up is not configured yet. Add your Client ID to quotation_backend/src/main/resources/google-oauth.yaml — see GOOGLE_OAUTH_SETUP.md in the backend folder.',
+    );
   }
 
   onSubmit(): void {
@@ -70,18 +93,28 @@ export class SignupComponent implements AfterViewInit {
     void this.router.navigate(['/login']);
   }
 
-  private async initGoogleSignUpButton(): Promise<void> {
-    if (!this.googleSignIn.isConfigured() || !this.googleButtonHost) {
+  private applyGoogleClientId(clientId: string): void {
+    if (clientId) {
+      this.googleClientId = clientId;
+      this.googleConfigured.set(true);
+    }
+  }
+
+  private async renderGoogleButton(): Promise<void> {
+    if (this.googleButtonRendered || !this.googleClientId || !this.googleButtonHost) {
       return;
     }
 
     try {
-      await this.googleSignIn.renderSignUpButton(this.googleButtonHost.nativeElement, (credential) => {
-        this.onGoogleSignUp(credential);
-      });
+      await this.googleSignIn.renderSignUpButton(
+        this.googleButtonHost.nativeElement,
+        this.googleClientId,
+        (credential) => this.onGoogleSignUp(credential),
+      );
+      this.googleButtonRendered = true;
     } catch {
-      this.googleSignInEnabled.set(false);
-      this.errorMessage.set('Google Sign-In could not be loaded.');
+      this.googleConfigured.set(false);
+      this.errorMessage.set('Google Sign-In could not be loaded. Check GOOGLE_OAUTH_SETUP.md.');
     }
   }
 
