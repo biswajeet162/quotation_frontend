@@ -127,6 +127,14 @@
   color: #64748b;
 }
 
+.auth-footer p {
+  margin: 0;
+}
+
+.auth-footer p + p {
+  margin-top: 0.5rem;
+}
+
 .auth-footer a {
   color: #0f766e;
   font-weight: 600;

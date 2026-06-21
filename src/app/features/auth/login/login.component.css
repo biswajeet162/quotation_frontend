@@ -40,6 +40,24 @@
   gap: 0.35rem;
 }
 
+.field-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.field-link {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #0f766e;
+  text-decoration: none;
+}
+
+.field-link:hover {
+  text-decoration: underline;
+}
+
 .field label {
   font-size: 0.875rem;
   font-weight: 600;

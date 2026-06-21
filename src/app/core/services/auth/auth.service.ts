@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { STORAGE_KEYS } from '../../constants/storage.constants';
-import { AuthResponse, AuthUser, LoginRequest, SignUpRequest, SignUpResponse } from '../../models/auth.model';
+import { AuthResponse, AuthUser, ForgotPasswordRequest, LoginRequest, MessageResponse, ResetPasswordRequest, SignUpRequest, SignUpResponse } from '../../models/auth.model';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -29,6 +29,14 @@ export class AuthService {
     return this.http
       .get<AuthResponse>(`${environment.apiUrl}/auth/verify-email`, { params: { token } })
       .pipe(tap((response) => this.applyAuthResponse(response)));
+  }
+
+  forgotPassword(request: ForgotPasswordRequest): Observable<MessageResponse> {
+    return this.http.post<MessageResponse>(`${environment.apiUrl}/auth/forgot-password`, request);
+  }
+
+  resetPassword(request: ResetPasswordRequest): Observable<MessageResponse> {
+    return this.http.post<MessageResponse>(`${environment.apiUrl}/auth/reset-password`, request);
   }
 
   applyAuthResponse(response: AuthResponse): void {

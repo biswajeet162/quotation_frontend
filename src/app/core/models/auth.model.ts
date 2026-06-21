@@ -14,6 +14,20 @@ export interface SignUpResponse {
   email: string;
 }
 
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  password: string;
+  confirmPassword: string;
+}
+
+export interface MessageResponse {
+  message: string;
+}
+
 export interface AuthResponse {
   token: string;
   type: string;
