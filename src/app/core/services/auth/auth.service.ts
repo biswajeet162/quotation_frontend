@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { STORAGE_KEYS } from '../../constants/storage.constants';
-import { AuthResponse, AuthUser, ForgotPasswordRequest, LoginRequest, MessageResponse, ResetPasswordRequest, SignUpRequest, SignUpResponse } from '../../models/auth.model';
+import { AuthResponse, AuthUser, ForgotPasswordRequest, GoogleSignUpRequest, LoginRequest, MessageResponse, ResetPasswordRequest, SignUpRequest, SignUpResponse } from '../../models/auth.model';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -23,6 +23,12 @@ export class AuthService {
 
   signUp(request: SignUpRequest): Observable<SignUpResponse> {
     return this.http.post<SignUpResponse>(`${environment.apiUrl}/auth/signup`, request);
+  }
+
+  googleSignUp(request: GoogleSignUpRequest): Observable<AuthResponse> {
+    return this.http
+      .post<AuthResponse>(`${environment.apiUrl}/auth/google/signup`, request)
+      .pipe(tap((response) => this.applyAuthResponse(response)));
   }
 
   verifyEmail(token: string): Observable<AuthResponse> {

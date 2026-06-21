@@ -1,7 +1,8 @@
-import { Component, inject, signal } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, inject, signal, ViewChild } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth/auth.service';
+import { GoogleSignInService } from '../../../core/services/auth/google-sign-in.service';
 
 function passwordsMatchValidator(control: AbstractControl): ValidationErrors | null {
   const password = control.get('password')?.value;
@@ -18,15 +19,19 @@ function passwordsMatchValidator(control: AbstractControl): ValidationErrors | n
   templateUrl: './signup.component.html',
   styleUrl: './signup.component.css',
 })
-export class SignupComponent {
+export class SignupComponent implements AfterViewInit {
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
+  private readonly googleSignIn = inject(GoogleSignInService);
   private readonly router = inject(Router);
+
+  @ViewChild('googleButtonHost') googleButtonHost?: ElementRef<HTMLDivElement>;
 
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
   readonly registeredEmail = signal<string | null>(null);
+  readonly googleSignInEnabled = signal(this.googleSignIn.isConfigured());
 
   readonly form = this.fb.nonNullable.group(
     {
@@ -36,6 +41,10 @@ export class SignupComponent {
     },
     { validators: passwordsMatchValidator },
   );
+
+  ngAfterViewInit(): void {
+    void this.initGoogleSignUpButton();
+  }
 
   onSubmit(): void {
     if (this.form.invalid) {
@@ -53,22 +62,53 @@ export class SignupComponent {
         this.registeredEmail.set(response.email);
         this.successMessage.set(response.message);
       },
-      error: (err) => {
-        this.loading.set(false);
-        const message = err?.error?.message;
-        if (typeof message === 'string') {
-          this.errorMessage.set(message);
-        } else if (typeof message === 'object' && message !== null) {
-          const firstError = Object.values(message)[0];
-          this.errorMessage.set(typeof firstError === 'string' ? firstError : 'Signup failed. Please try again.');
-        } else {
-          this.errorMessage.set('Signup failed. Please try again.');
-        }
-      },
+      error: (err) => this.handleError(err, 'Signup failed. Please try again.'),
     });
   }
 
   goToLogin(): void {
     void this.router.navigate(['/login']);
+  }
+
+  private async initGoogleSignUpButton(): Promise<void> {
+    if (!this.googleSignIn.isConfigured() || !this.googleButtonHost) {
+      return;
+    }
+
+    try {
+      await this.googleSignIn.renderSignUpButton(this.googleButtonHost.nativeElement, (credential) => {
+        this.onGoogleSignUp(credential);
+      });
+    } catch {
+      this.googleSignInEnabled.set(false);
+      this.errorMessage.set('Google Sign-In could not be loaded.');
+    }
+  }
+
+  private onGoogleSignUp(credential: string): void {
+    this.loading.set(true);
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
+
+    this.auth.googleSignUp({ idToken: credential }).subscribe({
+      next: () => {
+        this.loading.set(false);
+        void this.router.navigate(['/dashboard']);
+      },
+      error: (err) => this.handleError(err, 'Google signup failed. Please try again.'),
+    });
+  }
+
+  private handleError(err: { error?: { message?: string | Record<string, string> } }, fallback: string): void {
+    this.loading.set(false);
+    const message = err?.error?.message;
+    if (typeof message === 'string') {
+      this.errorMessage.set(message);
+    } else if (typeof message === 'object' && message !== null) {
+      const firstError = Object.values(message)[0];
+      this.errorMessage.set(typeof firstError === 'string' ? firstError : fallback);
+    } else {
+      this.errorMessage.set(fallback);
+    }
   }
 }

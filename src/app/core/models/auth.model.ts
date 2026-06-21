@@ -28,6 +28,10 @@ export interface MessageResponse {
   message: string;
 }
 
+export interface GoogleSignUpRequest {
+  idToken: string;
+}
+
 export interface AuthResponse {
   token: string;
   type: string;

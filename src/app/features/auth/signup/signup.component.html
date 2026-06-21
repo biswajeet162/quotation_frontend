@@ -19,6 +19,16 @@
         <button type="button" class="btn-secondary" (click)="goToLogin()">Back to sign in</button>
       </div>
     } @else {
+      @if (googleSignInEnabled()) {
+        <div class="google-signup">
+          <div #googleButtonHost class="google-button-host"></div>
+        </div>
+
+        <div class="auth-divider">
+          <span>or sign up with email</span>
+        </div>
+      }
+
       <form [formGroup]="form" (ngSubmit)="onSubmit()" class="auth-form">
         @if (errorMessage()) {
           <div class="alert alert-error" role="alert">
