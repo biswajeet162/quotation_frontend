@@ -163,6 +163,10 @@
   margin-bottom: 0.5rem;
 }
 
+.google-signup--hidden {
+  display: none;
+}
+
 .google-button-host {
   width: 100%;
   min-height: 44px;

@@ -5,6 +5,16 @@
       <p>Sign in to manage inquiries and quotations</p>
     </div>
 
+    <div class="google-signin" [class.google-signin--hidden]="!googleSignInEnabled()">
+      <div #googleButtonHost class="google-button-host"></div>
+    </div>
+
+    @if (googleSignInEnabled()) {
+      <div class="auth-divider">
+        <span>or sign in with email</span>
+      </div>
+    }
+
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="login-form">
       @if (errorMessage()) {
         <div class="alert alert-error" role="alert">

@@ -31,7 +31,7 @@ export class SignupComponent implements AfterViewInit {
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
   readonly registeredEmail = signal<string | null>(null);
-  readonly googleSignInEnabled = signal(this.googleSignIn.isConfigured());
+  readonly googleSignInEnabled = signal(false);
 
   readonly form = this.fb.nonNullable.group(
     {
@@ -71,14 +71,19 @@ export class SignupComponent implements AfterViewInit {
   }
 
   private async initGoogleSignUpButton(): Promise<void> {
-    if (!this.googleSignIn.isConfigured() || !this.googleButtonHost) {
+    if (!this.googleButtonHost) {
       return;
     }
 
     try {
-      await this.googleSignIn.renderSignUpButton(this.googleButtonHost.nativeElement, (credential) => {
-        this.onGoogleSignUp(credential);
-      });
+      const rendered = await this.googleSignIn.renderButton(
+        this.googleButtonHost.nativeElement,
+        'signup',
+        (credential) => {
+          this.onGoogleSignUp(credential);
+        },
+      );
+      this.googleSignInEnabled.set(rendered);
     } catch {
       this.googleSignInEnabled.set(false);
       this.errorMessage.set('Google Sign-In could not be loaded.');

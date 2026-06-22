@@ -32,6 +32,10 @@ export interface GoogleSignUpRequest {
   idToken: string;
 }
 
+export interface GoogleConfigResponse {
+  clientId: string;
+}
+
 export interface AuthResponse {
   token: string;
   type: string;

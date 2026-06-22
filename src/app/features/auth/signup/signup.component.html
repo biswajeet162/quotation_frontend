@@ -19,11 +19,11 @@
         <button type="button" class="btn-secondary" (click)="goToLogin()">Back to sign in</button>
       </div>
     } @else {
-      @if (googleSignInEnabled()) {
-        <div class="google-signup">
-          <div #googleButtonHost class="google-button-host"></div>
-        </div>
+      <div class="google-signup" [class.google-signup--hidden]="!googleSignInEnabled()">
+        <div #googleButtonHost class="google-button-host"></div>
+      </div>
 
+      @if (googleSignInEnabled()) {
         <div class="auth-divider">
           <span>or sign up with email</span>
         </div>

@@ -31,6 +31,12 @@ export class AuthService {
       .pipe(tap((response) => this.applyAuthResponse(response)));
   }
 
+  googleLogin(request: GoogleSignUpRequest): Observable<AuthResponse> {
+    return this.http
+      .post<AuthResponse>(`${environment.apiUrl}/auth/google/login`, request)
+      .pipe(tap((response) => this.applyAuthResponse(response)));
+  }
+
   verifyEmail(token: string): Observable<AuthResponse> {
     return this.http
       .get<AuthResponse>(`${environment.apiUrl}/auth/verify-email`, { params: { token } })

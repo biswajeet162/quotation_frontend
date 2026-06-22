@@ -1,14 +1,17 @@
 # QuotationFrontendsded
 
-This project was generated using [Angular CLI](https://github.com/angular/cangular-cli) version 19.1.7.f
+449123649947-i47ru9bf8ptrr2gepl87v32h98aj871v.apps.googleusercontent.com
 
-##d Development serverd
+This project was generated using [Angular CLI](https://github.com/angular/cangular-cli) version 19.1.7.fss
+
+##d Development serverds
 
 To start a local development servefr, run:tds
 dd
 ```bashfc
 ng serve
 ```
+
 
 Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
 sd
