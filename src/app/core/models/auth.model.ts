@@ -44,6 +44,7 @@ export interface AuthResponse {
   role: string;
   companyId: string;
   companyName: string;
+  message?: string;
 }
 
 export interface AuthUser {

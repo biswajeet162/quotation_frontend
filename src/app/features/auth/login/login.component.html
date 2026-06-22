@@ -15,12 +15,19 @@
       </div>
     }
 
+    @if (errorMessage()) {
+      <div class="alert alert-error" role="alert">
+        {{ errorMessage() }}
+      </div>
+    }
+
+    @if (infoMessage()) {
+      <div class="alert alert-info" role="status">
+        {{ infoMessage() }}
+      </div>
+    }
+
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="login-form">
-      @if (errorMessage()) {
-        <div class="alert alert-error" role="alert">
-          {{ errorMessage() }}
-        </div>
-      }
 
       <div class="field">
         <label for="email">Email</label>

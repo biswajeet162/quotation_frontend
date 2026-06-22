@@ -22,6 +22,7 @@ export class LoginComponent implements AfterViewInit {
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly googleSignInEnabled = signal(false);
+  readonly infoMessage = signal<string | null>(null);
 
   readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
@@ -74,8 +75,13 @@ export class LoginComponent implements AfterViewInit {
     this.errorMessage.set(null);
 
     this.auth.googleLogin({ idToken: credential }).subscribe({
-      next: () => {
+      next: (response) => {
         this.loading.set(false);
+        if (response.message) {
+          this.infoMessage.set(response.message);
+          setTimeout(() => void this.router.navigate(['/dashboard']), 2000);
+          return;
+        }
         void this.router.navigate(['/dashboard']);
       },
       error: (err: HttpErrorResponse) => this.handleError(err, 'Google sign-in failed. Please try again.'),
