@@ -1,0 +1,400 @@
+<section class="page-card">
+  <header class="page-header">
+    <div>
+      <h1>Users</h1>
+      <p class="muted">Manage consumer, admin, and distributor accounts across the portal.</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn-primary" (click)="openCreate()">
+        Add {{ roleLabel(activeRole()).toLowerCase() }}
+      </button>
+      <button type="button" class="btn-secondary" (click)="load()" [disabled]="loading()">
+        Refresh
+      </button>
+    </div>
+  </header>
+
+  <nav class="role-tabs" aria-label="User role tabs">
+    @for (tab of roleTabs; track tab.role) {
+      <button
+        type="button"
+        class="role-tab"
+        [class.active]="activeRole() === tab.role"
+        (click)="setRoleTab(tab.role)"
+      >
+        {{ tab.label }}
+      </button>
+    }
+  </nav>
+
+  <div class="toolbar">
+    <div class="search-field">
+      <label for="user-search">Search {{ activeTabLabel().toLowerCase() }}</label>
+      <input
+        id="user-search"
+        type="search"
+        placeholder="Name, email, company…"
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)"
+      />
+    </div>
+    <label class="toggle-field">
+      <input
+        type="checkbox"
+        [ngModel]="showInactive()"
+        (ngModelChange)="showInactive.set($event)"
+      />
+      Show deleted
+    </label>
+  </div>
+
+  @if (loading()) {
+    <p class="state-message">Loading {{ activeTabLabel().toLowerCase() }}…</p>
+  } @else if (errorMessage()) {
+    <div class="alert-error" role="alert">{{ errorMessage() }}</div>
+  } @else if (filteredUsers().length === 0) {
+    <p class="state-message">
+      @if (users().length === 0) {
+        No {{ activeTabLabel().toLowerCase() }} yet.
+      } @else {
+        No users match your search.
+      }
+    </p>
+  } @else {
+    <div class="users-layout">
+      <div class="table-wrap">
+        <table class="users-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Company</th>
+              <th>Status</th>
+              <th>Verified</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (user of filteredUsers(); track user.id) {
+              <tr
+                class="user-row"
+                [class.selected]="selectedId() === user.id"
+                [class.inactive-row]="user.isActive === false"
+                (click)="selectUser(user)"
+              >
+                <td>{{ user.name }}</td>
+                <td>{{ user.email }}</td>
+                <td>{{ user.companyName || '—' }}</td>
+                <td>
+                  <span class="status-chip" [class.inactive]="user.isActive === false">
+                    {{ user.isActive === false ? 'Deleted' : 'Active' }}
+                  </span>
+                </td>
+                <td>{{ user.emailVerified ? 'Yes' : 'No' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <aside class="user-detail" aria-live="polite">
+        @if (!selectedId()) {
+          <div class="detail-empty">
+            <p>Select a user to view full details.</p>
+          </div>
+        } @else if (detailLoading()) {
+          <p class="state-message">Loading details…</p>
+        } @else {
+          @if (selectedDetail(); as detail) {
+            <div class="detail-header">
+            <div>
+              <h2>{{ detail.name }}</h2>
+              <p class="detail-meta">{{ detail.email }} · {{ roleLabel(detail.role) }}</p>
+            </div>
+            <div class="detail-actions">
+              <button type="button" class="btn-secondary" (click)="openEdit()">Edit</button>
+              @if (detail.isActive !== false) {
+                <button
+                  type="button"
+                  class="btn-danger"
+                  [disabled]="deleting()"
+                  (click)="deleteSelected()"
+                >
+                  {{ deleting() ? 'Deleting…' : 'Delete' }}
+                </button>
+              }
+            </div>
+          </div>
+
+          @if (actionError()) {
+            <div class="alert-error" role="alert">{{ actionError() }}</div>
+          }
+
+          <div class="detail-section">
+            <h3>Account</h3>
+            <dl class="detail-grid">
+              <div>
+                <dt>Status</dt>
+                <dd>{{ detail.isActive === false ? 'Deleted' : 'Active' }}</dd>
+              </div>
+              <div>
+                <dt>Email verified</dt>
+                <dd>{{ detail.emailVerified ? 'Yes' : 'No' }}</dd>
+              </div>
+              <div>
+                <dt>Google linked</dt>
+                <dd>{{ detail.hasGoogleAccount ? 'Yes' : 'No' }}</dd>
+              </div>
+              <div>
+                <dt>Created</dt>
+                <dd>{{ formatDate(detail.createdAt) }}</dd>
+              </div>
+              <div>
+                <dt>Updated</dt>
+                <dd>{{ formatDate(detail.updatedAt) }}</dd>
+              </div>
+            </dl>
+          </div>
+
+          @if (detail.company; as company) {
+            <div class="detail-section">
+              <h3>Company</h3>
+              <dl class="detail-grid">
+                <div>
+                  <dt>Name</dt>
+                  <dd>{{ company.name }}</dd>
+                </div>
+                <div>
+                  <dt>Type</dt>
+                  <dd>{{ company.companyType || '—' }}</dd>
+                </div>
+                <div>
+                  <dt>Email</dt>
+                  <dd>{{ company.email }}</dd>
+                </div>
+                <div>
+                  <dt>Phone</dt>
+                  <dd>{{ company.phone }}</dd>
+                </div>
+                <div>
+                  <dt>GST</dt>
+                  <dd>{{ company.gstNumber || '—' }}</dd>
+                </div>
+                <div>
+                  <dt>PAN</dt>
+                  <dd>{{ company.panNumber || '—' }}</dd>
+                </div>
+                <div class="full-width">
+                  <dt>Address</dt>
+                  <dd>
+                    @if (company.address || company.city || company.state || company.country) {
+                      {{ company.address || '' }}
+                      @if (company.city) {
+                        {{ company.address ? ', ' : '' }}{{ company.city }}
+                      }
+                      @if (company.state) {
+                        , {{ company.state }}
+                      }
+                      @if (company.country) {
+                        , {{ company.country }}
+                      }
+                    } @else {
+                      —
+                    }
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          }
+          }
+        }
+      </aside>
+    </div>
+  }
+</section>
+
+@if (formOpen()) {
+  <div class="modal-backdrop" (click)="closeForm()">
+    <div class="modal-panel" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2>
+          @if (formMode() === 'create') {
+            Add {{ roleLabel(activeRole()).toLowerCase() }}
+          } @else {
+            Edit user
+          }
+        </h2>
+        <button type="button" class="modal-close" aria-label="Close" (click)="closeForm()">×</button>
+      </header>
+
+      <form class="modal-form" (ngSubmit)="saveForm()">
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="user-name">Full name</label>
+            <input
+              id="user-name"
+              type="text"
+              required
+              [ngModel]="form().name"
+              (ngModelChange)="updateFormField('name', $event)"
+              name="name"
+            />
+          </div>
+          <div class="form-field">
+            <label for="user-email">Email</label>
+            <input
+              id="user-email"
+              type="email"
+              required
+              [ngModel]="form().email"
+              (ngModelChange)="updateFormField('email', $event)"
+              name="email"
+            />
+          </div>
+          <div class="form-field">
+            <label for="user-password">
+              @if (formMode() === 'create') {
+                Password
+              } @else {
+                New password (optional)
+              }
+            </label>
+            <input
+              id="user-password"
+              type="password"
+              [required]="formMode() === 'create'"
+              [ngModel]="form().password"
+              (ngModelChange)="updateFormField('password', $event)"
+              name="password"
+            />
+          </div>
+          <div class="form-field">
+            <label for="company-name">Company name</label>
+            <input
+              id="company-name"
+              type="text"
+              required
+              [ngModel]="form().companyName"
+              (ngModelChange)="updateFormField('companyName', $event)"
+              name="companyName"
+            />
+          </div>
+          <div class="form-field">
+            <label for="company-email">Company email</label>
+            <input
+              id="company-email"
+              type="email"
+              required
+              [ngModel]="form().companyEmail"
+              (ngModelChange)="updateFormField('companyEmail', $event)"
+              name="companyEmail"
+            />
+          </div>
+          <div class="form-field">
+            <label for="company-phone">Phone</label>
+            <input
+              id="company-phone"
+              type="text"
+              required
+              [ngModel]="form().companyPhone"
+              (ngModelChange)="updateFormField('companyPhone', $event)"
+              name="companyPhone"
+            />
+          </div>
+          <div class="form-field">
+            <label for="gst-number">GST (optional)</label>
+            <input
+              id="gst-number"
+              type="text"
+              [ngModel]="form().gstNumber"
+              (ngModelChange)="updateFormField('gstNumber', $event)"
+              name="gstNumber"
+            />
+          </div>
+          <div class="form-field">
+            <label for="pan-number">PAN (optional)</label>
+            <input
+              id="pan-number"
+              type="text"
+              [ngModel]="form().panNumber"
+              (ngModelChange)="updateFormField('panNumber', $event)"
+              name="panNumber"
+            />
+          </div>
+          <div class="form-field full-width">
+            <label for="address">Address (optional)</label>
+            <input
+              id="address"
+              type="text"
+              [ngModel]="form().address"
+              (ngModelChange)="updateFormField('address', $event)"
+              name="address"
+            />
+          </div>
+          <div class="form-field">
+            <label for="city">City</label>
+            <input
+              id="city"
+              type="text"
+              [ngModel]="form().city"
+              (ngModelChange)="updateFormField('city', $event)"
+              name="city"
+            />
+          </div>
+          <div class="form-field">
+            <label for="state">State</label>
+            <input
+              id="state"
+              type="text"
+              [ngModel]="form().state"
+              (ngModelChange)="updateFormField('state', $event)"
+              name="state"
+            />
+          </div>
+          <div class="form-field">
+            <label for="country">Country</label>
+            <input
+              id="country"
+              type="text"
+              [ngModel]="form().country"
+              (ngModelChange)="updateFormField('country', $event)"
+              name="country"
+            />
+          </div>
+          @if (formMode() === 'edit') {
+            <label class="checkbox-field">
+              <input
+                type="checkbox"
+                [ngModel]="form().isActive"
+                (ngModelChange)="updateFormField('isActive', $event)"
+                name="isActive"
+              />
+              Active account
+            </label>
+            <label class="checkbox-field">
+              <input
+                type="checkbox"
+                [ngModel]="form().emailVerified"
+                (ngModelChange)="updateFormField('emailVerified', $event)"
+                name="emailVerified"
+              />
+              Email verified
+            </label>
+          }
+        </div>
+
+        @if (actionError()) {
+          <div class="alert-error" role="alert">{{ actionError() }}</div>
+        }
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeForm()" [disabled]="saving()">
+            Cancel
+          </button>
+          <button type="submit" class="btn-primary" [disabled]="saving()">
+            {{ saving() ? 'Saving…' : formMode() === 'create' ? 'Create user' : 'Save changes' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

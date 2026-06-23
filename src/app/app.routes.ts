@@ -93,6 +93,14 @@ export const routes: Routes = [
         canActivate: [roleGuard(['ADMIN'])],
       },
       {
+        path: 'admin/users',
+        loadComponent: () =>
+          import('./features/admin/admin-users/admin-users.component').then(
+            (m) => m.AdminUsersComponent,
+          ),
+        canActivate: [roleGuard(['ADMIN'])],
+      },
+      {
         path: 'admin/queries/:inquiryId/distributors',
         loadComponent: () =>
           import('./features/inquiries/admin-distributor-chats/admin-distributor-chats.component').then(

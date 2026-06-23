@@ -26,6 +26,7 @@ export class SidebarComponent {
     { label: 'Create quotation', path: '/requests', icon: '◎', roles: ['CONSUMER'] },
     { label: 'Tracking', path: '/tracking', icon: '◷', roles: ['CONSUMER'] },
     { label: 'Review queries', path: '/admin/queries', icon: '◉', roles: ['ADMIN'] },
+    { label: 'Users', path: '/admin/users', icon: '◈', roles: ['ADMIN'] },
     { label: 'Profile', path: '/profile', icon: '◇' },
   ];
 
