@@ -31,6 +31,18 @@ export class MainLayoutComponent {
         event instanceof NavigationError
       ) {
         this.navigating.set(false);
+        if (event instanceof NavigationEnd) {
+          this.resetPageScroll();
+        }
+      }
+    });
+  }
+
+  private resetPageScroll(): void {
+    requestAnimationFrame(() => {
+      const pageHost = document.querySelector('.app-content > router-outlet + *');
+      if (pageHost instanceof HTMLElement) {
+        pageHost.scrollTop = 0;
       }
     });
   }
