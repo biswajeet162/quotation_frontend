@@ -8,10 +8,11 @@ import {
   getInquiryListStep,
   getRequestSourceLabel,
 } from '../../../shared/utils/inquiry-display.util';
+import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 
 @Component({
   selector: 'app-consumer-dashboard',
-  imports: [RouterLink],
+  imports: [RouterLink, LoadingOverlayComponent],
   templateUrl: './consumer-dashboard.component.html',
   styleUrl: './consumer-dashboard.component.css',
 })

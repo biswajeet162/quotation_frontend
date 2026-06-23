@@ -8,6 +8,7 @@ import {
   UserRole,
 } from '../../../core/models/admin-user.model';
 import { AdminUserService } from '../../../core/services/admin/admin-user.service';
+import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 
 type RoleTab = UserRole;
 type FormMode = 'create' | 'edit';
@@ -54,7 +55,7 @@ const ROLE_TABS: { role: RoleTab; label: string }[] = [
 
 @Component({
   selector: 'app-admin-users',
-  imports: [FormsModule],
+  imports: [FormsModule, LoadingOverlayComponent],
   templateUrl: './admin-users.component.html',
   styleUrl: './admin-users.component.css',
 })
@@ -67,6 +68,9 @@ export class AdminUsersComponent implements OnInit {
   readonly detailLoading = signal(false);
   readonly saving = signal(false);
   readonly deleting = signal(false);
+  readonly overlayLoading = computed(
+    () => this.loading() || this.detailLoading() || this.saving() || this.deleting(),
+  );
   readonly errorMessage = signal<string | null>(null);
   readonly actionError = signal<string | null>(null);
   readonly users = signal<AdminUserSummary[]>([]);

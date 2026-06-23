@@ -40,6 +40,7 @@ import {
   noticeDisplayDetail,
   noticeDisplayLabel,
 } from '../../../shared/utils/timeline-chat.util';
+import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 
 type StatusFilter = 'all' | InquiryStatus | 'ACTION_REQUIRED';
 
@@ -52,7 +53,7 @@ interface PendingAttachment {
 
 @Component({
   selector: 'app-admin-query-review',
-  imports: [FormsModule, InquiryChatAttachmentComponent, ChatAudioPlayerComponent],
+  imports: [FormsModule, InquiryChatAttachmentComponent, ChatAudioPlayerComponent, LoadingOverlayComponent],
   templateUrl: './admin-query-review.component.html',
   styleUrl: './admin-query-review.component.css',
 })

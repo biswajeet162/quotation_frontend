@@ -4,10 +4,11 @@ import { AdminDashboardOverview } from '../../../core/models/admin-dashboard.mod
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { AdminDashboardService } from '../../../core/services/admin/admin-dashboard.service';
 import { getRequestSourceLabel } from '../../../shared/utils/inquiry-display.util';
+import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 
 @Component({
   selector: 'app-admin-dashboard',
-  imports: [RouterLink],
+  imports: [RouterLink, LoadingOverlayComponent],
   templateUrl: './admin-dashboard.component.html',
   styleUrl: './admin-dashboard.component.css',
 })

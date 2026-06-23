@@ -1,4 +1,6 @@
 <section class="page-card">
+  <app-loading-overlay [loading]="loading()" message="Loading products…" />
+
   <header class="page-header">
     <div>
       <h1>Products</h1>
@@ -26,9 +28,8 @@
     </span>
   </div>
 
-  @if (loading()) {
-    <p class="state-message">Loading products…</p>
-  } @else if (errorMessage()) {
+  @if (!loading()) {
+  @if (errorMessage()) {
     <div class="alert alert-error" role="alert">{{ errorMessage() }}</div>
   } @else if (showNoMatchState()) {
     <div class="no-match-card">
@@ -82,6 +83,7 @@
         </tbody>
       </table>
     </div>
+  }
   }
 </section>
 

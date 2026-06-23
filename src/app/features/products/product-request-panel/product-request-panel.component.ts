@@ -10,11 +10,12 @@ import { ConsumerInquiryCreated } from '../../../core/models/inquiry.model';
 import { ProductFormDraft, ProductFormRow } from '../../../core/models/product-form.model';
 import { formatSpecificationsInline } from '../../../shared/utils/specifications-display.util';
 import { ProductFieldAutocompleteComponent } from '../product-field-autocomplete/product-field-autocomplete.component';
+import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 import { forkJoin, map, of, switchMap } from 'rxjs';
 
 @Component({
   selector: 'app-product-request-panel',
-  imports: [FormsModule, ProductFieldAutocompleteComponent],
+  imports: [FormsModule, ProductFieldAutocompleteComponent, LoadingOverlayComponent],
   templateUrl: './product-request-panel.component.html',
   styleUrl: './product-request-panel.component.css',
 })

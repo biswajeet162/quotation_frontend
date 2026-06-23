@@ -1,12 +1,13 @@
 <div class="auth-page">
+  <app-loading-overlay [loading]="loading()" message="Verifying your email…" />
+
   <div class="auth-card">
     <div class="auth-brand">
       <h1>Email verification</h1>
     </div>
 
-    @if (loading()) {
-      <p class="status-text">Verifying your email…</p>
-    } @else if (errorMessage()) {
+    @if (!loading()) {
+    @if (errorMessage()) {
       <div class="alert alert-error" role="alert">
         {{ errorMessage() }}
       </div>
@@ -15,6 +16,7 @@
         ·
         <a routerLink="/login">Sign in</a>
       </p>
+    }
     }
   </div>
 </div>

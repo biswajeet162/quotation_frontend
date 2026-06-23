@@ -1,4 +1,6 @@
 <section class="page-card">
+  <app-loading-overlay [loading]="loading()" message="Loading distributor chats…" />
+
   <header class="page-header">
     <h1>Distributor chats</h1>
     <button
@@ -17,9 +19,8 @@
     </p>
   }
 
-  @if (loading()) {
-    <p class="state-message">Loading distributor chats…</p>
-  } @else if (errorMessage()) {
+  @if (!loading()) {
+  @if (errorMessage()) {
     <div class="alert alert-error" role="alert">{{ errorMessage() }}</div>
   } @else if (distributors().length === 0) {
     <p class="state-message">This request has not been sent to any distributors yet.</p>
@@ -457,5 +458,6 @@
         }
       </div>
     }
+  }
   }
 </section>

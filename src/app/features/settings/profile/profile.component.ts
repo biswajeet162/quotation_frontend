@@ -2,6 +2,7 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { DistributorProfile } from '../../../core/models/distributor.model';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { DistributorDashboardService } from '../../../core/services/distributor/distributor-dashboard.service';
+import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 
 const ROLE_LABELS: Record<string, string> = {
   ADMIN: 'Administrator',
@@ -11,7 +12,7 @@ const ROLE_LABELS: Record<string, string> = {
 
 @Component({
   selector: 'app-profile',
-  imports: [],
+  imports: [LoadingOverlayComponent],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.css',
 })

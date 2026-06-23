@@ -35,6 +35,7 @@ import {
   noticeDisplayDetail,
   noticeDisplayLabel,
 } from '../../../shared/utils/timeline-chat.util';
+import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 
 interface PendingAttachment {
   id: string;
@@ -45,7 +46,7 @@ interface PendingAttachment {
 
 @Component({
   selector: 'app-admin-distributor-chats',
-  imports: [FormsModule, InquiryChatAttachmentComponent, ChatAudioPlayerComponent],
+  imports: [FormsModule, InquiryChatAttachmentComponent, ChatAudioPlayerComponent, LoadingOverlayComponent],
   templateUrl: './admin-distributor-chats.component.html',
   styleUrl: './admin-distributor-chats.component.css',
 })

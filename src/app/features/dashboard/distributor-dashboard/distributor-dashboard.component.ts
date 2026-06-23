@@ -3,10 +3,11 @@ import { RouterLink } from '@angular/router';
 import { DistributorDashboardOverview } from '../../../core/models/distributor.model';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { DistributorDashboardService } from '../../../core/services/distributor/distributor-dashboard.service';
+import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 
 @Component({
   selector: 'app-distributor-dashboard',
-  imports: [RouterLink],
+  imports: [RouterLink, LoadingOverlayComponent],
   templateUrl: './distributor-dashboard.component.html',
   styleUrl: './distributor-dashboard.component.css',
 })

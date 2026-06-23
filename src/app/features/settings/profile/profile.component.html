@@ -1,4 +1,6 @@
 <section class="profile-page">
+  <app-loading-overlay [loading]="loading()" message="Loading profile…" />
+
   <header class="profile-hero">
     <div class="profile-avatar" aria-hidden="true">
       @if (auth.currentUser(); as user) {
@@ -16,9 +18,8 @@
   </header>
 
   @if (isDistributor()) {
-    @if (loading()) {
-      <p class="state-message">Loading profile…</p>
-    } @else if (errorMessage()) {
+    @if (!loading()) {
+    @if (errorMessage()) {
       <div class="alert-error" role="alert">{{ errorMessage() }}</div>
     } @else {
       @if (distributorProfile(); as profile) {
@@ -88,6 +89,7 @@
           </section>
         </div>
       }
+    }
     }
   } @else {
     @if (auth.currentUser(); as user) {

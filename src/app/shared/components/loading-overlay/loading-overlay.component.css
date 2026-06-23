@@ -1,4 +1,4 @@
-.auth-loading-overlay {
+.loading-overlay {
   position: fixed;
   inset: 0;
   z-index: 9999;
@@ -7,10 +7,10 @@
   justify-content: center;
   background: rgba(15, 23, 42, 0.5);
   backdrop-filter: blur(6px);
-  animation: auth-overlay-in 0.2s ease-out;
+  animation: loading-overlay-in 0.2s ease-out;
 }
 
-.auth-loading-content {
+.loading-content {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -21,17 +21,17 @@
   box-shadow:
     0 25px 50px rgba(15, 23, 42, 0.25),
     0 0 0 1px rgba(255, 255, 255, 0.1);
-  animation: auth-content-in 0.25s ease-out;
+  animation: loading-content-in 0.25s ease-out;
 }
 
-.auth-spinner {
+.loading-spinner {
   position: relative;
   width: 52px;
   height: 52px;
 }
 
-.auth-spinner::before,
-.auth-spinner::after {
+.loading-spinner::before,
+.loading-spinner::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -39,20 +39,20 @@
   border: 3px solid transparent;
 }
 
-.auth-spinner::before {
+.loading-spinner::before {
   border-top-color: #0f766e;
   border-right-color: #0f766e;
-  animation: auth-spin 1s cubic-bezier(0.5, 0.15, 0.5, 0.85) infinite;
+  animation: loading-spin 1s cubic-bezier(0.5, 0.15, 0.5, 0.85) infinite;
 }
 
-.auth-spinner::after {
+.loading-spinner::after {
   inset: 7px;
   border-bottom-color: #14b8a6;
   border-left-color: #14b8a6;
-  animation: auth-spin 0.75s cubic-bezier(0.5, 0.15, 0.5, 0.85) infinite reverse;
+  animation: loading-spin 0.75s cubic-bezier(0.5, 0.15, 0.5, 0.85) infinite reverse;
 }
 
-.auth-loading-message {
+.loading-message {
   margin: 0;
   font-size: 0.95rem;
   font-weight: 600;
@@ -60,13 +60,13 @@
   letter-spacing: 0.01em;
 }
 
-@keyframes auth-spin {
+@keyframes loading-spin {
   to {
     transform: rotate(360deg);
   }
 }
 
-@keyframes auth-overlay-in {
+@keyframes loading-overlay-in {
   from {
     opacity: 0;
   }
@@ -76,7 +76,7 @@
   }
 }
 
-@keyframes auth-content-in {
+@keyframes loading-content-in {
   from {
     opacity: 0;
     transform: scale(0.92) translateY(8px);

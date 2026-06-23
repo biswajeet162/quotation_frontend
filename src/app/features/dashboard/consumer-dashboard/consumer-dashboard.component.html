@@ -1,4 +1,6 @@
 <section class="dashboard">
+  <app-loading-overlay [loading]="loading()" message="Loading your summary…" />
+
   <header class="dashboard-header">
     <div>
       <h1>Dashboard</h1>
@@ -15,9 +17,8 @@
     </div>
   </header>
 
-  @if (loading()) {
-    <p class="state-message">Loading your summary…</p>
-  } @else if (errorMessage()) {
+  @if (!loading()) {
+  @if (errorMessage()) {
     <div class="alert-error" role="alert">{{ errorMessage() }}</div>
   } @else {
     <div class="kpi-grid">
@@ -97,5 +98,6 @@
         <span class="quick-desc">Explore the catalog before you quote</span>
       </a>
     </nav>
+  }
   }
 </section>

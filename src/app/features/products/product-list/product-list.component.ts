@@ -7,10 +7,11 @@ import { AuthService } from '../../../core/services/auth/auth.service';
 import { InquiryCartService } from '../../../core/services/inquiry/inquiry-cart.service';
 import { ProductQueryFormService } from '../../../core/services/product/product-query-form.service';
 import { parseSpecifications } from '../../../shared/utils/specifications-display.util';
+import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 
 @Component({
   selector: 'app-product-list',
-  imports: [FormsModule],
+  imports: [FormsModule, LoadingOverlayComponent],
   templateUrl: './product-list.component.html',
   styleUrl: './product-list.component.css',
 })

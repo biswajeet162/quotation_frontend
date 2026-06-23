@@ -1,4 +1,6 @@
 <section class="page-card">
+  <app-loading-overlay [loading]="overlayLoading()" message="Loading your products…" />
+
   <header class="page-header">
     <div>
       <h1>My products</h1>
@@ -36,9 +38,8 @@
     </label>
   </div>
 
-  @if (loading()) {
-    <p class="state-message">Loading your products…</p>
-  } @else if (errorMessage()) {
+  @if (!loading()) {
+  @if (errorMessage()) {
     <div class="alert-error" role="alert">{{ errorMessage() }}</div>
   } @else if (filteredProducts().length === 0) {
     <p class="state-message">
@@ -88,6 +89,7 @@
         </tbody>
       </table>
     </div>
+  }
   }
 </section>
 

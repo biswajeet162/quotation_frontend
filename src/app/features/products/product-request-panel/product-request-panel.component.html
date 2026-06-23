@@ -1,4 +1,6 @@
 <div class="request-panel" [class.panel-highlight]="highlight()">
+  <app-loading-overlay [loading]="submitting()" message="Submitting quotation…" />
+
   @if (lastSubmitted(); as inquiry) {
     <div class="success-card" role="status">
       <p>

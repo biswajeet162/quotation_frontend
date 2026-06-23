@@ -35,6 +35,7 @@ import {
   noticeDisplayDetail,
   noticeDisplayLabel,
 } from '../../../shared/utils/timeline-chat.util';
+import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 
 type StatusFilter = 'all' | 'pending' | 'responded' | 'CLOSED';
 
@@ -47,7 +48,7 @@ interface PendingAttachment {
 
 @Component({
   selector: 'app-distributor-inquiry-tracking',
-  imports: [FormsModule, InquiryChatAttachmentComponent, ChatAudioPlayerComponent],
+  imports: [FormsModule, InquiryChatAttachmentComponent, ChatAudioPlayerComponent, LoadingOverlayComponent],
   templateUrl: './distributor-inquiry-tracking.component.html',
   styleUrl: './distributor-inquiry-tracking.component.css',
 })

@@ -1,6 +1,7 @@
 <div class="app-shell">
   <app-sidebar />
   <main class="app-content">
+    <app-loading-overlay [loading]="navigating()" message="Loading page…" />
     <router-outlet />
   </main>
 </div>

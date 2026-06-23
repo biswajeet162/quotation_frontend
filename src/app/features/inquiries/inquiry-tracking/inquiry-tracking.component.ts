@@ -30,6 +30,7 @@ import {
   noticeDisplayDetail,
   noticeDisplayLabel,
 } from '../../../shared/utils/timeline-chat.util';
+import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 
 type StatusFilter = 'all' | InquiryStatus | 'ACTION_REQUIRED';
 
@@ -46,6 +47,7 @@ interface PendingAttachment {
     FormsModule,
     InquiryChatAttachmentComponent,
     ChatAudioPlayerComponent,
+    LoadingOverlayComponent,
   ],
   templateUrl: './inquiry-tracking.component.html',
   styleUrl: './inquiry-tracking.component.css',

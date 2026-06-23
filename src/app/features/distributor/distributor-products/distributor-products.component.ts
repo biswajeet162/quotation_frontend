@@ -6,6 +6,7 @@ import {
   UpdateDistributorProductRequest,
 } from '../../../core/models/distributor.model';
 import { DistributorProductService } from '../../../core/services/distributor/distributor-product.service';
+import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 
 type ProductFormMode = 'create' | 'edit';
 
@@ -47,7 +48,7 @@ const emptyForm = (): ProductFormState => ({
 
 @Component({
   selector: 'app-distributor-products',
-  imports: [FormsModule],
+  imports: [FormsModule, LoadingOverlayComponent],
   templateUrl: './distributor-products.component.html',
   styleUrl: './distributor-products.component.css',
 })
@@ -56,6 +57,7 @@ export class DistributorProductsComponent implements OnInit {
 
   readonly loading = signal(true);
   readonly saving = signal(false);
+  readonly overlayLoading = computed(() => this.loading() || this.saving());
   readonly errorMessage = signal<string | null>(null);
   readonly actionError = signal<string | null>(null);
   readonly products = signal<DistributorProductEntry[]>([]);

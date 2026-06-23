@@ -1,4 +1,9 @@
 <section class="page-card">
+  <app-loading-overlay
+    [loading]="overlayLoading()"
+    [message]="'Loading ' + activeTabLabel().toLowerCase() + '…'"
+  />
+
   <header class="page-header">
     <div>
       <h1>Users</h1>
@@ -48,9 +53,8 @@
     </label>
   </div>
 
-  @if (loading()) {
-    <p class="state-message">Loading {{ activeTabLabel().toLowerCase() }}…</p>
-  } @else if (errorMessage()) {
+  @if (!loading()) {
+  @if (errorMessage()) {
     <div class="alert-error" role="alert">{{ errorMessage() }}</div>
   } @else if (filteredUsers().length === 0) {
     <p class="state-message">
@@ -209,6 +213,7 @@
         }
       </aside>
     </div>
+  }
   }
 </section>
 

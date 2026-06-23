@@ -1,4 +1,6 @@
 <section class="dashboard">
+  <app-loading-overlay [loading]="loading()" message="Loading your summary…" />
+
   <header class="dashboard-header">
     <div>
       <h1>Distributor dashboard</h1>
@@ -18,9 +20,8 @@
     </div>
   </header>
 
-  @if (loading()) {
-    <p class="state-message">Loading your summary…</p>
-  } @else if (errorMessage()) {
+  @if (!loading()) {
+  @if (errorMessage()) {
     <div class="alert-error" role="alert">{{ errorMessage() }}</div>
   } @else {
     @if (overview(); as data) {
@@ -101,5 +102,6 @@
       </a>
     </nav>
     }
+  }
   }
 </section>
