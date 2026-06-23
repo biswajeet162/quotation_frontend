@@ -28,6 +28,7 @@
     </span>
   </div>
 
+  <div class="page-body">
   @if (!loading()) {
   @if (errorMessage()) {
     <div class="alert alert-error" role="alert">{{ errorMessage() }}</div>
@@ -85,6 +86,7 @@
     </div>
   }
   }
+  </div>
 </section>
 
 @if (selectedProduct(); as product) {

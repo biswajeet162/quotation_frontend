@@ -18,8 +18,20 @@
 
 .app-content > router-outlet + * {
   flex: 1;
+  min-width: 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Split-pane and table pages manage their own internal scroll areas. */
+.app-content > router-outlet + app-inquiry-tracking,
+.app-content > router-outlet + app-distributor-inquiry-tracking,
+.app-content > router-outlet + app-admin-query-review,
+.app-content > router-outlet + app-admin-distributor-chats,
+.app-content > router-outlet + app-product-list {
   overflow: hidden;
 }
