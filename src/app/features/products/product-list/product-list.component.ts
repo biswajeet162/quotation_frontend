@@ -1,7 +1,6 @@
 import { Component, computed, HostListener, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Product } from '../../../core/models/product.model';
 import {
   CatalogProduct,
   CatalogProductAttachment,
@@ -167,13 +166,7 @@ export class ProductListComponent implements OnInit {
       return;
     }
 
-    const product: Product = {
-      id: entry.productId,
-      brand: entry.brand,
-      designation: entry.designation,
-      description: entry.description,
-    };
-    this.queryForm.fillFromProduct(product, 'CATALOG_MATCH');
+    this.queryForm.fillFromCatalogProduct(entry, 'CATALOG_MATCH');
     void this.router.navigate(['/requests']);
   }
 

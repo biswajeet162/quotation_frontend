@@ -1,4 +1,4 @@
-import { Component, HostListener, inject, OnInit, output, signal } from '@angular/core';
+import { Component, computed, HostListener, inject, OnDestroy, OnInit, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { InquiryCartService } from '../../../core/services/inquiry/inquiry-cart.service';
@@ -6,25 +6,47 @@ import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
 import { ProductService } from '../../../core/services/product/product.service';
 import { ProductCatalogLookupService } from '../../../core/services/product/product-catalog-lookup.service';
 import { ProductQueryFormService } from '../../../core/services/product/product-query-form.service';
+import { ConsumerProductCatalogService } from '../../../core/services/product/consumer-product-catalog.service';
 import { ConsumerInquiryCreated } from '../../../core/models/inquiry.model';
-import { ProductFormDraft, ProductFormRow } from '../../../core/models/product-form.model';
+import { ProductFormDraft, ProductFormRow, RowLocalAttachment } from '../../../core/models/product-form.model';
+import {
+  CatalogProductAttachment,
+  toTimelineAttachment,
+} from '../../../core/models/catalog-product.model';
+import { InquiryTimelineAttachment, TimelineAttachmentMediaType } from '../../../core/models/inquiry-timeline.model';
 import { formatSpecificationsInline } from '../../../shared/utils/specifications-display.util';
+import { resolveAttachmentMediaType } from '../../../shared/utils/attachment-media-type.util';
 import { ProductFieldAutocompleteComponent } from '../product-field-autocomplete/product-field-autocomplete.component';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
-import { forkJoin, map, of, switchMap } from 'rxjs';
+import { InquiryChatAttachmentComponent } from '../../../shared/components/inquiry-chat-attachment/inquiry-chat-attachment.component';
+import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
+
+interface QueryAttachmentItem {
+  key: string;
+  kind: 'catalog' | 'local';
+  source: 'consumer' | 'local';
+  timelineAttachment: InquiryTimelineAttachment;
+  localId?: string;
+}
 
 @Component({
   selector: 'app-product-request-panel',
-  imports: [FormsModule, ProductFieldAutocompleteComponent, LoadingOverlayComponent],
+  imports: [
+    FormsModule,
+    ProductFieldAutocompleteComponent,
+    LoadingOverlayComponent,
+    InquiryChatAttachmentComponent,
+  ],
   templateUrl: './product-request-panel.component.html',
   styleUrl: './product-request-panel.component.css',
 })
-export class ProductRequestPanelComponent implements OnInit {
+export class ProductRequestPanelComponent implements OnInit, OnDestroy {
   private readonly cart = inject(InquiryCartService);
   private readonly inquiryService = inject(InquiryService);
   private readonly auth = inject(AuthService);
   private readonly productService = inject(ProductService);
   private readonly catalog = inject(ProductCatalogLookupService);
+  private readonly consumerCatalog = inject(ConsumerProductCatalogService);
   readonly formState = inject(ProductQueryFormService);
 
   readonly submitted = output<ConsumerInquiryCreated>();
@@ -34,15 +56,65 @@ export class ProductRequestPanelComponent implements OnInit {
   readonly lastSubmitted = signal<ConsumerInquiryCreated | null>(null);
   readonly previewOpen = signal(false);
 
+  readonly attachmentPanelOpen = signal(false);
+  readonly attachmentRow = signal<ProductFormRow | null>(null);
+  readonly catalogAttachments = signal<CatalogProductAttachment[]>([]);
+  readonly attachmentsLoading = signal(false);
+  readonly attachmentError = signal<string | null>(null);
+  readonly activeAttachmentTab = signal<TimelineAttachmentMediaType>('IMAGE');
+
+  readonly recording = signal(false);
+  readonly recordingSeconds = signal(0);
+  readonly recordingLevels = signal<number[]>(Array.from({ length: 24 }, () => 0.15));
+
+  readonly attachmentTabOptions: { type: TimelineAttachmentMediaType; label: string }[] = [
+    { type: 'IMAGE', label: 'Images' },
+    { type: 'VIDEO', label: 'Videos' },
+    { type: 'DOCUMENT', label: 'Files' },
+    { type: 'AUDIO', label: 'Voice' },
+  ];
+
+  readonly attachmentsForActiveTab = computed(() => {
+    const tab = this.activeAttachmentTab();
+    const row = this.attachmentRow();
+    const catalog = this.catalogAttachments()
+      .filter((attachment) => attachment.mediaType === tab)
+      .map((attachment) => this.toCatalogAttachmentItem(attachment));
+    const local = (row?.localAttachments ?? [])
+      .filter((attachment) => attachment.mediaType === tab)
+      .map((attachment) => this.toLocalAttachmentItem(attachment));
+    return [...catalog, ...local];
+  });
+
   readonly rows = this.formState.rows;
   readonly highlight = this.formState.highlight;
+
+  private mediaRecorder: MediaRecorder | null = null;
+  private recordingStream: MediaStream | null = null;
+  private recordingChunks: Blob[] = [];
+  private recordingMimeType = 'audio/webm';
+  private discardRecording = false;
+  private audioContext: AudioContext | null = null;
+  private analyser: AnalyserNode | null = null;
+  private levelAnimationId: number | null = null;
+  private durationTimerId: ReturnType<typeof setInterval> | null = null;
+  private recordingStartedAt = 0;
+  private readonly recordingBarCount = 24;
 
   ngOnInit(): void {
     this.catalog.ensureLoaded();
   }
 
+  ngOnDestroy(): void {
+    this.cleanupRecordingResources(false);
+  }
+
   @HostListener('document:keydown.escape')
   onEscape(): void {
+    if (this.attachmentPanelOpen()) {
+      this.closeAttachments();
+      return;
+    }
     if (this.previewOpen()) {
       this.closePreview();
     }
@@ -68,6 +140,162 @@ export class ProductRequestPanelComponent implements OnInit {
     this.updateRowField(rowId, 'quantity', Math.max(1, Number(value) || 1));
   }
 
+  openRowAttachments(row: ProductFormRow, event: Event): void {
+    event.stopPropagation();
+    this.attachmentRow.set(row);
+    this.attachmentPanelOpen.set(true);
+    this.attachmentError.set(null);
+    this.activeAttachmentTab.set(this.initialTabForRow(row));
+    this.catalogAttachments.set([]);
+    if (row.catalogProductId) {
+      this.loadCatalogAttachments(row.catalogProductId);
+    }
+  }
+
+  closeAttachments(): void {
+    this.cancelVoiceRecording();
+    this.attachmentPanelOpen.set(false);
+    this.attachmentRow.set(null);
+    this.catalogAttachments.set([]);
+    this.attachmentError.set(null);
+    this.activeAttachmentTab.set('IMAGE');
+  }
+
+  setAttachmentTab(tab: TimelineAttachmentMediaType): void {
+    this.activeAttachmentTab.set(tab);
+  }
+
+  attachmentCountFor(tab: TimelineAttachmentMediaType): number {
+    const row = this.attachmentRow();
+    const catalogCount = this.catalogAttachments().filter((item) => item.mediaType === tab).length;
+    const localCount = (row?.localAttachments ?? []).filter((item) => item.mediaType === tab).length;
+    return catalogCount + localCount;
+  }
+
+  activeAttachmentTabLabel(): string {
+    return (
+      this.attachmentTabOptions.find((tab) => tab.type === this.activeAttachmentTab())?.label ??
+      'Attachments'
+    );
+  }
+
+  rowAttachmentCount(row: ProductFormRow): number {
+    return this.formState.rowAttachmentCount(row);
+  }
+
+  onImageSelected(event: Event): void {
+    this.onFilesSelectedWithType(event, 'IMAGE');
+  }
+
+  onVideoSelected(event: Event): void {
+    this.onFilesSelectedWithType(event, 'VIDEO');
+  }
+
+  onDocumentSelected(event: Event): void {
+    this.onFilesSelectedWithType(event, 'DOCUMENT');
+  }
+
+  removeAttachment(item: QueryAttachmentItem): void {
+    const row = this.attachmentRow();
+    if (!row || item.kind !== 'local' || !item.localId) {
+      return;
+    }
+    this.formState.removeLocalAttachment(row.rowId, item.localId);
+    this.attachmentRow.set(this.rows().find((entry) => entry.rowId === row.rowId) ?? null);
+  }
+
+  async startVoiceRecording(): Promise<void> {
+    if (this.recording() || !navigator.mediaDevices?.getUserMedia) {
+      this.attachmentError.set('Voice recording is not supported in this browser.');
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      this.recordingStream = stream;
+      this.recordingChunks = [];
+      this.discardRecording = false;
+
+      this.audioContext = new AudioContext();
+      await this.audioContext.resume();
+      const source = this.audioContext.createMediaStreamSource(stream);
+      this.analyser = this.audioContext.createAnalyser();
+      this.analyser.fftSize = 256;
+      this.analyser.smoothingTimeConstant = 0.75;
+      source.connect(this.analyser);
+
+      const mimeType = this.resolveRecordingMimeType();
+      this.mediaRecorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
+      this.recordingMimeType = this.mediaRecorder.mimeType || mimeType || 'audio/webm';
+
+      this.mediaRecorder.ondataavailable = (recordingEvent) => {
+        if (recordingEvent.data.size > 0) {
+          this.recordingChunks.push(recordingEvent.data);
+        }
+      };
+      this.mediaRecorder.onstop = () => {
+        const chunks = this.recordingChunks;
+        this.recordingChunks = [];
+        this.cleanupRecordingResources(false);
+
+        if (this.discardRecording || chunks.length === 0) {
+          this.discardRecording = false;
+          return;
+        }
+
+        const type = this.recordingMimeType;
+        const blob = new Blob(chunks, { type });
+        const ext = type.includes('ogg') ? 'ogg' : 'webm';
+        const file = new File([blob], `voice-${Date.now()}.${ext}`, { type });
+        this.addLocalFiles([file]);
+        this.discardRecording = false;
+      };
+
+      this.mediaRecorder.start(250);
+      this.recordingStartedAt = Date.now();
+      this.recordingSeconds.set(0);
+      this.recordingLevels.set(Array.from({ length: this.recordingBarCount }, () => 0.15));
+      this.recording.set(true);
+      this.attachmentError.set(null);
+
+      this.durationTimerId = setInterval(() => {
+        this.recordingSeconds.set(Math.floor((Date.now() - this.recordingStartedAt) / 1000));
+      }, 200);
+      this.startLevelMonitor();
+    } catch {
+      this.cleanupRecordingResources(false);
+      this.attachmentError.set('Microphone access was denied or unavailable.');
+    }
+  }
+
+  stopVoiceRecording(): void {
+    if (!this.mediaRecorder || !this.recording()) {
+      return;
+    }
+    this.recording.set(false);
+    if (this.mediaRecorder.state !== 'inactive') {
+      this.mediaRecorder.requestData();
+      this.mediaRecorder.stop();
+    }
+    this.mediaRecorder = null;
+  }
+
+  cancelVoiceRecording(): void {
+    if (!this.recording()) {
+      return;
+    }
+    this.discardRecording = true;
+    this.stopVoiceRecording();
+  }
+
+  formatRecordingTime(seconds: number): string {
+    const minutes = Math.floor(seconds / 60);
+    const remaining = seconds % 60;
+    return `${minutes}:${remaining.toString().padStart(2, '0')}`;
+  }
+
   openPreview(): void {
     this.submitError.set(null);
     this.previewOpen.set(true);
@@ -84,6 +312,7 @@ export class ProductRequestPanelComponent implements OnInit {
     this.submitError.set(null);
     this.lastSubmitted.set(null);
     this.closePreview();
+    this.closeAttachments();
   }
 
   submitAnother(): void {
@@ -91,9 +320,9 @@ export class ProductRequestPanelComponent implements OnInit {
     this.formState.resetRows();
     this.submitError.set(null);
     this.closePreview();
+    this.closeAttachments();
   }
 
-  /** Rows with at least one field filled — fully empty rows are excluded from preview. */
   previewRows(): ProductFormRow[] {
     return this.rows().filter((r) => !this.formState.isEmptyRow(r));
   }
@@ -132,6 +361,7 @@ export class ProductRequestPanelComponent implements OnInit {
 
     this.submitting.set(true);
     this.submitError.set(null);
+    const localFiles = this.formState.collectLocalFiles(valid);
 
     const productRequests = valid.map((row) =>
       row.catalogProductId
@@ -152,7 +382,6 @@ export class ProductRequestPanelComponent implements OnInit {
           const description =
             resolved.length === 1 ? resolved[0].row.description.trim() || undefined : undefined;
 
-          // Single POST /inquiries: one inquiryId, all rows as items[] on the same query.
           return this.inquiryService.create({
             title,
             description,
@@ -165,6 +394,17 @@ export class ProductRequestPanelComponent implements OnInit {
             })),
           });
         }),
+        switchMap((inquiry) => {
+          if (localFiles.length === 0 || !inquiry.id) {
+            return of(inquiry);
+          }
+          return this.inquiryService
+            .postMessageWithAttachments(inquiry.id, 'Attachments from quotation request', localFiles)
+            .pipe(
+              map(() => inquiry),
+              catchError(() => of(inquiry)),
+            );
+        }),
       )
       .subscribe({
         next: (inquiry) => {
@@ -172,6 +412,7 @@ export class ProductRequestPanelComponent implements OnInit {
           this.cart.clear();
           this.formState.resetRows();
           this.closePreview();
+          this.closeAttachments();
           this.lastSubmitted.set(inquiry);
           this.submitted.emit(inquiry);
         },
@@ -180,5 +421,168 @@ export class ProductRequestPanelComponent implements OnInit {
           this.submitError.set('Could not submit your quotation request. Please try again.');
         },
       });
+  }
+
+  private addLocalFiles(files: File[]): void {
+    const row = this.attachmentRow();
+    if (!row || files.length === 0) {
+      return;
+    }
+    this.formState.addLocalFiles(row.rowId, files);
+    const updated = this.rows().find((entry) => entry.rowId === row.rowId);
+    if (updated) {
+      this.attachmentRow.set(updated);
+      const lastAdded = updated.localAttachments.at(-1);
+      if (lastAdded) {
+        this.activeAttachmentTab.set(lastAdded.mediaType);
+      }
+    }
+  }
+
+  private onFilesSelectedWithType(event: Event, expected: TimelineAttachmentMediaType): void {
+    const input = event.target as HTMLInputElement;
+    const files = input.files;
+    if (!files?.length) {
+      return;
+    }
+
+    const validFiles: File[] = [];
+    for (const file of Array.from(files)) {
+      const mediaType = resolveAttachmentMediaType(file);
+      if (mediaType !== expected) {
+        const label =
+          expected === 'IMAGE'
+            ? 'Please choose an image file.'
+            : expected === 'VIDEO'
+              ? 'Please choose a video file.'
+              : 'Please choose a document file (PDF, Word, Excel, etc.).';
+        this.attachmentError.set(label);
+        continue;
+      }
+      validFiles.push(file);
+    }
+
+    input.value = '';
+    if (validFiles.length > 0) {
+      this.attachmentError.set(null);
+      this.addLocalFiles(validFiles);
+    }
+  }
+
+  private loadCatalogAttachments(productId: string): void {
+    this.attachmentsLoading.set(true);
+    this.attachmentError.set(null);
+
+    this.consumerCatalog.listAttachments(productId).subscribe({
+      next: (list) => {
+        this.catalogAttachments.set(list);
+        this.attachmentsLoading.set(false);
+        this.activeAttachmentTab.set(this.initialTabForLists(list, this.attachmentRow()?.localAttachments ?? []));
+      },
+      error: () => {
+        this.attachmentsLoading.set(false);
+        this.attachmentError.set('Could not load catalog attachments.');
+      },
+    });
+  }
+
+  private initialTabForRow(row: ProductFormRow): TimelineAttachmentMediaType {
+    return this.initialTabForLists([], row.localAttachments);
+  }
+
+  private initialTabForLists(
+    catalog: CatalogProductAttachment[],
+    local: RowLocalAttachment[],
+  ): TimelineAttachmentMediaType {
+    const order: TimelineAttachmentMediaType[] = ['IMAGE', 'VIDEO', 'DOCUMENT', 'AUDIO'];
+    const firstWithItems = order.find(
+      (type) =>
+        catalog.some((attachment) => attachment.mediaType === type) ||
+        local.some((attachment) => attachment.mediaType === type),
+    );
+    return firstWithItems ?? 'IMAGE';
+  }
+
+  private toCatalogAttachmentItem(attachment: CatalogProductAttachment): QueryAttachmentItem {
+    return {
+      key: `catalog-${attachment.id}`,
+      kind: 'catalog',
+      source: 'consumer',
+      timelineAttachment: toTimelineAttachment(attachment),
+    };
+  }
+
+  private toLocalAttachmentItem(attachment: RowLocalAttachment): QueryAttachmentItem {
+    return {
+      key: attachment.localId,
+      kind: 'local',
+      source: 'local',
+      localId: attachment.localId,
+      timelineAttachment: {
+        id: attachment.localId,
+        fileName: attachment.fileName,
+        contentType: attachment.contentType,
+        mediaType: attachment.mediaType,
+        url: attachment.blobUrl,
+      },
+    };
+  }
+
+  private resolveRecordingMimeType(): string | undefined {
+    const candidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4'];
+    return candidates.find((type) => MediaRecorder.isTypeSupported(type));
+  }
+
+  private startLevelMonitor(): void {
+    if (!this.analyser) {
+      return;
+    }
+
+    const data = new Uint8Array(this.analyser.frequencyBinCount);
+    const tick = () => {
+      if (!this.analyser || !this.recording()) {
+        return;
+      }
+
+      this.analyser.getByteFrequencyData(data);
+      const step = Math.max(1, Math.floor(data.length / this.recordingBarCount));
+      const levels = Array.from({ length: this.recordingBarCount }, (_, index) => {
+        const start = index * step;
+        let sum = 0;
+        for (let i = 0; i < step && start + i < data.length; i++) {
+          sum += data[start + i];
+        }
+        const avg = sum / step / 255;
+        return Math.max(0.12, Math.min(1, avg * 2.8 + 0.08));
+      });
+      this.recordingLevels.set(levels);
+      this.levelAnimationId = requestAnimationFrame(tick);
+    };
+
+    tick();
+  }
+
+  private cleanupRecordingResources(resetDiscardFlag: boolean): void {
+    if (this.levelAnimationId != null) {
+      cancelAnimationFrame(this.levelAnimationId);
+      this.levelAnimationId = null;
+    }
+    if (this.durationTimerId != null) {
+      clearInterval(this.durationTimerId);
+      this.durationTimerId = null;
+    }
+    this.recordingStream?.getTracks().forEach((track) => track.stop());
+    this.recordingStream = null;
+    if (this.audioContext) {
+      void this.audioContext.close();
+      this.audioContext = null;
+    }
+    this.analyser = null;
+    this.recording.set(false);
+    this.recordingSeconds.set(0);
+    this.recordingLevels.set(Array.from({ length: this.recordingBarCount }, () => 0.15));
+    if (resetDiscardFlag) {
+      this.discardRecording = false;
+    }
   }
 }

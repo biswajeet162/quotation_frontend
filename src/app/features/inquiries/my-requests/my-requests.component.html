@@ -7,16 +7,4 @@
 
     <app-product-request-panel #requestPanel (submitted)="onSubmitted()" />
   </section>
-
-  <div class="quotation-form-actions">
-    <button type="button" class="btn-add" (click)="requestPanel.addRow()">Add</button>
-    <button
-      type="button"
-      class="btn-preview"
-      (click)="requestPanel.openPreview()"
-      [disabled]="requestPanel.previewRows().length === 0"
-    >
-      Preview
-    </button>
-  </div>
 </div>

@@ -21,6 +21,7 @@ export interface InquiryItem {
 
 /** Returned to consumers after POST /inquiries (no admin/line-item payload). */
 export interface ConsumerInquiryCreated {
+  id?: string;
   inquiryId: string;
   status: InquiryStatus;
   acknowledgementEmailSent?: boolean;

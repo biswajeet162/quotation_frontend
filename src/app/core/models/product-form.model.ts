@@ -1,7 +1,19 @@
 import { InquiryLineSource } from './inquiry.model';
+import { TimelineAttachmentMediaType } from './inquiry-timeline.model';
+
+export interface RowLocalAttachment {
+  localId: string;
+  fileName: string;
+  mediaType: TimelineAttachmentMediaType;
+  contentType: string;
+  file: File;
+  blobUrl: string;
+}
 
 export interface ProductFormDraft {
   catalogProductId?: string;
+  attachmentCount?: number;
+  localAttachments: RowLocalAttachment[];
   brand: string;
   designation: string;
   groupName: string;
@@ -15,6 +27,7 @@ export interface ProductFormDraft {
 }
 
 export const emptyProductFormDraft = (): ProductFormDraft => ({
+  localAttachments: [],
   brand: '',
   designation: '',
   groupName: '',

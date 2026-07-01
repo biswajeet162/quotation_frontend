@@ -20,30 +20,19 @@
       <table class="lines-table">
         <thead>
           <tr>
+            <th class="col-designation">Designation</th>
             <th>Brand</th>
-            <th>Designation</th>
-            <th>Group</th>
-            <th>Category</th>
-            <th>Description</th>
-            <th>Specifications</th>
             <th class="col-qty">Qty</th>
-            <th>Notes</th>
-            <th class="col-actions" aria-label="Actions"></th>
+            <th>Specification</th>
+            <th>Description</th>
+            <th class="col-attachment">Attachment</th>
+            <th class="col-actions" aria-label="Remove"></th>
           </tr>
         </thead>
         <tbody>
           @for (row of rows(); track row.rowId) {
             <tr>
-              <td>
-                <app-product-field-autocomplete
-                  field="brand"
-                  [value]="row.brand"
-                  (valueChange)="updateRowField(row.rowId, 'brand', $event)"
-                  placeholder="Brand"
-                  [ariaLabel]="'Brand for row ' + ($index + 1)"
-                />
-              </td>
-              <td>
+              <td class="col-designation">
                 <app-product-field-autocomplete
                   field="designation"
                   [value]="row.designation"
@@ -54,34 +43,11 @@
               </td>
               <td>
                 <app-product-field-autocomplete
-                  field="groupName"
-                  [value]="row.groupName"
-                  (valueChange)="updateRowField(row.rowId, 'groupName', $event)"
-                  placeholder="Group"
-                />
-              </td>
-              <td>
-                <app-product-field-autocomplete
-                  field="category"
-                  [value]="row.category"
-                  (valueChange)="updateRowField(row.rowId, 'category', $event)"
-                  placeholder="Category"
-                />
-              </td>
-              <td>
-                <app-product-field-autocomplete
-                  field="description"
-                  [value]="row.description"
-                  (valueChange)="updateRowField(row.rowId, 'description', $event)"
-                  placeholder="Description"
-                />
-              </td>
-              <td>
-                <app-product-field-autocomplete
-                  field="specifications"
-                  [value]="row.specifications"
-                  (valueChange)="updateRowField(row.rowId, 'specifications', $event)"
-                  placeholder="Specs"
+                  field="brand"
+                  [value]="row.brand"
+                  (valueChange)="updateRowField(row.rowId, 'brand', $event)"
+                  placeholder="Brand"
+                  [ariaLabel]="'Brand for row ' + ($index + 1)"
                 />
               </td>
               <td class="col-qty">
@@ -92,13 +58,41 @@
                   (ngModelChange)="updateRowQuantity(row.rowId, $event)"
                 />
               </td>
-              <td>
-                <input
-                  type="text"
-                  [ngModel]="row.lineNotes"
-                  (ngModelChange)="updateRowField(row.rowId, 'lineNotes', $event)"
-                  placeholder="Notes"
-                />
+              <td class="col-specification">
+                <textarea
+                  rows="2"
+                  [ngModel]="row.specifications"
+                  (ngModelChange)="updateRowField(row.rowId, 'specifications', $event)"
+                  placeholder="Specification"
+                  [attr.aria-label]="'Specification for row ' + ($index + 1)"
+                ></textarea>
+              </td>
+              <td class="col-description">
+                <textarea
+                  rows="2"
+                  [ngModel]="row.description"
+                  (ngModelChange)="updateRowField(row.rowId, 'description', $event)"
+                  placeholder="Description"
+                  [attr.aria-label]="'Description for row ' + ($index + 1)"
+                ></textarea>
+              </td>
+              <td class="col-attachment">
+                <button
+                  type="button"
+                  class="btn-attachment"
+                  (click)="openRowAttachments(row, $event)"
+                  [attr.aria-label]="'Attachments for ' + row.brand + ' ' + row.designation"
+                  title="Attachments"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M16.5 6v11.5a4 4 0 1 1-8 0V5a2.5 2.5 0 1 1 5 0v10.5a1.5 1.5 0 1 1-3 0V6"
+                    />
+                  </svg>
+                  @if (rowAttachmentCount(row) > 0) {
+                    <span class="attachment-badge">{{ rowAttachmentCount(row) }}</span>
+                  }
+                </button>
               </td>
               <td class="col-actions">
                 <button
@@ -106,8 +100,8 @@
                   class="btn-icon-delete"
                   (click)="removeRow(row.rowId)"
                   [disabled]="rows().length === 1 && formState.isEmptyRow(row)"
-                  [attr.aria-label]="'Delete row ' + ($index + 1)"
-                  title="Delete row"
+                  [attr.aria-label]="'Remove row ' + ($index + 1)"
+                  title="Remove row"
                 >
                   ✕
                 </button>
@@ -116,6 +110,18 @@
           }
         </tbody>
       </table>
+    </div>
+
+    <div class="lines-table-footer">
+      <button type="button" class="btn-add-line" (click)="addRow()">Add more lines</button>
+      <button
+        type="button"
+        class="btn-preview-lines"
+        (click)="openPreview()"
+        [disabled]="previewRows().length === 0"
+      >
+        Preview
+      </button>
     </div>
 
     @if (submitError()) {
@@ -133,74 +139,238 @@
       aria-modal="true"
       (click)="$event.stopPropagation()"
     >
-    <header class="preview-header">
+      <header class="preview-header">
+        <div>
+          <h1 id="preview-title">Quotation preview</h1>
+          <p class="preview-summary">
+            {{ previewRows().length }} product(s), total qty {{ totalPreviewQty() }}
+          </p>
+        </div>
+        <button type="button" class="btn-icon-close" (click)="closePreview()" aria-label="Close preview">
+          ✕
+        </button>
+      </header>
+
+      <main class="preview-body">
+        <div class="preview-table-wrap">
+          <table class="preview-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Designation</th>
+                <th>Brand</th>
+                <th>Qty</th>
+                <th>Specification</th>
+                <th>Description</th>
+                <th>Attachment</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (previewRows().length === 0) {
+                <tr>
+                  <td colspan="7" class="preview-empty">No products to preview.</td>
+                </tr>
+              }
+              @for (row of previewRows(); track row.rowId; let i = $index) {
+                <tr>
+                  <td>{{ i + 1 }}</td>
+                  <td>{{ row.designation }}</td>
+                  <td>{{ row.brand }}</td>
+                  <td>{{ row.quantity }}</td>
+                  <td>{{ formatSpecs(row.specifications) }}</td>
+                  <td>{{ row.description || '—' }}</td>
+                  <td>{{ rowAttachmentCount(row) > 0 ? rowAttachmentCount(row) : '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </main>
+
+      <footer class="preview-footer">
+        <button type="button" class="btn-secondary" (click)="closePreview()" [disabled]="submitting()">
+          Back to form
+        </button>
+        @if (submitError()) {
+          <p class="preview-submit-error" role="alert">{{ submitError() }}</p>
+        }
+        <button
+          type="button"
+          class="btn-submit-query"
+          (click)="submitRequest()"
+          [disabled]="submitting() || previewRows().length === 0"
+        >
+          {{ submitting() ? 'Submitting…' : 'Submit Query' }}
+        </button>
+      </footer>
+    </div>
+  </div>
+}
+
+@if (attachmentPanelOpen()) {
+  <div class="modal-backdrop" role="presentation" (click)="closeAttachments()"></div>
+  <div
+    class="modal attachment-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="query-attachment-title"
+    (click)="$event.stopPropagation()"
+  >
+    <header class="modal-header">
       <div>
-        <h1 id="preview-title">Quotation preview</h1>
-        <p class="preview-summary">
-          {{ previewRows().length }} product(s), total qty {{ totalPreviewQty() }}
-        </p>
+        <h2 id="query-attachment-title">Attachments</h2>
+        @if (attachmentRow(); as row) {
+          <p class="attachment-subtitle">{{ row.brand }} · {{ row.designation }}</p>
+        }
       </div>
-      <button type="button" class="btn-icon-close" (click)="closePreview()" aria-label="Close preview">
-        ✕
+      <button type="button" class="btn-icon-close" (click)="closeAttachments()" aria-label="Close">
+        ×
       </button>
     </header>
 
-    <main class="preview-body">
-      <div class="preview-table-wrap">
-        <table class="preview-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Brand</th>
-              <th>Designation</th>
-              <th>Group</th>
-              <th>Category</th>
-              <th>Description</th>
-              <th>Specifications</th>
-              <th>Qty</th>
-              <th>Notes</th>
-            </tr>
-          </thead>
-          <tbody>
-            @if (previewRows().length === 0) {
-              <tr>
-                <td colspan="9" class="preview-empty">No products to preview.</td>
-              </tr>
-            }
-            @for (row of previewRows(); track row.rowId; let i = $index) {
-              <tr>
-                <td>{{ i + 1 }}</td>
-                <td>{{ row.brand }}</td>
-                <td>{{ row.designation }}</td>
-                <td>{{ row.groupName || '—' }}</td>
-                <td>{{ row.category || '—' }}</td>
-                <td>{{ row.description || '—' }}</td>
-                <td>{{ formatSpecs(row.specifications) }}</td>
-                <td>{{ row.quantity }}</td>
-                <td>{{ row.lineNotes || '—' }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    </main>
-
-    <footer class="preview-footer">
-      <button type="button" class="btn-secondary" (click)="closePreview()" [disabled]="submitting()">
-        Back to form
-      </button>
-      @if (submitError()) {
-        <p class="preview-submit-error" role="alert">{{ submitError() }}</p>
+    <div class="modal-body attachment-body">
+      @if (attachmentError()) {
+        <div class="alert alert-error" role="alert">{{ attachmentError() }}</div>
       }
-      <button
-        type="button"
-        class="btn-submit-query"
-        (click)="submitRequest()"
-        [disabled]="submitting() || previewRows().length === 0"
-      >
-        {{ submitting() ? 'Submitting…' : 'Submit Query' }}
-      </button>
-    </footer>
+
+      <input
+        #imageInput
+        type="file"
+        class="visually-hidden"
+        accept="image/*"
+        multiple
+        (change)="onImageSelected($event)"
+      />
+      <input
+        #videoInput
+        type="file"
+        class="visually-hidden"
+        accept="video/*"
+        multiple
+        (change)="onVideoSelected($event)"
+      />
+      <input
+        #documentInput
+        type="file"
+        class="visually-hidden"
+        accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.pps,.ppsx,.txt,.csv,.rtf,.odt,.ods"
+        multiple
+        (change)="onDocumentSelected($event)"
+      />
+
+      <nav class="attachment-tabs" aria-label="Attachment types">
+        @for (tab of attachmentTabOptions; track tab.type) {
+          <button
+            type="button"
+            class="attachment-tab"
+            [class.active]="activeAttachmentTab() === tab.type"
+            (click)="setAttachmentTab(tab.type)"
+          >
+            {{ tab.label }}
+            @if (attachmentCountFor(tab.type) > 0) {
+              <span class="tab-count">{{ attachmentCountFor(tab.type) }}</span>
+            }
+          </button>
+        }
+      </nav>
+
+      <div class="attachment-tab-panel">
+        <div class="attachment-tab-header">
+          <h3>{{ activeAttachmentTabLabel() }}</h3>
+          @switch (activeAttachmentTab()) {
+            @case ('IMAGE') {
+              <button
+                type="button"
+                class="btn-add-attachment"
+                (click)="imageInput.click()"
+                [disabled]="recording() || attachmentsLoading()"
+              >
+                Add image
+              </button>
+            }
+            @case ('VIDEO') {
+              <button
+                type="button"
+                class="btn-add-attachment"
+                (click)="videoInput.click()"
+                [disabled]="recording() || attachmentsLoading()"
+              >
+                Add video
+              </button>
+            }
+            @case ('DOCUMENT') {
+              <button
+                type="button"
+                class="btn-add-attachment"
+                (click)="documentInput.click()"
+                [disabled]="recording() || attachmentsLoading()"
+              >
+                Add file
+              </button>
+            }
+            @case ('AUDIO') {
+              <button
+                type="button"
+                class="btn-add-attachment"
+                (click)="startVoiceRecording()"
+                [disabled]="recording() || attachmentsLoading()"
+              >
+                Record voice
+              </button>
+            }
+          }
+        </div>
+
+        @if (activeAttachmentTab() === 'AUDIO' && recording()) {
+          <div class="voice-recording-panel" role="status" aria-live="polite">
+            <span class="rec-dot" aria-hidden="true"></span>
+            <span class="rec-time">{{ formatRecordingTime(recordingSeconds()) }}</span>
+            <div class="rec-wave" aria-hidden="true">
+              @for (level of recordingLevels(); track $index) {
+                <span class="rec-bar" [style.height.%]="level * 100"></span>
+              }
+            </div>
+            <button type="button" class="btn-rec-cancel" (click)="cancelVoiceRecording()">
+              Cancel
+            </button>
+            <button type="button" class="btn-rec-done" (click)="stopVoiceRecording()">
+              Done
+            </button>
+          </div>
+        }
+
+        @if (attachmentsLoading()) {
+          <p class="state-message">Loading attachments…</p>
+        } @else if (attachmentsForActiveTab().length === 0) {
+          <p class="state-message attachment-empty">
+            No {{ activeAttachmentTabLabel().toLowerCase() }} yet. Use the add button above.
+          </p>
+        } @else {
+          <ul class="attachment-list">
+            @for (attachment of attachmentsForActiveTab(); track attachment.key) {
+              <li class="attachment-item">
+                <div class="attachment-preview">
+                  <app-inquiry-chat-attachment
+                    [attachment]="attachment.timelineAttachment"
+                    [attachmentSource]="attachment.source"
+                    [previewMode]="'panel'"
+                  />
+                </div>
+                @if (attachment.kind === 'local') {
+                  <button
+                    type="button"
+                    class="btn-attachment-delete"
+                    (click)="removeAttachment(attachment)"
+                    aria-label="Remove attachment"
+                  >
+                    Remove
+                  </button>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </div>
     </div>
   </div>
 }

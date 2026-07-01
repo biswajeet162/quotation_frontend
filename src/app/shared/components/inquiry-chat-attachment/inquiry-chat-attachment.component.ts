@@ -32,7 +32,7 @@ import { MediaLightboxComponent } from '../media-lightbox/media-lightbox.compone
 })
 export class InquiryChatAttachmentComponent implements OnInit {
   readonly attachment = input.required<InquiryTimelineAttachment>();
-  readonly attachmentSource = input<'inquiry' | 'product' | 'consumer'>('inquiry');
+  readonly attachmentSource = input<'inquiry' | 'product' | 'consumer' | 'local'>('inquiry');
   readonly previewMode = input<'chat' | 'panel'>('chat');
 
   private readonly inquiryService = inject(InquiryService);
@@ -54,6 +54,31 @@ export class InquiryChatAttachmentComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    if (this.attachmentSource() === 'local') {
+      void fetch(this.attachment().url)
+        .then((response) => response.blob())
+        .then((blob) => {
+          const typedBlob = blob.type
+            ? blob
+            : new Blob([blob], { type: this.attachment().contentType || 'application/octet-stream' });
+          this.attachmentBlob.set(typedBlob);
+          this.objectUrl.set(URL.createObjectURL(typedBlob));
+          this.loading.set(false);
+        })
+        .catch(() => {
+          this.loading.set(false);
+          this.error.set(true);
+        });
+
+      this.destroyRef.onDestroy(() => {
+        const url = this.objectUrl();
+        if (url) {
+          URL.revokeObjectURL(url);
+        }
+      });
+      return;
+    }
+
     const fetchBlob = (() => {
       switch (this.attachmentSource()) {
         case 'product':

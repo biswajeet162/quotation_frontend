@@ -24,67 +24,25 @@
   font-size: 1.5rem;
 }
 
-.page-header .btn-clear,
-.quotation-form-actions .btn-add,
-.quotation-form-actions .btn-preview {
+.page-header .btn-clear {
   padding: 0.45rem 1rem;
   border-radius: 8px;
   font-size: 0.8125rem;
   font-weight: 500;
   line-height: 1.25;
   cursor: pointer;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #334155;
+  flex-shrink: 0;
   transition:
     background 0.15s ease,
     border-color 0.15s ease,
     color 0.15s ease;
 }
 
-.quotation-form-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0 0.15rem;
-}
-
-.page-header .btn-clear {
-  border: 1px solid #cbd5e1;
-  background: #fff;
-  color: #334155;
-  flex-shrink: 0;
-}
-
 .page-header .btn-clear:hover {
   background: #f8fafc;
   border-color: #94a3b8;
   color: #0f172a;
-}
-
-.quotation-form-actions .btn-add {
-  border: 1px solid #0f766e;
-  background: #fff;
-  color: #0f766e;
-}
-
-.quotation-form-actions .btn-add:hover {
-  background: #f0fdfa;
-  border-color: #0d9488;
-  color: #0d9488;
-}
-
-.quotation-form-actions .btn-preview {
-  border: 1px solid #0f766e;
-  background: #fff;
-  color: #0f766e;
-}
-
-.quotation-form-actions .btn-preview:hover:not(:disabled) {
-  background: #f0fdfa;
-  border-color: #0d9488;
-  color: #0d9488;
-}
-
-.quotation-form-actions .btn-preview:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
 }

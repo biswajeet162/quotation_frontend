@@ -6,8 +6,12 @@ import {
   emptyProductFormDraft,
   ProductFormDraft,
   ProductFormRow,
+  RowLocalAttachment,
 } from '../../models/product-form.model';
+import { CatalogProduct } from '../../models/catalog-product.model';
 import { InquiryLineSource } from '../../models/inquiry.model';
+import { TimelineAttachmentMediaType } from '../../models/inquiry-timeline.model';
+import { resolveAttachmentMediaType } from '../../../shared/utils/attachment-media-type.util';
 
 @Injectable({ providedIn: 'root' })
 export class ProductQueryFormService {
@@ -18,6 +22,7 @@ export class ProductQueryFormService {
   readonly highlight = this.highlightSignal.asReadonly();
 
   resetRows(): void {
+    this.revokeAllLocalAttachments(this.rowsSignal());
     this.rowsSignal.set([createProductFormRow()]);
     this.highlightSignal.set(false);
   }
@@ -32,9 +37,67 @@ export class ProductQueryFormService {
 
   removeRow(rowId: string): void {
     this.rowsSignal.update((rows) => {
+      const removed = rows.find((r) => r.rowId === rowId);
+      if (removed) {
+        this.revokeLocalAttachments(removed.localAttachments);
+      }
       const next = rows.filter((r) => r.rowId !== rowId);
       return next.length > 0 ? next : [createProductFormRow()];
     });
+  }
+
+  rowAttachmentCount(row: ProductFormRow): number {
+    return (row.attachmentCount ?? 0) + row.localAttachments.length;
+  }
+
+  addLocalFiles(rowId: string, files: File[]): void {
+    const added: RowLocalAttachment[] = [];
+    for (const file of files) {
+      const mediaType = resolveAttachmentMediaType(file);
+      if (!mediaType) {
+        continue;
+      }
+      added.push({
+        localId: `local-${crypto.randomUUID?.() ?? Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        fileName: file.name,
+        mediaType,
+        contentType: file.type || 'application/octet-stream',
+        file,
+        blobUrl: URL.createObjectURL(file),
+      });
+    }
+    if (added.length === 0) {
+      return;
+    }
+    this.rowsSignal.update((rows) =>
+      rows.map((row) =>
+        row.rowId === rowId
+          ? { ...row, localAttachments: [...row.localAttachments, ...added] }
+          : row,
+      ),
+    );
+  }
+
+  removeLocalAttachment(rowId: string, localId: string): void {
+    this.rowsSignal.update((rows) =>
+      rows.map((row) => {
+        if (row.rowId !== rowId) {
+          return row;
+        }
+        const target = row.localAttachments.find((item) => item.localId === localId);
+        if (target) {
+          URL.revokeObjectURL(target.blobUrl);
+        }
+        return {
+          ...row,
+          localAttachments: row.localAttachments.filter((item) => item.localId !== localId),
+        };
+      }),
+    );
+  }
+
+  collectLocalFiles(rows: ProductFormRow[]): File[] {
+    return rows.flatMap((row) => row.localAttachments.map((item) => item.file));
   }
 
   updateRow(rowId: string, patch: Partial<ProductFormDraft>): void {
@@ -46,6 +109,23 @@ export class ProductQueryFormService {
   fillFromProduct(product: Product, lineSource: InquiryLineSource = 'CATALOG_MATCH'): void {
     const row = this.productToRowPatch(product, lineSource);
     this.upsertPrefillRow(row);
+    this.highlightSignal.set(true);
+  }
+
+  fillFromCatalogProduct(
+    entry: CatalogProduct,
+    lineSource: InquiryLineSource = 'CATALOG_MATCH',
+  ): void {
+    this.upsertPrefillRow({
+      catalogProductId: entry.productId,
+      brand: entry.brand ?? '',
+      designation: entry.designation ?? '',
+      description: entry.description ?? '',
+      attachmentCount: entry.attachmentCount ?? 0,
+      quantity: 1,
+      lineNotes: '',
+      lineSource,
+    });
     this.highlightSignal.set(true);
   }
 
@@ -94,6 +174,7 @@ export class ProductQueryFormService {
       !row.aliasNames.trim() &&
       !row.lineNotes.trim() &&
       !row.catalogProductId &&
+      row.localAttachments.length === 0 &&
       row.quantity <= 1
     );
   }
@@ -124,5 +205,17 @@ export class ProductQueryFormService {
       lineNotes: '',
       lineSource,
     };
+  }
+
+  private revokeLocalAttachments(attachments: RowLocalAttachment[]): void {
+    for (const attachment of attachments) {
+      URL.revokeObjectURL(attachment.blobUrl);
+    }
+  }
+
+  private revokeAllLocalAttachments(rows: ProductFormRow[]): void {
+    for (const row of rows) {
+      this.revokeLocalAttachments(row.localAttachments);
+    }
   }
 }
