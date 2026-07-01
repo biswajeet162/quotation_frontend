@@ -6,6 +6,7 @@ export interface CatalogProduct {
   brand: string;
   designation: string;
   description?: string;
+  attachmentCount?: number;
 }
 
 /** Public catalog attachment — safe fields only. */
