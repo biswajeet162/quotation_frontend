@@ -1,22 +1,28 @@
-import { Component, HostListener, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, HostListener, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Product } from '../../../core/models/product.model';
-import { ProductService } from '../../../core/services/product/product.service';
+import {
+  CatalogProduct,
+  CatalogProductAttachment,
+  toTimelineAttachment,
+} from '../../../core/models/catalog-product.model';
+import { TimelineAttachmentMediaType } from '../../../core/models/inquiry-timeline.model';
+import { ConsumerProductCatalogService } from '../../../core/services/product/consumer-product-catalog.service';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { InquiryCartService } from '../../../core/services/inquiry/inquiry-cart.service';
 import { ProductQueryFormService } from '../../../core/services/product/product-query-form.service';
-import { parseSpecifications } from '../../../shared/utils/specifications-display.util';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
+import { InquiryChatAttachmentComponent } from '../../../shared/components/inquiry-chat-attachment/inquiry-chat-attachment.component';
 
 @Component({
   selector: 'app-product-list',
-  imports: [FormsModule, LoadingOverlayComponent],
+  imports: [FormsModule, LoadingOverlayComponent, InquiryChatAttachmentComponent],
   templateUrl: './product-list.component.html',
   styleUrl: './product-list.component.css',
 })
 export class ProductListComponent implements OnInit {
-  private readonly productService = inject(ProductService);
+  private readonly catalogService = inject(ConsumerProductCatalogService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly cart = inject(InquiryCartService);
@@ -25,20 +31,44 @@ export class ProductListComponent implements OnInit {
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
   readonly searchTerm = signal('');
-  readonly products = signal<Product[]>([]);
+  readonly catalogProducts = signal<CatalogProduct[]>([]);
   readonly searchLoading = signal(false);
 
-  readonly selectedProduct = signal<Product | null>(null);
-  readonly detailLoading = signal(false);
-  readonly detailError = signal<string | null>(null);
+  readonly selectedProduct = signal<CatalogProduct | null>(null);
+
+  readonly attachmentPanelOpen = signal(false);
+  readonly attachmentProduct = signal<CatalogProduct | null>(null);
+  readonly attachments = signal<CatalogProductAttachment[]>([]);
+  readonly attachmentsLoading = signal(false);
+  readonly attachmentError = signal<string | null>(null);
+
+  readonly attachmentTabOptions: { type: TimelineAttachmentMediaType; label: string }[] = [
+    { type: 'IMAGE', label: 'Images' },
+    { type: 'VIDEO', label: 'Videos' },
+    { type: 'DOCUMENT', label: 'Files' },
+    { type: 'AUDIO', label: 'Voice' },
+  ];
+
+  readonly activeAttachmentTab = signal<TimelineAttachmentMediaType>('IMAGE');
+
+  readonly attachmentsForActiveTab = computed(() =>
+    this.attachments().filter((attachment) => attachment.mediaType === this.activeAttachmentTab()),
+  );
 
   readonly isConsumer = () => this.auth.currentUser()?.role === 'CONSUMER';
 
   readonly showNoMatchState = () =>
-    !this.loading() && !this.searchLoading() && this.searchTerm().trim().length > 0 && this.products().length === 0;
+    !this.loading() &&
+    !this.searchLoading() &&
+    this.searchTerm().trim().length > 0 &&
+    this.catalogProducts().length === 0;
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
+    if (this.attachmentPanelOpen()) {
+      this.closeAttachments();
+      return;
+    }
     if (this.selectedProduct() !== null) {
       this.closeDetail();
     }
@@ -52,9 +82,9 @@ export class ProductListComponent implements OnInit {
     this.loading.set(true);
     this.errorMessage.set(null);
 
-    this.productService.getAll().subscribe({
+    this.catalogService.list().subscribe({
       next: (products) => {
-        this.products.set(products);
+        this.catalogProducts.set(products);
         this.loading.set(false);
       },
       error: () => {
@@ -74,9 +104,9 @@ export class ProductListComponent implements OnInit {
     }
 
     this.searchLoading.set(true);
-    this.productService.search(term).subscribe({
+    this.catalogService.search(term).subscribe({
       next: (products) => {
-        this.products.set(products);
+        this.catalogProducts.set(products);
         this.searchLoading.set(false);
       },
       error: () => {
@@ -86,45 +116,65 @@ export class ProductListComponent implements OnInit {
     });
   }
 
-  openProductDetail(product: Product, event: Event): void {
+  openProductDetail(entry: CatalogProduct, event: Event): void {
     event.stopPropagation();
-    this.detailLoading.set(true);
-    this.detailError.set(null);
-    this.selectedProduct.set(product);
-
-    this.productService.getById(product.id).subscribe({
-      next: (fullProduct) => {
-        this.selectedProduct.set(fullProduct);
-        this.detailLoading.set(false);
-      },
-      error: () => {
-        this.detailLoading.set(false);
-        this.detailError.set('Could not load product details.');
-      },
-    });
+    this.selectedProduct.set(entry);
   }
 
   closeDetail(): void {
     this.selectedProduct.set(null);
-    this.detailLoading.set(false);
-    this.detailError.set(null);
   }
 
-  useInQuery(product: Product, event: Event): void {
+  openAttachments(entry: CatalogProduct, event: Event): void {
+    event.stopPropagation();
+    this.attachmentProduct.set(entry);
+    this.attachmentPanelOpen.set(true);
+    this.attachmentError.set(null);
+    this.activeAttachmentTab.set('IMAGE');
+    this.loadAttachments(entry.productId);
+  }
+
+  closeAttachments(): void {
+    this.attachmentPanelOpen.set(false);
+    this.attachmentProduct.set(null);
+    this.attachments.set([]);
+    this.attachmentError.set(null);
+    this.activeAttachmentTab.set('IMAGE');
+  }
+
+  setAttachmentTab(tab: TimelineAttachmentMediaType): void {
+    this.activeAttachmentTab.set(tab);
+  }
+
+  attachmentCountFor(tab: TimelineAttachmentMediaType): number {
+    return this.attachments().filter((attachment) => attachment.mediaType === tab).length;
+  }
+
+  activeAttachmentTabLabel(): string {
+    return (
+      this.attachmentTabOptions.find((tab) => tab.type === this.activeAttachmentTab())?.label ??
+      'Attachments'
+    );
+  }
+
+  toTimelineAttachment(attachment: CatalogProductAttachment) {
+    return toTimelineAttachment(attachment);
+  }
+
+  useInQuery(entry: CatalogProduct, event: Event): void {
     event.stopPropagation();
     if (!this.isConsumer()) {
       return;
     }
 
-    const go = (p: Product) => {
-      this.queryForm.fillFromProduct(p, 'CATALOG_MATCH');
-      void this.router.navigate(['/requests']);
+    const product: Product = {
+      id: entry.productId,
+      brand: entry.brand,
+      designation: entry.designation,
+      description: entry.description,
     };
-
-    this.productService.getById(product.id).subscribe({
-      next: go,
-      error: () => go(product),
-    });
+    this.queryForm.fillFromProduct(product, 'CATALOG_MATCH');
+    void this.router.navigate(['/requests']);
   }
 
   goToQueryFromSearch(): void {
@@ -138,7 +188,26 @@ export class ProductListComponent implements OnInit {
     return value?.trim() ? value : '—';
   }
 
-  specificationEntries(product: Product) {
-    return parseSpecifications(product.specifications);
+  private loadAttachments(productId: string): void {
+    this.attachmentsLoading.set(true);
+    this.attachmentError.set(null);
+
+    this.catalogService.listAttachments(productId).subscribe({
+      next: (list) => {
+        this.attachments.set(list);
+        this.attachmentsLoading.set(false);
+        this.selectInitialAttachmentTab(list);
+      },
+      error: () => {
+        this.attachmentsLoading.set(false);
+        this.attachmentError.set('Could not load attachments.');
+      },
+    });
+  }
+
+  private selectInitialAttachmentTab(list: CatalogProductAttachment[]): void {
+    const order: TimelineAttachmentMediaType[] = ['IMAGE', 'VIDEO', 'DOCUMENT', 'AUDIO'];
+    const firstWithItems = order.find((type) => list.some((attachment) => attachment.mediaType === type));
+    this.activeAttachmentTab.set(firstWithItems ?? 'IMAGE');
   }
 }

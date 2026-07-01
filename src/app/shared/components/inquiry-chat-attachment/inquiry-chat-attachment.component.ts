@@ -12,6 +12,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { InquiryTimelineAttachment } from '../../../core/models/inquiry-timeline.model';
 import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
 import { DistributorProductService } from '../../../core/services/distributor/distributor-product.service';
+import { ConsumerProductCatalogService } from '../../../core/services/product/consumer-product-catalog.service';
 import {
   documentPreviewSizeMessage,
   isDocumentTooLargeForPreview,
@@ -31,11 +32,12 @@ import { MediaLightboxComponent } from '../media-lightbox/media-lightbox.compone
 })
 export class InquiryChatAttachmentComponent implements OnInit {
   readonly attachment = input.required<InquiryTimelineAttachment>();
-  readonly attachmentSource = input<'inquiry' | 'product'>('inquiry');
+  readonly attachmentSource = input<'inquiry' | 'product' | 'consumer'>('inquiry');
   readonly previewMode = input<'chat' | 'panel'>('chat');
 
   private readonly inquiryService = inject(InquiryService);
   private readonly productService = inject(DistributorProductService);
+  private readonly catalogService = inject(ConsumerProductCatalogService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly loading = signal(true);
@@ -52,10 +54,16 @@ export class InquiryChatAttachmentComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    const fetchBlob =
-      this.attachmentSource() === 'product'
-        ? this.productService.fetchAttachmentBlob.bind(this.productService)
-        : this.inquiryService.fetchAttachmentBlob.bind(this.inquiryService);
+    const fetchBlob = (() => {
+      switch (this.attachmentSource()) {
+        case 'product':
+          return this.productService.fetchAttachmentBlob.bind(this.productService);
+        case 'consumer':
+          return this.catalogService.fetchAttachmentBlob.bind(this.catalogService);
+        default:
+          return this.inquiryService.fetchAttachmentBlob.bind(this.inquiryService);
+      }
+    })();
 
     fetchBlob(this.attachment().url)
       .pipe(takeUntilDestroyed(this.destroyRef))

@@ -46,7 +46,7 @@
 }
 
 .actions-cell {
-  width: 5rem;
+  white-space: nowrap;
 }
 
 .btn-add {
@@ -192,6 +192,7 @@
 
 .products-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: 0.9rem;
 }
@@ -201,6 +202,189 @@
   padding: 0.65rem 0.75rem;
   text-align: left;
   border-bottom: 1px solid #e2e8f0;
+  vertical-align: middle;
+}
+
+.products-table th.col-serial,
+.products-table td.serial-cell {
+  width: 3rem;
+  min-width: 3rem;
+  text-align: center;
+  color: #64748b;
+}
+
+.products-table th.col-designation,
+.products-table td.designation-cell {
+  width: 24%;
+  min-width: 10rem;
+}
+
+.products-table th.col-brand,
+.products-table td.brand-cell {
+  width: 14%;
+  min-width: 7rem;
+}
+
+.products-table th.col-description,
+.products-table td.description-cell {
+  width: auto;
+}
+
+.products-table th.col-attachment,
+.products-table td.attachment-cell {
+  width: 6.25rem;
+  min-width: 6.25rem;
+  text-align: center;
+  padding-left: 0.3rem;
+  padding-right: 0.3rem;
+}
+
+.products-table th.col-action,
+.products-table td.actions-cell {
+  width: 8.5rem;
+  min-width: 8.5rem;
+  text-align: center;
+}
+
+.designation-cell,
+.brand-cell,
+.description-cell {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-attachment {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  padding: 0;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #0f766e;
+  cursor: pointer;
+}
+
+.btn-attachment svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  fill: currentColor;
+}
+
+.btn-attachment:hover {
+  border-color: #0f766e;
+  background: #f0fdfa;
+}
+
+.attachment-badge {
+  position: absolute;
+  top: -0.35rem;
+  right: -0.35rem;
+  min-width: 1rem;
+  height: 1rem;
+  padding: 0 0.2rem;
+  border-radius: 999px;
+  background: #0f766e;
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1rem;
+}
+
+.attachment-modal {
+  width: min(640px, calc(100vw - 2rem));
+}
+
+.attachment-subtitle {
+  margin: 0.2rem 0 0;
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+.attachment-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.attachment-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.2rem;
+  border-radius: 10px;
+  background: #f1f5f9;
+}
+
+.attachment-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.75rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.attachment-tab.active {
+  background: #fff;
+  color: #0f766e;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.tab-count {
+  min-width: 1.1rem;
+  height: 1.1rem;
+  padding: 0 0.25rem;
+  border-radius: 999px;
+  background: #ccfbf1;
+  color: #0f766e;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1.1rem;
+}
+
+.attachment-tab-panel {
+  min-height: 10rem;
+}
+
+.attachment-tab-heading {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  color: #0f172a;
+}
+
+.attachment-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.attachment-item {
+  padding: 0.65rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.attachment-empty {
+  text-align: center;
+  padding: 1.5rem 0.5rem;
+}
+
+.description-cell {
+  color: #475569;
 }
 
 .products-table th {
@@ -366,12 +550,4 @@
 
 .spec-kv-plain {
   grid-column: 1 / -1;
-}
-
-.description-cell {
-  max-width: 280px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: #475569;
 }

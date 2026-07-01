@@ -4,7 +4,7 @@
   <header class="page-header">
     <div>
       <h1>Products</h1>
-      <p class="muted">Browse and search the product catalog.</p>
+      <p class="muted">Browse active distributor products and add them to your quotation.</p>
     </div>
     <button type="button" class="btn-secondary" (click)="loadProducts()" [disabled]="loading()">
       Refresh
@@ -15,7 +15,7 @@
     <input
       type="search"
       class="search-input"
-      placeholder="Search brand, designation, category…"
+      placeholder="Search designation, brand, description…"
       [ngModel]="searchTerm()"
       (ngModelChange)="onSearchChange($event)"
     />
@@ -23,7 +23,7 @@
       @if (searchLoading()) {
         Searching…
       } @else {
-        {{ products().length }} product(s)
+        {{ catalogProducts().length }} product(s)
       }
     </span>
   </div>
@@ -42,36 +42,54 @@
         </button>
       }
     </div>
-  } @else if (products().length === 0) {
-    <p class="state-message">No products in catalog.</p>
+  } @else if (catalogProducts().length === 0) {
+    <p class="state-message">No active products in catalog.</p>
   } @else {
     <div class="table-wrap">
       <table class="products-table">
         <thead>
           <tr>
-            <th>ID</th>
-            <th>Brand</th>
-            <th>Designation</th>
-            <th>Category</th>
-            <th>Group</th>
+            <th class="col-serial">#</th>
+            <th class="col-designation">Designation</th>
+            <th class="col-brand">Brand</th>
+            <th class="col-description">Description</th>
+            <th class="col-attachment">Attachment</th>
             @if (isConsumer()) {
-              <th></th>
+              <th class="col-action"></th>
             }
           </tr>
         </thead>
         <tbody>
-          @for (product of products(); track product.id) {
+          @for (product of catalogProducts(); track product.productId; let i = $index) {
             <tr
               class="product-row"
               tabindex="0"
               (click)="openProductDetail(product, $event)"
               (keydown.enter)="openProductDetail(product, $event)"
             >
-              <td>{{ product.id }}</td>
-              <td>{{ product.brand }}</td>
-              <td>{{ product.designation }}</td>
-              <td>{{ product.category || '—' }}</td>
-              <td>{{ product.groupName || '—' }}</td>
+              <td class="serial-cell">{{ i + 1 }}</td>
+              <td class="designation-cell" [title]="product.designation">{{ product.designation }}</td>
+              <td class="brand-cell" [title]="product.brand">{{ product.brand }}</td>
+              <td class="description-cell" [title]="product.description || ''">
+                {{ product.description || '—' }}
+              </td>
+              <td class="attachment-cell">
+                <button
+                  type="button"
+                  class="btn-attachment"
+                  (click)="openAttachments(product, $event)"
+                  [attr.aria-label]="
+                    'View attachments for ' + product.brand + ' ' + product.designation
+                  "
+                  title="Attachments"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M16.5 6v11.5a4 4 0 1 1-8 0V5a2.5 2.5 0 1 1 5 0v10.5a1.5 1.5 0 1 1-3 0V6"
+                    />
+                  </svg>
+                </button>
+              </td>
               @if (isConsumer()) {
                 <td class="actions-cell">
                   <button type="button" class="btn-add" (click)="useInQuery(product, $event)">
@@ -101,46 +119,15 @@
     <header class="modal-header">
       <div>
         <h2 id="product-detail-title">{{ product.brand }} — {{ product.designation }}</h2>
-        <p class="modal-subtitle">Product #{{ product.id }}</p>
       </div>
       <button type="button" class="modal-close" aria-label="Close" (click)="closeDetail()">×</button>
     </header>
     <div class="modal-body">
-      @if (detailLoading()) {
-        <p class="state-message">Loading details…</p>
-      } @else if (detailError()) {
-        <div class="alert alert-error" role="alert">{{ detailError() }}</div>
-      } @else {
-        <dl class="detail-grid">
-          <div><dt>Brand</dt><dd>{{ displayValue(product.brand) }}</dd></div>
-          <div><dt>Designation</dt><dd>{{ displayValue(product.designation) }}</dd></div>
-          <div><dt>Category</dt><dd>{{ displayValue(product.category) }}</dd></div>
-          <div><dt>Group</dt><dd>{{ displayValue(product.groupName) }}</dd></div>
-          <div class="detail-full"><dt>Description</dt><dd>{{ displayValue(product.description) }}</dd></div>
-          <div class="detail-full">
-            <dt>Specifications</dt>
-            <dd>
-              @if (specificationEntries(product).length === 0) {
-                —
-              } @else {
-                <dl class="spec-kv-list">
-                  @for (entry of specificationEntries(product); track entry.key + entry.value) {
-                    <div class="spec-kv-row">
-                      @if (entry.key) {
-                        <dt>{{ entry.key }}</dt>
-                        <dd>{{ entry.value }}</dd>
-                      } @else {
-                        <dd class="spec-kv-plain">{{ entry.value }}</dd>
-                      }
-                    </div>
-                  }
-                </dl>
-              }
-            </dd>
-          </div>
-          <div class="detail-full"><dt>Alias names</dt><dd>{{ displayValue(product.aliasNames) }}</dd></div>
-        </dl>
-      }
+      <dl class="detail-grid">
+        <div><dt>Brand</dt><dd>{{ displayValue(product.brand) }}</dd></div>
+        <div><dt>Designation</dt><dd>{{ displayValue(product.designation) }}</dd></div>
+        <div class="detail-full"><dt>Description</dt><dd>{{ displayValue(product.description) }}</dd></div>
+      </dl>
     </div>
     <footer class="modal-footer">
       @if (isConsumer()) {
@@ -150,5 +137,72 @@
       }
       <button type="button" class="btn-secondary" (click)="closeDetail()">Close</button>
     </footer>
+  </div>
+}
+
+@if (attachmentPanelOpen()) {
+  <div class="modal-backdrop" role="presentation" (click)="closeAttachments()"></div>
+  <div
+    class="modal-dialog attachment-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="catalog-attachment-title"
+    (click)="$event.stopPropagation()"
+  >
+    <header class="modal-header">
+      <div>
+        <h2 id="catalog-attachment-title">Attachments</h2>
+        @if (attachmentProduct(); as product) {
+          <p class="attachment-subtitle">{{ product.brand }} · {{ product.designation }}</p>
+        }
+      </div>
+      <button type="button" class="modal-close" aria-label="Close" (click)="closeAttachments()">×</button>
+    </header>
+
+    <div class="modal-body attachment-body">
+      @if (attachmentError()) {
+        <div class="alert alert-error" role="alert">{{ attachmentError() }}</div>
+      }
+
+      <nav class="attachment-tabs" aria-label="Attachment types">
+        @for (tab of attachmentTabOptions; track tab.type) {
+          <button
+            type="button"
+            class="attachment-tab"
+            [class.active]="activeAttachmentTab() === tab.type"
+            (click)="setAttachmentTab(tab.type)"
+          >
+            {{ tab.label }}
+            @if (attachmentCountFor(tab.type) > 0) {
+              <span class="tab-count">{{ attachmentCountFor(tab.type) }}</span>
+            }
+          </button>
+        }
+      </nav>
+
+      <div class="attachment-tab-panel">
+        <h3 class="attachment-tab-heading">{{ activeAttachmentTabLabel() }}</h3>
+
+        @if (attachmentsLoading()) {
+          <p class="state-message">Loading attachments…</p>
+        } @else if (attachmentsForActiveTab().length === 0) {
+          <p class="state-message attachment-empty">
+            No {{ activeAttachmentTabLabel().toLowerCase() }} for this product.
+          </p>
+        } @else {
+          <ul class="attachment-list">
+            @for (attachment of attachmentsForActiveTab(); track attachment.id) {
+              <li class="attachment-item">
+                <app-inquiry-chat-attachment
+                  [attachment]="toTimelineAttachment(attachment)"
+                  [attachmentSource]="'consumer'"
+                  [previewMode]="'panel'"
+                />
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    </div>
   </div>
 }
