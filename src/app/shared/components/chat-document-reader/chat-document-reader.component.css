@@ -1,7 +1,7 @@
 .doc-reader-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1300;
+  z-index: 2000;
   display: flex;
   flex-direction: column;
   background: #e2e8f0;
@@ -86,9 +86,8 @@
 
 .doc-reader-body {
   flex: 1;
-  overflow-y: auto;
-  overflow-x: auto;
-  padding: 1rem;
+  overflow: auto;
+  padding: 0;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -117,12 +116,12 @@
 .doc-reader-body .pdf-native-viewer {
   display: block;
   width: 100%;
-  min-height: calc(100vh - 4.5rem);
-  height: calc(100vh - 4.5rem);
+  min-height: calc(100vh - 4rem);
+  height: calc(100vh - 4rem);
   border: none;
   background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.12);
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .doc-reader-body .pdf-pages {

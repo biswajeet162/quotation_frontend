@@ -1,0 +1,34 @@
+<div
+  class="media-lightbox"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Full size preview"
+  (click)="close()"
+>
+  <button
+    type="button"
+    class="lightbox-close"
+    aria-label="Close preview"
+    (click)="close(); $event.stopPropagation()"
+  >
+    ×
+  </button>
+  @if (mediaType() === 'IMAGE') {
+    <img
+      [src]="objectUrl()"
+      [alt]="fileName()"
+      class="lightbox-image"
+      (click)="$event.stopPropagation()"
+    />
+  } @else {
+    <video
+      [src]="objectUrl()"
+      class="lightbox-video"
+      controls
+      autoplay
+      (click)="$event.stopPropagation()"
+    >
+      Your browser does not support video playback.
+    </video>
+  }
+</div>

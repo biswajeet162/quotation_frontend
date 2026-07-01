@@ -6,6 +6,7 @@ import {
   HostListener,
   inject,
   input,
+  OnInit,
   output,
   signal,
   viewChild,
@@ -18,6 +19,7 @@ import {
   isDocumentTooLargeForPreview,
   resolveDocumentViewerKind,
 } from '../../utils/document-viewer.util';
+import { teleportElementToBody } from '../../utils/teleport-to-body.util';
 
 @Component({
   selector: 'app-chat-document-reader',
@@ -25,7 +27,7 @@ import {
   styleUrl: './chat-document-reader.component.css',
   encapsulation: ViewEncapsulation.None,
 })
-export class ChatDocumentReaderComponent {
+export class ChatDocumentReaderComponent implements OnInit {
   readonly blob = input.required<Blob>();
   readonly fileName = input.required<string>();
   readonly contentType = input.required<string>();
@@ -34,6 +36,7 @@ export class ChatDocumentReaderComponent {
   readonly closed = output<void>();
 
   private readonly destroyRef = inject(DestroyRef);
+  private readonly host = inject(ElementRef<HTMLElement>);
   private readonly bodyRef = viewChild<ElementRef<HTMLElement>>('readerBody');
   private readonly createdUrls: string[] = [];
 
@@ -51,6 +54,10 @@ export class ChatDocumentReaderComponent {
         URL.revokeObjectURL(url);
       }
     });
+  }
+
+  ngOnInit(): void {
+    teleportElementToBody(this.host.nativeElement, this.destroyRef);
   }
 
   typeLabel(): string {

@@ -11,23 +11,31 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { InquiryTimelineAttachment } from '../../../core/models/inquiry-timeline.model';
 import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
+import { DistributorProductService } from '../../../core/services/distributor/distributor-product.service';
 import {
   documentPreviewSizeMessage,
   isDocumentTooLargeForPreview,
 } from '../../utils/document-viewer.util';
 import { ChatAudioPlayerComponent } from '../chat-audio-player/chat-audio-player.component';
 import { ChatDocumentReaderComponent } from '../chat-document-reader/chat-document-reader.component';
+import { MediaLightboxComponent } from '../media-lightbox/media-lightbox.component';
 
 @Component({
   selector: 'app-inquiry-chat-attachment',
-  imports: [ChatAudioPlayerComponent, ChatDocumentReaderComponent],
+  imports: [ChatAudioPlayerComponent, ChatDocumentReaderComponent, MediaLightboxComponent],
   templateUrl: './inquiry-chat-attachment.component.html',
   styleUrl: './inquiry-chat-attachment.component.css',
+  host: {
+    '[class.panel-preview]': 'previewMode() === "panel"',
+  },
 })
 export class InquiryChatAttachmentComponent implements OnInit {
   readonly attachment = input.required<InquiryTimelineAttachment>();
+  readonly attachmentSource = input<'inquiry' | 'product'>('inquiry');
+  readonly previewMode = input<'chat' | 'panel'>('chat');
 
   private readonly inquiryService = inject(InquiryService);
+  private readonly productService = inject(DistributorProductService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly loading = signal(true);
@@ -44,8 +52,12 @@ export class InquiryChatAttachmentComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.inquiryService
-      .fetchAttachmentBlob(this.attachment().url)
+    const fetchBlob =
+      this.attachmentSource() === 'product'
+        ? this.productService.fetchAttachmentBlob.bind(this.productService)
+        : this.inquiryService.fetchAttachmentBlob.bind(this.inquiryService);
+
+    fetchBlob(this.attachment().url)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (blob) => {

@@ -111,40 +111,20 @@
     />
   }
 
-  @if (viewerOpen() && (attachment().mediaType === 'IMAGE' || attachment().mediaType === 'VIDEO')) {
-    <div
-      class="media-lightbox"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Full size preview"
-      (click)="closeViewer()"
-    >
-      <button
-        type="button"
-        class="lightbox-close"
-        aria-label="Close preview"
-        (click)="closeViewer(); $event.stopPropagation()"
-      >
-        ×
-      </button>
-      @if (attachment().mediaType === 'IMAGE') {
-        <img
-          [src]="objectUrl()!"
-          [alt]="attachment().fileName"
-          class="lightbox-image"
-          (click)="$event.stopPropagation()"
-        />
-      } @else {
-        <video
-          [src]="objectUrl()!"
-          class="lightbox-video"
-          controls
-          autoplay
-          (click)="$event.stopPropagation()"
-        >
-          Your browser does not support video playback.
-        </video>
-      }
-    </div>
+  @if (viewerOpen() && objectUrl() && attachment().mediaType === 'IMAGE') {
+    <app-media-lightbox
+      [objectUrl]="objectUrl()!"
+      [fileName]="attachment().fileName"
+      mediaType="IMAGE"
+      (closed)="closeViewer()"
+    />
+  }
+  @if (viewerOpen() && objectUrl() && attachment().mediaType === 'VIDEO') {
+    <app-media-lightbox
+      [objectUrl]="objectUrl()!"
+      [fileName]="attachment().fileName"
+      mediaType="VIDEO"
+      (closed)="closeViewer()"
+    />
   }
 }

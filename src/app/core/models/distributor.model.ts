@@ -50,6 +50,14 @@ export interface DistributorProfile {
   country?: string;
 }
 
+export interface DistributorProductAttachment {
+  id: string;
+  fileName: string;
+  contentType: string;
+  mediaType: 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT';
+  url: string;
+}
+
 export interface DistributorProductEntry {
   id: string;
   productId: string;
@@ -69,6 +77,8 @@ export interface DistributorProductEntry {
   priceValidTill?: string;
   extraInfo?: string;
   isActive?: boolean;
+  attachmentCount?: number;
+  attachments?: DistributorProductAttachment[];
   createdAt?: string;
   updatedAt?: string;
 }
