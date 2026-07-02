@@ -1,7 +1,7 @@
 import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
-import { finalize, timeout } from 'rxjs';
+import { finalize, map, of, switchMap, timeout } from 'rxjs';
 
 import {
 
@@ -43,6 +43,12 @@ interface ProductFormState {
 
   stockQuantity: string | number;
 
+}
+
+interface PendingAttachment {
+  id: string;
+  file: File;
+  mediaType: TimelineAttachmentMediaType;
 }
 
 
@@ -134,6 +140,28 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
 
   readonly attachmentsForActiveTab = computed(() =>
     this.attachments().filter((attachment) => attachment.mediaType === this.activeAttachmentTab()),
+  );
+
+  readonly pendingAttachments = signal<PendingAttachment[]>([]);
+
+  readonly pendingAttachmentsForActiveTab = computed(() =>
+    this.pendingAttachments().filter((attachment) => attachment.mediaType === this.activeAttachmentTab()),
+  );
+
+  readonly detailsOpen = signal(false);
+
+  readonly detailsProduct = signal<DistributorProductEntry | null>(null);
+
+  readonly detailsAttachments = signal<DistributorProductAttachment[]>([]);
+
+  readonly detailsLoading = signal(false);
+
+  readonly detailsError = signal<string | null>(null);
+
+  readonly detailsAttachmentTab = signal<TimelineAttachmentMediaType>('IMAGE');
+
+  readonly detailsAttachmentsForActiveTab = computed(() =>
+    this.detailsAttachments().filter((attachment) => attachment.mediaType === this.detailsAttachmentTab()),
   );
 
 
@@ -273,6 +301,11 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
     this.form.set(emptyForm());
 
     this.actionError.set(null);
+    this.attachmentError.set(null);
+    this.activeAttachmentTab.set('IMAGE');
+    this.attachments.set([]);
+    this.pendingAttachments.set([]);
+    this.attachmentProduct.set(null);
 
     this.formOpen.set(true);
 
@@ -303,6 +336,11 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
     });
 
     this.actionError.set(null);
+    this.attachmentError.set(null);
+    this.activeAttachmentTab.set('IMAGE');
+    this.pendingAttachments.set([]);
+    this.attachmentProduct.set(product);
+    this.loadAttachments(product.id);
 
     this.formOpen.set(true);
 
@@ -323,6 +361,50 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
     this.editingProduct.set(null);
 
     this.actionError.set(null);
+    this.attachmentError.set(null);
+    this.pendingAttachments.set([]);
+    this.attachments.set([]);
+    this.attachmentProduct.set(null);
+
+  }
+
+
+
+  openDetails(product: DistributorProductEntry): void {
+
+    this.detailsProduct.set(product);
+    this.detailsOpen.set(true);
+    this.detailsError.set(null);
+    this.detailsAttachmentTab.set('IMAGE');
+    this.loadDetailsAttachments(product.id);
+
+  }
+
+
+
+  closeDetails(): void {
+
+    this.detailsOpen.set(false);
+    this.detailsProduct.set(null);
+    this.detailsAttachments.set([]);
+    this.detailsError.set(null);
+    this.detailsAttachmentTab.set('IMAGE');
+
+  }
+
+
+
+  setDetailsAttachmentTab(tab: TimelineAttachmentMediaType): void {
+
+    this.detailsAttachmentTab.set(tab);
+
+  }
+
+
+
+  detailsAttachmentCountFor(tab: TimelineAttachmentMediaType): number {
+
+    return this.detailsAttachments().filter((attachment) => attachment.mediaType === tab).length;
 
   }
 
@@ -378,7 +460,19 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
 
   attachmentCountFor(tab: TimelineAttachmentMediaType): number {
 
+    if (this.formOpen() && this.formMode() === 'create') {
+      return this.pendingAttachments().filter((attachment) => attachment.mediaType === tab).length;
+    }
+
     return this.attachments().filter((attachment) => attachment.mediaType === tab).length;
+
+  }
+
+
+
+  removePendingAttachment(id: string): void {
+
+    this.pendingAttachments.update((items) => items.filter((item) => item.id !== id));
 
   }
 
@@ -428,6 +522,30 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
 
       },
 
+    });
+
+  }
+
+
+
+  loadDetailsAttachments(productId: string): void {
+
+    this.detailsLoading.set(true);
+    this.detailsError.set(null);
+
+    this.productService.listAttachments(productId).subscribe({
+      next: (list) => {
+        this.detailsAttachments.set(list);
+        this.detailsLoading.set(false);
+        const firstWithItems = this.attachmentTabOptions
+          .map((tab) => tab.type)
+          .find((type) => list.some((attachment) => attachment.mediaType === type));
+        this.detailsAttachmentTab.set(firstWithItems ?? 'IMAGE');
+      },
+      error: () => {
+        this.detailsLoading.set(false);
+        this.detailsError.set('Could not load product details.');
+      },
     });
 
   }
@@ -548,7 +666,7 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
 
         const file = new File([blob], `voice-${Date.now()}.${ext}`, { type });
 
-        this.uploadFiles([file]);
+        this.handleSelectedFiles([file]);
 
         this.discardRecording = false;
 
@@ -713,20 +831,39 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
     if (this.formMode() === 'create') {
 
       const request = this.toCreateRequest(state);
+      const pendingFiles = this.pendingAttachments().map((attachment) => attachment.file);
 
       this.productService
         .create(request)
         .pipe(
           timeout(20000),
+          switchMap((created) => {
+            if (pendingFiles.length === 0) {
+              return of({ created, attachmentCount: 0 });
+            }
+            return this.productService.uploadAttachments(created.id, pendingFiles).pipe(
+              timeout(20000),
+              map((uploaded) => ({ created, attachmentCount: uploaded.length })),
+            );
+          }),
           finalize(() => this.saving.set(false)),
         )
         .subscribe({
 
-        next: (created) => {
+        next: ({ created, attachmentCount }) => {
 
-          this.products.update((list) => [created, ...list]);
+          this.products.update((list) => [
+            {
+              ...created,
+              attachmentCount: (created.attachmentCount ?? 0) + attachmentCount,
+            },
+            ...list,
+          ]);
 
           this.formOpen.set(false);
+          this.pendingAttachments.set([]);
+          this.attachments.set([]);
+          this.attachmentProduct.set(null);
 
         },
 
@@ -946,9 +1083,56 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
 
     if (validFiles.length > 0) {
 
-      this.uploadFiles(validFiles);
+      this.handleSelectedFiles(validFiles);
 
     }
+
+  }
+
+
+
+  private handleSelectedFiles(files: File[]): void {
+
+    if (files.length === 0) {
+      return;
+    }
+
+    if (this.formOpen() && this.formMode() === 'create') {
+      this.queuePendingFiles(files);
+      return;
+    }
+
+    this.uploadFiles(files);
+
+  }
+
+
+
+  private queuePendingFiles(files: File[]): void {
+
+    this.attachmentError.set(null);
+
+    const queued = files
+      .map((file) => {
+        const mediaType = this.resolveMediaType(file);
+        if (!mediaType) {
+          return null;
+        }
+        return {
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          file,
+          mediaType,
+        } as PendingAttachment;
+      })
+      .filter((item): item is PendingAttachment => Boolean(item));
+
+    if (queued.length === 0) {
+      this.attachmentError.set('Could not queue selected attachment files.');
+      return;
+    }
+
+    this.pendingAttachments.update((items) => [...items, ...queued]);
+    this.activeAttachmentTab.set(queued[0].mediaType);
 
   }
 

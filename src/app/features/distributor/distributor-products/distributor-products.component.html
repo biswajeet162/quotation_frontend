@@ -59,7 +59,11 @@
         </thead>
         <tbody>
           @for (product of filteredProducts(); track product.id; let index = $index) {
-            <tr [class.inactive-row]="product.isActive === false">
+            <tr
+              [class.inactive-row]="product.isActive === false"
+              class="product-row"
+              (click)="openDetails(product)"
+            >
               <td class="serial-cell">{{ index + 1 }}</td>
               <td class="brand-cell" [title]="product.brand">{{ product.brand }}</td>
               <td class="designation-cell" [title]="product.designation">{{ product.designation }}</td>
@@ -79,6 +83,7 @@
                     type="checkbox"
                     [checked]="product.isActive !== false"
                     [disabled]="isTogglingActive(product.id)"
+                    (click)="$event.stopPropagation()"
                     (change)="onActiveToggle(product)"
                   />
                   <span class="active-toggle-slider" aria-hidden="true"></span>
@@ -88,7 +93,7 @@
                 <button
                   type="button"
                   class="btn-attachment"
-                  (click)="openAttachments(product)"
+                  (click)="$event.stopPropagation(); openAttachments(product)"
                   [attr.aria-label]="
                     'Manage attachments for ' + product.brand + ' ' + product.designation
                   "
@@ -105,7 +110,9 @@
                 </button>
               </td>
               <td class="actions-cell">
-                <button type="button" class="btn-edit" (click)="openEdit(product)">Edit</button>
+                <button type="button" class="btn-edit" (click)="$event.stopPropagation(); openEdit(product)">
+                  Edit
+                </button>
               </td>
             </tr>
           }
@@ -115,6 +122,92 @@
   }
   }
 </section>
+
+@if (detailsOpen()) {
+  <div class="modal-backdrop" role="presentation" (click)="closeDetails()"></div>
+  <div class="modal details-modal" role="dialog" aria-modal="true" aria-labelledby="product-details-title">
+    <header class="modal-header">
+      <div>
+        <h2 id="product-details-title">Product details</h2>
+        @if (detailsProduct(); as product) {
+          <p class="attachment-subtitle">{{ product.brand }} · {{ product.designation }}</p>
+        }
+      </div>
+      <button type="button" class="btn-icon-close" (click)="closeDetails()" aria-label="Close">×</button>
+    </header>
+
+    <div class="modal-body attachment-body">
+      @if (detailsProduct(); as product) {
+        <div class="details-list">
+          <div class="details-row">
+            <span class="details-label">Brand</span>
+            <span class="details-value">{{ product.brand }}</span>
+          </div>
+          <div class="details-row">
+            <span class="details-label">Designation</span>
+            <span class="details-value">{{ product.designation }}</span>
+          </div>
+          <div class="details-row">
+            <span class="details-label">RSP</span>
+            <span class="details-value">{{ product.rsp ?? '—' }}</span>
+          </div>
+          <div class="details-row">
+            <span class="details-label">Stock</span>
+            <span class="details-value">{{ product.stockQuantity ?? 0 }}</span>
+          </div>
+          <div class="details-row">
+            <span class="details-label">Description</span>
+            <span class="details-value">{{ product.description || '—' }}</span>
+          </div>
+          <div class="details-row">
+            <span class="details-label">Specifications</span>
+            <span class="details-value">{{ product.specifications || '—' }}</span>
+          </div>
+        </div>
+      }
+
+      <nav class="attachment-tabs" aria-label="Detail attachment types">
+        @for (tab of attachmentTabOptions; track tab.type) {
+          <button
+            type="button"
+            class="attachment-tab"
+            [class.active]="detailsAttachmentTab() === tab.type"
+            (click)="setDetailsAttachmentTab(tab.type)"
+          >
+            {{ tab.label }}
+            @if (detailsAttachmentCountFor(tab.type) > 0) {
+              <span class="tab-count">{{ detailsAttachmentCountFor(tab.type) }}</span>
+            }
+          </button>
+        }
+      </nav>
+
+      @if (detailsLoading()) {
+        <p class="state-message">Loading product details…</p>
+      } @else if (detailsError()) {
+        <div class="alert-error" role="alert">{{ detailsError() }}</div>
+      } @else if (detailsAttachmentsForActiveTab().length === 0) {
+        <p class="state-message attachment-empty">
+          No {{ detailsAttachmentTab().toLowerCase() }} found for this product.
+        </p>
+      } @else {
+        <ul class="attachment-list">
+          @for (attachment of detailsAttachmentsForActiveTab(); track attachment.id) {
+            <li class="attachment-item">
+              <div class="attachment-preview">
+                <app-inquiry-chat-attachment
+                  [attachment]="attachment"
+                  [attachmentSource]="'product'"
+                  [previewMode]="'panel'"
+                />
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  </div>
+}
 
 @if (formOpen()) {
   <div class="modal-backdrop" role="presentation" (click)="closeForm()"></div>
@@ -200,6 +293,188 @@
           ></textarea>
         </div>
       </div>
+
+      <section class="form-attachments">
+        <h3>Attachments</h3>
+        <p class="attachment-note">
+          @if (formMode() === 'create') {
+            Add files now; they will be uploaded automatically when you save this product.
+          } @else {
+            Manage product attachments directly while editing.
+          }
+        </p>
+
+        <input
+          #formImageInput
+          type="file"
+          class="visually-hidden"
+          accept="image/*"
+          multiple
+          (change)="onImageSelected($event)"
+        />
+        <input
+          #formVideoInput
+          type="file"
+          class="visually-hidden"
+          accept="video/*"
+          multiple
+          (change)="onVideoSelected($event)"
+        />
+        <input
+          #formDocumentInput
+          type="file"
+          class="visually-hidden"
+          accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.pps,.ppsx,.txt,.csv,.rtf,.odt,.ods"
+          multiple
+          (change)="onDocumentSelected($event)"
+        />
+
+        <nav class="attachment-tabs" aria-label="Attachment types">
+          @for (tab of attachmentTabOptions; track tab.type) {
+            <button
+              type="button"
+              class="attachment-tab"
+              [class.active]="activeAttachmentTab() === tab.type"
+              (click)="setAttachmentTab(tab.type)"
+            >
+              {{ tab.label }}
+              @if (attachmentCountFor(tab.type) > 0) {
+                <span class="tab-count">{{ attachmentCountFor(tab.type) }}</span>
+              }
+            </button>
+          }
+        </nav>
+
+        <div class="attachment-tab-panel">
+          <div class="attachment-tab-header">
+            <h3>{{ activeAttachmentTabLabel() }}</h3>
+            @switch (activeAttachmentTab()) {
+              @case ('IMAGE') {
+                <button
+                  type="button"
+                  class="btn-add-attachment"
+                  (click)="formImageInput.click()"
+                  [disabled]="attachmentsUploading() || recording() || attachmentsLoading()"
+                >
+                  Add image
+                </button>
+              }
+              @case ('VIDEO') {
+                <button
+                  type="button"
+                  class="btn-add-attachment"
+                  (click)="formVideoInput.click()"
+                  [disabled]="attachmentsUploading() || recording() || attachmentsLoading()"
+                >
+                  Add video
+                </button>
+              }
+              @case ('DOCUMENT') {
+                <button
+                  type="button"
+                  class="btn-add-attachment"
+                  (click)="formDocumentInput.click()"
+                  [disabled]="attachmentsUploading() || recording() || attachmentsLoading()"
+                >
+                  Add file
+                </button>
+              }
+              @case ('AUDIO') {
+                <button
+                  type="button"
+                  class="btn-add-attachment"
+                  (click)="startVoiceRecording()"
+                  [disabled]="attachmentsUploading() || recording() || attachmentsLoading()"
+                >
+                  Record voice
+                </button>
+              }
+            }
+          </div>
+
+          @if (activeAttachmentTab() === 'AUDIO' && recording()) {
+            <div class="voice-recording-panel" role="status" aria-live="polite">
+              <span class="rec-dot" aria-hidden="true"></span>
+              <span class="rec-time">{{ formatRecordingTime(recordingSeconds()) }}</span>
+              <div class="rec-wave" aria-hidden="true">
+                @for (level of recordingLevels(); track $index) {
+                  <span class="rec-bar" [style.height.%]="level * 100"></span>
+                }
+              </div>
+              <button
+                type="button"
+                class="btn-rec-cancel"
+                (click)="cancelVoiceRecording()"
+                [disabled]="attachmentsUploading()"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                class="btn-rec-done"
+                (click)="stopVoiceRecording()"
+                [disabled]="attachmentsUploading()"
+              >
+                Done
+              </button>
+            </div>
+          }
+
+          @if (attachmentsUploading()) {
+            <p class="state-message">Uploading…</p>
+          }
+          @if (attachmentsLoading() && formMode() === 'edit') {
+            <p class="state-message">Loading attachments…</p>
+          } @else if (formMode() === 'create' && pendingAttachmentsForActiveTab().length === 0) {
+            <p class="state-message attachment-empty">
+              No {{ activeAttachmentTabLabel().toLowerCase() }} queued yet.
+            </p>
+          } @else if (formMode() === 'edit' && attachmentsForActiveTab().length === 0) {
+            <p class="state-message attachment-empty">
+              No {{ activeAttachmentTabLabel().toLowerCase() }} yet. Use the add button above.
+            </p>
+          } @else if (formMode() === 'create') {
+            <ul class="attachment-list">
+              @for (pending of pendingAttachmentsForActiveTab(); track pending.id) {
+                <li class="attachment-item">
+                  <div class="attachment-preview attachment-file-name">{{ pending.file.name }}</div>
+                  <button
+                    type="button"
+                    class="btn-attachment-delete"
+                    (click)="removePendingAttachment(pending.id)"
+                    [disabled]="saving()"
+                  >
+                    Remove
+                  </button>
+                </li>
+              }
+            </ul>
+          } @else {
+            <ul class="attachment-list">
+              @for (attachment of attachmentsForActiveTab(); track attachment.id) {
+                <li class="attachment-item">
+                  <div class="attachment-preview">
+                    <app-inquiry-chat-attachment
+                      [attachment]="attachment"
+                      [attachmentSource]="'product'"
+                      [previewMode]="'panel'"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    class="btn-attachment-delete"
+                    (click)="deleteAttachment(attachment)"
+                    [disabled]="attachmentsUploading()"
+                    aria-label="Remove attachment"
+                  >
+                    Remove
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </section>
 
       <footer class="modal-footer">
         <button type="button" class="btn-secondary" (click)="closeForm()" [disabled]="saving()">

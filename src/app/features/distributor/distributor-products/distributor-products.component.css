@@ -228,6 +228,14 @@
   opacity: 0.72;
 }
 
+.product-row {
+  cursor: pointer;
+}
+
+.product-row:hover {
+  background: #f8fafc;
+}
+
 .description-cell {
   white-space: nowrap;
   overflow: hidden;
@@ -470,6 +478,30 @@
   border-top: 1px solid #f1f5f9;
 }
 
+.form-attachments {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.form-attachments > h3 {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+  color: #0f172a;
+}
+
+.attachment-note {
+  margin: 0 0 0.75rem;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.attachment-file-name {
+  font-size: 0.82rem;
+  color: #0f172a;
+  word-break: break-word;
+}
+
 @media (max-width: 640px) {
   .form-grid {
     grid-template-columns: 1fr;
@@ -478,6 +510,50 @@
 
 .attachment-modal {
   width: min(640px, calc(100vw - 2rem));
+}
+
+.details-modal {
+  width: min(760px, calc(100vw - 2rem));
+}
+
+.details-grid {
+  display: none;
+}
+
+.details-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0.8rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.details-row {
+  display: grid;
+  grid-template-columns: 10rem minmax(0, 1fr);
+  gap: 0.85rem;
+  align-items: start;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.details-row:last-child {
+  border-bottom: none;
+}
+
+.details-label {
+  color: #475569;
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+
+.details-value {
+  color: #0f172a;
+  font-size: 0.85rem;
+  line-height: 1.35;
+  word-break: break-word;
 }
 
 .attachment-subtitle {
