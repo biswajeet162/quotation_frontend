@@ -144,9 +144,9 @@
 }
 
 .col-brand {
-  width: 11%;
-  min-width: 6.5rem;
-  max-width: 8.5rem;
+  width: 13%;
+  min-width: 8rem;
+  max-width: 10rem;
 }
 
 .col-designation :is(input, app-product-field-autocomplete),
@@ -171,8 +171,15 @@
 }
 
 .col-attachment {
-  width: 4.5rem;
+  width: 6.75rem;
+  min-width: 6.75rem;
   text-align: center;
+  white-space: normal;
+  line-height: 1.25;
+}
+
+.lines-table thead th.col-attachment {
+  font-size: 0.68rem;
 }
 
 .btn-attachment {

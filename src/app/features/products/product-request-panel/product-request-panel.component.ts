@@ -6,13 +6,8 @@ import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
 import { ProductService } from '../../../core/services/product/product.service';
 import { ProductCatalogLookupService } from '../../../core/services/product/product-catalog-lookup.service';
 import { ProductQueryFormService } from '../../../core/services/product/product-query-form.service';
-import { ConsumerProductCatalogService } from '../../../core/services/product/consumer-product-catalog.service';
 import { ConsumerInquiryCreated } from '../../../core/models/inquiry.model';
 import { ProductFormDraft, ProductFormRow, RowLocalAttachment } from '../../../core/models/product-form.model';
-import {
-  CatalogProductAttachment,
-  toTimelineAttachment,
-} from '../../../core/models/catalog-product.model';
 import { InquiryTimelineAttachment, TimelineAttachmentMediaType } from '../../../core/models/inquiry-timeline.model';
 import { formatSpecificationsInline } from '../../../shared/utils/specifications-display.util';
 import { resolveAttachmentMediaType } from '../../../shared/utils/attachment-media-type.util';
@@ -23,10 +18,8 @@ import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 
 interface QueryAttachmentItem {
   key: string;
-  kind: 'catalog' | 'local';
-  source: 'consumer' | 'local';
+  localId: string;
   timelineAttachment: InquiryTimelineAttachment;
-  localId?: string;
 }
 
 @Component({
@@ -46,7 +39,6 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
   private readonly auth = inject(AuthService);
   private readonly productService = inject(ProductService);
   private readonly catalog = inject(ProductCatalogLookupService);
-  private readonly consumerCatalog = inject(ConsumerProductCatalogService);
   readonly formState = inject(ProductQueryFormService);
 
   readonly submitted = output<ConsumerInquiryCreated>();
@@ -58,8 +50,6 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
 
   readonly attachmentPanelOpen = signal(false);
   readonly attachmentRow = signal<ProductFormRow | null>(null);
-  readonly catalogAttachments = signal<CatalogProductAttachment[]>([]);
-  readonly attachmentsLoading = signal(false);
   readonly attachmentError = signal<string | null>(null);
   readonly activeAttachmentTab = signal<TimelineAttachmentMediaType>('IMAGE');
 
@@ -77,13 +67,9 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
   readonly attachmentsForActiveTab = computed(() => {
     const tab = this.activeAttachmentTab();
     const row = this.attachmentRow();
-    const catalog = this.catalogAttachments()
-      .filter((attachment) => attachment.mediaType === tab)
-      .map((attachment) => this.toCatalogAttachmentItem(attachment));
-    const local = (row?.localAttachments ?? [])
+    return (row?.localAttachments ?? [])
       .filter((attachment) => attachment.mediaType === tab)
       .map((attachment) => this.toLocalAttachmentItem(attachment));
-    return [...catalog, ...local];
   });
 
   readonly rows = this.formState.rows;
@@ -103,6 +89,7 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.catalog.ensureLoaded();
+    this.catalog.ensureConsumerBrandsLoaded();
   }
 
   ngOnDestroy(): void {
@@ -146,17 +133,12 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
     this.attachmentPanelOpen.set(true);
     this.attachmentError.set(null);
     this.activeAttachmentTab.set(this.initialTabForRow(row));
-    this.catalogAttachments.set([]);
-    if (row.catalogProductId) {
-      this.loadCatalogAttachments(row.catalogProductId);
-    }
   }
 
   closeAttachments(): void {
     this.cancelVoiceRecording();
     this.attachmentPanelOpen.set(false);
     this.attachmentRow.set(null);
-    this.catalogAttachments.set([]);
     this.attachmentError.set(null);
     this.activeAttachmentTab.set('IMAGE');
   }
@@ -167,9 +149,7 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
 
   attachmentCountFor(tab: TimelineAttachmentMediaType): number {
     const row = this.attachmentRow();
-    const catalogCount = this.catalogAttachments().filter((item) => item.mediaType === tab).length;
-    const localCount = (row?.localAttachments ?? []).filter((item) => item.mediaType === tab).length;
-    return catalogCount + localCount;
+    return (row?.localAttachments ?? []).filter((item) => item.mediaType === tab).length;
   }
 
   activeAttachmentTabLabel(): string {
@@ -197,7 +177,7 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
 
   removeAttachment(item: QueryAttachmentItem): void {
     const row = this.attachmentRow();
-    if (!row || item.kind !== 'local' || !item.localId) {
+    if (!row) {
       return;
     }
     this.formState.removeLocalAttachment(row.rowId, item.localId);
@@ -475,54 +455,17 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
     }
   }
 
-  private loadCatalogAttachments(productId: string): void {
-    this.attachmentsLoading.set(true);
-    this.attachmentError.set(null);
-
-    this.consumerCatalog.listAttachments(productId).subscribe({
-      next: (list) => {
-        this.catalogAttachments.set(list);
-        this.attachmentsLoading.set(false);
-        this.activeAttachmentTab.set(this.initialTabForLists(list, this.attachmentRow()?.localAttachments ?? []));
-      },
-      error: () => {
-        this.attachmentsLoading.set(false);
-        this.attachmentError.set('Could not load catalog attachments.');
-      },
-    });
-  }
-
   private initialTabForRow(row: ProductFormRow): TimelineAttachmentMediaType {
-    return this.initialTabForLists([], row.localAttachments);
-  }
-
-  private initialTabForLists(
-    catalog: CatalogProductAttachment[],
-    local: RowLocalAttachment[],
-  ): TimelineAttachmentMediaType {
     const order: TimelineAttachmentMediaType[] = ['IMAGE', 'VIDEO', 'DOCUMENT', 'AUDIO'];
-    const firstWithItems = order.find(
-      (type) =>
-        catalog.some((attachment) => attachment.mediaType === type) ||
-        local.some((attachment) => attachment.mediaType === type),
+    const firstWithItems = order.find((type) =>
+      row.localAttachments.some((attachment) => attachment.mediaType === type),
     );
     return firstWithItems ?? 'IMAGE';
-  }
-
-  private toCatalogAttachmentItem(attachment: CatalogProductAttachment): QueryAttachmentItem {
-    return {
-      key: `catalog-${attachment.id}`,
-      kind: 'catalog',
-      source: 'consumer',
-      timelineAttachment: toTimelineAttachment(attachment),
-    };
   }
 
   private toLocalAttachmentItem(attachment: RowLocalAttachment): QueryAttachmentItem {
     return {
       key: attachment.localId,
-      kind: 'local',
-      source: 'local',
       localId: attachment.localId,
       timelineAttachment: {
         id: attachment.localId,

@@ -13,18 +13,53 @@
     [attr.aria-autocomplete]="'list'"
     autocomplete="off"
   />
-  @if (dropdownOpen() && suggestions().length > 0) {
+  <button
+    type="button"
+    class="dropdown-toggle"
+    tabindex="-1"
+    [attr.aria-label]="'Show ' + placeholder() + ' options'"
+    (mousedown)="toggleDropdown($event)"
+  >
+    ▾
+  </button>
+
+  @if (dropdownOpen()) {
     <ul class="suggestions" role="listbox">
-      @for (option of suggestions(); track option) {
-        <li role="option">
-          <button
-            type="button"
-            class="suggestion-item"
-            (mousedown)="selectSuggestion(option, $event)"
-          >
-            {{ option }}
-          </button>
-        </li>
+      @if (isLoading()) {
+        <li class="suggestion-status" role="status">Loading options…</li>
+      } @else if (!hasDropdownItems()) {
+        <li class="suggestion-status">No matches</li>
+      } @else if (showBrandDropdown()) {
+        @for (option of brandOptions(); track option.brandName) {
+          <li role="option">
+            <button
+              type="button"
+              class="suggestion-item brand-option"
+              (mousedown)="selectBrandOption(option, $event)"
+            >
+              <span class="brand-option-logo" aria-hidden="true">
+                @if (option.logoUrl) {
+                  <img [src]="option.logoUrl" [alt]="" />
+                } @else {
+                  <span>{{ brandInitials(option.brandName) }}</span>
+                }
+              </span>
+              <span class="brand-option-name">{{ option.brandName }}</span>
+            </button>
+          </li>
+        }
+      } @else {
+        @for (option of suggestions(); track option) {
+          <li role="option">
+            <button
+              type="button"
+              class="suggestion-item"
+              (mousedown)="selectSuggestion(option, $event)"
+            >
+              {{ option }}
+            </button>
+          </li>
+        }
       }
     </ul>
   }

@@ -1,113 +1,281 @@
-<section class="page-card">
+<section class="page-card" [class.brands-view]="activeMainTab() === 'brands'">
   <app-loading-overlay [loading]="loading()" message="Loading products…" />
 
   <header class="page-header">
     <div>
-      <h1>Products</h1>
-      <p class="muted">Browse active distributor products and add them to your quotation.</p>
+      <div class="top-tabs" role="tablist" aria-label="Product catalog views">
+        <button
+          type="button"
+          class="top-tab"
+          [class.active]="activeMainTab() === 'products'"
+          (click)="setMainTab('products')"
+        >
+          Products
+        </button>
+        <button
+          type="button"
+          class="top-tab"
+          [class.active]="activeMainTab() === 'brands'"
+          (click)="setMainTab('brands')"
+        >
+          Brands
+        </button>
+      </div>
     </div>
     <button type="button" class="btn-secondary" (click)="loadProducts()" [disabled]="loading()">
       Refresh
     </button>
   </header>
 
-  <div class="toolbar">
-    <input
-      type="search"
-      class="search-input"
-      placeholder="Search designation, brand, description…"
-      [ngModel]="searchTerm()"
-      (ngModelChange)="onSearchChange($event)"
-    />
-    <span class="result-count">
-      @if (searchLoading()) {
-        Searching…
-      } @else {
-        {{ catalogProducts().length }} product(s)
-      }
-    </span>
-  </div>
-
-  <div class="page-body">
-  @if (!loading()) {
-  @if (errorMessage()) {
-    <div class="alert alert-error" role="alert">{{ errorMessage() }}</div>
-  } @else if (showNoMatchState()) {
-    <div class="no-match-card">
-      <h2>No match for “{{ searchTerm() }}”</h2>
-      <p>Nothing in the catalog matches your search.</p>
-      @if (isConsumer()) {
-        <button type="button" class="btn-primary" (click)="goToQueryFromSearch()">
-          Create quotation from search
-        </button>
-      }
+  @if (activeMainTab() === 'products') {
+    <div class="toolbar">
+      <div class="search-field">
+        <label for="catalog-search">Search</label>
+        <input
+          id="catalog-search"
+          type="search"
+          placeholder="Brand, designation, description…"
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+        />
+      </div>
+      <span class="result-count">{{ sortedFilteredProducts().length }} product(s)</span>
     </div>
-  } @else if (catalogProducts().length === 0) {
-    <p class="state-message">No active products in catalog.</p>
-  } @else {
-    <div class="table-wrap">
-      <table class="products-table">
-        <thead>
-          <tr>
-            <th class="col-serial">#</th>
-            <th class="col-designation">Designation</th>
-            <th class="col-brand">Brand</th>
-            <th class="col-description">Description</th>
-            <th class="col-attachment">Attachment</th>
-            @if (isConsumer()) {
-              <th class="col-action"></th>
-            }
-          </tr>
-        </thead>
-        <tbody>
-          @for (product of catalogProducts(); track product.productId; let i = $index) {
-            <tr
-              class="product-row"
-              tabindex="0"
-              (click)="openProductDetail(product, $event)"
-              (keydown.enter)="openProductDetail(product, $event)"
-            >
-              <td class="serial-cell">{{ i + 1 }}</td>
-              <td class="designation-cell" [title]="product.designation">{{ product.designation }}</td>
-              <td class="brand-cell" [title]="product.brand">{{ product.brand }}</td>
-              <td class="description-cell" [title]="product.description || ''">
-                {{ product.description || '—' }}
-              </td>
-              <td class="attachment-cell">
-                <button
-                  type="button"
-                  class="btn-attachment"
-                  (click)="openAttachments(product, $event)"
-                  [attr.aria-label]="
-                    'View attachments for ' + product.brand + ' ' + product.designation
-                  "
-                  title="Attachments"
-                >
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path
-                      d="M16.5 6v11.5a4 4 0 1 1-8 0V5a2.5 2.5 0 1 1 5 0v10.5a1.5 1.5 0 1 1-3 0V6"
-                    />
-                  </svg>
-                  @if ((product.attachmentCount ?? 0) > 0) {
-                    <span class="attachment-badge">{{ product.attachmentCount }}</span>
+  }
+
+  @if (!loading()) {
+    @if (errorMessage()) {
+      <div class="alert alert-error" role="alert">{{ errorMessage() }}</div>
+    } @else if (showNoMatchState()) {
+      <div class="no-match-card">
+        <h2>No match for “{{ searchQuery() }}”</h2>
+        <p>Nothing in the catalog matches your search.</p>
+        @if (isConsumer()) {
+          <button type="button" class="btn-primary" (click)="goToQueryFromSearch()">
+            Create quotation from search
+          </button>
+        }
+      </div>
+    } @else if (activeMainTab() === 'products' && catalogProducts().length === 0) {
+      <p class="state-message">No active products in catalog.</p>
+    } @else if (activeMainTab() === 'products' && filteredProducts().length === 0) {
+      <p class="state-message">No products match your search.</p>
+    } @else if (activeMainTab() === 'brands') {
+      @if (brands().length === 0) {
+        <p class="state-message">No brands found in catalog.</p>
+      } @else {
+        <div class="brands-layout">
+          <aside class="brands-sidebar">
+            @for (brand of brands(); track brand.brandName) {
+              <button
+                type="button"
+                class="brand-card"
+                [class.active]="selectedBrand() === brand.brandName"
+                (click)="selectBrand(brand.brandName)"
+              >
+                <div class="brand-logo">
+                  @if (brand.logoUrl) {
+                    <img [src]="brand.logoUrl" [alt]="brand.brandName + ' logo'" />
+                  } @else {
+                    <span>{{ getBrandInitials(brand.brandName) }}</span>
                   }
+                </div>
+                <div class="brand-meta">
+                  <h3>{{ brand.brandName }}</h3>
+                  <p>{{ brand.productCount }} products</p>
+                </div>
+              </button>
+            }
+          </aside>
+
+          <div class="brands-products-panel">
+            @if (selectedBrandProducts().length > 0) {
+              <h3 class="brand-products-title">{{ selectedBrand() }} products</h3>
+              <div class="table-wrap">
+                <table class="products-table">
+                  <thead>
+                    <tr>
+                      <th class="col-serial">S.No</th>
+                      <th class="col-brand sort-col">
+                        <button type="button" class="sort-btn" (click)="toggleSort('brand')">
+                          Brand <span>{{ sortIcon('brand') }}</span>
+                        </button>
+                      </th>
+                      <th class="col-designation sort-col">
+                        <button type="button" class="sort-btn" (click)="toggleSort('designation')">
+                          Designation <span>{{ sortIcon('designation') }}</span>
+                        </button>
+                      </th>
+                      <th class="col-description sort-col">
+                        <button type="button" class="sort-btn" (click)="toggleSort('description')">
+                          Description <span>{{ sortIcon('description') }}</span>
+                        </button>
+                      </th>
+                      <th class="col-attachment sort-col">
+                        <button type="button" class="sort-btn" (click)="toggleSort('attachmentCount')">
+                          Attachment <span>{{ sortIcon('attachmentCount') }}</span>
+                        </button>
+                      </th>
+                      @if (isConsumer()) {
+                        <th class="col-action"></th>
+                      }
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (product of selectedBrandProducts(); track product.productId; let index = $index) {
+                      <tr
+                        class="product-row"
+                        tabindex="0"
+                        (click)="openProductDetail(product, $event)"
+                        (keydown.enter)="openProductDetail(product, $event)"
+                      >
+                        <td class="serial-cell">{{ index + 1 }}</td>
+                        <td class="brand-cell" [title]="product.brand">
+                          @let brandLogoUrl = getBrandLogoUrl(product.brand);
+                          <span class="brand-cell-content">
+                            <span class="brand-cell-logo" aria-hidden="true">
+                              @if (brandLogoUrl) {
+                                <img [src]="brandLogoUrl" [alt]="product.brand + ' logo'" />
+                              } @else {
+                                <span>{{ getBrandInitials(product.brand) }}</span>
+                              }
+                            </span>
+                            <span class="brand-cell-name">{{ product.brand }}</span>
+                          </span>
+                        </td>
+                        <td class="designation-cell" [title]="product.designation">{{ product.designation }}</td>
+                        <td class="description-cell" [title]="product.description || ''">
+                          {{ product.description || '—' }}
+                        </td>
+                        <td class="attachment-cell">
+                          <button
+                            type="button"
+                            class="btn-attachment"
+                            (click)="openAttachments(product, $event)"
+                            [attr.aria-label]="
+                              'View attachments for ' + product.brand + ' ' + product.designation
+                            "
+                            title="Attachments"
+                          >
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                              <path
+                                d="M16.5 6v11.5a4 4 0 1 1-8 0V5a2.5 2.5 0 1 1 5 0v10.5a1.5 1.5 0 1 1-3 0V6"
+                              />
+                            </svg>
+                            @if ((product.attachmentCount ?? 0) > 0) {
+                              <span class="attachment-badge">{{ product.attachmentCount }}</span>
+                            }
+                          </button>
+                        </td>
+                        @if (isConsumer()) {
+                          <td class="actions-cell">
+                            <button type="button" class="btn-add" (click)="useInQuery(product, $event)">
+                              Add to quotation
+                            </button>
+                          </td>
+                        }
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            } @else {
+              <p class="state-message">No products for selected brand.</p>
+            }
+          </div>
+        </div>
+      }
+    } @else {
+      <div class="table-wrap">
+        <table class="products-table">
+          <thead>
+            <tr>
+              <th class="col-serial">S.No</th>
+              <th class="col-brand sort-col">
+                <button type="button" class="sort-btn" (click)="toggleSort('brand')">
+                  Brand <span>{{ sortIcon('brand') }}</span>
                 </button>
-              </td>
+              </th>
+              <th class="col-designation sort-col">
+                <button type="button" class="sort-btn" (click)="toggleSort('designation')">
+                  Designation <span>{{ sortIcon('designation') }}</span>
+                </button>
+              </th>
+              <th class="col-description sort-col">
+                <button type="button" class="sort-btn" (click)="toggleSort('description')">
+                  Description <span>{{ sortIcon('description') }}</span>
+                </button>
+              </th>
+              <th class="col-attachment sort-col">
+                <button type="button" class="sort-btn" (click)="toggleSort('attachmentCount')">
+                  Attachment <span>{{ sortIcon('attachmentCount') }}</span>
+                </button>
+              </th>
               @if (isConsumer()) {
-                <td class="actions-cell">
-                  <button type="button" class="btn-add" (click)="useInQuery(product, $event)">
-                    Add to quotation
-                  </button>
-                </td>
+                <th class="col-action"></th>
               }
             </tr>
-          }
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            @for (product of sortedFilteredProducts(); track product.productId; let index = $index) {
+              <tr
+                class="product-row"
+                tabindex="0"
+                (click)="openProductDetail(product, $event)"
+                (keydown.enter)="openProductDetail(product, $event)"
+              >
+                <td class="serial-cell">{{ index + 1 }}</td>
+                <td class="brand-cell" [title]="product.brand">
+                  @let brandLogoUrl = getBrandLogoUrl(product.brand);
+                  <span class="brand-cell-content">
+                    <span class="brand-cell-logo" aria-hidden="true">
+                      @if (brandLogoUrl) {
+                        <img [src]="brandLogoUrl" [alt]="product.brand + ' logo'" />
+                      } @else {
+                        <span>{{ getBrandInitials(product.brand) }}</span>
+                      }
+                    </span>
+                    <span class="brand-cell-name">{{ product.brand }}</span>
+                  </span>
+                </td>
+                <td class="designation-cell" [title]="product.designation">{{ product.designation }}</td>
+                <td class="description-cell" [title]="product.description || ''">
+                  {{ product.description || '—' }}
+                </td>
+                <td class="attachment-cell">
+                  <button
+                    type="button"
+                    class="btn-attachment"
+                    (click)="openAttachments(product, $event)"
+                    [attr.aria-label]="
+                      'View attachments for ' + product.brand + ' ' + product.designation
+                    "
+                    title="Attachments"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        d="M16.5 6v11.5a4 4 0 1 1-8 0V5a2.5 2.5 0 1 1 5 0v10.5a1.5 1.5 0 1 1-3 0V6"
+                      />
+                    </svg>
+                    @if ((product.attachmentCount ?? 0) > 0) {
+                      <span class="attachment-badge">{{ product.attachmentCount }}</span>
+                    }
+                  </button>
+                </td>
+                @if (isConsumer()) {
+                  <td class="actions-cell">
+                    <button type="button" class="btn-add" (click)="useInQuery(product, $event)">
+                      Add to quotation
+                    </button>
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
   }
-  }
-  </div>
 </section>
 
 @if (selectedProduct(); as product) {
@@ -120,8 +288,18 @@
     (click)="$event.stopPropagation()"
   >
     <header class="modal-header">
-      <div>
-        <h2 id="product-detail-title">{{ product.brand }} — {{ product.designation }}</h2>
+      <div class="modal-header-main">
+        @let brandLogoUrl = getBrandLogoUrl(product.brand);
+        <span class="modal-brand-logo" aria-hidden="true">
+          @if (brandLogoUrl) {
+            <img [src]="brandLogoUrl" [alt]="product.brand + ' logo'" />
+          } @else {
+            <span>{{ getBrandInitials(product.brand) }}</span>
+          }
+        </span>
+        <div class="modal-header-text">
+          <h2 id="product-detail-title">{{ product.brand }} — {{ product.designation }}</h2>
+        </div>
       </div>
       <button type="button" class="modal-close" aria-label="Close" (click)="closeDetail()">×</button>
     </header>

@@ -47,7 +47,7 @@ export class ProductQueryFormService {
   }
 
   rowAttachmentCount(row: ProductFormRow): number {
-    return (row.attachmentCount ?? 0) + row.localAttachments.length;
+    return row.localAttachments.length;
   }
 
   addLocalFiles(rowId: string, files: File[]): void {
@@ -121,7 +121,6 @@ export class ProductQueryFormService {
       brand: entry.brand ?? '',
       designation: entry.designation ?? '',
       description: entry.description ?? '',
-      attachmentCount: entry.attachmentCount ?? 0,
       quantity: 1,
       lineNotes: '',
       lineSource,

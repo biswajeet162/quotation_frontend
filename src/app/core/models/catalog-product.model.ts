@@ -9,6 +9,13 @@ export interface CatalogProduct {
   attachmentCount?: number;
 }
 
+/** Brand summary for consumer catalog browse. */
+export interface CatalogBrand {
+  brandName: string;
+  productCount: number;
+  logoUrl?: string | null;
+}
+
 /** Public catalog attachment — safe fields only. */
 export interface CatalogProductAttachment {
   id: string;

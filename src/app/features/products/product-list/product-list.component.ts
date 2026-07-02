@@ -1,7 +1,8 @@
-import { Component, computed, HostListener, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, HostListener, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import {
+  CatalogBrand,
   CatalogProduct,
   CatalogProductAttachment,
   toTimelineAttachment,
@@ -14,24 +15,38 @@ import { ProductQueryFormService } from '../../../core/services/product/product-
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 import { InquiryChatAttachmentComponent } from '../../../shared/components/inquiry-chat-attachment/inquiry-chat-attachment.component';
 
+type ProductSortColumn = 'brand' | 'designation' | 'description' | 'attachmentCount';
+type SortDirection = 'asc' | 'desc';
+
+interface BrandSummary {
+  brandName: string;
+  productCount: number;
+  logoUrl: string | null;
+}
+
 @Component({
   selector: 'app-product-list',
   imports: [FormsModule, LoadingOverlayComponent, InquiryChatAttachmentComponent],
   templateUrl: './product-list.component.html',
   styleUrl: './product-list.component.css',
 })
-export class ProductListComponent implements OnInit {
+export class ProductListComponent implements OnInit, OnDestroy {
   private readonly catalogService = inject(ConsumerProductCatalogService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly cart = inject(InquiryCartService);
   private readonly queryForm = inject(ProductQueryFormService);
 
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
-  readonly searchTerm = signal('');
+  readonly searchQuery = signal('');
   readonly catalogProducts = signal<CatalogProduct[]>([]);
-  readonly searchLoading = signal(false);
+  readonly activeMainTab = signal<'products' | 'brands'>('products');
+  readonly selectedBrand = signal<string | null>(null);
+  readonly brands = signal<BrandSummary[]>([]);
+  readonly sortColumn = signal<ProductSortColumn>('brand');
+  readonly sortDirection = signal<SortDirection>('asc');
 
   readonly selectedProduct = signal<CatalogProduct | null>(null);
 
@@ -54,13 +69,42 @@ export class ProductListComponent implements OnInit {
     this.attachments().filter((attachment) => attachment.mediaType === this.activeAttachmentTab()),
   );
 
+  readonly filteredProducts = computed(() => {
+    const query = this.searchQuery().trim().toLowerCase();
+    return this.catalogProducts().filter((product) => {
+      if (!query) {
+        return true;
+      }
+      const haystack = [product.brand, product.designation, product.description]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(query);
+    });
+  });
+
+  readonly sortedFilteredProducts = computed(() =>
+    this.sortProducts(this.filteredProducts(), this.sortColumn(), this.sortDirection()),
+  );
+
+  readonly selectedBrandProducts = computed(() => {
+    const brand = this.selectedBrand();
+    if (!brand) {
+      return [] as CatalogProduct[];
+    }
+    const list = this.catalogProducts().filter((product) => (product.brand ?? '').trim() === brand);
+    return this.sortProducts(list, this.sortColumn(), this.sortDirection());
+  });
+
   readonly isConsumer = () => this.auth.currentUser()?.role === 'CONSUMER';
 
   readonly showNoMatchState = () =>
     !this.loading() &&
-    !this.searchLoading() &&
-    this.searchTerm().trim().length > 0 &&
-    this.catalogProducts().length === 0;
+    this.activeMainTab() === 'products' &&
+    this.searchQuery().trim().length > 0 &&
+    this.filteredProducts().length === 0;
+
+  private readonly brandLogoObjectUrls = new Set<string>();
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
@@ -74,7 +118,12 @@ export class ProductListComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.syncTabFromRoute();
     this.loadProducts();
+  }
+
+  ngOnDestroy(): void {
+    this.clearBrandLogoObjectUrls();
   }
 
   loadProducts(): void {
@@ -84,6 +133,7 @@ export class ProductListComponent implements OnInit {
     this.catalogService.list().subscribe({
       next: (products) => {
         this.catalogProducts.set(products);
+        this.loadBrands();
         this.loading.set(false);
       },
       error: () => {
@@ -93,26 +143,51 @@ export class ProductListComponent implements OnInit {
     });
   }
 
-  onSearchChange(value: string): void {
-    this.searchTerm.set(value);
-    const term = value.trim();
+  setMainTab(tab: 'products' | 'brands'): void {
+    this.activeMainTab.set(tab);
+    void this.router.navigate(['../', tab === 'products' ? 'all' : 'brands'], {
+      relativeTo: this.route,
+      replaceUrl: true,
+    });
+    if (tab === 'brands' && !this.selectedBrand() && this.brands().length > 0) {
+      this.selectedBrand.set(this.brands()[0].brandName);
+    }
+  }
 
-    if (!term) {
-      this.loadProducts();
+  selectBrand(brandName: string): void {
+    this.selectedBrand.set(brandName);
+  }
+
+  getBrandInitials(brandName: string): string {
+    const value = brandName.trim();
+    if (!value) {
+      return '?';
+    }
+    return value.slice(0, 2).toUpperCase();
+  }
+
+  getBrandLogoUrl(brandName: string | null | undefined): string | null {
+    const name = brandName?.trim();
+    if (!name) {
+      return null;
+    }
+    return this.brands().find((brand) => brand.brandName === name)?.logoUrl ?? null;
+  }
+
+  toggleSort(column: ProductSortColumn): void {
+    if (this.sortColumn() === column) {
+      this.sortDirection.set(this.sortDirection() === 'asc' ? 'desc' : 'asc');
       return;
     }
+    this.sortColumn.set(column);
+    this.sortDirection.set('asc');
+  }
 
-    this.searchLoading.set(true);
-    this.catalogService.search(term).subscribe({
-      next: (products) => {
-        this.catalogProducts.set(products);
-        this.searchLoading.set(false);
-      },
-      error: () => {
-        this.searchLoading.set(false);
-        this.errorMessage.set('Search failed. Please try again.');
-      },
-    });
+  sortIcon(column: ProductSortColumn): string {
+    if (this.sortColumn() !== column) {
+      return '↕';
+    }
+    return this.sortDirection() === 'asc' ? '↑' : '↓';
   }
 
   openProductDetail(entry: CatalogProduct, event: Event): void {
@@ -171,7 +246,7 @@ export class ProductListComponent implements OnInit {
   }
 
   goToQueryFromSearch(): void {
-    const term = this.searchTerm().trim();
+    const term = this.searchQuery().trim();
     this.cart.setSearchTerm(term);
     this.queryForm.fillFromSearchTerm(term);
     void this.router.navigate(['/requests']);
@@ -179,6 +254,93 @@ export class ProductListComponent implements OnInit {
 
   displayValue(value: string | undefined): string {
     return value?.trim() ? value : '—';
+  }
+
+  private loadBrands(): void {
+    this.clearBrandLogoObjectUrls();
+    this.catalogService.listBrands().subscribe({
+      next: (brandList) => {
+        const normalized: BrandSummary[] = brandList
+          .map((brand: CatalogBrand) => ({
+            brandName: brand.brandName?.trim() ?? '',
+            productCount: brand.productCount ?? 0,
+            logoUrl: brand.logoUrl ?? null,
+          }))
+          .filter((brand) => !!brand.brandName)
+          .sort((a, b) => a.brandName.localeCompare(b.brandName));
+
+        this.brands.set(normalized);
+
+        const selected = this.selectedBrand();
+        const stillExists = normalized.some((brand) => brand.brandName === selected);
+        if (!stillExists) {
+          this.selectedBrand.set(normalized[0]?.brandName ?? null);
+        }
+
+        this.resolveBrandLogoPreviews();
+      },
+      error: () => {
+        this.brands.set([]);
+        this.selectedBrand.set(null);
+      },
+    });
+  }
+
+  private syncTabFromRoute(): void {
+    const lastSegment = this.route.snapshot.url.at(-1)?.path;
+    if (lastSegment === 'brands') {
+      this.activeMainTab.set('brands');
+      return;
+    }
+    this.activeMainTab.set('products');
+  }
+
+  private sortProducts(
+    list: CatalogProduct[],
+    column: ProductSortColumn,
+    direction: SortDirection,
+  ): CatalogProduct[] {
+    const factor = direction === 'asc' ? 1 : -1;
+    return [...list].sort((a, b) => this.compareByColumn(a, b, column) * factor);
+  }
+
+  private compareByColumn(a: CatalogProduct, b: CatalogProduct, column: ProductSortColumn): number {
+    switch (column) {
+      case 'attachmentCount':
+        return (a.attachmentCount ?? 0) - (b.attachmentCount ?? 0);
+      case 'designation':
+        return (a.designation ?? '').localeCompare(b.designation ?? '');
+      case 'description':
+        return (a.description ?? '').localeCompare(b.description ?? '');
+      case 'brand':
+      default:
+        return (a.brand ?? '').localeCompare(b.brand ?? '');
+    }
+  }
+
+  private resolveBrandLogoPreviews(): void {
+    this.brands().forEach((brand) => {
+      if (!brand.logoUrl) {
+        return;
+      }
+
+      this.catalogService.fetchBrandLogoBlob(brand.logoUrl).subscribe({
+        next: (blob) => {
+          const objectUrl = URL.createObjectURL(blob);
+          this.brandLogoObjectUrls.add(objectUrl);
+          this.brands.update((items) =>
+            items.map((item) =>
+              item.brandName === brand.brandName ? { ...item, logoUrl: objectUrl } : item,
+            ),
+          );
+        },
+      });
+    });
+  }
+
+  private clearBrandLogoObjectUrls(): void {
+    this.brandLogoObjectUrls.forEach((url) => URL.revokeObjectURL(url));
+    this.brandLogoObjectUrls.clear();
   }
 
   private loadAttachments(productId: string): void {

@@ -25,7 +25,7 @@
             <th class="col-qty">Qty</th>
             <th>Specification</th>
             <th>Description</th>
-            <th class="col-attachment">Attachment</th>
+            <th class="col-attachment">Your attachments</th>
             <th class="col-actions" aria-label="Remove"></th>
           </tr>
         </thead>
@@ -37,6 +37,7 @@
                   field="designation"
                   [value]="row.designation"
                   (valueChange)="updateRowField(row.rowId, 'designation', $event)"
+                  [brandFilter]="row.brand"
                   placeholder="Designation"
                   [ariaLabel]="'Designation for row ' + ($index + 1)"
                 />
@@ -46,6 +47,7 @@
                   field="brand"
                   [value]="row.brand"
                   (valueChange)="updateRowField(row.rowId, 'brand', $event)"
+                  [richBrands]="true"
                   placeholder="Brand"
                   [ariaLabel]="'Brand for row ' + ($index + 1)"
                 />
@@ -81,8 +83,8 @@
                   type="button"
                   class="btn-attachment"
                   (click)="openRowAttachments(row, $event)"
-                  [attr.aria-label]="'Attachments for ' + row.brand + ' ' + row.designation"
-                  title="Attachments"
+                  [attr.aria-label]="'Your attachments for ' + row.brand + ' ' + row.designation"
+                  title="Your attachments"
                 >
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path
@@ -161,7 +163,7 @@
                 <th class="col-qty">Qty</th>
                 <th>Specification</th>
                 <th>Description</th>
-                <th class="col-attachment">Attachment</th>
+                <th class="col-attachment">Your attachments</th>
               </tr>
             </thead>
             <tbody>
@@ -218,7 +220,7 @@
   >
     <header class="modal-header">
       <div>
-        <h2 id="query-attachment-title">Attachments</h2>
+        <h2 id="query-attachment-title">Your attachments</h2>
         @if (attachmentRow(); as row) {
           <p class="attachment-subtitle">{{ row.brand }} · {{ row.designation }}</p>
         }
@@ -283,7 +285,7 @@
                 type="button"
                 class="btn-add-attachment"
                 (click)="imageInput.click()"
-                [disabled]="recording() || attachmentsLoading()"
+                [disabled]="recording()"
               >
                 Add image
               </button>
@@ -293,7 +295,7 @@
                 type="button"
                 class="btn-add-attachment"
                 (click)="videoInput.click()"
-                [disabled]="recording() || attachmentsLoading()"
+                [disabled]="recording()"
               >
                 Add video
               </button>
@@ -303,7 +305,7 @@
                 type="button"
                 class="btn-add-attachment"
                 (click)="documentInput.click()"
-                [disabled]="recording() || attachmentsLoading()"
+                [disabled]="recording()"
               >
                 Add file
               </button>
@@ -313,7 +315,7 @@
                 type="button"
                 class="btn-add-attachment"
                 (click)="startVoiceRecording()"
-                [disabled]="recording() || attachmentsLoading()"
+                [disabled]="recording()"
               >
                 Record voice
               </button>
@@ -339,9 +341,7 @@
           </div>
         }
 
-        @if (attachmentsLoading()) {
-          <p class="state-message">Loading attachments…</p>
-        } @else if (attachmentsForActiveTab().length === 0) {
+        @if (attachmentsForActiveTab().length === 0) {
           <p class="state-message attachment-empty">
             No {{ activeAttachmentTabLabel().toLowerCase() }} yet. Use the add button above.
           </p>
@@ -352,20 +352,18 @@
                 <div class="attachment-preview">
                   <app-inquiry-chat-attachment
                     [attachment]="attachment.timelineAttachment"
-                    [attachmentSource]="attachment.source"
+                    attachmentSource="local"
                     [previewMode]="'panel'"
                   />
                 </div>
-                @if (attachment.kind === 'local') {
-                  <button
-                    type="button"
-                    class="btn-attachment-delete"
-                    (click)="removeAttachment(attachment)"
-                    aria-label="Remove attachment"
-                  >
-                    Remove
-                  </button>
-                }
+                <button
+                  type="button"
+                  class="btn-attachment-delete"
+                  (click)="removeAttachment(attachment)"
+                  aria-label="Remove attachment"
+                >
+                  Remove
+                </button>
               </li>
             }
           </ul>

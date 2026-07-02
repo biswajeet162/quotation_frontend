@@ -46,6 +46,19 @@ export const routes: Routes = [
       },
       {
         path: 'products',
+        pathMatch: 'full',
+        redirectTo: 'products/all',
+      },
+      {
+        path: 'products/all',
+        loadComponent: () =>
+          import('./features/products/product-list/product-list.component').then(
+            (m) => m.ProductListComponent,
+          ),
+        canActivate: [roleGuard(['ADMIN', 'CONSUMER'])],
+      },
+      {
+        path: 'products/brands',
         loadComponent: () =>
           import('./features/products/product-list/product-list.component').then(
             (m) => m.ProductListComponent,

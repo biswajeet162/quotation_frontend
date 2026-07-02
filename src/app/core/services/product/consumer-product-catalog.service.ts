@@ -1,8 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { CatalogProduct, CatalogProductAttachment } from '../../models/catalog-product.model';
+import { CatalogBrand, CatalogProduct, CatalogProductAttachment } from '../../models/catalog-product.model';
 
 @Injectable({ providedIn: 'root' })
 export class ConsumerProductCatalogService {
@@ -19,6 +19,12 @@ export class ConsumerProductCatalogService {
     });
   }
 
+  listBrands(): Observable<CatalogBrand[]> {
+    return this.http.get<CatalogBrand[]>(`${this.baseUrl}/brands`).pipe(
+      map((brands) => brands.map((brand) => this.withResolvedLogoUrl(brand))),
+    );
+  }
+
   listAttachments(productId: string): Observable<CatalogProductAttachment[]> {
     return this.http.get<CatalogProductAttachment[]>(`${this.baseUrl}/${productId}/attachments`);
   }
@@ -26,5 +32,19 @@ export class ConsumerProductCatalogService {
   fetchAttachmentBlob(relativeUrl: string): Observable<Blob> {
     const path = relativeUrl.startsWith('/') ? relativeUrl.slice(1) : relativeUrl;
     return this.http.get(`${environment.apiUrl}/${path}`, { responseType: 'blob' });
+  }
+
+  fetchBrandLogoBlob(url: string): Observable<Blob> {
+    return this.http.get(url, { responseType: 'blob' });
+  }
+
+  private withResolvedLogoUrl(brand: CatalogBrand): CatalogBrand {
+    if (!brand.logoUrl) {
+      return brand;
+    }
+    const logoUrl = brand.logoUrl.startsWith('http')
+      ? brand.logoUrl
+      : `${environment.apiUrl}${brand.logoUrl.startsWith('/') ? '' : '/'}${brand.logoUrl}`;
+    return { ...brand, logoUrl };
   }
 }
