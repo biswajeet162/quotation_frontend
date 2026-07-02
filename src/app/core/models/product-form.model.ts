@@ -16,11 +16,8 @@ export interface ProductFormDraft {
   localAttachments: RowLocalAttachment[];
   brand: string;
   designation: string;
-  groupName: string;
-  category: string;
   description: string;
   specifications: string;
-  aliasNames: string;
   quantity: number;
   lineNotes: string;
   lineSource: InquiryLineSource;
@@ -30,11 +27,8 @@ export const emptyProductFormDraft = (): ProductFormDraft => ({
   localAttachments: [],
   brand: '',
   designation: '',
-  groupName: '',
-  category: '',
   description: '',
   specifications: '',
-  aliasNames: '',
   quantity: 1,
   lineNotes: '',
   lineSource: 'NEW_PRODUCT',

@@ -279,10 +279,6 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
 
         product.designation,
 
-        product.category,
-
-        product.groupName,
-
         product.description,
 
       ]

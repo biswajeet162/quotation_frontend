@@ -91,11 +91,8 @@ export interface DistributorProductEntry {
   productId: string;
   brand: string;
   designation: string;
-  groupName?: string;
-  category?: string;
   description?: string;
   specifications?: string;
-  aliasNames?: string;
   rsp?: number;
   discountPercentage?: number;
   gstPercentage?: number;
@@ -103,7 +100,6 @@ export interface DistributorProductEntry {
   leadTimeDays?: number;
   minOrderQuantity?: number;
   priceValidTill?: string;
-  extraInfo?: string;
   isActive?: boolean;
   attachmentCount?: number;
   attachments?: DistributorProductAttachment[];
@@ -114,11 +110,8 @@ export interface DistributorProductEntry {
 export interface CreateDistributorProductRequest {
   brand: string;
   designation: string;
-  groupName?: string;
-  category?: string;
   description?: string;
   specifications?: string;
-  aliasNames?: string;
   rsp?: number;
   discountPercentage?: number;
   gstPercentage?: number;
@@ -126,7 +119,6 @@ export interface CreateDistributorProductRequest {
   leadTimeDays?: number;
   minOrderQuantity?: number;
   priceValidTill?: string;
-  extraInfo?: string;
 }
 
 export type UpdateDistributorProductRequest = Partial<CreateDistributorProductRequest> & {

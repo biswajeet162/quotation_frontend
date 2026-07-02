@@ -87,18 +87,14 @@ export interface CreateInquiryRequest {
 export interface FindOrCreateProductRequest {
   brand: string;
   designation: string;
-  groupName?: string;
-  category?: string;
   description?: string;
   specifications?: string;
-  aliasNames?: string;
 }
 
 export interface QuoteCartLine {
   productId: string;
   brand: string;
   designation: string;
-  category?: string;
   quantity: number;
   lineNotes: string;
   lineSource: InquiryLineSource;
@@ -108,8 +104,6 @@ export interface DistributorProductOption {
   productId: string;
   brand: string;
   designation: string;
-  category?: string;
-  groupName?: string;
   rsp?: number;
   stockQuantity?: number;
   leadTimeDays?: number;

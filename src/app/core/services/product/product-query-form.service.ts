@@ -146,20 +146,14 @@ export class ProductQueryFormService {
   toFindOrCreateRequest(row: ProductFormRow): {
     brand: string;
     designation: string;
-    groupName?: string;
-    category?: string;
     description?: string;
     specifications?: string;
-    aliasNames?: string;
   } {
     return {
       brand: row.brand.trim(),
       designation: row.designation.trim(),
-      groupName: row.groupName.trim() || undefined,
-      category: row.category.trim() || undefined,
       description: row.description.trim() || undefined,
       specifications: row.specifications.trim() || undefined,
-      aliasNames: row.aliasNames.trim() || undefined,
     };
   }
 
@@ -167,11 +161,8 @@ export class ProductQueryFormService {
     return (
       !row.brand.trim() &&
       !row.designation.trim() &&
-      !row.groupName.trim() &&
-      !row.category.trim() &&
       !row.description.trim() &&
       !row.specifications.trim() &&
-      !row.aliasNames.trim() &&
       !row.lineNotes.trim() &&
       !row.catalogProductId &&
       row.localAttachments.length === 0 &&
@@ -196,11 +187,8 @@ export class ProductQueryFormService {
       catalogProductId: product.id,
       brand: product.brand ?? '',
       designation: product.designation ?? '',
-      groupName: product.groupName ?? '',
-      category: product.category ?? '',
       description: product.description ?? '',
       specifications: formatSpecificationsInline(product.specifications),
-      aliasNames: product.aliasNames ?? '',
       quantity: 1,
       lineNotes: '',
       lineSource,

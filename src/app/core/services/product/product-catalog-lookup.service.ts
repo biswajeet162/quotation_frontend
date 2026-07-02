@@ -6,8 +6,6 @@ import { ProductService } from './product.service';
 export type ProductSuggestField =
   | 'brand'
   | 'designation'
-  | 'groupName'
-  | 'category'
   | 'description'
   | 'specifications';
 
@@ -18,8 +16,6 @@ type FieldIndex = Record<ProductSuggestField, string[]>;
 const emptyIndex = (): FieldIndex => ({
   brand: [],
   designation: [],
-  groupName: [],
-  category: [],
   description: [],
   specifications: [],
 });
@@ -91,8 +87,6 @@ export class ProductCatalogLookupService {
     const sets: Record<ProductSuggestField, Set<string>> = {
       brand: new Set(),
       designation: new Set(),
-      groupName: new Set(),
-      category: new Set(),
       description: new Set(),
       specifications: new Set(),
     };
@@ -101,8 +95,6 @@ export class ProductCatalogLookupService {
     for (const product of products) {
       this.add(sets.brand, product.brand);
       this.add(sets.designation, product.designation);
-      this.add(sets.groupName, product.groupName);
-      this.add(sets.category, product.category);
       this.add(sets.description, product.description);
       for (const label of specificationSuggestionLabels(product.specifications)) {
         sets.specifications.add(label);
@@ -131,8 +123,6 @@ export class ProductCatalogLookupService {
       index: {
         brand: sort(sets.brand),
         designation: sort(sets.designation),
-        groupName: sort(sets.groupName),
-        category: sort(sets.category),
         description: sort(sets.description),
         specifications: sort(sets.specifications),
       },
