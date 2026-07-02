@@ -18,7 +18,7 @@
           [class.active]="activeMainTab() === 'brands'"
           (click)="setMainTab('brands')"
         >
-          Your brands
+          Brands
         </button>
       </div>
     </div>
@@ -118,13 +118,41 @@
                 <thead>
                   <tr>
                     <th class="col-serial">S.No</th>
-                    <th class="col-brand">Brand</th>
-                    <th class="col-designation">Designation</th>
-                    <th class="col-description">Description</th>
-                    <th class="col-rsp">RSP</th>
-                    <th class="col-stock">Stock</th>
-                    <th class="col-active">Active</th>
-                    <th class="col-attachment">Attachment</th>
+                    <th class="col-brand sort-col">
+                      <button type="button" class="sort-btn" (click)="toggleSort('brand')">
+                        Brand <span>{{ sortIcon('brand') }}</span>
+                      </button>
+                    </th>
+                    <th class="col-designation sort-col">
+                      <button type="button" class="sort-btn" (click)="toggleSort('designation')">
+                        Designation <span>{{ sortIcon('designation') }}</span>
+                      </button>
+                    </th>
+                    <th class="col-description sort-col">
+                      <button type="button" class="sort-btn" (click)="toggleSort('description')">
+                        Description <span>{{ sortIcon('description') }}</span>
+                      </button>
+                    </th>
+                    <th class="col-rsp sort-col">
+                      <button type="button" class="sort-btn" (click)="toggleSort('rsp')">
+                        RSP <span>{{ sortIcon('rsp') }}</span>
+                      </button>
+                    </th>
+                    <th class="col-stock sort-col">
+                      <button type="button" class="sort-btn" (click)="toggleSort('stockQuantity')">
+                        Stock <span>{{ sortIcon('stockQuantity') }}</span>
+                      </button>
+                    </th>
+                    <th class="col-active sort-col">
+                      <button type="button" class="sort-btn" (click)="toggleSort('isActive')">
+                        Active <span>{{ sortIcon('isActive') }}</span>
+                      </button>
+                    </th>
+                    <th class="col-attachment sort-col">
+                      <button type="button" class="sort-btn" (click)="toggleSort('attachmentCount')">
+                        Attachment <span>{{ sortIcon('attachmentCount') }}</span>
+                      </button>
+                    </th>
                     <th class="col-edit">Edit</th>
                   </tr>
                 </thead>
@@ -202,18 +230,46 @@
         <thead>
           <tr>
             <th class="col-serial">S.No</th>
-            <th class="col-brand">Brand</th>
-            <th class="col-designation">Designation</th>
-            <th class="col-description">Description</th>
-            <th class="col-rsp">RSP</th>
-            <th class="col-stock">Stock</th>
-            <th class="col-active">Active</th>
-            <th class="col-attachment">Attachment</th>
+            <th class="col-brand sort-col">
+              <button type="button" class="sort-btn" (click)="toggleSort('brand')">
+                Brand <span>{{ sortIcon('brand') }}</span>
+              </button>
+            </th>
+            <th class="col-designation sort-col">
+              <button type="button" class="sort-btn" (click)="toggleSort('designation')">
+                Designation <span>{{ sortIcon('designation') }}</span>
+              </button>
+            </th>
+            <th class="col-description sort-col">
+              <button type="button" class="sort-btn" (click)="toggleSort('description')">
+                Description <span>{{ sortIcon('description') }}</span>
+              </button>
+            </th>
+            <th class="col-rsp sort-col">
+              <button type="button" class="sort-btn" (click)="toggleSort('rsp')">
+                RSP <span>{{ sortIcon('rsp') }}</span>
+              </button>
+            </th>
+            <th class="col-stock sort-col">
+              <button type="button" class="sort-btn" (click)="toggleSort('stockQuantity')">
+                Stock <span>{{ sortIcon('stockQuantity') }}</span>
+              </button>
+            </th>
+            <th class="col-active sort-col">
+              <button type="button" class="sort-btn" (click)="toggleSort('isActive')">
+                Active <span>{{ sortIcon('isActive') }}</span>
+              </button>
+            </th>
+            <th class="col-attachment sort-col">
+              <button type="button" class="sort-btn" (click)="toggleSort('attachmentCount')">
+                Attachment <span>{{ sortIcon('attachmentCount') }}</span>
+              </button>
+            </th>
             <th class="col-edit">Edit</th>
           </tr>
         </thead>
         <tbody>
-          @for (product of filteredProducts(); track product.id; let index = $index) {
+          @for (product of sortedFilteredProducts(); track product.id; let index = $index) {
             <tr
               [class.inactive-row]="product.isActive === false"
               class="product-row"
@@ -384,26 +440,28 @@
       <div class="form-grid">
         <div class="form-field">
           <label for="brand">Brand *</label>
-          <input
-            id="brand"
-            type="text"
-            required
-            [ngModel]="form().brand"
-            (ngModelChange)="updateFormField('brand', $event)"
-            name="brand"
+          <app-product-field-autocomplete
+            field="brand"
+            [value]="form().brand"
+            (valueChange)="updateFormField('brand', $event)"
+            placeholder="Brand"
+            ariaLabel="Brand"
           />
         </div>
         <div class="form-field">
           <label for="designation">Designation *</label>
-          <input
-            id="designation"
-            type="text"
-            required
-            [ngModel]="form().designation"
-            (ngModelChange)="updateFormField('designation', $event)"
-            name="designation"
+          <app-product-field-autocomplete
+            field="designation"
+            [value]="form().designation"
+            (valueChange)="updateFormField('designation', $event)"
+            [brandFilter]="form().brand"
+            placeholder="Designation"
+            ariaLabel="Designation"
           />
         </div>
+        @if (duplicateProductError()) {
+          <p class="field-error form-duplicate-error" role="alert">{{ duplicateProductError() }}</p>
+        }
         <div class="form-field">
           <label for="rsp">RSP *</label>
           <input
@@ -635,7 +693,7 @@
         <button type="button" class="btn-secondary" (click)="closeForm()" [disabled]="saving()">
           Cancel
         </button>
-        <button type="submit" class="btn-primary" [disabled]="saving()">
+        <button type="submit" class="btn-primary" [disabled]="saving() || !!duplicateProductError()">
           {{ saving() ? 'Saving…' : formMode() === 'create' ? 'Add product' : 'Save changes' }}
         </button>
       </footer>

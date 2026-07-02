@@ -1,4 +1,5 @@
 import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { FormsModule } from '@angular/forms';
 import { finalize, map, of, switchMap, timeout } from 'rxjs';
@@ -21,12 +22,22 @@ import { DistributorProductService } from '../../../core/services/distributor/di
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 
 import { InquiryChatAttachmentComponent } from '../../../shared/components/inquiry-chat-attachment/inquiry-chat-attachment.component';
+import { ProductFieldAutocompleteComponent } from '../../products/product-field-autocomplete/product-field-autocomplete.component';
 
 import { TimelineAttachmentMediaType } from '../../../core/models/inquiry-timeline.model';
 
 
 
 type ProductFormMode = 'create' | 'edit';
+type ProductSortColumn =
+  | 'brand'
+  | 'designation'
+  | 'description'
+  | 'rsp'
+  | 'stockQuantity'
+  | 'isActive'
+  | 'attachmentCount';
+type SortDirection = 'asc' | 'desc';
 
 
 
@@ -82,7 +93,12 @@ const emptyForm = (): ProductFormState => ({
 
   selector: 'app-distributor-products',
 
-  imports: [FormsModule, LoadingOverlayComponent, InquiryChatAttachmentComponent],
+  imports: [
+    FormsModule,
+    LoadingOverlayComponent,
+    InquiryChatAttachmentComponent,
+    ProductFieldAutocompleteComponent,
+  ],
 
   templateUrl: './distributor-products.component.html',
 
@@ -93,6 +109,8 @@ const emptyForm = (): ProductFormState => ({
 export class DistributorProductsComponent implements OnInit, OnDestroy {
 
   private readonly productService = inject(DistributorProductService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
 
 
@@ -115,6 +133,8 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
   readonly selectedBrand = signal<string | null>(null);
 
   readonly brands = signal<BrandSummary[]>([]);
+  readonly sortColumn = signal<ProductSortColumn>('brand');
+  readonly sortDirection = signal<SortDirection>('asc');
 
   readonly brandLogoUploading = signal<ReadonlySet<string>>(new Set());
 
@@ -129,6 +149,28 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
   readonly editingProduct = signal<DistributorProductEntry | null>(null);
 
   readonly form = signal<ProductFormState>(emptyForm());
+
+  readonly duplicateProductError = computed(() => {
+    if (!this.formOpen()) {
+      return null;
+    }
+
+    const brand = this.normalizeProductKey(this.form().brand);
+    const designation = this.normalizeProductKey(this.form().designation);
+    if (!brand || !designation) {
+      return null;
+    }
+
+    const editingId = this.editingProduct()?.id;
+    const exists = this.products().some(
+      (product) =>
+        product.id !== editingId &&
+        this.normalizeProductKey(product.brand) === brand &&
+        this.normalizeProductKey(product.designation) === designation,
+    );
+
+    return exists ? 'This brand and designation already exists.' : null;
+  });
 
   readonly togglingActiveIds = signal<ReadonlySet<string>>(new Set());
 
@@ -259,20 +301,24 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
 
   });
 
+  readonly sortedFilteredProducts = computed(() =>
+    this.sortProducts(this.filteredProducts(), this.sortColumn(), this.sortDirection()),
+  );
+
   readonly selectedBrandProducts = computed(() => {
     const brand = this.selectedBrand();
     if (!brand) {
       return [] as DistributorProductEntry[];
     }
-    return this.products()
-      .filter((product) => (product.brand ?? '').trim() === brand)
-      .sort((a, b) => (a.designation ?? '').localeCompare(b.designation ?? ''));
+    const list = this.products().filter((product) => (product.brand ?? '').trim() === brand);
+    return this.sortProducts(list, this.sortColumn(), this.sortDirection());
   });
 
 
 
   ngOnInit(): void {
 
+    this.syncTabFromRoute();
     this.load();
 
   }
@@ -324,6 +370,10 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
   setMainTab(tab: 'products' | 'brands'): void {
 
     this.activeMainTab.set(tab);
+    void this.router.navigate(['../', tab === 'products' ? 'my-products' : 'brands'], {
+      relativeTo: this.route,
+      replaceUrl: true,
+    });
     if (tab === 'brands' && !this.selectedBrand() && this.brands().length > 0) {
       this.selectedBrand.set(this.brands()[0].brandName);
     }
@@ -405,6 +455,30 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
       return '?';
     }
     return value.slice(0, 2).toUpperCase();
+
+  }
+
+
+
+  toggleSort(column: ProductSortColumn): void {
+
+    if (this.sortColumn() === column) {
+      this.sortDirection.set(this.sortDirection() === 'asc' ? 'desc' : 'asc');
+      return;
+    }
+    this.sortColumn.set(column);
+    this.sortDirection.set('asc');
+
+  }
+
+
+
+  sortIcon(column: ProductSortColumn): string {
+
+    if (this.sortColumn() !== column) {
+      return '↕';
+    }
+    return this.sortDirection() === 'asc' ? '↑' : '↓';
 
   }
 
@@ -938,6 +1012,12 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
 
     }
 
+    const duplicateError = this.duplicateProductError();
+    if (duplicateError) {
+      this.actionError.set(duplicateError);
+      return;
+    }
+
 
 
     this.saving.set(true);
@@ -1136,6 +1216,10 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
   updateFormField<K extends keyof ProductFormState>(field: K, value: ProductFormState[K]): void {
 
     this.form.update((current) => ({ ...current, [field]: value }));
+
+    if (field === 'brand' || field === 'designation') {
+      this.actionError.set(null);
+    }
 
   }
 
@@ -1562,6 +1646,51 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
     });
   }
 
+  private syncTabFromRoute(): void {
+    const lastSegment = this.route.snapshot.url.at(-1)?.path;
+    if (lastSegment === 'brands') {
+      this.activeMainTab.set('brands');
+      return;
+    }
+    this.activeMainTab.set('products');
+  }
+
+  private sortProducts(
+    list: DistributorProductEntry[],
+    column: ProductSortColumn,
+    direction: SortDirection,
+  ): DistributorProductEntry[] {
+    const factor = direction === 'asc' ? 1 : -1;
+    return [...list].sort((a, b) => {
+      const compare = this.compareByColumn(a, b, column);
+      return compare * factor;
+    });
+  }
+
+  private compareByColumn(
+    a: DistributorProductEntry,
+    b: DistributorProductEntry,
+    column: ProductSortColumn,
+  ): number {
+    switch (column) {
+      case 'rsp':
+        return (a.rsp ?? 0) - (b.rsp ?? 0);
+      case 'stockQuantity':
+        return (a.stockQuantity ?? 0) - (b.stockQuantity ?? 0);
+      case 'isActive':
+        return Number(a.isActive ?? false) - Number(b.isActive ?? false);
+      case 'attachmentCount':
+        return (a.attachmentCount ?? 0) - (b.attachmentCount ?? 0);
+      case 'designation':
+        return (a.designation ?? '').localeCompare(b.designation ?? '');
+      case 'description':
+        return (a.description ?? '').localeCompare(b.description ?? '');
+      case 'brand':
+      default:
+        return (a.brand ?? '').localeCompare(b.brand ?? '');
+    }
+  }
+
   private resolveBrandLogoPreviews(): void {
     this.brands().forEach((brand) => {
       if (!brand.logoUrl) {
@@ -1654,6 +1783,10 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
   }
 
 
+
+  private normalizeProductKey(value: unknown): string {
+    return this.toTrimmedString(value).toLowerCase();
+  }
 
   private toTrimmedString(value: unknown): string {
 

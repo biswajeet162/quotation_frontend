@@ -62,6 +62,19 @@ export const routes: Routes = [
       },
       {
         path: 'distributor/products',
+        pathMatch: 'full',
+        redirectTo: 'distributor/products/my-products',
+      },
+      {
+        path: 'distributor/products/my-products',
+        loadComponent: () =>
+          import('./features/distributor/distributor-products/distributor-products.component').then(
+            (m) => m.DistributorProductsComponent,
+          ),
+        canActivate: [roleGuard(['DISTRIBUTOR'])],
+      },
+      {
+        path: 'distributor/products/brands',
         loadComponent: () =>
           import('./features/distributor/distributor-products/distributor-products.component').then(
             (m) => m.DistributorProductsComponent,

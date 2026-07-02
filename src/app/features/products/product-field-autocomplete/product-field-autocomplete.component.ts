@@ -1,14 +1,11 @@
-import { NgStyle } from '@angular/common';
 import {
   Component,
   effect,
-  ElementRef,
   inject,
   input,
   OnInit,
   output,
   signal,
-  viewChild,
 } from '@angular/core';
 import {
   ProductCatalogLookupService,
@@ -17,7 +14,7 @@ import {
 
 @Component({
   selector: 'app-product-field-autocomplete',
-  imports: [NgStyle],
+  imports: [],
   templateUrl: './product-field-autocomplete.component.html',
   styleUrl: './product-field-autocomplete.component.css',
 })
@@ -28,20 +25,20 @@ export class ProductFieldAutocompleteComponent implements OnInit {
   readonly value = input.required<string>();
   readonly placeholder = input('');
   readonly ariaLabel = input<string | undefined>(undefined);
+  /** When set on designation fields, limits suggestions to this brand in the catalog. */
+  readonly brandFilter = input<string | undefined>(undefined);
 
   readonly valueChange = output<string>();
-
-  private readonly inputRef = viewChild<ElementRef<HTMLInputElement>>('inputEl');
 
   private readonly focused = signal(false);
 
   protected readonly dropdownOpen = signal(false);
   protected readonly suggestions = signal<string[]>([]);
-  protected readonly dropdownStyle = signal<Record<string, string>>({});
 
   constructor() {
     effect(() => {
       if (this.catalog.loaded() && this.focused()) {
+        this.brandFilter();
         this.showSuggestionsFor(this.value());
       }
     });
@@ -78,27 +75,14 @@ export class ProductFieldAutocompleteComponent implements OnInit {
 
   private showSuggestionsFor(term: string): void {
     this.refreshSuggestions(term);
-    const hasSuggestions = this.suggestions().length > 0;
-    this.dropdownOpen.set(hasSuggestions);
-    if (hasSuggestions) {
-      this.positionDropdown();
-    }
+    this.dropdownOpen.set(this.suggestions().length > 0);
   }
 
   private refreshSuggestions(term: string): void {
-    this.suggestions.set(this.catalog.suggest(this.field(), term));
-  }
-
-  private positionDropdown(): void {
-    const el = this.inputRef()?.nativeElement;
-    if (!el) {
+    if (this.field() === 'designation') {
+      this.suggestions.set(this.catalog.suggestDesignation(term, this.brandFilter()));
       return;
     }
-    const rect = el.getBoundingClientRect();
-    this.dropdownStyle.set({
-      top: `${rect.bottom + 2}px`,
-      left: `${rect.left}px`,
-      width: `${rect.width}px`,
-    });
+    this.suggestions.set(this.catalog.suggest(this.field(), term));
   }
 }

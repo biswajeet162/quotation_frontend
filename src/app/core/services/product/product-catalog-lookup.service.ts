@@ -29,6 +29,7 @@ export class ProductCatalogLookupService {
   private readonly productService = inject(ProductService);
 
   private readonly indexSignal = signal<FieldIndex>(emptyIndex());
+  private readonly brandDesignationsSignal = signal<ReadonlyMap<string, string[]>>(new Map());
   private readonly loadedSignal = signal(false);
   private loadStarted = false;
 
@@ -41,7 +42,9 @@ export class ProductCatalogLookupService {
     this.loadStarted = true;
     this.productService.getAll().subscribe({
       next: (products) => {
-        this.indexSignal.set(this.buildIndex(products));
+        const { index, brandDesignations } = this.buildIndex(products);
+        this.indexSignal.set(index);
+        this.brandDesignationsSignal.set(brandDesignations);
         this.loadedSignal.set(true);
       },
       error: () => {
@@ -62,7 +65,29 @@ export class ProductCatalogLookupService {
     return values.filter((value) => value.toLowerCase().includes(query)).slice(0, MAX_SUGGESTIONS);
   }
 
-  private buildIndex(products: Product[]): FieldIndex {
+  /** Designation suggestions, optionally limited to a brand from the catalog. */
+  suggestDesignation(term: string, brand?: string): string[] {
+    const brandKey = brand?.trim().toLowerCase();
+    let values = this.indexSignal().designation;
+    if (brandKey && brandKey.length > 0) {
+      const brandSpecific = this.brandDesignationsSignal().get(brandKey);
+      if (brandSpecific && brandSpecific.length > 0) {
+        values = brandSpecific;
+      }
+    }
+    const query = term.trim().toLowerCase();
+
+    if (!query) {
+      return values.slice(0, MAX_SUGGESTIONS);
+    }
+
+    return values.filter((value) => value.toLowerCase().includes(query)).slice(0, MAX_SUGGESTIONS);
+  }
+
+  private buildIndex(products: Product[]): {
+    index: FieldIndex;
+    brandDesignations: ReadonlyMap<string, string[]>;
+  } {
     const sets: Record<ProductSuggestField, Set<string>> = {
       brand: new Set(),
       designation: new Set(),
@@ -71,6 +96,7 @@ export class ProductCatalogLookupService {
       description: new Set(),
       specifications: new Set(),
     };
+    const brandDesignationSets = new Map<string, Set<string>>();
 
     for (const product of products) {
       this.add(sets.brand, product.brand);
@@ -81,18 +107,36 @@ export class ProductCatalogLookupService {
       for (const label of specificationSuggestionLabels(product.specifications)) {
         sets.specifications.add(label);
       }
+
+      const brand = product.brand?.trim();
+      const designation = product.designation?.trim();
+      if (brand && designation) {
+        const key = brand.toLowerCase();
+        if (!brandDesignationSets.has(key)) {
+          brandDesignationSets.set(key, new Set());
+        }
+        brandDesignationSets.get(key)!.add(designation);
+      }
     }
 
     const sort = (values: Set<string>) =>
       [...values].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
 
+    const brandDesignations = new Map<string, string[]>();
+    for (const [key, designations] of brandDesignationSets) {
+      brandDesignations.set(key, sort(designations));
+    }
+
     return {
-      brand: sort(sets.brand),
-      designation: sort(sets.designation),
-      groupName: sort(sets.groupName),
-      category: sort(sets.category),
-      description: sort(sets.description),
-      specifications: sort(sets.specifications),
+      index: {
+        brand: sort(sets.brand),
+        designation: sort(sets.designation),
+        groupName: sort(sets.groupName),
+        category: sort(sets.category),
+        description: sort(sets.description),
+        specifications: sort(sets.specifications),
+      },
+      brandDesignations,
     };
   }
 
