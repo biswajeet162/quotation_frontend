@@ -458,6 +458,14 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
 
   }
 
+  getBrandLogoUrl(brandName: string | null | undefined): string | null {
+    const name = this.toTrimmedString(brandName);
+    if (!name) {
+      return null;
+    }
+    return this.brands().find((brand) => brand.brandName === name)?.logoUrl ?? null;
+  }
+
 
 
   toggleSort(column: ProductSortColumn): void {

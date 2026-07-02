@@ -164,7 +164,19 @@
                       (click)="openDetails(product)"
                     >
                       <td class="serial-cell">{{ index + 1 }}</td>
-                      <td class="brand-cell" [title]="product.brand">{{ product.brand }}</td>
+                      <td class="brand-cell" [title]="product.brand">
+                        @let brandLogoUrl = getBrandLogoUrl(product.brand);
+                        <span class="brand-cell-content">
+                          <span class="brand-cell-logo" aria-hidden="true">
+                            @if (brandLogoUrl) {
+                              <img [src]="brandLogoUrl" [alt]="product.brand + ' logo'" />
+                            } @else {
+                              <span>{{ getBrandInitials(product.brand) }}</span>
+                            }
+                          </span>
+                          <span class="brand-cell-name">{{ product.brand }}</span>
+                        </span>
+                      </td>
                       <td class="designation-cell" [title]="product.designation">{{ product.designation }}</td>
                       <td class="description-cell" [title]="product.description || ''">
                         {{ product.description || '—' }}
@@ -276,7 +288,19 @@
               (click)="openDetails(product)"
             >
               <td class="serial-cell">{{ index + 1 }}</td>
-              <td class="brand-cell" [title]="product.brand">{{ product.brand }}</td>
+              <td class="brand-cell" [title]="product.brand">
+                @let brandLogoUrl = getBrandLogoUrl(product.brand);
+                <span class="brand-cell-content">
+                  <span class="brand-cell-logo" aria-hidden="true">
+                    @if (brandLogoUrl) {
+                      <img [src]="brandLogoUrl" [alt]="product.brand + ' logo'" />
+                    } @else {
+                      <span>{{ getBrandInitials(product.brand) }}</span>
+                    }
+                  </span>
+                  <span class="brand-cell-name">{{ product.brand }}</span>
+                </span>
+              </td>
               <td class="designation-cell" [title]="product.designation">{{ product.designation }}</td>
               <td class="description-cell" [title]="product.description || ''">
                 {{ product.description || '—' }}

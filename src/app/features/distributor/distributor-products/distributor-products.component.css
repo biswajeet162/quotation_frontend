@@ -409,10 +409,43 @@
 }
 
 .brand-cell {
-  white-space: nowrap;
+  font-weight: 500;
+}
+
+.brand-cell-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.brand-cell-logo {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #ccfbf1;
+  color: #0f766e;
+  font-size: 0.55rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.brand-cell-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.brand-cell-name {
   overflow: hidden;
   text-overflow: ellipsis;
-  font-weight: 500;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .page-alert {
