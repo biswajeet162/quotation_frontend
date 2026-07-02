@@ -141,6 +141,12 @@
 .col-designation {
   width: 28%;
   min-width: 14rem;
+  overflow: visible;
+  z-index: 1;
+}
+
+.col-designation:has(.field-autocomplete input:focus) {
+  z-index: 50;
 }
 
 .col-brand {

@@ -36,8 +36,10 @@
                 <app-product-field-autocomplete
                   field="designation"
                   [value]="row.designation"
-                  (valueChange)="updateRowField(row.rowId, 'designation', $event)"
+                  (valueChange)="updateDesignation(row.rowId, $event)"
+                  (catalogProductSelect)="applyCatalogProductToRow(row.rowId, $event)"
                   [brandFilter]="row.brand"
+                  [remoteSearch]="true"
                   placeholder="Designation"
                   [ariaLabel]="'Designation for row ' + ($index + 1)"
                 />

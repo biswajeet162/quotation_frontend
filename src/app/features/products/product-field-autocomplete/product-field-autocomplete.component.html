@@ -24,8 +24,15 @@
   </button>
 
   @if (dropdownOpen()) {
-    <ul class="suggestions" role="listbox">
-      @if (isLoading()) {
+    <ul
+      class="suggestions"
+      [class.suggestions-fixed]="remoteSearchActive()"
+      [style.top]="dropdownStyle()?.top"
+      [style.left]="dropdownStyle()?.left"
+      [style.width]="dropdownStyle()?.width"
+      role="listbox"
+    >
+      @if (isLoading() && !hasDropdownItems()) {
         <li class="suggestion-status" role="status">Loading options…</li>
       } @else if (!hasDropdownItems()) {
         <li class="suggestion-status">No matches</li>
@@ -45,6 +52,33 @@
                 }
               </span>
               <span class="brand-option-name">{{ option.brandName }}</span>
+            </button>
+          </li>
+        }
+      } @else if (showDesignationList()) {
+        @for (option of designationOptions(); track option) {
+          <li role="option">
+            <button
+              type="button"
+              class="suggestion-item"
+              (mousedown)="selectDesignationOption(option, $event)"
+            >
+              {{ option }}
+            </button>
+          </li>
+        }
+      } @else if (showProductDropdown()) {
+        @for (option of productSuggestions(); track option.productId) {
+          <li role="option">
+            <button
+              type="button"
+              class="suggestion-item designation-option"
+              (mousedown)="selectProductSuggestion(option, $event)"
+            >
+              <span class="designation-option-primary">{{ productSuggestionPrimary(option) }}</span>
+              @if (productSuggestionSecondary(option); as secondary) {
+                <span class="designation-option-secondary">{{ secondary }}</span>
+              }
             </button>
           </li>
         }

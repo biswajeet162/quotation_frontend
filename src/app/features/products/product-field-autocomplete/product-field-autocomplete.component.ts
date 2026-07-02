@@ -1,17 +1,32 @@
 import {
   Component,
+  DestroyRef,
+  ElementRef,
   effect,
   inject,
   input,
   OnInit,
   output,
   signal,
+  viewChild,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, map, of, switchMap, tap } from 'rxjs';
+import { CatalogProduct } from '../../../core/models/catalog-product.model';
+import { Product } from '../../../core/models/product.model';
+import { ProductService } from '../../../core/services/product/product.service';
 import {
   CatalogBrandOption,
   ProductCatalogLookupService,
   ProductSuggestField,
 } from '../../../core/services/product/product-catalog-lookup.service';
+
+interface RemoteSearchRequest {
+  field: ProductSuggestField;
+  term: string;
+  brand?: string;
+}
 
 @Component({
   selector: 'app-product-field-autocomplete',
@@ -21,23 +36,35 @@ import {
 })
 export class ProductFieldAutocompleteComponent implements OnInit {
   private readonly catalog = inject(ProductCatalogLookupService);
+  private readonly productService = inject(ProductService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly inputEl = viewChild<ElementRef<HTMLInputElement>>('inputEl');
 
   readonly field = input.required<ProductSuggestField>();
   readonly value = input.required<string>();
   readonly placeholder = input('');
   readonly ariaLabel = input<string | undefined>(undefined);
-  /** When set on designation fields, limits suggestions to this brand in the catalog. */
+  /** When set, limits remote/local designation suggestions to this brand. */
   readonly brandFilter = input<string | undefined>(undefined);
   /** Show brand logos in the dropdown (consumer quotation form). */
   readonly richBrands = input(false);
+  /** Query the backend with debounced switchMap search (cancels in-flight HTTP calls). */
+  readonly remoteSearch = input(false);
 
   readonly valueChange = output<string>();
+  readonly catalogProductSelect = output<CatalogProduct>();
 
   private readonly focused = signal(false);
+  private readonly searchRequests$ = new Subject<RemoteSearchRequest>();
 
   protected readonly dropdownOpen = signal(false);
   protected readonly suggestions = signal<string[]>([]);
+  protected readonly productSuggestions = signal<CatalogProduct[]>([]);
   protected readonly brandOptions = signal<CatalogBrandOption[]>([]);
+  protected readonly searching = signal(false);
+  protected readonly dropdownStyle = signal<{ top: string; left: string; width: string } | null>(
+    null,
+  );
 
   constructor() {
     effect(() => {
@@ -55,8 +82,13 @@ export class ProductFieldAutocompleteComponent implements OnInit {
         return;
       }
 
+      if (this.useRemoteSearch()) {
+        this.emitRemoteSearch(this.value());
+        return;
+      }
+
       if (this.catalog.loaded()) {
-        this.refreshSuggestions(this.value());
+        this.refreshLocalSuggestions(this.value());
       }
     });
 
@@ -67,13 +99,23 @@ export class ProductFieldAutocompleteComponent implements OnInit {
     });
 
     effect(() => {
-      if (this.field() !== 'brand' && this.catalog.loaded() && this.focused()) {
-        this.refreshSuggestions(this.value());
+      if (
+        this.field() !== 'brand' &&
+        !this.useRemoteSearch() &&
+        this.catalog.loaded() &&
+        this.focused()
+      ) {
+        this.refreshLocalSuggestions(this.value());
       }
     });
   }
 
   ngOnInit(): void {
+    if (this.useRemoteSearch()) {
+      this.setupRemoteSearchPipeline();
+      return;
+    }
+
     this.catalog.ensureLoaded();
     if (this.field() === 'brand' && this.richBrands()) {
       this.catalog.ensureConsumerBrandsLoaded();
@@ -82,7 +124,8 @@ export class ProductFieldAutocompleteComponent implements OnInit {
 
   onFocus(): void {
     this.focused.set(true);
-    this.catalog.ensureLoaded();
+    this.syncDropdownPosition();
+
     if (this.field() === 'brand' && this.richBrands()) {
       this.catalog.ensureConsumerBrandsLoaded();
       this.refreshBrandOptions(this.value());
@@ -90,20 +133,34 @@ export class ProductFieldAutocompleteComponent implements OnInit {
       return;
     }
 
-    this.refreshSuggestions(this.value());
+    if (this.useRemoteSearch()) {
+      this.emitRemoteSearch(this.value());
+      this.openRemoteDropdown(this.value());
+      return;
+    }
+
+    this.catalog.ensureLoaded();
+    this.refreshLocalSuggestions(this.value());
     this.dropdownOpen.set(this.suggestions().length > 0 || this.catalog.loading());
   }
 
   onInput(event: Event): void {
     const raw = (event.target as HTMLInputElement).value;
     this.valueChange.emit(raw);
+
     if (this.field() === 'brand' && this.richBrands()) {
       this.refreshBrandOptions(raw);
       this.dropdownOpen.set(this.brandOptions().length > 0 || this.catalog.loading());
       return;
     }
 
-    this.refreshSuggestions(raw);
+    if (this.useRemoteSearch()) {
+      this.emitRemoteSearch(raw);
+      this.openRemoteDropdown(raw);
+      return;
+    }
+
+    this.refreshLocalSuggestions(raw);
     this.dropdownOpen.set(this.suggestions().length > 0 || this.catalog.loading());
   }
 
@@ -127,9 +184,26 @@ export class ProductFieldAutocompleteComponent implements OnInit {
     event.preventDefault();
     event.stopPropagation();
     this.valueChange.emit(option);
-    this.dropdownOpen.set(false);
-    this.suggestions.set([]);
-    this.brandOptions.set([]);
+    this.closeDropdown();
+  }
+
+  selectProductSuggestion(product: CatalogProduct, event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const field = this.field();
+    const selectedValue =
+      field === 'brand'
+        ? product.brand
+        : field === 'designation'
+          ? product.designation
+          : field === 'description'
+            ? (product.description ?? product.designation)
+            : product.designation;
+
+    this.valueChange.emit(selectedValue);
+    this.catalogProductSelect.emit(product);
+    this.closeDropdown();
   }
 
   selectBrandOption(option: CatalogBrandOption, event: MouseEvent): void {
@@ -141,6 +215,9 @@ export class ProductFieldAutocompleteComponent implements OnInit {
   }
 
   isLoading(): boolean {
+    if (this.useRemoteSearch()) {
+      return this.searching();
+    }
     if (this.field() === 'brand' && this.richBrands()) {
       return !this.catalog.brandsLoaded();
     }
@@ -151,13 +228,199 @@ export class ProductFieldAutocompleteComponent implements OnInit {
     return this.field() === 'brand' && this.richBrands();
   }
 
-  hasDropdownItems(): boolean {
-    return this.showBrandDropdown()
-      ? this.brandOptions().length > 0
-      : this.suggestions().length > 0;
+  showProductDropdown(): boolean {
+    return this.useRemoteSearch();
   }
 
-  private refreshSuggestions(term: string): void {
+  showDesignationList(): boolean {
+    return this.useRemoteSearch() && this.field() === 'designation';
+  }
+
+  designationOptions(): string[] {
+    const seen = new Set<string>();
+    const options: string[] = [];
+    for (const product of this.productSuggestions()) {
+      const designation = product.designation?.trim();
+      if (!designation || seen.has(designation)) {
+        continue;
+      }
+      seen.add(designation);
+      options.push(designation);
+    }
+    return options;
+  }
+
+  hasDropdownItems(): boolean {
+    if (this.showBrandDropdown()) {
+      return this.brandOptions().length > 0;
+    }
+    if (this.showDesignationList()) {
+      return this.designationOptions().length > 0;
+    }
+    if (this.showProductDropdown()) {
+      return this.productSuggestions().length > 0;
+    }
+    return this.suggestions().length > 0;
+  }
+
+  productSuggestionPrimary(product: CatalogProduct): string {
+    const field = this.field();
+    if (field === 'brand') {
+      return product.brand;
+    }
+    if (field === 'description') {
+      return product.description?.trim() || product.designation;
+    }
+    return product.designation;
+  }
+
+  productSuggestionSecondary(product: CatalogProduct): string | null {
+    const field = this.field();
+    if (field === 'designation' && !this.brandFilter()) {
+      return product.brand;
+    }
+    if (field === 'description') {
+      return `${product.brand} · ${product.designation}`;
+    }
+    return null;
+  }
+
+  private useRemoteSearch(): boolean {
+    return this.remoteSearch() && !(this.field() === 'brand' && this.richBrands());
+  }
+
+  protected remoteSearchActive(): boolean {
+    return this.useRemoteSearch();
+  }
+
+  /**
+   * debounceTime → distinctUntilChanged → switchMap
+   * switchMap unsubscribes the previous HTTP observable, cancelling in-flight requests.
+   */
+  private setupRemoteSearchPipeline(): void {
+    this.searchRequests$
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(
+          (previous, current) =>
+            previous.field === current.field &&
+            previous.term === current.term &&
+            previous.brand === current.brand,
+        ),
+        tap((request) => {
+          this.searching.set(request.term.trim().length > 0);
+        }),
+        switchMap((request) => {
+          const trimmed = request.term.trim();
+          if (trimmed.length === 0) {
+            return of<CatalogProduct[]>([]);
+          }
+
+          return this.productService
+            .searchCatalog({
+              field: request.field,
+              term: trimmed,
+              brandFilter: request.brand,
+              size: 15,
+            })
+            .pipe(
+              map((products) => products.map((product) => this.toCatalogProduct(product))),
+              catchError(() => of<CatalogProduct[]>([])),
+            );
+        }),
+        tap(() => this.searching.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((results) => {
+        this.productSuggestions.set(results);
+        this.openRemoteDropdown(this.value());
+        this.syncDropdownPosition();
+      });
+  }
+
+  selectDesignationOption(designation: string, event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const brandKey = this.brandFilter()?.trim().toLowerCase();
+    const product =
+      this.productSuggestions().find((entry) => {
+        if (entry.designation !== designation) {
+          return false;
+        }
+        if (!brandKey) {
+          return true;
+        }
+        return entry.brand?.trim().toLowerCase() === brandKey;
+      }) ?? this.productSuggestions().find((entry) => entry.designation === designation);
+
+    if (product) {
+      this.selectProductSuggestion(product, event);
+      return;
+    }
+
+    this.selectSuggestion(designation, event);
+  }
+
+  private openRemoteDropdown(term: string): void {
+    if (!this.useRemoteSearch()) {
+      return;
+    }
+    this.dropdownOpen.set(term.trim().length > 0);
+  }
+
+  private syncDropdownPosition(): void {
+    const input = this.inputEl()?.nativeElement;
+    if (!input) {
+      this.dropdownStyle.set(null);
+      return;
+    }
+
+    const rect = input.getBoundingClientRect();
+    this.dropdownStyle.set({
+      top: `${rect.bottom + 2}px`,
+      left: `${rect.left}px`,
+      width: `${rect.width}px`,
+    });
+  }
+
+  private emitRemoteSearch(term: string): void {
+    if (!this.useRemoteSearch()) {
+      return;
+    }
+
+    const trimmed = term.trim();
+    if (trimmed.length === 0) {
+      this.productSuggestions.set([]);
+      this.searching.set(false);
+      return;
+    }
+
+    this.searchRequests$.next({
+      field: this.field(),
+      term,
+      brand: this.brandFilter(),
+    });
+  }
+
+  private toCatalogProduct(product: Product): CatalogProduct {
+    return {
+      productId: product.id,
+      brand: product.brand,
+      designation: product.designation,
+      description: product.description,
+    };
+  }
+
+  private closeDropdown(): void {
+    this.dropdownOpen.set(false);
+    this.dropdownStyle.set(null);
+    this.suggestions.set([]);
+    this.productSuggestions.set([]);
+    this.brandOptions.set([]);
+  }
+
+  private refreshLocalSuggestions(term: string): void {
     if (this.field() === 'designation') {
       this.suggestions.set(this.catalog.suggestDesignation(term, this.brandFilter()));
       return;
