@@ -1,6 +1,7 @@
 import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
+import { finalize, timeout } from 'rxjs';
 
 import {
 
@@ -34,31 +35,13 @@ interface ProductFormState {
 
   designation: string;
 
-  groupName: string;
-
-  category: string;
-
   description: string;
 
   specifications: string;
 
-  aliasNames: string;
+  rsp: string | number;
 
-  rsp: string;
-
-  discountPercentage: string;
-
-  gstPercentage: string;
-
-  stockQuantity: string;
-
-  leadTimeDays: string;
-
-  minOrderQuantity: string;
-
-  priceValidTill: string;
-
-  extraInfo: string;
+  stockQuantity: string | number;
 
 }
 
@@ -70,31 +53,13 @@ const emptyForm = (): ProductFormState => ({
 
   designation: '',
 
-  groupName: '',
-
-  category: '',
-
   description: '',
 
   specifications: '',
 
-  aliasNames: '',
-
   rsp: '',
 
-  discountPercentage: '',
-
-  gstPercentage: '',
-
-  stockQuantity: '0',
-
-  leadTimeDays: '7',
-
-  minOrderQuantity: '1',
-
-  priceValidTill: '',
-
-  extraInfo: '',
+  stockQuantity: '1',
 
 });
 
@@ -327,35 +292,13 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
 
       designation: product.designation ?? '',
 
-      groupName: product.groupName ?? '',
-
-      category: product.category ?? '',
-
       description: product.description ?? '',
 
       specifications: product.specifications ?? '',
 
-      aliasNames: product.aliasNames ?? '',
-
       rsp: product.rsp != null ? String(product.rsp) : '',
 
-      discountPercentage:
-
-        product.discountPercentage != null ? String(product.discountPercentage) : '',
-
-      gstPercentage: product.gstPercentage != null ? String(product.gstPercentage) : '',
-
-      stockQuantity: product.stockQuantity != null ? String(product.stockQuantity) : '0',
-
-      leadTimeDays: product.leadTimeDays != null ? String(product.leadTimeDays) : '7',
-
-      minOrderQuantity:
-
-        product.minOrderQuantity != null ? String(product.minOrderQuantity) : '1',
-
-      priceValidTill: product.priceValidTill ?? '',
-
-      extraInfo: product.extraInfo ?? '',
+      stockQuantity: product.stockQuantity != null ? String(product.stockQuantity) : '1',
 
     });
 
@@ -747,9 +690,13 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
 
     const state = this.form();
 
-    if (!state.brand.trim() || !state.designation.trim()) {
+    if (
+      !this.toTrimmedString(state.brand) ||
+      !this.toTrimmedString(state.designation) ||
+      !this.toTrimmedString(state.rsp)
+    ) {
 
-      this.actionError.set('Brand and designation are required.');
+      this.actionError.set('Brand, designation, and RSP are required.');
 
       return;
 
@@ -767,13 +714,17 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
 
       const request = this.toCreateRequest(state);
 
-      this.productService.create(request).subscribe({
+      this.productService
+        .create(request)
+        .pipe(
+          timeout(20000),
+          finalize(() => this.saving.set(false)),
+        )
+        .subscribe({
 
         next: (created) => {
 
           this.products.update((list) => [created, ...list]);
-
-          this.saving.set(false);
 
           this.formOpen.set(false);
 
@@ -781,9 +732,7 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
 
         error: (err) => {
 
-          this.saving.set(false);
-
-          this.actionError.set(err?.error?.message ?? 'Could not add product.');
+          this.actionError.set(err?.error?.message ?? 'Could not add product. Please try again.');
 
         },
 
@@ -809,7 +758,13 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
 
     const request = this.toUpdateRequest(state);
 
-    this.productService.update(editing.id, request).subscribe({
+    this.productService
+      .update(editing.id, request)
+      .pipe(
+        timeout(20000),
+        finalize(() => this.saving.set(false)),
+      )
+      .subscribe({
 
       next: (updated) => {
 
@@ -819,17 +774,13 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
 
         );
 
-        this.saving.set(false);
-
         this.formOpen.set(false);
 
       },
 
       error: (err) => {
 
-        this.saving.set(false);
-
-        this.actionError.set(err?.error?.message ?? 'Could not update product.');
+        this.actionError.set(err?.error?.message ?? 'Could not update product. Please try again.');
 
       },
 
@@ -1281,35 +1232,17 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
 
     return {
 
-      brand: state.brand.trim(),
+      brand: this.toTrimmedString(state.brand),
 
-      designation: state.designation.trim(),
+      designation: this.toTrimmedString(state.designation),
 
-      groupName: state.groupName.trim() || undefined,
+      description: this.toTrimmedString(state.description) || undefined,
 
-      category: state.category.trim() || undefined,
-
-      description: state.description.trim() || undefined,
-
-      specifications: state.specifications.trim() || undefined,
-
-      aliasNames: state.aliasNames.trim() || undefined,
+      specifications: this.toTrimmedString(state.specifications) || undefined,
 
       rsp: this.parseNumber(state.rsp),
 
-      discountPercentage: this.parseNumber(state.discountPercentage),
-
-      gstPercentage: this.parseNumber(state.gstPercentage),
-
-      stockQuantity: this.parseInteger(state.stockQuantity, 0),
-
-      leadTimeDays: this.parseInteger(state.leadTimeDays, 7),
-
-      minOrderQuantity: this.parseInteger(state.minOrderQuantity, 1),
-
-      priceValidTill: state.priceValidTill || undefined,
-
-      extraInfo: state.extraInfo.trim() || undefined,
+      stockQuantity: this.parseInteger(state.stockQuantity, 1),
 
     };
 
@@ -1325,9 +1258,9 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
 
 
 
-  private parseNumber(value: string): number | undefined {
+  private parseNumber(value: string | number): number | undefined {
 
-    const trimmed = value.trim();
+    const trimmed = this.toTrimmedString(value);
 
     if (!trimmed) {
 
@@ -1343,9 +1276,9 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
 
 
 
-  private parseInteger(value: string, fallback: number): number {
+  private parseInteger(value: string | number, fallback: number): number {
 
-    const trimmed = value.trim();
+    const trimmed = this.toTrimmedString(value);
 
     if (!trimmed) {
 
@@ -1356,6 +1289,20 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
     const parsed = Number.parseInt(trimmed, 10);
 
     return Number.isFinite(parsed) ? parsed : fallback;
+
+  }
+
+
+
+  private toTrimmedString(value: unknown): string {
+
+    if (value == null) {
+
+      return '';
+
+    }
+
+    return String(value).trim();
 
   }
 

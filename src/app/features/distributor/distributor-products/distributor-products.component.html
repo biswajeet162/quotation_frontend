@@ -4,10 +4,6 @@
   <header class="page-header">
     <div>
       <h1>My products</h1>
-      <p class="muted">
-        Products you add appear in the shared catalog for admin and consumers. You manage pricing
-        and stock for your company only.
-      </p>
     </div>
     <div class="header-actions">
       <button type="button" class="btn-primary" (click)="openCreate()">Add product</button>
@@ -50,6 +46,7 @@
       <table class="products-table">
         <thead>
           <tr>
+            <th class="col-serial">S.No</th>
             <th class="col-brand">Brand</th>
             <th class="col-designation">Designation</th>
             <th class="col-description">Description</th>
@@ -61,8 +58,9 @@
           </tr>
         </thead>
         <tbody>
-          @for (product of filteredProducts(); track product.id) {
+          @for (product of filteredProducts(); track product.id; let index = $index) {
             <tr [class.inactive-row]="product.isActive === false">
+              <td class="serial-cell">{{ index + 1 }}</td>
               <td class="brand-cell" [title]="product.brand">{{ product.brand }}</td>
               <td class="designation-cell" [title]="product.designation">{{ product.designation }}</td>
               <td class="description-cell" [title]="product.description || ''">
@@ -159,27 +157,7 @@
           />
         </div>
         <div class="form-field">
-          <label for="category">Category</label>
-          <input
-            id="category"
-            type="text"
-            [ngModel]="form().category"
-            (ngModelChange)="updateFormField('category', $event)"
-            name="category"
-          />
-        </div>
-        <div class="form-field">
-          <label for="groupName">Group</label>
-          <input
-            id="groupName"
-            type="text"
-            [ngModel]="form().groupName"
-            (ngModelChange)="updateFormField('groupName', $event)"
-            name="groupName"
-          />
-        </div>
-        <div class="form-field">
-          <label for="rsp">RSP</label>
+          <label for="rsp">RSP *</label>
           <input
             id="rsp"
             type="number"
@@ -201,62 +179,6 @@
             name="stockQuantity"
           />
         </div>
-        <div class="form-field">
-          <label for="leadTimeDays">Lead time (days)</label>
-          <input
-            id="leadTimeDays"
-            type="number"
-            min="0"
-            [ngModel]="form().leadTimeDays"
-            (ngModelChange)="updateFormField('leadTimeDays', $event)"
-            name="leadTimeDays"
-          />
-        </div>
-        <div class="form-field">
-          <label for="minOrderQuantity">Min order qty</label>
-          <input
-            id="minOrderQuantity"
-            type="number"
-            min="1"
-            [ngModel]="form().minOrderQuantity"
-            (ngModelChange)="updateFormField('minOrderQuantity', $event)"
-            name="minOrderQuantity"
-          />
-        </div>
-        <div class="form-field">
-          <label for="discountPercentage">Discount %</label>
-          <input
-            id="discountPercentage"
-            type="number"
-            min="0"
-            step="0.01"
-            [ngModel]="form().discountPercentage"
-            (ngModelChange)="updateFormField('discountPercentage', $event)"
-            name="discountPercentage"
-          />
-        </div>
-        <div class="form-field">
-          <label for="gstPercentage">GST %</label>
-          <input
-            id="gstPercentage"
-            type="number"
-            min="0"
-            step="0.01"
-            [ngModel]="form().gstPercentage"
-            (ngModelChange)="updateFormField('gstPercentage', $event)"
-            name="gstPercentage"
-          />
-        </div>
-        <div class="form-field">
-          <label for="priceValidTill">Price valid till</label>
-          <input
-            id="priceValidTill"
-            type="date"
-            [ngModel]="form().priceValidTill"
-            (ngModelChange)="updateFormField('priceValidTill', $event)"
-            name="priceValidTill"
-          />
-        </div>
         <div class="form-field form-field-wide">
           <label for="description">Description</label>
           <textarea
@@ -275,16 +197,6 @@
             [ngModel]="form().specifications"
             (ngModelChange)="updateFormField('specifications', $event)"
             name="specifications"
-          ></textarea>
-        </div>
-        <div class="form-field form-field-wide">
-          <label for="extraInfo">Extra info</label>
-          <textarea
-            id="extraInfo"
-            rows="2"
-            [ngModel]="form().extraInfo"
-            (ngModelChange)="updateFormField('extraInfo', $event)"
-            name="extraInfo"
           ></textarea>
         </div>
       </div>
