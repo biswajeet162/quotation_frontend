@@ -877,6 +877,32 @@
   margin-top: 0.25rem;
 }
 
+.preview-terms-editor {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.85rem 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: #475569;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 8.5rem;
+}
+
+.preview-terms-editor:focus {
+  outline: 2px solid #0f766e;
+  outline-offset: 1px;
+  border-color: #0f766e;
+}
+
+.preview-terms-print {
+  display: none;
+}
+
 .preview-terms-box {
   padding: 0.85rem 1rem;
   border: 1px solid #e2e8f0;
@@ -1009,6 +1035,14 @@
 
   .preview-body {
     overflow: visible;
+  }
+
+  .preview-terms-editor {
+    display: none !important;
+  }
+
+  .preview-terms-print {
+    display: block !important;
   }
 }
 

@@ -83,6 +83,15 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
 
   readonly quotationDate = computed(() => this.formatQuotationDate(new Date()));
 
+  readonly termsText = signal('');
+
+  readonly termsLines = computed(() =>
+    this.termsText()
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean),
+  );
+
   readonly previewCompanyName = computed(() => {
     const profile = this.companyProfile();
     const user = this.auth.currentUser();
@@ -347,6 +356,7 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
 
   openPreview(): void {
     this.submitError.set(null);
+    this.termsText.set(this.buildDefaultTermsText());
     this.previewOpen.set(true);
     document.body.style.overflow = 'hidden';
     this.loadCompanyProfile();
@@ -376,6 +386,17 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear();
     return `${day}-${month}-${year}`;
+  }
+
+  private buildDefaultTermsText(): string {
+    const date = this.quotationDate();
+    return [
+      'Pricing and delivery timelines will be confirmed after review.',
+      'Payment terms to be agreed upon acceptance of the quotation.',
+      `Offer validity: 30 days from ${date}.`,
+      'Delivery dates are subject to prior sale and stock availability.',
+      'Please confirm with us before placing the final order.',
+    ].join('\n');
   }
 
   clearForm(): void {

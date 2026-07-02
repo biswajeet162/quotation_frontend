@@ -250,12 +250,17 @@
 
         <section class="preview-terms">
           <h4 class="preview-section-title">T&amp;Cs:</h4>
-          <div class="preview-terms-box">
-            <p>Pricing and delivery timelines will be confirmed after review.</p>
-            <p>Payment terms to be agreed upon acceptance of the quotation.</p>
-            <p>Offer validity: 30 days from quotation date.</p>
-            <p>Delivery dates are subject to prior sale and stock availability.</p>
-            <p>Please confirm with us before placing the final order.</p>
+          <textarea
+            class="preview-terms-editor"
+            [ngModel]="termsText()"
+            (ngModelChange)="termsText.set($event)"
+            rows="6"
+            aria-label="Terms and conditions"
+          ></textarea>
+          <div class="preview-terms-box preview-terms-print" aria-hidden="true">
+            @for (line of termsLines(); track $index) {
+              <p>{{ line }}</p>
+            }
           </div>
         </section>
       </main>
