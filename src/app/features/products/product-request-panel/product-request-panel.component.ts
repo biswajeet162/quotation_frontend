@@ -331,9 +331,15 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
     return this.previewRows().reduce((sum, row) => sum + row.quantity, 0);
   }
 
-  formatSpecs(value: string | undefined): string {
-    const formatted = formatSpecificationsInline(value);
-    return formatted || '—';
+  previewField(value: string | undefined): string {
+    const trimmed = value?.trim();
+    if (!trimmed) {
+      return '—';
+    }
+    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+      return formatSpecificationsInline(value) || '—';
+    }
+    return trimmed;
   }
 
   submitRequest(): void {

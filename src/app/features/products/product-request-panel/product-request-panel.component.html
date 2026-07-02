@@ -21,7 +21,7 @@
         <thead>
           <tr>
             <th class="col-designation">Designation</th>
-            <th>Brand</th>
+            <th class="col-brand">Brand</th>
             <th class="col-qty">Qty</th>
             <th>Specification</th>
             <th>Description</th>
@@ -41,7 +41,7 @@
                   [ariaLabel]="'Designation for row ' + ($index + 1)"
                 />
               </td>
-              <td>
+              <td class="col-brand">
                 <app-product-field-autocomplete
                   field="brand"
                   [value]="row.brand"
@@ -60,7 +60,7 @@
               </td>
               <td class="col-specification">
                 <textarea
-                  rows="2"
+                  rows="1"
                   [ngModel]="row.specifications"
                   (ngModelChange)="updateRowField(row.rowId, 'specifications', $event)"
                   placeholder="Specification"
@@ -69,7 +69,7 @@
               </td>
               <td class="col-description">
                 <textarea
-                  rows="2"
+                  rows="1"
                   [ngModel]="row.description"
                   (ngModelChange)="updateRowField(row.rowId, 'description', $event)"
                   placeholder="Description"
@@ -156,30 +156,30 @@
           <table class="preview-table">
             <thead>
               <tr>
-                <th>#</th>
-                <th>Designation</th>
-                <th>Brand</th>
-                <th>Qty</th>
+                <th class="col-designation">Designation</th>
+                <th class="col-brand">Brand</th>
+                <th class="col-qty">Qty</th>
                 <th>Specification</th>
                 <th>Description</th>
-                <th>Attachment</th>
+                <th class="col-attachment">Attachment</th>
               </tr>
             </thead>
             <tbody>
               @if (previewRows().length === 0) {
                 <tr>
-                  <td colspan="7" class="preview-empty">No products to preview.</td>
+                  <td colspan="6" class="preview-empty">No products to preview.</td>
                 </tr>
               }
-              @for (row of previewRows(); track row.rowId; let i = $index) {
+              @for (row of previewRows(); track row.rowId) {
                 <tr>
-                  <td>{{ i + 1 }}</td>
-                  <td>{{ row.designation }}</td>
-                  <td>{{ row.brand }}</td>
-                  <td>{{ row.quantity }}</td>
-                  <td>{{ formatSpecs(row.specifications) }}</td>
-                  <td>{{ row.description || '—' }}</td>
-                  <td>{{ rowAttachmentCount(row) > 0 ? rowAttachmentCount(row) : '—' }}</td>
+                  <td class="col-designation">{{ previewField(row.designation) }}</td>
+                  <td class="col-brand">{{ previewField(row.brand) }}</td>
+                  <td class="col-qty">{{ row.quantity }}</td>
+                  <td class="preview-multiline">{{ previewField(row.specifications) }}</td>
+                  <td class="preview-multiline">{{ previewField(row.description) }}</td>
+                  <td class="col-attachment">
+                    {{ rowAttachmentCount(row) > 0 ? rowAttachmentCount(row) : '—' }}
+                  </td>
                 </tr>
               }
             </tbody>

@@ -111,7 +111,7 @@
 .col-specification,
 .col-description {
   min-width: 9rem;
-  vertical-align: top;
+  vertical-align: middle;
 }
 
 .lines-table input,
@@ -128,7 +128,7 @@
 
 .lines-table textarea {
   resize: vertical;
-  min-height: 3.25rem;
+  min-height: 0;
 }
 
 .lines-table input:focus,
@@ -139,11 +139,18 @@
 }
 
 .col-designation {
-  width: 22%;
-  min-width: 12.5rem;
+  width: 28%;
+  min-width: 14rem;
 }
 
-.col-designation :is(input, app-product-field-autocomplete) {
+.col-brand {
+  width: 11%;
+  min-width: 6.5rem;
+  max-width: 8.5rem;
+}
+
+.col-designation :is(input, app-product-field-autocomplete),
+.col-brand :is(input, app-product-field-autocomplete) {
   min-width: 0;
 }
 
@@ -636,6 +643,32 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 0.9rem;
+  table-layout: fixed;
+}
+
+.preview-table .col-designation {
+  width: 28%;
+  min-width: 14rem;
+}
+
+.preview-table .col-brand {
+  width: 11%;
+  min-width: 6.5rem;
+  max-width: 8.5rem;
+}
+
+.preview-table .col-qty {
+  width: 5.75rem;
+}
+
+.preview-table .col-attachment {
+  width: 5rem;
+  text-align: center;
+}
+
+.preview-table .preview-multiline {
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .preview-table th,
@@ -643,6 +676,18 @@
   padding: 0.45rem 0.5rem;
   text-align: left;
   border-bottom: 1px solid #e2e8f0;
+  vertical-align: top;
+}
+
+.preview-table .col-qty,
+.preview-table .col-attachment {
+  vertical-align: middle;
+  text-align: center;
+}
+
+.preview-table th.col-attachment,
+.preview-table td.col-attachment {
+  text-align: center;
 }
 
 .preview-table th {
