@@ -378,15 +378,6 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
     return `${day}-${month}-${year}`;
   }
 
-  previewItemLabel(row: ProductFormRow): string {
-    const brand = row.brand.trim();
-    const designation = row.designation.trim();
-    if (brand && designation) {
-      return `${brand} ${designation}`;
-    }
-    return brand || designation || '—';
-  }
-
   clearForm(): void {
     this.formState.resetRows();
     this.submitError.set(null);

@@ -217,7 +217,7 @@
             <thead>
               <tr>
                 <th class="col-sno">S.No.</th>
-                <th class="col-item">Item</th>
+                <th class="col-designation">Designation</th>
                 <th class="col-brand">Brand</th>
                 <th class="col-qty">Qty</th>
                 <th>Specification</th>
@@ -234,7 +234,7 @@
               @for (row of previewRows(); track row.rowId) {
                 <tr>
                   <td class="col-sno">{{ $index + 1 }}</td>
-                  <td class="col-item">{{ previewItemLabel(row) }}</td>
+                  <td class="col-designation">{{ previewField(row.designation) }}</td>
                   <td class="col-brand">{{ previewField(row.brand) }}</td>
                   <td class="col-qty">{{ row.quantity }}</td>
                   <td class="preview-multiline">{{ previewField(row.specifications) }}</td>

@@ -685,14 +685,17 @@
   flex: 1;
   min-height: 0;
   padding: 1.25rem 2.25rem 1.5rem;
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: auto;
   background: #fff;
+  -webkit-overflow-scrolling: touch;
 }
 
 .preview-document {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  min-width: min(100%, 56rem);
 }
 
 .preview-parties {
@@ -796,14 +799,14 @@
 .preview-table-wrap {
   border: 1px solid #e2e8f0;
   border-radius: 8px;
-  overflow: auto;
+  overflow: visible;
 }
 
 .preview-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.8rem;
-  table-layout: fixed;
+  table-layout: auto;
 }
 
 .preview-items-table .col-sno {
@@ -811,19 +814,30 @@
   text-align: center;
 }
 
-.preview-items-table .col-item {
-  width: 16%;
+.preview-items-table .col-designation {
   min-width: 7rem;
 }
 
 .preview-items-table .col-brand {
-  width: 10%;
   min-width: 5rem;
 }
 
 .preview-items-table .col-qty {
   width: 3.5rem;
   text-align: center;
+}
+
+.preview-table .col-designation,
+.preview-table .col-brand,
+.preview-table .col-qty {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.preview-table th.col-designation,
+.preview-table th.col-brand,
+.preview-table th.col-qty {
+  font-weight: 700;
 }
 
 .preview-items-table .col-attachment {
