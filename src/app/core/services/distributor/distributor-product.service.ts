@@ -1,9 +1,10 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import {
   CreateDistributorProductRequest,
+  DistributorBrand,
   DistributorProductAttachment,
   DistributorProductEntry,
   UpdateDistributorProductRequest,
@@ -16,6 +17,12 @@ export class DistributorProductService {
 
   listMine(): Observable<DistributorProductEntry[]> {
     return this.http.get<DistributorProductEntry[]>(this.baseUrl);
+  }
+
+  listBrands(): Observable<DistributorBrand[]> {
+    return this.http.get<DistributorBrand[]>(`${this.baseUrl}/brands`).pipe(
+      map((brands) => brands.map((brand) => this.withResolvedLogoUrl(brand))),
+    );
   }
 
   create(request: CreateDistributorProductRequest): Observable<DistributorProductEntry> {
@@ -56,5 +63,28 @@ export class DistributorProductService {
   fetchAttachmentBlob(relativeUrl: string): Observable<Blob> {
     const path = relativeUrl.startsWith('/') ? relativeUrl.slice(1) : relativeUrl;
     return this.http.get(`${environment.apiUrl}/${path}`, { responseType: 'blob' });
+  }
+
+  fetchBrandLogoBlob(url: string): Observable<Blob> {
+    return this.http.get(url, { responseType: 'blob' });
+  }
+
+  uploadBrandLogo(brandName: string, file: File): Observable<DistributorBrand> {
+    const formData = new FormData();
+    formData.append('brandName', brandName);
+    formData.append('logo', file);
+    return this.http
+      .post<DistributorBrand>(`${this.baseUrl}/brands/logo`, formData)
+      .pipe(map((brand) => this.withResolvedLogoUrl(brand)));
+  }
+
+  private withResolvedLogoUrl(brand: DistributorBrand): DistributorBrand {
+    if (!brand.logoUrl) {
+      return brand;
+    }
+    const logoUrl = brand.logoUrl.startsWith('http')
+      ? brand.logoUrl
+      : `${environment.apiUrl}${brand.logoUrl.startsWith('/') ? '' : '/'}${brand.logoUrl}`;
+    return { ...brand, logoUrl };
   }
 }

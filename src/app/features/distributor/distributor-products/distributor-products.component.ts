@@ -6,6 +6,7 @@ import { finalize, map, of, switchMap, timeout } from 'rxjs';
 import {
 
   CreateDistributorProductRequest,
+  DistributorBrand,
 
   DistributorProductAttachment,
 
@@ -49,6 +50,12 @@ interface PendingAttachment {
   id: string;
   file: File;
   mediaType: TimelineAttachmentMediaType;
+}
+
+interface BrandSummary {
+  brandName: string;
+  productCount: number;
+  logoUrl: string | null;
 }
 
 
@@ -102,6 +109,16 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
   readonly products = signal<DistributorProductEntry[]>([]);
 
   readonly searchQuery = signal('');
+
+  readonly activeMainTab = signal<'products' | 'brands'>('products');
+
+  readonly selectedBrand = signal<string | null>(null);
+
+  readonly brands = signal<BrandSummary[]>([]);
+
+  readonly brandLogoUploading = signal<ReadonlySet<string>>(new Set());
+
+  readonly brandLogoTarget = signal<string | null>(null);
 
 
 
@@ -196,7 +213,7 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
 
   private readonly recordingBarCount = 12;
 
-
+  private readonly brandLogoObjectUrls = new Set<string>();
 
   readonly filteredProducts = computed(() => {
 
@@ -242,6 +259,16 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
 
   });
 
+  readonly selectedBrandProducts = computed(() => {
+    const brand = this.selectedBrand();
+    if (!brand) {
+      return [] as DistributorProductEntry[];
+    }
+    return this.products()
+      .filter((product) => (product.brand ?? '').trim() === brand)
+      .sort((a, b) => (a.designation ?? '').localeCompare(b.designation ?? ''));
+  });
+
 
 
   ngOnInit(): void {
@@ -255,6 +282,7 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
 
     this.cleanupRecordingResources(false);
+    this.clearBrandLogoObjectUrls();
 
   }
 
@@ -273,6 +301,7 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
       next: (list) => {
 
         this.products.set(list);
+        this.loadBrands();
 
         this.loading.set(false);
 
@@ -287,6 +316,95 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
       },
 
     });
+
+  }
+
+
+
+  setMainTab(tab: 'products' | 'brands'): void {
+
+    this.activeMainTab.set(tab);
+    if (tab === 'brands' && !this.selectedBrand() && this.brands().length > 0) {
+      this.selectedBrand.set(this.brands()[0].brandName);
+    }
+
+  }
+
+
+
+  selectBrand(brandName: string): void {
+
+    this.selectedBrand.set(brandName);
+
+  }
+
+
+
+  isBrandLogoUploading(brandName: string): boolean {
+
+    return this.brandLogoUploading().has(brandName);
+
+  }
+
+
+
+  prepareBrandLogoUpload(brandName: string): void {
+
+    this.brandLogoTarget.set(brandName);
+
+  }
+
+
+
+  onBrandLogoSelected(event: Event): void {
+
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    const brandName = this.brandLogoTarget();
+    input.value = '';
+
+    if (!brandName || !file) {
+      return;
+    }
+
+    const mediaType = this.resolveMediaType(file);
+    if (mediaType !== 'IMAGE') {
+      this.actionError.set('Please select an image file for brand logo.');
+      return;
+    }
+
+    this.actionError.set(null);
+    this.brandLogoUploading.update((items) => new Set(items).add(brandName));
+
+    this.productService.uploadBrandLogo(brandName, file).pipe(
+      timeout(20000),
+      finalize(() => {
+        this.brandLogoUploading.update((items) => {
+          const next = new Set(items);
+          next.delete(brandName);
+          return next;
+        });
+      }),
+    ).subscribe({
+      next: () => {
+        this.loadBrands();
+      },
+      error: () => {
+        this.actionError.set('Could not update brand logo.');
+      },
+    });
+
+  }
+
+
+
+  getBrandInitials(brandName: string): string {
+
+    const value = brandName.trim();
+    if (!value) {
+      return '?';
+    }
+    return value.slice(0, 2).toUpperCase();
 
   }
 
@@ -864,6 +982,7 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
           this.pendingAttachments.set([]);
           this.attachments.set([]);
           this.attachmentProduct.set(null);
+          this.loadBrands();
 
         },
 
@@ -912,6 +1031,7 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
         );
 
         this.formOpen.set(false);
+        this.loadBrands();
 
       },
 
@@ -1408,6 +1528,63 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
 
     );
 
+  }
+
+
+
+  private loadBrands(): void {
+    this.clearBrandLogoObjectUrls();
+    this.productService.listBrands().subscribe({
+      next: (brands) => {
+        const normalized: BrandSummary[] = brands
+          .map((brand: DistributorBrand) => ({
+            brandName: this.toTrimmedString(brand.brandName),
+            productCount: brand.productCount ?? 0,
+            logoUrl: brand.logoUrl ?? null,
+          }))
+          .filter((brand) => !!brand.brandName)
+          .sort((a, b) => a.brandName.localeCompare(b.brandName));
+
+        this.brands.set(normalized);
+
+        const selected = this.selectedBrand();
+        const stillExists = normalized.some((brand) => brand.brandName === selected);
+        if (!stillExists) {
+          this.selectedBrand.set(normalized[0]?.brandName ?? null);
+        }
+
+        this.resolveBrandLogoPreviews();
+      },
+      error: () => {
+        this.brands.set([]);
+        this.selectedBrand.set(null);
+      },
+    });
+  }
+
+  private resolveBrandLogoPreviews(): void {
+    this.brands().forEach((brand) => {
+      if (!brand.logoUrl) {
+        return;
+      }
+
+      this.productService.fetchBrandLogoBlob(brand.logoUrl).subscribe({
+        next: (blob) => {
+          const objectUrl = URL.createObjectURL(blob);
+          this.brandLogoObjectUrls.add(objectUrl);
+          this.brands.update((items) =>
+            items.map((item) =>
+              item.brandName === brand.brandName ? { ...item, logoUrl: objectUrl } : item,
+            ),
+          );
+        },
+      });
+    });
+  }
+
+  private clearBrandLogoObjectUrls(): void {
+    this.brandLogoObjectUrls.forEach((url) => URL.revokeObjectURL(url));
+    this.brandLogoObjectUrls.clear();
   }
 
 

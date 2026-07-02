@@ -80,6 +80,12 @@ export interface DistributorProductAttachment {
   url: string;
 }
 
+export interface DistributorBrand {
+  brandName: string;
+  productCount: number;
+  logoUrl?: string;
+}
+
 export interface DistributorProductEntry {
   id: string;
   productId: string;
