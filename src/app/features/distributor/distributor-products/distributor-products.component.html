@@ -362,10 +362,22 @@
   <div class="modal-backdrop" role="presentation" (click)="closeDetails()"></div>
   <div class="modal details-modal" role="dialog" aria-modal="true" aria-labelledby="product-details-title">
     <header class="modal-header">
-      <div>
-        <h2 id="product-details-title">Product details</h2>
+      <div class="modal-header-main">
         @if (detailsProduct(); as product) {
-          <p class="attachment-subtitle">{{ product.brand }} · {{ product.designation }}</p>
+          @let brandLogoUrl = getBrandLogoUrl(product.brand);
+          <span class="modal-brand-logo" aria-hidden="true">
+            @if (brandLogoUrl) {
+              <img [src]="brandLogoUrl" [alt]="product.brand + ' logo'" />
+            } @else {
+              <span>{{ getBrandInitials(product.brand) }}</span>
+            }
+          </span>
+          <div class="modal-header-text">
+            <h2 id="product-details-title">Product details</h2>
+            <p class="attachment-subtitle">{{ product.brand }} · {{ product.designation }}</p>
+          </div>
+        } @else {
+          <h2 id="product-details-title">Product details</h2>
         }
       </div>
       <button type="button" class="btn-icon-close" (click)="closeDetails()" aria-label="Close">×</button>
@@ -734,10 +746,22 @@
     aria-labelledby="attachment-panel-title"
   >
     <header class="modal-header">
-      <div>
-        <h2 id="attachment-panel-title">Attachments</h2>
+      <div class="modal-header-main">
         @if (attachmentProduct(); as product) {
-          <p class="attachment-subtitle">{{ product.brand }} · {{ product.designation }}</p>
+          @let brandLogoUrl = getBrandLogoUrl(product.brand);
+          <span class="modal-brand-logo" aria-hidden="true">
+            @if (brandLogoUrl) {
+              <img [src]="brandLogoUrl" [alt]="product.brand + ' logo'" />
+            } @else {
+              <span>{{ getBrandInitials(product.brand) }}</span>
+            }
+          </span>
+          <div class="modal-header-text">
+            <h2 id="attachment-panel-title">Attachments</h2>
+            <p class="attachment-subtitle">{{ product.brand }} · {{ product.designation }}</p>
+          </div>
+        } @else {
+          <h2 id="attachment-panel-title">Attachments</h2>
         }
       </div>
       <button type="button" class="btn-icon-close" (click)="closeAttachments()" aria-label="Close">
