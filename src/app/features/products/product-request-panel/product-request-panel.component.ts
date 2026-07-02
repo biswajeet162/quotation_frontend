@@ -133,15 +133,6 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
     this.formState.updateRow(rowId, patch);
   }
 
-  onDesignationSelected(
-    rowId: string,
-    designation: string,
-    brandField: ProductFieldAutocompleteComponent,
-  ): void {
-    this.updateDesignation(rowId, designation);
-    window.setTimeout(() => brandField.focusInput(), 0);
-  }
-
   updateRowQuantity(rowId: string, value: string): void {
     this.updateRowField(rowId, 'quantity', Math.max(1, Number(value) || 1));
   }

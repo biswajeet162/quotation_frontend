@@ -59,6 +59,7 @@ export class ProductFieldAutocompleteComponent implements OnInit {
   readonly catalogProductSelect = output<CatalogProduct>();
 
   private readonly focused = signal(false);
+  private readonly dropdownSuppressed = signal(false);
   private readonly searchRequests$ = new Subject<RemoteSearchRequest>();
   private readonly brandLogoObjectUrls = new Set<string>();
 
@@ -73,7 +74,7 @@ export class ProductFieldAutocompleteComponent implements OnInit {
 
   constructor() {
     effect(() => {
-      if (!this.focused()) {
+      if (!this.focused() || this.dropdownSuppressed()) {
         return;
       }
 
@@ -139,6 +140,10 @@ export class ProductFieldAutocompleteComponent implements OnInit {
     this.focused.set(true);
     this.syncDropdownPosition();
 
+    if (this.dropdownSuppressed()) {
+      return;
+    }
+
     if (this.useRemoteSearch()) {
       this.emitRemoteSearch(this.value());
       this.openRemoteDropdown(this.value());
@@ -159,6 +164,7 @@ export class ProductFieldAutocompleteComponent implements OnInit {
 
   onInput(event: Event): void {
     const raw = (event.target as HTMLInputElement).value;
+    this.dropdownSuppressed.set(false);
     this.valueChange.emit(raw);
 
     if (this.useRemoteSearch()) {
@@ -196,9 +202,12 @@ export class ProductFieldAutocompleteComponent implements OnInit {
   selectSuggestion(option: string, event: MouseEvent): void {
     event.preventDefault();
     event.stopPropagation();
+    this.dropdownSuppressed.set(true);
+    this.focused.set(false);
     this.valueChange.emit(option);
     this.suggestionSelected.emit(option);
     this.closeDropdown();
+    this.inputEl()?.nativeElement.blur();
   }
 
   focusInput(): void {
@@ -224,9 +233,12 @@ export class ProductFieldAutocompleteComponent implements OnInit {
             ? (product.description ?? product.designation)
             : product.designation;
 
+    this.dropdownSuppressed.set(true);
+    this.focused.set(false);
     this.valueChange.emit(selectedValue);
     this.catalogProductSelect.emit(product);
     this.closeDropdown();
+    this.inputEl()?.nativeElement.blur();
   }
 
   selectBrandOption(option: CatalogBrandOption, event: MouseEvent): void {
@@ -382,6 +394,10 @@ export class ProductFieldAutocompleteComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe(({ field, brands, products }) => {
+        if (this.dropdownSuppressed()) {
+          return;
+        }
+
         if (field === 'brand') {
           this.brandOptions.set(brands);
           this.productSuggestions.set([]);
@@ -399,29 +415,14 @@ export class ProductFieldAutocompleteComponent implements OnInit {
   }
 
   private openRemoteDropdown(term: string): void {
-    if (!this.useRemoteSearch()) {
+    if (!this.useRemoteSearch() || this.dropdownSuppressed()) {
       return;
     }
     this.dropdownOpen.set(term.trim().length > 0);
   }
 
-  private syncDropdownPosition(): void {
-    const input = this.inputEl()?.nativeElement;
-    if (!input) {
-      this.dropdownStyle.set(null);
-      return;
-    }
-
-    const rect = input.getBoundingClientRect();
-    this.dropdownStyle.set({
-      top: `${rect.bottom + 2}px`,
-      left: `${rect.left}px`,
-      width: `${rect.width}px`,
-    });
-  }
-
   private emitRemoteSearch(term: string): void {
-    if (!this.useRemoteSearch()) {
+    if (!this.useRemoteSearch() || this.dropdownSuppressed()) {
       return;
     }
 
@@ -437,6 +438,21 @@ export class ProductFieldAutocompleteComponent implements OnInit {
       field: this.field(),
       term,
       brand: this.brandFilter(),
+    });
+  }
+
+  private syncDropdownPosition(): void {
+    const input = this.inputEl()?.nativeElement;
+    if (!input) {
+      this.dropdownStyle.set(null);
+      return;
+    }
+
+    const rect = input.getBoundingClientRect();
+    this.dropdownStyle.set({
+      top: `${rect.bottom + 2}px`,
+      left: `${rect.left}px`,
+      width: `${rect.width}px`,
     });
   }
 
