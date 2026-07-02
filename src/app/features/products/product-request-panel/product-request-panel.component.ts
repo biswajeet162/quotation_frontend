@@ -1,11 +1,13 @@
 import { Component, computed, HostListener, inject, OnDestroy, OnInit, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth/auth.service';
+import { ConsumerDashboardService } from '../../../core/services/consumer/consumer-dashboard.service';
 import { InquiryCartService } from '../../../core/services/inquiry/inquiry-cart.service';
 import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
 import { ProductService } from '../../../core/services/product/product.service';
 import { ProductCatalogLookupService } from '../../../core/services/product/product-catalog-lookup.service';
 import { ProductQueryFormService } from '../../../core/services/product/product-query-form.service';
+import { ConsumerProfile } from '../../../core/models/consumer.model';
 import { ConsumerInquiryCreated } from '../../../core/models/inquiry.model';
 import { ProductFormDraft, ProductFormRow, RowLocalAttachment } from '../../../core/models/product-form.model';
 import { InquiryTimelineAttachment, TimelineAttachmentMediaType } from '../../../core/models/inquiry-timeline.model';
@@ -37,6 +39,7 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
   private readonly cart = inject(InquiryCartService);
   private readonly inquiryService = inject(InquiryService);
   private readonly auth = inject(AuthService);
+  private readonly consumerDashboard = inject(ConsumerDashboardService);
   private readonly productService = inject(ProductService);
   private readonly catalog = inject(ProductCatalogLookupService);
   readonly formState = inject(ProductQueryFormService);
@@ -47,6 +50,9 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
   readonly submitError = signal<string | null>(null);
   readonly lastSubmitted = signal<ConsumerInquiryCreated | null>(null);
   readonly previewOpen = signal(false);
+  readonly companyProfile = signal<ConsumerProfile | null>(null);
+  readonly companyLogoUrl = signal<string | null>(null);
+  readonly profileLoading = signal(false);
 
   readonly attachmentPanelOpen = signal(false);
   readonly attachmentRow = signal<ProductFormRow | null>(null);
@@ -75,6 +81,34 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
   readonly rows = this.formState.rows;
   readonly highlight = this.formState.highlight;
 
+  readonly quotationDate = computed(() => this.formatQuotationDate(new Date()));
+
+  readonly previewCompanyName = computed(() => {
+    const profile = this.companyProfile();
+    const user = this.auth.currentUser();
+    return profile?.companyName?.trim() || user?.companyName?.trim() || 'Your company';
+  });
+
+  readonly previewCompanyAddress = computed(() => this.formatAddress(this.companyProfile()));
+
+  readonly previewContactName = computed(() => {
+    const profile = this.companyProfile();
+    return profile?.userName?.trim() || 'Contact Person';
+  });
+
+  readonly previewCustomerAddress = computed(() => this.formatAddress(this.companyProfile()));
+
+  readonly previewContactPhone = computed(() => {
+    const profile = this.companyProfile();
+    return profile?.companyPhone?.trim() || '—';
+  });
+
+  readonly previewContactEmail = computed(() => {
+    const profile = this.companyProfile();
+    return profile?.email?.trim() || profile?.companyEmail?.trim() || '—';
+  });
+
+  private logoObjectUrl: string | null = null;
   private mediaRecorder: MediaRecorder | null = null;
   private recordingStream: MediaStream | null = null;
   private recordingChunks: Blob[] = [];
@@ -94,6 +128,7 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.cleanupRecordingResources(false);
+    this.revokeLogoUrl();
   }
 
   @HostListener('document:keydown.escape')
@@ -290,11 +325,42 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
     this.submitError.set(null);
     this.previewOpen.set(true);
     document.body.style.overflow = 'hidden';
+    this.loadCompanyProfile();
   }
 
   closePreview(): void {
     this.previewOpen.set(false);
     document.body.style.overflow = '';
+  }
+
+  downloadPreview(): void {
+    window.print();
+  }
+
+  companyInitials(name: string): string {
+    return name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((word) => word[0])
+      .join('')
+      .toUpperCase();
+  }
+
+  formatQuotationDate(date: Date): string {
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  }
+
+  previewItemLabel(row: ProductFormRow): string {
+    const brand = row.brand.trim();
+    const designation = row.designation.trim();
+    if (brand && designation) {
+      return `${brand} ${designation}`;
+    }
+    return brand || designation || '—';
   }
 
   clearForm(): void {
@@ -519,6 +585,49 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
     };
 
     tick();
+  }
+
+  private loadCompanyProfile(): void {
+    if (this.companyProfile() || this.profileLoading()) {
+      return;
+    }
+
+    this.profileLoading.set(true);
+    this.consumerDashboard.getProfile().subscribe({
+      next: (profile) => {
+        this.companyProfile.set(profile);
+        this.profileLoading.set(false);
+        if (profile.consumerLogoUrl) {
+          this.consumerDashboard.loadLogoBlob().subscribe({
+            next: (blob) => {
+              this.revokeLogoUrl();
+              this.logoObjectUrl = URL.createObjectURL(blob);
+              this.companyLogoUrl.set(this.logoObjectUrl);
+            },
+            error: () => this.companyLogoUrl.set(null),
+          });
+        }
+      },
+      error: () => this.profileLoading.set(false),
+    });
+  }
+
+  private formatAddress(profile: ConsumerProfile | null): string {
+    if (!profile) {
+      return '—';
+    }
+    const parts = [profile.address, profile.city, profile.state, profile.country, profile.pinCode]
+      .map((part) => part?.trim())
+      .filter(Boolean);
+    return parts.length > 0 ? parts.join(', ') : '—';
+  }
+
+  private revokeLogoUrl(): void {
+    if (this.logoObjectUrl) {
+      URL.revokeObjectURL(this.logoObjectUrl);
+      this.logoObjectUrl = null;
+    }
+    this.companyLogoUrl.set(null);
   }
 
   private cleanupRecordingResources(resetDiscardFlag: boolean): void {

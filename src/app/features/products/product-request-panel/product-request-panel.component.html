@@ -143,40 +143,98 @@
       aria-modal="true"
       (click)="$event.stopPropagation()"
     >
-      <header class="preview-header">
-        <div>
-          <h1 id="preview-title">Quotation preview</h1>
-          <p class="preview-summary">
-            {{ previewRows().length }} product(s), total qty {{ totalPreviewQty() }}
-          </p>
+      <header class="preview-header preview-header-branded">
+        <h1 id="preview-title">Quotation Preview</h1>
+        <div class="preview-header-actions">
+          <button type="button" class="btn-download" (click)="downloadPreview()">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12 3v10.2l3.1-3.1 1.4 1.4L12 17l-4.5-4.5 1.4-1.4L11 13.2V3h1zm-7 14h14v2H5v-2z"
+              />
+            </svg>
+            Download
+          </button>
+          <button type="button" class="btn-icon-close preview-close" (click)="closePreview()" aria-label="Close preview">
+            ✕
+          </button>
         </div>
-        <button type="button" class="btn-icon-close" (click)="closePreview()" aria-label="Close preview">
-          ✕
-        </button>
       </header>
 
-      <main class="preview-body">
+      <main class="preview-body preview-document" id="quotation-preview-document">
+        <section class="preview-parties">
+          <div class="preview-company-block">
+            <div class="preview-logo-wrap">
+              @if (companyLogoUrl(); as logoUrl) {
+                <img [src]="logoUrl" alt="" class="preview-logo-image" />
+              } @else {
+                <div class="preview-logo-fallback" aria-hidden="true">
+                  {{ companyInitials(previewCompanyName()) }}
+                </div>
+              }
+            </div>
+            <h2 class="preview-company-name">{{ previewCompanyName() }}</h2>
+            <ul class="preview-details-list">
+              <li>{{ previewCompanyAddress() }}</li>
+              @if (companyProfile()?.gstNumber; as gst) {
+                <li><span class="detail-label">GST:</span> {{ gst }}</li>
+              }
+              @if (companyProfile()?.panNumber; as pan) {
+                <li><span class="detail-label">PAN:</span> {{ pan }}</li>
+              }
+              @if (companyProfile()?.companyPhone; as phone) {
+                <li>{{ phone }}</li>
+              }
+              @if (companyProfile()?.companyEmail; as email) {
+                <li>{{ email }}</li>
+              }
+            </ul>
+          </div>
+
+          <div class="preview-customer-block">
+            <h3 class="preview-section-title">Customer Details</h3>
+            <ul class="preview-details-list">
+              <li><span class="detail-label">Name:</span> {{ previewContactName() }}</li>
+              <li><span class="detail-label">Address:</span> {{ previewCustomerAddress() }}</li>
+              <li><span class="detail-label">Contact:</span> {{ previewContactPhone() }}</li>
+              <li><span class="detail-label">Email:</span> {{ previewContactEmail() }}</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="preview-meta">
+          <p class="preview-meta-item">
+            <span class="detail-label">Quotation Number:</span>
+            <span class="preview-quotation-number">Will generate on submit</span>
+          </p>
+          <p class="preview-meta-item">
+            <span class="detail-label">Quotation Date:</span>
+            <span>{{ quotationDate() }}</span>
+          </p>
+        </section>
+
         <div class="preview-table-wrap">
-          <table class="preview-table">
+          <table class="preview-table preview-items-table">
             <thead>
               <tr>
-                <th class="col-designation">Designation</th>
+                <th class="col-sno">S.No.</th>
+                <th class="col-item">Item</th>
                 <th class="col-brand">Brand</th>
                 <th class="col-qty">Qty</th>
                 <th>Specification</th>
                 <th>Description</th>
-                <th class="col-attachment">Your attachments</th>
+                <th class="col-attachment">Attachments</th>
               </tr>
             </thead>
             <tbody>
               @if (previewRows().length === 0) {
                 <tr>
-                  <td colspan="6" class="preview-empty">No products to preview.</td>
+                  <td colspan="7" class="preview-empty">No products to preview.</td>
                 </tr>
               }
               @for (row of previewRows(); track row.rowId) {
                 <tr>
-                  <td class="col-designation">{{ previewField(row.designation) }}</td>
+                  <td class="col-sno">{{ $index + 1 }}</td>
+                  <td class="col-item">{{ previewItemLabel(row) }}</td>
                   <td class="col-brand">{{ previewField(row.brand) }}</td>
                   <td class="col-qty">{{ row.quantity }}</td>
                   <td class="preview-multiline">{{ previewField(row.specifications) }}</td>
@@ -189,6 +247,17 @@
             </tbody>
           </table>
         </div>
+
+        <section class="preview-terms">
+          <h4 class="preview-section-title">T&amp;Cs:</h4>
+          <div class="preview-terms-box">
+            <p>Pricing and delivery timelines will be confirmed after review.</p>
+            <p>Payment terms to be agreed upon acceptance of the quotation.</p>
+            <p>Offer validity: 30 days from quotation date.</p>
+            <p>Delivery dates are subject to prior sale and stock availability.</p>
+            <p>Please confirm with us before placing the final order.</p>
+          </div>
+        </section>
       </main>
 
       <footer class="preview-footer">
@@ -204,7 +273,7 @@
           (click)="submitRequest()"
           [disabled]="submitting() || previewRows().length === 0"
         >
-          {{ submitting() ? 'Submitting…' : 'Submit Query' }}
+          {{ submitting() ? 'Submitting…' : 'Submit Quotation' }}
         </button>
       </footer>
     </div>
