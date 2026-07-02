@@ -37,7 +37,7 @@
                   field="designation"
                   [value]="row.designation"
                   (valueChange)="updateDesignation(row.rowId, $event)"
-                  (catalogProductSelect)="applyCatalogProductToRow(row.rowId, $event)"
+                  (suggestionSelected)="onDesignationSelected(row.rowId, $event, brandField)"
                   [brandFilter]="row.brand"
                   [remoteSearch]="true"
                   placeholder="Designation"
@@ -46,10 +46,12 @@
               </td>
               <td class="col-brand">
                 <app-product-field-autocomplete
+                  #brandField
                   field="brand"
                   [value]="row.brand"
                   (valueChange)="updateRowField(row.rowId, 'brand', $event)"
                   [richBrands]="true"
+                  [remoteSearch]="true"
                   placeholder="Brand"
                   [ariaLabel]="'Brand for row ' + ($index + 1)"
                 />

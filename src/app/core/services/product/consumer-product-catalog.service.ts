@@ -25,6 +25,14 @@ export class ConsumerProductCatalogService {
     );
   }
 
+  searchBrands(term: string, limit = 15): Observable<CatalogBrand[]> {
+    return this.http
+      .get<CatalogBrand[]>(`${this.baseUrl}/brands`, {
+        params: { search: term, limit: String(limit) },
+      })
+      .pipe(map((brands) => brands.map((brand) => this.withResolvedLogoUrl(brand))));
+  }
+
   listAttachments(productId: string): Observable<CatalogProductAttachment[]> {
     return this.http.get<CatalogProductAttachment[]>(`${this.baseUrl}/${productId}/attachments`);
   }

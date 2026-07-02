@@ -7,7 +7,6 @@ import { ProductService } from '../../../core/services/product/product.service';
 import { ProductCatalogLookupService } from '../../../core/services/product/product-catalog-lookup.service';
 import { ProductQueryFormService } from '../../../core/services/product/product-query-form.service';
 import { ConsumerInquiryCreated } from '../../../core/models/inquiry.model';
-import { CatalogProduct } from '../../../core/models/catalog-product.model';
 import { ProductFormDraft, ProductFormRow, RowLocalAttachment } from '../../../core/models/product-form.model';
 import { InquiryTimelineAttachment, TimelineAttachmentMediaType } from '../../../core/models/inquiry-timeline.model';
 import { formatSpecificationsInline } from '../../../shared/utils/specifications-display.util';
@@ -124,16 +123,6 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
     this.formState.updateRow(rowId, { [field]: value });
   }
 
-  applyCatalogProductToRow(rowId: string, product: CatalogProduct): void {
-    this.formState.updateRow(rowId, {
-      catalogProductId: product.productId,
-      brand: product.brand ?? '',
-      designation: product.designation ?? '',
-      description: product.description ?? '',
-      lineSource: 'CATALOG_MATCH',
-    });
-  }
-
   updateDesignation(rowId: string, value: string): void {
     const row = this.rows().find((entry) => entry.rowId === rowId);
     const patch: Partial<ProductFormDraft> = { designation: value };
@@ -142,6 +131,15 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
       patch.lineSource = 'NEW_PRODUCT';
     }
     this.formState.updateRow(rowId, patch);
+  }
+
+  onDesignationSelected(
+    rowId: string,
+    designation: string,
+    brandField: ProductFieldAutocompleteComponent,
+  ): void {
+    this.updateDesignation(rowId, designation);
+    window.setTimeout(() => brandField.focusInput(), 0);
   }
 
   updateRowQuantity(rowId: string, value: string): void {

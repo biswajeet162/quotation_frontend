@@ -11,11 +11,12 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subject } from 'rxjs';
-import { catchError, debounceTime, distinctUntilChanged, map, of, switchMap, tap } from 'rxjs';
-import { CatalogProduct } from '../../../core/models/catalog-product.model';
+import { Subject, Observable } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, forkJoin, map, of, switchMap, tap } from 'rxjs';
+import { CatalogBrand, CatalogProduct } from '../../../core/models/catalog-product.model';
 import { Product } from '../../../core/models/product.model';
 import { ProductService } from '../../../core/services/product/product.service';
+import { ConsumerProductCatalogService } from '../../../core/services/product/consumer-product-catalog.service';
 import {
   CatalogBrandOption,
   ProductCatalogLookupService,
@@ -37,6 +38,7 @@ interface RemoteSearchRequest {
 export class ProductFieldAutocompleteComponent implements OnInit {
   private readonly catalog = inject(ProductCatalogLookupService);
   private readonly productService = inject(ProductService);
+  private readonly consumerCatalog = inject(ConsumerProductCatalogService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly inputEl = viewChild<ElementRef<HTMLInputElement>>('inputEl');
 
@@ -52,10 +54,13 @@ export class ProductFieldAutocompleteComponent implements OnInit {
   readonly remoteSearch = input(false);
 
   readonly valueChange = output<string>();
+  /** Emitted when the user picks a value from the suggestion list (not plain typing). */
+  readonly suggestionSelected = output<string>();
   readonly catalogProductSelect = output<CatalogProduct>();
 
   private readonly focused = signal(false);
   private readonly searchRequests$ = new Subject<RemoteSearchRequest>();
+  private readonly brandLogoObjectUrls = new Set<string>();
 
   protected readonly dropdownOpen = signal(false);
   protected readonly suggestions = signal<string[]>([]);
@@ -75,15 +80,15 @@ export class ProductFieldAutocompleteComponent implements OnInit {
       this.brandFilter();
       this.richBrands();
 
+      if (this.useRemoteSearch()) {
+        this.emitRemoteSearch(this.value());
+        return;
+      }
+
       if (this.field() === 'brand' && this.richBrands()) {
         if (this.catalog.brandsLoaded()) {
           this.refreshBrandOptions(this.value());
         }
-        return;
-      }
-
-      if (this.useRemoteSearch()) {
-        this.emitRemoteSearch(this.value());
         return;
       }
 
@@ -93,7 +98,13 @@ export class ProductFieldAutocompleteComponent implements OnInit {
     });
 
     effect(() => {
-      if (this.field() === 'brand' && this.richBrands() && this.catalog.brandsLoaded() && this.focused()) {
+      if (
+        this.field() === 'brand' &&
+        this.richBrands() &&
+        !this.useRemoteSearch() &&
+        this.catalog.brandsLoaded() &&
+        this.focused()
+      ) {
         this.refreshBrandOptions(this.value());
       }
     });
@@ -111,6 +122,8 @@ export class ProductFieldAutocompleteComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.destroyRef.onDestroy(() => this.clearBrandLogoObjectUrls());
+
     if (this.useRemoteSearch()) {
       this.setupRemoteSearchPipeline();
       return;
@@ -126,16 +139,16 @@ export class ProductFieldAutocompleteComponent implements OnInit {
     this.focused.set(true);
     this.syncDropdownPosition();
 
+    if (this.useRemoteSearch()) {
+      this.emitRemoteSearch(this.value());
+      this.openRemoteDropdown(this.value());
+      return;
+    }
+
     if (this.field() === 'brand' && this.richBrands()) {
       this.catalog.ensureConsumerBrandsLoaded();
       this.refreshBrandOptions(this.value());
       this.dropdownOpen.set(this.brandOptions().length > 0 || this.catalog.loading());
-      return;
-    }
-
-    if (this.useRemoteSearch()) {
-      this.emitRemoteSearch(this.value());
-      this.openRemoteDropdown(this.value());
       return;
     }
 
@@ -148,15 +161,15 @@ export class ProductFieldAutocompleteComponent implements OnInit {
     const raw = (event.target as HTMLInputElement).value;
     this.valueChange.emit(raw);
 
-    if (this.field() === 'brand' && this.richBrands()) {
-      this.refreshBrandOptions(raw);
-      this.dropdownOpen.set(this.brandOptions().length > 0 || this.catalog.loading());
-      return;
-    }
-
     if (this.useRemoteSearch()) {
       this.emitRemoteSearch(raw);
       this.openRemoteDropdown(raw);
+      return;
+    }
+
+    if (this.field() === 'brand' && this.richBrands()) {
+      this.refreshBrandOptions(raw);
+      this.dropdownOpen.set(this.brandOptions().length > 0 || this.catalog.loading());
       return;
     }
 
@@ -184,7 +197,17 @@ export class ProductFieldAutocompleteComponent implements OnInit {
     event.preventDefault();
     event.stopPropagation();
     this.valueChange.emit(option);
+    this.suggestionSelected.emit(option);
     this.closeDropdown();
+  }
+
+  focusInput(): void {
+    const input = this.inputEl()?.nativeElement;
+    if (!input) {
+      return;
+    }
+    input.focus();
+    this.onFocus();
   }
 
   selectProductSuggestion(product: CatalogProduct, event: MouseEvent): void {
@@ -225,11 +248,14 @@ export class ProductFieldAutocompleteComponent implements OnInit {
   }
 
   showBrandDropdown(): boolean {
-    return this.field() === 'brand' && this.richBrands();
+    return (
+      this.field() === 'brand' &&
+      (this.useRemoteBrandSearch() || (this.richBrands() && !this.useRemoteSearch()))
+    );
   }
 
   showProductDropdown(): boolean {
-    return this.useRemoteSearch();
+    return this.useRemoteSearch() && this.field() !== 'brand' && this.field() !== 'designation';
   }
 
   showDesignationList(): boolean {
@@ -286,7 +312,11 @@ export class ProductFieldAutocompleteComponent implements OnInit {
   }
 
   private useRemoteSearch(): boolean {
-    return this.remoteSearch() && !(this.field() === 'brand' && this.richBrands());
+    return this.remoteSearch();
+  }
+
+  private useRemoteBrandSearch(): boolean {
+    return this.remoteSearch() && this.field() === 'brand';
   }
 
   protected remoteSearchActive(): boolean {
@@ -313,7 +343,21 @@ export class ProductFieldAutocompleteComponent implements OnInit {
         switchMap((request) => {
           const trimmed = request.term.trim();
           if (trimmed.length === 0) {
-            return of<CatalogProduct[]>([]);
+            return of({ field: request.field, brands: [] as CatalogBrandOption[], products: [] as CatalogProduct[] });
+          }
+
+          if (request.field === 'brand') {
+            return this.consumerCatalog.searchBrands(trimmed, 15).pipe(
+              switchMap((brands) => this.resolveBrandOptionsWithBlobUrls(brands)),
+              map((brands) => ({
+                field: request.field,
+                brands,
+                products: [] as CatalogProduct[],
+              })),
+              catchError(() =>
+                of({ field: request.field, brands: [] as CatalogBrandOption[], products: [] as CatalogProduct[] }),
+              ),
+            );
           }
 
           return this.productService
@@ -324,41 +368,33 @@ export class ProductFieldAutocompleteComponent implements OnInit {
               size: 15,
             })
             .pipe(
-              map((products) => products.map((product) => this.toCatalogProduct(product))),
-              catchError(() => of<CatalogProduct[]>([])),
+              map((products) => ({
+                field: request.field,
+                brands: [] as CatalogBrandOption[],
+                products: products.map((product) => this.toCatalogProduct(product)),
+              })),
+              catchError(() =>
+                of({ field: request.field, brands: [] as CatalogBrandOption[], products: [] as CatalogProduct[] }),
+              ),
             );
         }),
         tap(() => this.searching.set(false)),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe((results) => {
-        this.productSuggestions.set(results);
+      .subscribe(({ field, brands, products }) => {
+        if (field === 'brand') {
+          this.brandOptions.set(brands);
+          this.productSuggestions.set([]);
+        } else {
+          this.productSuggestions.set(products);
+          this.brandOptions.set([]);
+        }
         this.openRemoteDropdown(this.value());
         this.syncDropdownPosition();
       });
   }
 
   selectDesignationOption(designation: string, event: MouseEvent): void {
-    event.preventDefault();
-    event.stopPropagation();
-
-    const brandKey = this.brandFilter()?.trim().toLowerCase();
-    const product =
-      this.productSuggestions().find((entry) => {
-        if (entry.designation !== designation) {
-          return false;
-        }
-        if (!brandKey) {
-          return true;
-        }
-        return entry.brand?.trim().toLowerCase() === brandKey;
-      }) ?? this.productSuggestions().find((entry) => entry.designation === designation);
-
-    if (product) {
-      this.selectProductSuggestion(product, event);
-      return;
-    }
-
     this.selectSuggestion(designation, event);
   }
 
@@ -392,6 +428,7 @@ export class ProductFieldAutocompleteComponent implements OnInit {
     const trimmed = term.trim();
     if (trimmed.length === 0) {
       this.productSuggestions.set([]);
+      this.brandOptions.set([]);
       this.searching.set(false);
       return;
     }
@@ -418,6 +455,44 @@ export class ProductFieldAutocompleteComponent implements OnInit {
     this.suggestions.set([]);
     this.productSuggestions.set([]);
     this.brandOptions.set([]);
+    this.clearBrandLogoObjectUrls();
+  }
+
+  private resolveBrandOptionsWithBlobUrls(brands: CatalogBrand[]): Observable<CatalogBrandOption[]> {
+    this.clearBrandLogoObjectUrls();
+
+    const options: CatalogBrandOption[] = brands
+      .map((brand) => ({
+        brandName: brand.brandName?.trim() ?? '',
+        logoUrl: brand.logoUrl ?? null,
+      }))
+      .filter((option) => !!option.brandName);
+
+    if (options.length === 0) {
+      return of([]);
+    }
+
+    return forkJoin(
+      options.map((option) => {
+        if (!option.logoUrl || option.logoUrl.startsWith('blob:')) {
+          return of(option);
+        }
+
+        return this.consumerCatalog.fetchBrandLogoBlob(option.logoUrl).pipe(
+          map((blob) => {
+            const objectUrl = URL.createObjectURL(blob);
+            this.brandLogoObjectUrls.add(objectUrl);
+            return { ...option, logoUrl: objectUrl };
+          }),
+          catchError(() => of({ ...option, logoUrl: null })),
+        );
+      }),
+    );
+  }
+
+  private clearBrandLogoObjectUrls(): void {
+    this.brandLogoObjectUrls.forEach((url) => URL.revokeObjectURL(url));
+    this.brandLogoObjectUrls.clear();
   }
 
   private refreshLocalSuggestions(term: string): void {

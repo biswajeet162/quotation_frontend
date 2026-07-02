@@ -153,6 +153,12 @@
   width: 13%;
   min-width: 8rem;
   max-width: 10rem;
+  overflow: visible;
+  z-index: 1;
+}
+
+.col-brand:has(.field-autocomplete input:focus) {
+  z-index: 50;
 }
 
 .col-designation :is(input, app-product-field-autocomplete),
