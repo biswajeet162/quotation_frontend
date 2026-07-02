@@ -48,6 +48,28 @@ export interface DistributorProfile {
   city?: string;
   state?: string;
   country?: string;
+  distributorLogoUrl?: string;
+  contacts?: DistributorContactPerson[];
+}
+
+export interface DistributorContactPerson {
+  id: string;
+  name: string;
+  email: string;
+  phonePrimary: string;
+  phoneSecondary?: string;
+  primary?: boolean;
+}
+
+export interface UpdateDistributorProfileRequest {
+  companyName: string;
+  companyEmail: string;
+  companyPhone: string;
+  gstNumber?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
 }
 
 export interface DistributorProductAttachment {

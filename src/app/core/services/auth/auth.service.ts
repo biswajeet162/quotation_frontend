@@ -70,6 +70,17 @@ export class AuthService {
     return localStorage.getItem(STORAGE_KEYS.token);
   }
 
+  updateStoredCompanyName(companyName: string): void {
+    const user = this.currentUserSignal();
+    if (!user) {
+      return;
+    }
+
+    const updated: AuthUser = { ...user, companyName };
+    localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(updated));
+    this.currentUserSignal.set(updated);
+  }
+
   isAuthenticated(): boolean {
     return !!this.getToken();
   }

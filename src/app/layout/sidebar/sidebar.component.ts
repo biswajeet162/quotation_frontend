@@ -27,7 +27,8 @@ export class SidebarComponent {
     { label: 'Tracking', path: '/tracking', icon: '◷', roles: ['CONSUMER'] },
     { label: 'Review queries', path: '/admin/queries', icon: '◉', roles: ['ADMIN'] },
     { label: 'Users', path: '/admin/users', icon: '◈', roles: ['ADMIN'] },
-    { label: 'Profile', path: '/profile', icon: '◇' },
+    { label: 'Company profile', path: '/profile', icon: '◇', roles: ['DISTRIBUTOR'] },
+    { label: 'Profile', path: '/profile', icon: '◇', roles: ['ADMIN', 'CONSUMER'] },
   ];
 
   readonly navItems = computed(() => {

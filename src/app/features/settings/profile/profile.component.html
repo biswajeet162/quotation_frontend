@@ -1,117 +1,261 @@
 <section class="profile-page">
-  <app-loading-overlay [loading]="loading()" message="Loading profile…" />
-
-  <header class="profile-hero">
-    <div class="profile-avatar" aria-hidden="true">
-      @if (auth.currentUser(); as user) {
-        {{ (user.companyName || 'U').charAt(0).toUpperCase() }}
-      }
-    </div>
-    <div>
-      <h1>Profile</h1>
-      @if (auth.currentUser(); as user) {
-        <p class="profile-subtitle">
-          {{ user.companyName }} · {{ roleLabel(user.role) }}
-        </p>
-      }
-    </div>
-  </header>
+  <app-loading-overlay
+    [loading]="isBusy()"
+    [message]="saving() ? 'Saving profile…' : 'Loading profile…'"
+  />
 
   @if (isDistributor()) {
     @if (!loading()) {
-    @if (errorMessage()) {
-      <div class="alert-error" role="alert">{{ errorMessage() }}</div>
-    } @else {
+      @if (errorMessage()) {
+        <div class="alert alert-error" role="alert">{{ errorMessage() }}</div>
+      }
+      @if (successMessage()) {
+        <div class="alert alert-success" role="status">{{ successMessage() }}</div>
+      }
+
       @if (distributorProfile(); as profile) {
-        <div class="profile-grid">
-          <section class="profile-card">
-            <h2>Account</h2>
-            <dl class="profile-details">
-              <div>
-                <dt>Name</dt>
-                <dd>{{ profile.userName }}</dd>
-              </div>
-              <div>
-                <dt>Email</dt>
-                <dd>{{ profile.email }}</dd>
-              </div>
-              <div>
-                <dt>Role</dt>
-                <dd>{{ roleLabel(profile.role) }}</dd>
-              </div>
-            </dl>
-          </section>
-
-          <section class="profile-card">
-            <h2>Distributor company</h2>
-            <dl class="profile-details">
-              <div>
-                <dt>Company</dt>
-                <dd>{{ profile.companyName }}</dd>
-              </div>
-              <div>
-                <dt>Company email</dt>
-                <dd>{{ profile.companyEmail }}</dd>
-              </div>
-              <div>
-                <dt>Phone</dt>
-                <dd>{{ profile.companyPhone }}</dd>
-              </div>
-              <div>
-                <dt>GST</dt>
-                <dd>{{ profile.gstNumber || '—' }}</dd>
-              </div>
-              <div>
-                <dt>Address</dt>
-                <dd>
-                  @if (profile.address || profile.city || profile.state || profile.country) {
-                    {{ profile.address || '' }}
-                    @if (profile.city) {
-                      <br />{{ profile.city }}
-                    }
-                    @if (profile.state || profile.country) {
-                      <br />{{ profile.state }} {{ profile.country }}
-                    }
+        <form class="profile-form" (ngSubmit)="saveProfile()">
+          <section class="company-banner" aria-labelledby="company-banner-title">
+            <div class="logo-panel">
+              <input
+                #logoInput
+                type="file"
+                class="visually-hidden"
+                accept="image/*"
+                (change)="onLogoSelected($event)"
+              />
+              <div class="logo-wrap">
+                <div class="logo-display">
+                  @if (logoPreviewUrl()) {
+                    <img [src]="logoPreviewUrl()!" [alt]="profile.companyName + ' logo'" />
                   } @else {
-                    —
+                    <span class="logo-placeholder">
+                      <span class="logo-placeholder-icon">◆</span>
+                      <span>No logo</span>
+                    </span>
                   }
-                </dd>
+                </div>
+                <button
+                  type="button"
+                  class="icon-btn logo-edit-btn"
+                  aria-label="Edit logo"
+                  title="Edit logo"
+                  (click)="logoInput.click()"
+                  [disabled]="isBusy()"
+                >
+                  ✎
+                </button>
               </div>
-            </dl>
+            </div>
+
+            <div class="company-identity">
+              <h1 id="company-banner-title">{{ form().companyName || profile.companyName }}</h1>
+              <p class="company-meta">
+                Signed in as <strong>{{ profile.userName }}</strong> · {{ profile.email }}
+              </p>
+            </div>
           </section>
 
-          <section class="profile-card profile-note">
-            <h2>Privacy</h2>
-            <p>
-              As a distributor you only see quotation requests routed by the admin team. Consumer
-              identities are never shared with your account.
-            </p>
+          <section class="profile-panel" aria-labelledby="company-details-title">
+            <div class="panel-head panel-head-row">
+              <h2 id="company-details-title">Company details</h2>
+              @if (!editDetailsMode()) {
+                <button
+                  type="button"
+                  class="icon-btn"
+                  aria-label="Edit company details"
+                  title="Edit company details"
+                  (click)="startDetailsEdit()"
+                  [disabled]="isBusy()"
+                >
+                  ✎
+                </button>
+              } @else {
+                <div class="inline-actions">
+                  <button type="button" class="btn-secondary btn-small" (click)="cancelDetailsEdit()" [disabled]="isBusy()">
+                    Cancel
+                  </button>
+                  <button type="submit" class="btn-primary btn-small" [disabled]="isBusy()">
+                    {{ saving() ? 'Saving…' : 'Save' }}
+                  </button>
+                </div>
+              }
+            </div>
+
+            <div class="details-columns">
+              <dl class="info-grid">
+                <div class="info-item">
+                  <dt>Company name</dt>
+                  <dd>
+                    @if (editDetailsMode()) {
+                      <input
+                        class="inline-input"
+                        type="text"
+                        [ngModel]="form().companyName"
+                        (ngModelChange)="updateFormField('companyName', $event)"
+                        name="companyName"
+                        required
+                      />
+                    } @else {
+                      {{ displayValue(profile.companyName) }}
+                    }
+                  </dd>
+                </div>
+                <div class="info-item">
+                  <dt>GST number</dt>
+                  <dd>
+                    @if (editDetailsMode()) {
+                      <input
+                        class="inline-input"
+                        type="text"
+                        [ngModel]="form().gstNumber"
+                        (ngModelChange)="updateFormField('gstNumber', $event)"
+                        name="gstNumber"
+                      />
+                    } @else {
+                      {{ displayValue(profile.gstNumber) }}
+                    }
+                  </dd>
+                </div>
+                <div class="info-item">
+                  <dt>Company email</dt>
+                  <dd>
+                    @if (editDetailsMode()) {
+                      <input
+                        class="inline-input"
+                        type="email"
+                        [ngModel]="form().companyEmail"
+                        (ngModelChange)="updateFormField('companyEmail', $event)"
+                        name="companyEmail"
+                        required
+                      />
+                    } @else {
+                      {{ displayValue(profile.companyEmail) }}
+                    }
+                  </dd>
+                </div>
+                <div class="info-item">
+                  <dt>Company phone</dt>
+                  <dd>
+                    @if (editDetailsMode()) {
+                      <input
+                        class="inline-input"
+                        type="tel"
+                        [ngModel]="form().companyPhone"
+                        (ngModelChange)="updateFormField('companyPhone', $event)"
+                        name="companyPhone"
+                        required
+                      />
+                    } @else {
+                      {{ displayValue(profile.companyPhone) }}
+                    }
+                  </dd>
+                </div>
+              </dl>
+
+              <dl class="info-grid">
+                <div class="info-item">
+                  <dt>Street address</dt>
+                  <dd>
+                    @if (editDetailsMode()) {
+                      <input
+                        class="inline-input"
+                        type="text"
+                        [ngModel]="form().address"
+                        (ngModelChange)="updateFormField('address', $event)"
+                        name="address"
+                      />
+                    } @else {
+                      {{ displayValue(profile.address) }}
+                    }
+                  </dd>
+                </div>
+                <div class="info-item">
+                  <dt>City</dt>
+                  <dd>
+                    @if (editDetailsMode()) {
+                      <input
+                        class="inline-input"
+                        type="text"
+                        [ngModel]="form().city"
+                        (ngModelChange)="updateFormField('city', $event)"
+                        name="city"
+                      />
+                    } @else {
+                      {{ displayValue(profile.city) }}
+                    }
+                  </dd>
+                </div>
+                <div class="info-item">
+                  <dt>State</dt>
+                  <dd>
+                    @if (editDetailsMode()) {
+                      <input
+                        class="inline-input"
+                        type="text"
+                        [ngModel]="form().state"
+                        (ngModelChange)="updateFormField('state', $event)"
+                        name="state"
+                      />
+                    } @else {
+                      {{ displayValue(profile.state) }}
+                    }
+                  </dd>
+                </div>
+                <div class="info-item">
+                  <dt>Country</dt>
+                  <dd>
+                    @if (editDetailsMode()) {
+                      <input
+                        class="inline-input"
+                        type="text"
+                        [ngModel]="form().country"
+                        (ngModelChange)="updateFormField('country', $event)"
+                        name="country"
+                      />
+                    } @else {
+                      {{ displayValue(profile.country) }}
+                    }
+                  </dd>
+                </div>
+                <div class="info-item">
+                  <dt>Registered address</dt>
+                  <dd class="address-value">{{ formatAddress(profile) }}</dd>
+                </div>
+              </dl>
+            </div>
           </section>
-        </div>
+        </form>
       }
     }
-    }
   } @else {
-    @if (auth.currentUser(); as user) {
-      <div class="profile-grid">
-        <section class="profile-card">
-          <h2>Account</h2>
-          <dl class="profile-details">
-            <div>
-              <dt>Email</dt>
-              <dd>{{ user.email }}</dd>
-            </div>
-            <div>
-              <dt>Role</dt>
-              <dd>{{ roleLabel(user.role) }}</dd>
-            </div>
-            <div>
-              <dt>Company</dt>
-              <dd>{{ user.companyName }}</dd>
-            </div>
-          </dl>
-        </section>
+    <header class="page-header">
+      <div>
+        <p class="page-eyebrow">Account</p>
+        <h1>Profile</h1>
       </div>
+    </header>
+
+    @if (auth.currentUser(); as user) {
+      <section class="profile-panel">
+        <div class="panel-head">
+          <h2>Account details</h2>
+        </div>
+        <dl class="info-grid info-grid-single">
+          <div class="info-item">
+            <dt>Email</dt>
+            <dd><a [href]="'mailto:' + user.email">{{ user.email }}</a></dd>
+          </div>
+          <div class="info-item">
+            <dt>Role</dt>
+            <dd>{{ roleLabel(user.role) }}</dd>
+          </div>
+          <div class="info-item">
+            <dt>Company</dt>
+            <dd>{{ displayValue(user.companyName) }}</dd>
+          </div>
+        </dl>
+      </section>
     }
   }
 </section>
