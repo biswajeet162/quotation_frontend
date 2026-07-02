@@ -17,14 +17,17 @@ import { resolveAttachmentMediaType } from '../../../shared/utils/attachment-med
 export class ProductQueryFormService {
   private readonly rowsSignal = signal<ProductFormRow[]>([createProductFormRow()]);
   private readonly highlightSignal = signal(false);
+  private readonly draftSessionIdSignal = signal(this.createDraftSessionId());
 
   readonly rows = this.rowsSignal.asReadonly();
   readonly highlight = this.highlightSignal.asReadonly();
+  readonly draftSessionId = this.draftSessionIdSignal.asReadonly();
 
   resetRows(): void {
     this.revokeAllLocalAttachments(this.rowsSignal());
     this.rowsSignal.set([createProductFormRow()]);
     this.highlightSignal.set(false);
+    this.draftSessionIdSignal.set(this.createDraftSessionId());
   }
 
   setHighlight(active: boolean): void {
@@ -50,24 +53,25 @@ export class ProductQueryFormService {
     return row.localAttachments.length;
   }
 
-  addLocalFiles(rowId: string, files: File[]): void {
+  addLocalFiles(rowId: string, files: File[]): RowLocalAttachment[] {
     const added: RowLocalAttachment[] = [];
     for (const file of files) {
       const mediaType = resolveAttachmentMediaType(file);
-      if (!mediaType) {
+      if (mediaType !== 'IMAGE') {
         continue;
       }
       added.push({
         localId: `local-${crypto.randomUUID?.() ?? Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
         fileName: file.name,
         mediaType,
-        contentType: file.type || 'application/octet-stream',
+        contentType: file.type || 'image/jpeg',
         file,
         blobUrl: URL.createObjectURL(file),
+        uploadStatus: 'uploading',
       });
     }
     if (added.length === 0) {
-      return;
+      return [];
     }
     this.rowsSignal.update((rows) =>
       rows.map((row) =>
@@ -75,6 +79,45 @@ export class ProductQueryFormService {
           ? { ...row, localAttachments: [...row.localAttachments, ...added] }
           : row,
       ),
+    );
+    return added;
+  }
+
+  updateLocalAttachment(
+    rowId: string,
+    localId: string,
+    patch: Partial<RowLocalAttachment>,
+  ): void {
+    this.rowsSignal.update((rows) =>
+      rows.map((row) => {
+        if (row.rowId !== rowId) {
+          return row;
+        }
+        return {
+          ...row,
+          localAttachments: row.localAttachments.map((attachment) =>
+            attachment.localId === localId ? { ...attachment, ...patch } : attachment,
+          ),
+        };
+      }),
+    );
+  }
+
+  attachmentIdsForRow(row: ProductFormRow): string[] {
+    return row.localAttachments
+      .map((attachment) => attachment.serverAttachmentId)
+      .filter((id): id is string => Boolean(id));
+  }
+
+  hasUploadingAttachments(rows: ProductFormRow[] = this.rowsSignal()): boolean {
+    return rows.some((row) =>
+      row.localAttachments.some((attachment) => attachment.uploadStatus === 'uploading'),
+    );
+  }
+
+  hasAttachmentErrors(rows: ProductFormRow[] = this.rowsSignal()): boolean {
+    return rows.some((row) =>
+      row.localAttachments.some((attachment) => attachment.uploadStatus === 'error'),
     );
   }
 
@@ -204,5 +247,12 @@ export class ProductQueryFormService {
     for (const row of rows) {
       this.revokeLocalAttachments(row.localAttachments);
     }
+  }
+
+  private createDraftSessionId(): string {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return `draft-${crypto.randomUUID()}`;
+    }
+    return `draft-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
   }
 }

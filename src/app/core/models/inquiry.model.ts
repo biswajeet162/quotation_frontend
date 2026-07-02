@@ -26,6 +26,7 @@ export interface ConsumerInquiryCreated {
   status: InquiryStatus;
   acknowledgementEmailSent?: boolean;
   acknowledgementEmailMessage?: string;
+  pdfDownloadUrl?: string;
 }
 
 /** Consumer-safe inquiry view for GET /inquiries/my and related endpoints. */
@@ -76,12 +77,25 @@ export interface CreateInquiryRequest {
   title: string;
   description?: string;
   searchTerm?: string;
+  draftSessionId?: string;
   items: {
     productId: string;
     quantity: number;
     notes?: string;
     lineSource?: InquiryLineSource;
+    rowClientId?: string;
+    attachmentIds?: string[];
   }[];
+}
+
+export interface InquiryDraftAttachment {
+  id: string;
+  draftSessionId: string;
+  rowClientId: string;
+  fileName: string;
+  contentType: string;
+  thumbnailUrl: string;
+  originalUrl: string;
 }
 
 export interface FindOrCreateProductRequest {

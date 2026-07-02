@@ -208,6 +208,24 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
     return this.formState.rowAttachmentCount(row);
   }
 
+  isAttachmentUploading(localId: string): boolean {
+    const row = this.attachmentRow();
+    return (
+      row?.localAttachments.some(
+        (attachment) => attachment.localId === localId && attachment.uploadStatus === 'uploading',
+      ) ?? false
+    );
+  }
+
+  hasAttachmentUploadError(localId: string): boolean {
+    const row = this.attachmentRow();
+    return (
+      row?.localAttachments.some(
+        (attachment) => attachment.localId === localId && attachment.uploadStatus === 'error',
+      ) ?? false
+    );
+  }
+
   onImageSelected(event: Event): void {
     this.onFilesSelectedWithType(event, 'IMAGE');
   }
@@ -224,6 +242,12 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
     const row = this.attachmentRow();
     if (!row) {
       return;
+    }
+    const target = row.localAttachments.find((attachment) => attachment.localId === item.localId);
+    if (target?.serverAttachmentId) {
+      this.inquiryService
+        .deleteDraftAttachment(target.serverAttachmentId, this.formState.draftSessionId())
+        .subscribe({ error: () => {} });
     }
     this.formState.removeLocalAttachment(row.rowId, item.localId);
     this.attachmentRow.set(this.rows().find((entry) => entry.rowId === row.rowId) ?? null);
@@ -421,9 +445,19 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if (this.formState.hasUploadingAttachments(valid)) {
+      this.submitError.set('Please wait until all image uploads finish.');
+      return;
+    }
+
+    if (this.formState.hasAttachmentErrors(valid)) {
+      this.submitError.set('Fix or remove image uploads that failed before submitting.');
+      return;
+    }
+
     this.submitting.set(true);
     this.submitError.set(null);
-    const localFiles = this.formState.collectLocalFiles(valid);
+    const draftSessionId = this.formState.draftSessionId();
 
     const productRequests = valid.map((row) =>
       row.catalogProductId
@@ -448,24 +482,16 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
             title,
             description,
             searchTerm: this.cart.searchTerm().trim() || undefined,
+            draftSessionId,
             items: resolved.map(({ row, productId }) => ({
               productId,
               quantity: row.quantity,
               notes: row.lineNotes.trim() || undefined,
               lineSource: row.lineSource,
+              rowClientId: row.rowId,
+              attachmentIds: this.formState.attachmentIdsForRow(row),
             })),
           });
-        }),
-        switchMap((inquiry) => {
-          if (localFiles.length === 0 || !inquiry.id) {
-            return of(inquiry);
-          }
-          return this.inquiryService
-            .postMessageWithAttachments(inquiry.id, 'Attachments from quotation request', localFiles)
-            .pipe(
-              map(() => inquiry),
-              catchError(() => of(inquiry)),
-            );
         }),
       )
       .subscribe({
@@ -477,6 +503,9 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
           this.closeAttachments();
           this.lastSubmitted.set(inquiry);
           this.submitted.emit(inquiry);
+          if (inquiry.id) {
+            this.downloadSubmissionPdf(inquiry.id, inquiry.inquiryId);
+          }
         },
         error: () => {
           this.submitting.set(false);
@@ -490,15 +519,58 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
     if (!row || files.length === 0) {
       return;
     }
-    this.formState.addLocalFiles(row.rowId, files);
+    const added = this.formState.addLocalFiles(row.rowId, files);
     const updated = this.rows().find((entry) => entry.rowId === row.rowId);
     if (updated) {
       this.attachmentRow.set(updated);
-      const lastAdded = updated.localAttachments.at(-1);
-      if (lastAdded) {
-        this.activeAttachmentTab.set(lastAdded.mediaType);
-      }
+      this.activeAttachmentTab.set('IMAGE');
     }
+    for (const attachment of added) {
+      this.uploadDraftAttachment(row.rowId, attachment.localId, attachment.file);
+    }
+  }
+
+  private uploadDraftAttachment(rowId: string, localId: string, file: File): void {
+    this.inquiryService
+      .uploadDraftAttachment(this.formState.draftSessionId(), rowId, file)
+      .subscribe({
+        next: (uploaded) => {
+          this.formState.updateLocalAttachment(rowId, localId, {
+            serverAttachmentId: uploaded.id,
+            uploadStatus: 'ready',
+            uploadError: undefined,
+          });
+          const updated = this.rows().find((entry) => entry.rowId === rowId);
+          if (updated && this.attachmentRow()?.rowId === rowId) {
+            this.attachmentRow.set(updated);
+          }
+        },
+        error: () => {
+          this.formState.updateLocalAttachment(rowId, localId, {
+            uploadStatus: 'error',
+            uploadError: 'Upload failed',
+          });
+          const updated = this.rows().find((entry) => entry.rowId === rowId);
+          if (updated && this.attachmentRow()?.rowId === rowId) {
+            this.attachmentRow.set(updated);
+          }
+          this.attachmentError.set('Could not upload one or more images. Please try again.');
+        },
+      });
+  }
+
+  private downloadSubmissionPdf(inquiryId: string, inquiryNumber: string): void {
+    this.inquiryService.downloadSubmissionPdf(inquiryId).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = `${inquiryNumber}.pdf`;
+        anchor.click();
+        URL.revokeObjectURL(url);
+      },
+      error: () => {},
+    });
   }
 
   private onFilesSelectedWithType(event: Event, expected: TimelineAttachmentMediaType): void {
@@ -512,13 +584,7 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
     for (const file of Array.from(files)) {
       const mediaType = resolveAttachmentMediaType(file);
       if (mediaType !== expected) {
-        const label =
-          expected === 'IMAGE'
-            ? 'Please choose an image file.'
-            : expected === 'VIDEO'
-              ? 'Please choose a video file.'
-              : 'Please choose a document file (PDF, Word, Excel, etc.).';
-        this.attachmentError.set(label);
+        this.attachmentError.set('Please choose an image file.');
         continue;
       }
       validFiles.push(file);

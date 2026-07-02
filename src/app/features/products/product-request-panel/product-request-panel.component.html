@@ -291,7 +291,7 @@
   >
     <header class="modal-header">
       <div>
-        <h2 id="query-attachment-title">Your attachments</h2>
+        <h2 id="query-attachment-title">Reference images</h2>
         @if (attachmentRow(); as row) {
           <p class="attachment-subtitle">{{ row.brand }} · {{ row.designation }}</p>
         }
@@ -314,107 +314,18 @@
         multiple
         (change)="onImageSelected($event)"
       />
-      <input
-        #videoInput
-        type="file"
-        class="visually-hidden"
-        accept="video/*"
-        multiple
-        (change)="onVideoSelected($event)"
-      />
-      <input
-        #documentInput
-        type="file"
-        class="visually-hidden"
-        accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.pps,.ppsx,.txt,.csv,.rtf,.odt,.ods"
-        multiple
-        (change)="onDocumentSelected($event)"
-      />
-
-      <nav class="attachment-tabs" aria-label="Attachment types">
-        @for (tab of attachmentTabOptions; track tab.type) {
-          <button
-            type="button"
-            class="attachment-tab"
-            [class.active]="activeAttachmentTab() === tab.type"
-            (click)="setAttachmentTab(tab.type)"
-          >
-            {{ tab.label }}
-            @if (attachmentCountFor(tab.type) > 0) {
-              <span class="tab-count">{{ attachmentCountFor(tab.type) }}</span>
-            }
-          </button>
-        }
-      </nav>
 
       <div class="attachment-tab-panel">
         <div class="attachment-tab-header">
-          <h3>{{ activeAttachmentTabLabel() }}</h3>
-          @switch (activeAttachmentTab()) {
-            @case ('IMAGE') {
-              <button
-                type="button"
-                class="btn-add-attachment"
-                (click)="imageInput.click()"
-                [disabled]="recording()"
-              >
-                Add image
-              </button>
-            }
-            @case ('VIDEO') {
-              <button
-                type="button"
-                class="btn-add-attachment"
-                (click)="videoInput.click()"
-                [disabled]="recording()"
-              >
-                Add video
-              </button>
-            }
-            @case ('DOCUMENT') {
-              <button
-                type="button"
-                class="btn-add-attachment"
-                (click)="documentInput.click()"
-                [disabled]="recording()"
-              >
-                Add file
-              </button>
-            }
-            @case ('AUDIO') {
-              <button
-                type="button"
-                class="btn-add-attachment"
-                (click)="startVoiceRecording()"
-                [disabled]="recording()"
-              >
-                Record voice
-              </button>
-            }
-          }
+          <h3>Images</h3>
+          <button type="button" class="btn-add-attachment" (click)="imageInput.click()">
+            Add image
+          </button>
         </div>
-
-        @if (activeAttachmentTab() === 'AUDIO' && recording()) {
-          <div class="voice-recording-panel" role="status" aria-live="polite">
-            <span class="rec-dot" aria-hidden="true"></span>
-            <span class="rec-time">{{ formatRecordingTime(recordingSeconds()) }}</span>
-            <div class="rec-wave" aria-hidden="true">
-              @for (level of recordingLevels(); track $index) {
-                <span class="rec-bar" [style.height.%]="level * 100"></span>
-              }
-            </div>
-            <button type="button" class="btn-rec-cancel" (click)="cancelVoiceRecording()">
-              Cancel
-            </button>
-            <button type="button" class="btn-rec-done" (click)="stopVoiceRecording()">
-              Done
-            </button>
-          </div>
-        }
 
         @if (attachmentsForActiveTab().length === 0) {
           <p class="state-message attachment-empty">
-            No {{ activeAttachmentTabLabel().toLowerCase() }} yet. Use the add button above.
+            No images yet. Add a photo to help identify this product line.
           </p>
         } @else {
           <ul class="attachment-list">
@@ -427,6 +338,12 @@
                     [previewMode]="'panel'"
                   />
                 </div>
+                @if (isAttachmentUploading(attachment.localId)) {
+                    <p class="attachment-upload-status">Uploading…</p>
+                  }
+                  @if (hasAttachmentUploadError(attachment.localId)) {
+                    <p class="attachment-upload-status attachment-upload-error">Upload failed</p>
+                  }
                 <button
                   type="button"
                   class="btn-attachment-delete"

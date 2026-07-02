@@ -8,6 +8,9 @@ export interface RowLocalAttachment {
   contentType: string;
   file: File;
   blobUrl: string;
+  serverAttachmentId?: string;
+  uploadStatus?: 'uploading' | 'ready' | 'error';
+  uploadError?: string;
 }
 
 export interface ProductFormDraft {

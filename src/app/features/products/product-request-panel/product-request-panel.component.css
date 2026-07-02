@@ -509,6 +509,16 @@
   text-align: center;
 }
 
+.attachment-upload-status {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.attachment-upload-error {
+  color: #b91c1c;
+}
+
 .attachment-empty,
 .state-message {
   margin: 0;

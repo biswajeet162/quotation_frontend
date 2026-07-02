@@ -9,6 +9,7 @@ import {
   CreateInquiryRequest,
   DistributorOption,
   Inquiry,
+  InquiryDraftAttachment,
   InquiryStatus,
   SubmitToDistributorsRequest,
 } from '../../models/inquiry.model';
@@ -21,6 +22,28 @@ export class InquiryService {
   /** One inquiry (single inquiryId) with all items in the request body. Company comes from JWT. */
   create(request: CreateInquiryRequest): Observable<ConsumerInquiryCreated> {
     return this.http.post<ConsumerInquiryCreated>(this.baseUrl, request);
+  }
+
+  uploadDraftAttachment(
+    draftSessionId: string,
+    rowClientId: string,
+    file: File,
+  ): Observable<InquiryDraftAttachment> {
+    const formData = new FormData();
+    formData.append('draftSessionId', draftSessionId);
+    formData.append('rowClientId', rowClientId);
+    formData.append('file', file, file.name);
+    return this.http.post<InquiryDraftAttachment>(`${this.baseUrl}/draft-attachments`, formData);
+  }
+
+  deleteDraftAttachment(attachmentId: string, draftSessionId: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/draft-attachments/${attachmentId}`, {
+      params: { draftSessionId },
+    });
+  }
+
+  downloadSubmissionPdf(inquiryId: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/${inquiryId}/pdf`, { responseType: 'blob' });
   }
 
   getMyInquiries(): Observable<ConsumerInquiry[]> {
