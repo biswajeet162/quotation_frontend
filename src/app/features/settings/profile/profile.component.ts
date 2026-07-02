@@ -1,12 +1,14 @@
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { switchMap } from 'rxjs';
+import { Observable, switchMap } from 'rxjs';
+import { ConsumerProfile, UpdateConsumerProfileRequest } from '../../../core/models/consumer.model';
 import {
   DistributorProfile,
   UpdateDistributorProfileRequest,
 } from '../../../core/models/distributor.model';
 import { AuthService } from '../../../core/services/auth/auth.service';
+import { ConsumerDashboardService } from '../../../core/services/consumer/consumer-dashboard.service';
 import { DistributorDashboardService } from '../../../core/services/distributor/distributor-dashboard.service';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 
@@ -19,23 +21,29 @@ const ROLE_LABELS: Record<string, string> = {
 interface ProfileFormState {
   companyName: string;
   gstNumber: string;
+  panNumber: string;
   companyEmail: string;
   companyPhone: string;
   address: string;
   city: string;
   state: string;
   country: string;
+  pinCode: string;
 }
+
+type CompanyProfile = DistributorProfile | ConsumerProfile;
 
 const emptyForm = (): ProfileFormState => ({
   companyName: '',
   gstNumber: '',
+  panNumber: '',
   companyEmail: '',
   companyPhone: '',
   address: '',
   city: '',
   state: '',
   country: '',
+  pinCode: '',
 });
 
 @Component({
@@ -46,6 +54,7 @@ const emptyForm = (): ProfileFormState => ({
 })
 export class ProfileComponent implements OnInit {
   private readonly distributorDashboardService = inject(DistributorDashboardService);
+  private readonly consumerDashboardService = inject(ConsumerDashboardService);
   private readonly destroyRef = inject(DestroyRef);
   protected readonly auth = inject(AuthService);
 
@@ -54,33 +63,50 @@ export class ProfileComponent implements OnInit {
   readonly editDetailsMode = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
-  readonly distributorProfile = signal<DistributorProfile | null>(null);
+  readonly companyProfile = signal<CompanyProfile | null>(null);
   readonly form = signal<ProfileFormState>(emptyForm());
   readonly logoPreviewUrl = signal<string | null>(null);
 
   readonly isDistributor = computed(() => this.auth.currentUser()?.role === 'DISTRIBUTOR');
+  readonly isConsumer = computed(() => this.auth.currentUser()?.role === 'CONSUMER');
+  readonly hasCompanyProfile = computed(() => this.isDistributor() || this.isConsumer());
   readonly isBusy = computed(() => this.loading() || this.saving());
 
   private serverLogoObjectUrl: string | null = null;
 
   ngOnInit(): void {
-    if (this.isDistributor()) {
-      this.loadDistributorProfile();
+    if (this.hasCompanyProfile()) {
+      this.loadCompanyProfile();
     }
 
     this.destroyRef.onDestroy(() => this.revokeLogoUrls());
   }
 
-  loadDistributorProfile(): void {
+  loadCompanyProfile(): void {
     this.loading.set(true);
     this.errorMessage.set(null);
     this.successMessage.set(null);
     this.editDetailsMode.set(false);
 
+    if (this.isConsumer()) {
+      this.consumerDashboardService.getProfile().subscribe({
+        next: (profile) => {
+          this.applyProfile(profile);
+          this.loadLogoPreview();
+          this.loading.set(false);
+        },
+        error: () => {
+          this.loading.set(false);
+          this.errorMessage.set('Could not load your profile details.');
+        },
+      });
+      return;
+    }
+
     this.distributorDashboardService.getProfile().subscribe({
       next: (profile) => {
         this.applyProfile(profile);
-        this.loadLogoPreview(profile);
+        this.loadLogoPreview();
         this.loading.set(false);
       },
       error: () => {
@@ -108,30 +134,40 @@ export class ProfileComponent implements OnInit {
     this.successMessage.set(null);
     this.saving.set(true);
 
+    if (this.isConsumer()) {
+      this.consumerDashboardService
+        .uploadLogo(file)
+        .pipe(switchMap(() => this.consumerDashboardService.getProfile()))
+        .subscribe({
+          next: (updated) => this.onLogoUploaded(updated),
+          error: (error: unknown) => this.onLogoUploadError(error),
+        });
+      return;
+    }
+
     this.distributorDashboardService
       .uploadLogo(file)
       .pipe(switchMap(() => this.distributorDashboardService.getProfile()))
       .subscribe({
-        next: (updated) => {
-          this.applyProfile(updated);
-          this.loadLogoPreview(updated);
-          this.saving.set(false);
-          this.successMessage.set('Logo updated successfully.');
-        },
-        error: (error) => {
-          this.saving.set(false);
-          this.errorMessage.set(this.extractErrorMessage(error));
-        },
+        next: (updated) => this.onLogoUploaded(updated),
+        error: (error: unknown) => this.onLogoUploadError(error),
       });
   }
 
-  saveProfile(): void {
-    if (this.saving()) {
-      return;
-    }
+  private onLogoUploaded(updated: CompanyProfile): void {
+    this.applyProfile(updated);
+    this.loadLogoPreview();
+    this.saving.set(false);
+    this.successMessage.set('Logo updated successfully.');
+  }
 
-    const profile = this.distributorProfile();
-    if (!profile) {
+  private onLogoUploadError(error: unknown): void {
+    this.saving.set(false);
+    this.errorMessage.set(this.extractErrorMessage(error));
+  }
+
+  saveProfile(): void {
+    if (this.saving() || !this.companyProfile()) {
       return;
     }
 
@@ -145,35 +181,32 @@ export class ProfileComponent implements OnInit {
     this.errorMessage.set(null);
     this.successMessage.set(null);
 
-    const request: UpdateDistributorProfileRequest = {
-      companyName: form.companyName.trim(),
-      companyEmail: form.companyEmail.trim(),
-      companyPhone: form.companyPhone.trim(),
-      gstNumber: form.gstNumber.trim() || undefined,
-      address: form.address.trim() || undefined,
-      city: form.city.trim() || undefined,
-      state: form.state.trim() || undefined,
-      country: form.country.trim() || undefined,
-    };
+    if (this.isConsumer()) {
+      this.saveConsumerProfile(form).subscribe({
+        next: (updated) => this.onProfileSaved(updated),
+        error: (error: unknown) => this.onProfileSaveError(error),
+      });
+      return;
+    }
 
-    const save$ = this.distributorDashboardService
-      .updateProfile(request)
-      .pipe(switchMap(() => this.distributorDashboardService.getProfile()));
-
-    save$.subscribe({
-      next: (updated) => {
-        this.applyProfile(updated);
-        this.auth.updateStoredCompanyName(updated.companyName);
-        this.loadLogoPreview(updated);
-        this.editDetailsMode.set(false);
-        this.saving.set(false);
-        this.successMessage.set('Profile saved successfully.');
-      },
-      error: (error) => {
-        this.saving.set(false);
-        this.errorMessage.set(this.extractErrorMessage(error));
-      },
+    this.saveDistributorProfile(form).subscribe({
+      next: (updated) => this.onProfileSaved(updated),
+      error: (error: unknown) => this.onProfileSaveError(error),
     });
+  }
+
+  private onProfileSaved(updated: CompanyProfile): void {
+    this.applyProfile(updated);
+    this.auth.updateStoredCompanyName(updated.companyName);
+    this.loadLogoPreview();
+    this.editDetailsMode.set(false);
+    this.saving.set(false);
+    this.successMessage.set('Profile saved successfully.');
+  }
+
+  private onProfileSaveError(error: unknown): void {
+    this.saving.set(false);
+    this.errorMessage.set(this.extractErrorMessage(error));
   }
 
   updateFormField<K extends keyof ProfileFormState>(field: K, value: ProfileFormState[K]): void {
@@ -181,7 +214,7 @@ export class ProfileComponent implements OnInit {
   }
 
   startDetailsEdit(): void {
-    const profile = this.distributorProfile();
+    const profile = this.companyProfile();
     if (!profile) {
       return;
     }
@@ -192,7 +225,7 @@ export class ProfileComponent implements OnInit {
   }
 
   cancelDetailsEdit(): void {
-    const profile = this.distributorProfile();
+    const profile = this.companyProfile();
     if (profile) {
       this.applyProfile(profile);
     }
@@ -213,7 +246,7 @@ export class ProfileComponent implements OnInit {
     return trimmed ? trimmed : '—';
   }
 
-  formatAddress(profile: DistributorProfile): string {
+  formatAddress(profile: CompanyProfile): string {
     const lines: string[] = [];
     if (profile.address?.trim()) {
       lines.push(profile.address.trim());
@@ -222,49 +255,109 @@ export class ProfileComponent implements OnInit {
     if (locality) {
       lines.push(locality);
     }
+    const pinCode = 'pinCode' in profile ? profile.pinCode : undefined;
+    if (pinCode?.trim()) {
+      lines.push(`PIN: ${pinCode.trim()}`);
+    }
     if (profile.country?.trim()) {
       lines.push(profile.country.trim());
     }
     return lines.length ? lines.join('\n') : '—';
   }
 
-  private applyProfile(profile: DistributorProfile): void {
-    this.distributorProfile.set(profile);
+  panNumber(profile: CompanyProfile): string | undefined {
+    return 'panNumber' in profile ? profile.panNumber : undefined;
+  }
+
+  pinCode(profile: CompanyProfile): string | undefined {
+    return 'pinCode' in profile ? profile.pinCode : undefined;
+  }
+
+  private saveConsumerProfile(form: ProfileFormState): Observable<ConsumerProfile> {
+    const request: UpdateConsumerProfileRequest = {
+      companyName: form.companyName.trim(),
+      companyEmail: form.companyEmail.trim(),
+      companyPhone: form.companyPhone.trim(),
+      gstNumber: form.gstNumber.trim() || undefined,
+      panNumber: form.panNumber.trim() || undefined,
+      address: form.address.trim() || undefined,
+      city: form.city.trim() || undefined,
+      state: form.state.trim() || undefined,
+      country: form.country.trim() || undefined,
+      pinCode: form.pinCode.trim() || undefined,
+    };
+
+    return this.consumerDashboardService
+      .updateProfile(request)
+      .pipe(switchMap(() => this.consumerDashboardService.getProfile()));
+  }
+
+  private saveDistributorProfile(form: ProfileFormState): Observable<DistributorProfile> {
+    const request: UpdateDistributorProfileRequest = {
+      companyName: form.companyName.trim(),
+      companyEmail: form.companyEmail.trim(),
+      companyPhone: form.companyPhone.trim(),
+      gstNumber: form.gstNumber.trim() || undefined,
+      address: form.address.trim() || undefined,
+      city: form.city.trim() || undefined,
+      state: form.state.trim() || undefined,
+      country: form.country.trim() || undefined,
+    };
+
+    return this.distributorDashboardService
+      .updateProfile(request)
+      .pipe(switchMap(() => this.distributorDashboardService.getProfile()));
+  }
+
+  private applyProfile(profile: CompanyProfile): void {
+    this.companyProfile.set(profile);
     this.form.set({
       companyName: profile.companyName ?? '',
       gstNumber: profile.gstNumber ?? '',
+      panNumber: 'panNumber' in profile ? (profile.panNumber ?? '') : '',
       companyEmail: profile.companyEmail ?? '',
       companyPhone: profile.companyPhone ?? '',
       address: profile.address ?? '',
       city: profile.city ?? '',
       state: profile.state ?? '',
       country: profile.country ?? '',
+      pinCode: 'pinCode' in profile ? (profile.pinCode ?? '') : '',
     });
   }
 
-  private loadLogoPreview(profile: DistributorProfile): void {
+  private loadLogoPreview(): void {
     if (this.serverLogoObjectUrl) {
       URL.revokeObjectURL(this.serverLogoObjectUrl);
       this.serverLogoObjectUrl = null;
     }
     this.logoPreviewUrl.set(null);
 
-    if (!profile.distributorLogoUrl) {
+    const profile = this.companyProfile();
+    if (!profile) {
       return;
     }
 
-    this.distributorDashboardService
-      .loadLogoBlob()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (blob) => {
-          this.serverLogoObjectUrl = URL.createObjectURL(blob);
-          this.logoPreviewUrl.set(this.serverLogoObjectUrl);
-        },
-        error: () => {
-          this.logoPreviewUrl.set(null);
-        },
-      });
+    const hasLogo = this.isConsumer()
+      ? Boolean((profile as ConsumerProfile).consumerLogoUrl)
+      : Boolean((profile as DistributorProfile).distributorLogoUrl);
+
+    if (!hasLogo) {
+      return;
+    }
+
+    const logo$ = this.isConsumer()
+      ? this.consumerDashboardService.loadLogoBlob()
+      : this.distributorDashboardService.loadLogoBlob();
+
+    logo$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (blob) => {
+        this.serverLogoObjectUrl = URL.createObjectURL(blob);
+        this.logoPreviewUrl.set(this.serverLogoObjectUrl);
+      },
+      error: () => {
+        this.logoPreviewUrl.set(null);
+      },
+    });
   }
 
   private revokeLogoUrls(): void {
