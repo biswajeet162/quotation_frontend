@@ -32,6 +32,7 @@
 .app-content > router-outlet + app-distributor-inquiry-tracking,
 .app-content > router-outlet + app-admin-query-review,
 .app-content > router-outlet + app-admin-distributor-chats,
-.app-content > router-outlet + app-product-list {
+.app-content > router-outlet + app-product-list,
+.app-content > router-outlet + app-distributor-products {
   overflow: hidden;
 }

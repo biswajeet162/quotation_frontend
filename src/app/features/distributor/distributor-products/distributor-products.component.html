@@ -1,4 +1,4 @@
-<section class="page-card">
+<section class="page-card" [class.brands-view]="activeMainTab() === 'brands'">
   <app-loading-overlay [loading]="overlayLoading()" message="Loading your products…" />
 
   <header class="page-header">
