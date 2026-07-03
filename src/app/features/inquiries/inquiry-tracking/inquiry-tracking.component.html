@@ -36,7 +36,11 @@
   @if (!loading()) {
   @if (errorMessage()) {
     <div class="alert alert-error" role="alert">{{ errorMessage() }}</div>
-  } @else if (inquiries().length === 0) {
+  }
+  @if (deepLinkError()) {
+    <div class="alert alert-error" role="alert">{{ deepLinkError() }}</div>
+  }
+  @if (inquiries().length === 0) {
     <p class="state-message">You have not submitted any quotation requests yet.</p>
   } @else if (filteredInquiries().length === 0) {
     <p class="state-message">No requests match your search or status filter.</p>

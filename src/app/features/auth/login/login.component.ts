@@ -1,6 +1,6 @@
 import { AfterViewInit, Component, ElementRef, inject, signal, ViewChild } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { GoogleSignInService } from '../../../core/services/auth/google-sign-in.service';
@@ -17,6 +17,7 @@ export class LoginComponent implements AfterViewInit {
   private readonly auth = inject(AuthService);
   private readonly googleSignIn = inject(GoogleSignInService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   @ViewChild('googleButtonHost') googleButtonHost?: ElementRef<HTMLDivElement>;
 
@@ -46,7 +47,7 @@ export class LoginComponent implements AfterViewInit {
     this.auth.login(this.form.getRawValue()).subscribe({
       next: () => {
         this.loading.set(false);
-        void this.router.navigate(['/dashboard']);
+        this.navigateAfterAuth();
       },
       error: (err: HttpErrorResponse) => this.handleError(err, 'Invalid email or password. Please try again.'),
     });
@@ -80,10 +81,10 @@ export class LoginComponent implements AfterViewInit {
         this.loading.set(false);
         if (response.message) {
           this.infoMessage.set(response.message);
-          setTimeout(() => void this.router.navigate(['/dashboard']), 2000);
+          setTimeout(() => this.navigateAfterAuth(), 2000);
           return;
         }
-        void this.router.navigate(['/dashboard']);
+        this.navigateAfterAuth();
       },
       error: (err: HttpErrorResponse) => this.handleError(err, 'Google sign-in failed. Please try again.'),
     });
@@ -96,5 +97,14 @@ export class LoginComponent implements AfterViewInit {
       return;
     }
     this.errorMessage.set(fallback);
+  }
+
+  private navigateAfterAuth(): void {
+    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+    if (returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('//')) {
+      void this.router.navigateByUrl(returnUrl);
+      return;
+    }
+    void this.router.navigate(['/dashboard']);
   }
 }

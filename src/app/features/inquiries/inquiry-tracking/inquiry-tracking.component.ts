@@ -1,5 +1,6 @@
 import { Component, computed, ElementRef, HostListener, inject, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ConsumerInquiry, InquiryStatus } from '../../../core/models/inquiry.model';
 import {
   InquiryTimelineEntry,
@@ -54,9 +55,12 @@ interface PendingAttachment {
 })
 export class InquiryTrackingComponent implements OnInit, OnDestroy {
   private readonly inquiryService = inject(InquiryService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
+  readonly deepLinkError = signal<string | null>(null);
   readonly inquiries = signal<ConsumerInquiry[]>([]);
   readonly searchQuery = signal('');
   readonly statusFilter = signal<StatusFilter>('all');
@@ -197,7 +201,9 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.load();
+    this.route.queryParamMap.subscribe(() => {
+      this.load();
+    });
   }
 
   ngOnDestroy(): void {
@@ -207,11 +213,30 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   load(): void {
     this.loading.set(true);
     this.errorMessage.set(null);
+    this.deepLinkError.set(null);
+
+    const requestedInquiryRef = this.route.snapshot.queryParamMap.get('inq')?.trim() ?? null;
 
     this.inquiryService.getMyInquiries().subscribe({
       next: (list) => {
         this.inquiries.set(list);
         this.loading.set(false);
+
+        if (requestedInquiryRef) {
+          const match = list.find((inquiry) => inquiry.inquiryId === requestedInquiryRef);
+          if (match) {
+            this.searchQuery.set('');
+            this.statusFilter.set('all');
+            this.selectedId.set(match.id);
+            this.loadTimeline();
+            return;
+          }
+          this.selectedId.set(null);
+          this.timelineEntries.set([]);
+          this.deepLinkError.set('No such inquiry exists.');
+          return;
+        }
+
         const current = this.selectedId();
         const stillVisible =
           current != null && this.filteredInquiries().some((q) => q.id === current);
@@ -244,12 +269,21 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     this.cancelVoiceRecording();
     this.clearPendingAttachments();
     this.selectedId.set(id);
+    this.deepLinkError.set(null);
     this.deleteError.set(null);
     this.messageError.set(null);
     this.messageText.set('');
     this.clearReplyTarget();
     this.timelineEntries.set([]);
     this.loadTimeline();
+
+    const inquiry = this.inquiries().find((item) => item.id === id);
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: inquiry ? { inq: inquiry.inquiryId } : { inq: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 
   private syncSelection(): void {
