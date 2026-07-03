@@ -43,3 +43,34 @@ export function resolveAttachmentMediaType(file: File): TimelineAttachmentMediaT
   }
   return null;
 }
+
+export function resolveAttachmentMediaTypeFromMeta(
+  contentType: string,
+  fileName: string,
+): TimelineAttachmentMediaType {
+  if (isDocumentAttachmentType(contentType, fileName)) {
+    return 'DOCUMENT';
+  }
+  if (contentType.startsWith('image/') || /\.(jpe?g|png|gif|webp)$/i.test(fileName)) {
+    return 'IMAGE';
+  }
+  if (contentType.startsWith('video/') || /\.(mp4|mov|webm)$/i.test(fileName)) {
+    return 'VIDEO';
+  }
+  if (contentType.startsWith('audio/') || /\.(mp3|wav|ogg|m4a)$/i.test(fileName)) {
+    return 'AUDIO';
+  }
+  return 'DOCUMENT';
+}
+
+export function toItemTimelineAttachment(
+  attachment: import('../../core/models/inquiry.model').InquiryItemAttachment,
+): import('../../core/models/inquiry-timeline.model').InquiryTimelineAttachment {
+  return {
+    id: attachment.id,
+    fileName: attachment.fileName,
+    contentType: attachment.contentType,
+    mediaType: resolveAttachmentMediaTypeFromMeta(attachment.contentType, attachment.fileName),
+    url: attachment.originalUrl,
+  };
+}

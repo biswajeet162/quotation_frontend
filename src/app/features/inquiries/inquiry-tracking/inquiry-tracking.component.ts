@@ -1,7 +1,7 @@
 import { Component, computed, ElementRef, HostListener, inject, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ConsumerInquiry, InquiryStatus } from '../../../core/models/inquiry.model';
+import { ConsumerInquiry, InquiryItem, InquiryStatus } from '../../../core/models/inquiry.model';
 import {
   InquiryTimelineEntry,
   InquiryTimelineAttachment,
@@ -32,6 +32,8 @@ import {
   noticeDisplayLabel,
 } from '../../../shared/utils/timeline-chat.util';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
+import { formatSpecificationsInline } from '../../../shared/utils/specifications-display.util';
+import { toItemTimelineAttachment } from '../../../shared/utils/attachment-media-type.util';
 
 type StatusFilter = 'all' | InquiryStatus | 'ACTION_REQUIRED';
 
@@ -83,6 +85,9 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   readonly deleteLoading = signal(false);
   readonly deleteError = signal<string | null>(null);
   readonly deleteConfirmOpen = signal(false);
+  readonly productsExpanded = signal(true);
+  readonly itemAttachmentViewerOpen = signal(false);
+  readonly itemAttachmentViewerItem = signal<InquiryItem | null>(null);
 
   private readonly detailScrollRef = viewChild<ElementRef<HTMLElement>>('detailScroll');
   private readonly messageInputRef = viewChild<ElementRef<HTMLTextAreaElement>>('messageInput');
@@ -268,6 +273,8 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   selectInquiry(id: string): void {
     this.cancelVoiceRecording();
     this.clearPendingAttachments();
+    this.productsExpanded.set(true);
+    this.closeItemAttachments();
     this.selectedId.set(id);
     this.deepLinkError.set(null);
     this.deleteError.set(null);
@@ -749,8 +756,53 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     });
   }
 
-  lineSourceLabel(lineSource?: string): string {
-    return lineSource === 'NEW_PRODUCT' ? 'New product from search' : 'Catalog match';
+  productCountLabel(items?: ConsumerInquiry['items']): string {
+    const count = items?.length ?? 0;
+    return count === 1 ? '1 product' : `${count} products`;
+  }
+
+  toggleProductsExpanded(): void {
+    this.productsExpanded.update((expanded) => !expanded);
+  }
+
+  displayProductField(value?: string): string {
+    const trimmed = value?.trim();
+    return trimmed ? trimmed : '—';
+  }
+
+  displaySpecifications(value?: string): string {
+    const formatted = formatSpecificationsInline(value);
+    return formatted ? formatted : '—';
+  }
+
+  itemAttachmentCount(item: InquiryItem): number {
+    return item.attachments?.length ?? 0;
+  }
+
+  openItemAttachments(item: InquiryItem, event: Event): void {
+    event.stopPropagation();
+    this.itemAttachmentViewerItem.set(item);
+    this.itemAttachmentViewerOpen.set(true);
+  }
+
+  closeItemAttachments(): void {
+    this.itemAttachmentViewerOpen.set(false);
+    this.itemAttachmentViewerItem.set(null);
+  }
+
+  toItemTimelineAttachment(
+    attachment: NonNullable<InquiryItem['attachments']>[number],
+  ): InquiryTimelineAttachment {
+    return toItemTimelineAttachment(attachment);
+  }
+
+  itemAttachmentViewerLabel(item: InquiryItem): string {
+    const brand = item.productBrand?.trim();
+    const designation = item.productName?.trim();
+    if (brand && designation) {
+      return `${brand} · ${designation}`;
+    }
+    return brand || designation || 'Product attachments';
   }
 
   formatDate(iso?: string): string {

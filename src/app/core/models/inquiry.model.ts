@@ -9,14 +9,25 @@ export type InquiryRequestSource = 'CATALOG_SEARCH' | 'NEW_PRODUCT_SEARCH' | 'MI
 
 export type InquiryLineSource = 'CATALOG_MATCH' | 'NEW_PRODUCT';
 
+export interface InquiryItemAttachment {
+  id: string;
+  fileName: string;
+  contentType: string;
+  thumbnailUrl: string;
+  originalUrl: string;
+}
+
 export interface InquiryItem {
   id?: string;
   productId: string;
   productBrand?: string;
   productName?: string;
+  productSpecifications?: string;
+  productDescription?: string;
   quantity: number;
   notes?: string;
   lineSource?: InquiryLineSource;
+  attachments?: InquiryItemAttachment[];
 }
 
 /** Returned to consumers after POST /inquiries (no admin/line-item payload). */

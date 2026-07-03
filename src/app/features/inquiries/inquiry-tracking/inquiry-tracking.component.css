@@ -274,8 +274,8 @@
   padding-top: 0.85rem;
 }
 
-.detail-summary h3 {
-  margin: 0.75rem 0 0.35rem;
+.detail-summary h3,
+.products-panel h3 {
   font-size: 0.95rem;
 }
 
@@ -341,32 +341,147 @@
   margin: 0.35rem 0 0;
 }
 
-.product-lines {
-  margin: 0.35rem 0 0.75rem;
-  padding-left: 0;
-  list-style: none;
+.products-panel {
+  margin: 0.75rem 0;
 }
 
-.product-lines li {
-  padding: 0.5rem 0;
+.products-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.products-panel-title {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.products-panel h3 {
+  margin: 0;
+}
+
+.products-count {
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.btn-products-expand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.78rem;
+}
+
+.expand-chevron {
+  width: 1rem;
+  height: 1rem;
+  fill: currentColor;
+}
+
+.expand-chevron.expanded {
+  transform: rotate(180deg);
+}
+
+.products-table-wrap {
+  margin-top: 0.65rem;
+  overflow: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.products-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.products-table th,
+.products-table td {
+  padding: 0.55rem 0.65rem;
+  text-align: left;
   border-bottom: 1px solid #f1f5f9;
-  font-size: 0.9rem;
+  vertical-align: middle;
 }
 
-.line-badge {
-  display: inline-block;
-  margin-right: 0.5rem;
-  font-size: 0.68rem;
+.products-table th {
+  font-size: 0.72rem;
   font-weight: 600;
-  padding: 0.1rem 0.35rem;
-  border-radius: 4px;
-  background: #e2e8f0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  background: #f8fafc;
+}
+
+.products-table .serial-cell,
+.products-table .col-serial {
+  width: 3.25rem;
+  text-align: center;
+  color: #64748b;
+}
+
+.products-table .col-qty,
+.products-table .qty-cell {
+  width: 3.5rem;
+  text-align: center;
+}
+
+.products-table .col-attachment,
+.products-table .attachment-cell {
+  width: 6.5rem;
+  text-align: center;
+}
+
+.products-table .designation-cell,
+.products-table .brand-cell,
+.products-table .spec-cell,
+.products-table .description-cell {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.82rem;
+}
+
+.products-table .spec-cell,
+.products-table .description-cell {
   color: #475569;
 }
 
-.line-badge.new-product {
-  background: #fef3c7;
-  color: #92400e;
+.btn-attachment-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #0f766e;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.item-attachment-subtitle {
+  margin: -0.25rem 0 0.75rem;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.item-attachment-list {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: min(50vh, 420px);
+  overflow: auto;
+}
+
+.products-empty {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: #64748b;
 }
 
 .status-row {

@@ -109,20 +109,101 @@
                 <p class="detail-note"><strong>Your notes:</strong> {{ inquiry.description }}</p>
               }
 
-              <h3>Products</h3>
-              <ul class="product-lines">
-                @for (item of inquiry.items ?? []; track item.id ?? item.productId) {
-                  <li>
-                    <span class="line-badge" [class.new-product]="item.lineSource === 'NEW_PRODUCT'">
-                      {{ lineSourceLabel(item.lineSource) }}
-                    </span>
-                    {{ item.productBrand }} {{ item.productName }} — qty {{ item.quantity }}
-                    @if (item.notes) {
-                      <span class="muted">({{ item.notes }})</span>
-                    }
-                  </li>
+              <div class="products-panel">
+                <div class="products-panel-header">
+                  <div class="products-panel-title">
+                    <h3>Products</h3>
+                    <span class="products-count">{{ productCountLabel(inquiry.items) }}</span>
+                  </div>
+                  @if ((inquiry.items ?? []).length > 0) {
+                    <button
+                      type="button"
+                      class="btn-secondary btn-products-expand"
+                      [attr.aria-expanded]="productsExpanded()"
+                      [attr.aria-controls]="'inquiry-products-' + inquiry.id"
+                      (click)="toggleProductsExpanded()"
+                    >
+                      <span>{{ productsExpanded() ? 'Hide' : 'Show' }} products</span>
+                      <svg
+                        class="expand-chevron"
+                        [class.expanded]="productsExpanded()"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
+                        <path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41Z" />
+                      </svg>
+                    </button>
+                  }
+                </div>
+
+                @if (productsExpanded() && (inquiry.items ?? []).length > 0) {
+                  <div class="products-table-wrap" [id]="'inquiry-products-' + inquiry.id">
+                    <table class="products-table">
+                      <thead>
+                        <tr>
+                          <th class="col-serial">S.No</th>
+                          <th class="col-designation">Designation</th>
+                          <th class="col-brand">Brand</th>
+                          <th class="col-qty">Qty</th>
+                          <th class="col-spec">Specification</th>
+                          <th class="col-description">Description</th>
+                          <th class="col-attachment">Attachments</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (item of inquiry.items ?? []; track item.id ?? item.productId) {
+                          <tr>
+                            <td class="serial-cell">{{ $index + 1 }}</td>
+                            <td
+                              class="designation-cell"
+                              [title]="displayProductField(item.productName)"
+                            >
+                              {{ displayProductField(item.productName) }}
+                            </td>
+                            <td class="brand-cell" [title]="displayProductField(item.productBrand)">
+                              {{ displayProductField(item.productBrand) }}
+                            </td>
+                            <td class="qty-cell">{{ item.quantity }}</td>
+                            <td
+                              class="spec-cell"
+                              [title]="displaySpecifications(item.productSpecifications)"
+                            >
+                              {{ displaySpecifications(item.productSpecifications) }}
+                            </td>
+                            <td
+                              class="description-cell"
+                              [title]="displayProductField(item.productDescription)"
+                            >
+                              {{ displayProductField(item.productDescription) }}
+                            </td>
+                            <td class="attachment-cell">
+                              @if (itemAttachmentCount(item) > 0) {
+                                <button
+                                  type="button"
+                                  class="btn-attachment-link"
+                                  (click)="openItemAttachments(item, $event)"
+                                  [attr.aria-label]="
+                                    'View attachments for ' +
+                                    displayProductField(item.productBrand) +
+                                    ' ' +
+                                    displayProductField(item.productName)
+                                  "
+                                >
+                                  Click here
+                                </button>
+                              } @else {
+                                —
+                              }
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                } @else if ((inquiry.items ?? []).length === 0) {
+                  <p class="products-empty">No products in this request.</p>
                 }
-              </ul>
+              </div>
 
               <p class="status-row">
                 <strong>Status:</strong> {{ inquiry.status }}
@@ -480,6 +561,34 @@
   }
   }
 </section>
+
+@if (itemAttachmentViewerOpen() && itemAttachmentViewerItem(); as attachmentItem) {
+  <div class="confirm-overlay" (click)="closeItemAttachments()" role="presentation">
+    <div
+      class="confirm-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="item-attachment-title"
+      (click)="$event.stopPropagation()"
+    >
+      <h2 id="item-attachment-title">Attachments</h2>
+      <p class="item-attachment-subtitle">{{ itemAttachmentViewerLabel(attachmentItem) }}</p>
+      <ul class="item-attachment-list">
+        @for (attachment of attachmentItem.attachments ?? []; track attachment.id) {
+          <li>
+            <app-inquiry-chat-attachment
+              [attachment]="toItemTimelineAttachment(attachment)"
+              [previewMode]="'panel'"
+            />
+          </li>
+        }
+      </ul>
+      <div class="confirm-actions">
+        <button type="button" class="btn-secondary" (click)="closeItemAttachments()">Close</button>
+      </div>
+    </div>
+  </div>
+}
 
 @if (deleteConfirmOpen() && selectedInquiry(); as toDelete) {
   <div class="confirm-overlay" (click)="closeDeleteConfirm()" role="presentation">
