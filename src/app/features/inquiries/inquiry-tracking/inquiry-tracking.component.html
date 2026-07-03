@@ -31,6 +31,18 @@
         }
       </select>
     </div>
+    <div class="sort-field">
+      <label for="sort-by">Sort by</label>
+      <select
+        id="sort-by"
+        [ngModel]="sortBy()"
+        (ngModelChange)="onSortByChange($event)"
+      >
+        @for (opt of sortOptions; track opt.value) {
+          <option [value]="opt.value">{{ opt.label }}</option>
+        }
+      </select>
+    </div>
   </div>
 
   @if (!loading()) {
@@ -47,7 +59,7 @@
   } @else {
     <div class="review-layout">
       <ul class="query-list">
-        @for (inquiry of filteredInquiries(); track inquiry.id) {
+        @for (inquiry of sortedInquiries(); track inquiry.id) {
           <li>
             <button
               type="button"

@@ -23,7 +23,7 @@
   justify-content: space-between;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: .5rem;
   flex-shrink: 0;
 }
 
@@ -40,10 +40,9 @@
 .toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.65rem;
-  margin-bottom: 0.5rem;
+  gap: .65rem;
+  margin-bottom: .5rem;
   align-items: flex-end;
-  flex-shrink: 0;
 }
 
 .search-field {
@@ -53,21 +52,23 @@
   gap: 0.35rem;
 }
 
-.status-field {
-  flex: 0 1 220px;
+.status-field,
+.sort-field {
+  flex: 0 1 200px;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: .35rem;
 }
-
 .search-field label,
-.status-field label {
+.status-field label,
+.sort-field label {
   font-size: 0.8rem;
   font-weight: 600;
 }
 
 .search-field input,
-.status-field select {
+.status-field select,
+.sort-field select {
   padding: 0.5rem 0.65rem;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
@@ -456,7 +457,6 @@
   border: 0;
   background: none;
   color: #0f766e;
-  font: inherit;
   font-weight: 600;
   text-decoration: underline;
 }
@@ -915,7 +915,7 @@
   align-items: center;
   gap: 0.55rem;
   padding: 0.65rem 0.75rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: .5rem;
   border-radius: 28px;
   background: #fef2f2;
   border: 1px solid #fecaca;

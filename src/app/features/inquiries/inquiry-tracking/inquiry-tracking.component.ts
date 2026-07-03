@@ -36,6 +36,7 @@ import { formatSpecificationsInline } from '../../../shared/utils/specifications
 import { toItemTimelineAttachment } from '../../../shared/utils/attachment-media-type.util';
 
 type StatusFilter = 'all' | InquiryStatus | 'ACTION_REQUIRED';
+type SortBy = 'date' | 'inquiryNumber' | 'productCount';
 
 interface PendingAttachment {
   id: string;
@@ -66,6 +67,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   readonly inquiries = signal<ConsumerInquiry[]>([]);
   readonly searchQuery = signal('');
   readonly statusFilter = signal<StatusFilter>('all');
+  readonly sortBy = signal<SortBy>('date');
   readonly selectedId = signal<string | null>(null);
 
   readonly timelineLoading = signal(false);
@@ -114,6 +116,12 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     { value: 'CLOSED', label: 'Closed' },
   ];
 
+  readonly sortOptions: { value: SortBy; label: string }[] = [
+    { value: 'date', label: 'Date (newest first)' },
+    { value: 'inquiryNumber', label: 'Quotation number' },
+    { value: 'productCount', label: 'Product count' },
+  ];
+
   readonly filteredInquiries = computed(() => {
     const query = this.searchQuery().trim().toLowerCase();
     const status = this.statusFilter();
@@ -148,6 +156,25 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
 
       return haystack.includes(query);
     });
+  });
+
+  readonly sortedInquiries = computed(() => {
+    const items = [...this.filteredInquiries()];
+    const sort = this.sortBy();
+
+    if (sort === 'inquiryNumber') {
+      return items.sort((a, b) =>
+        a.inquiryId.localeCompare(b.inquiryId, undefined, { numeric: true, sensitivity: 'base' }),
+      );
+    }
+
+    if (sort === 'productCount') {
+      return items.sort(
+        (a, b) => (b.items?.length ?? 0) - (a.items?.length ?? 0) || this.compareInquiryDate(b, a),
+      );
+    }
+
+    return items.sort((a, b) => this.compareInquiryDate(b, a));
   });
 
   readonly selectedInquiry = computed(() => {
@@ -246,7 +273,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
         const stillVisible =
           current != null && this.filteredInquiries().some((q) => q.id === current);
         if (!stillVisible) {
-          const first = this.filteredInquiries()[0];
+          const first = this.sortedInquiries()[0];
           this.selectedId.set(first?.id ?? null);
         }
         if (this.selectedId()) {
@@ -267,6 +294,11 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
 
   onStatusFilterChange(value: string): void {
     this.statusFilter.set(value as StatusFilter);
+    this.syncSelection();
+  }
+
+  onSortByChange(value: string): void {
+    this.sortBy.set(value as SortBy);
     this.syncSelection();
   }
 
@@ -294,7 +326,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   }
 
   private syncSelection(): void {
-    const visible = this.filteredInquiries();
+    const visible = this.sortedInquiries();
     const current = this.selectedId();
     if (current != null && visible.some((q) => q.id === current)) {
       return;
@@ -759,6 +791,24 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   productCountLabel(items?: ConsumerInquiry['items']): string {
     const count = items?.length ?? 0;
     return count === 1 ? '1 product' : `${count} products`;
+  }
+
+  private compareInquiryDate(a: ConsumerInquiry, b: ConsumerInquiry): number {
+    const aTime = a.createdAt ? Date.parse(a.createdAt) : 0;
+    const bTime = b.createdAt ? Date.parse(b.createdAt) : 0;
+    const aValid = !Number.isNaN(aTime);
+    const bValid = !Number.isNaN(bTime);
+
+    if (aValid && bValid) {
+      return aTime - bTime;
+    }
+    if (aValid) {
+      return 1;
+    }
+    if (bValid) {
+      return -1;
+    }
+    return a.inquiryId.localeCompare(b.inquiryId, undefined, { numeric: true, sensitivity: 'base' });
   }
 
   toggleProductsExpanded(): void {
