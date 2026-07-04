@@ -799,6 +799,28 @@ export class ProductListComponent implements OnInit, OnDestroy {
   }
 
   private loadBrands(): void {
+    if (this.isAdmin()) {
+      this.clearBrandLogoObjectUrls();
+      this.catalogService.listBrands().subscribe({
+        next: (brandList) => {
+          this.brands.set(
+            brandList
+              .map((brand: CatalogBrand) => ({
+                brandName: brand.brandName?.trim() ?? '',
+                productCount: brand.productCount ?? 0,
+                logoUrl: brand.logoUrl ?? null,
+              }))
+              .filter((brand) => !!brand.brandName),
+          );
+          this.buildAdminBrands();
+        },
+        error: () => {
+          this.buildAdminBrands();
+        },
+      });
+      return;
+    }
+
     this.clearBrandLogoObjectUrls();
     this.catalogService.listBrands().subscribe({
       next: (brandList) => {
@@ -828,6 +850,38 @@ export class ProductListComponent implements OnInit, OnDestroy {
     });
   }
 
+  private buildAdminBrands(): void {
+    const existingLogos = new Map(
+      this.brands().map((brand) => [brand.brandName, brand.logoUrl] as const),
+    );
+    const counts = new Map<string, number>();
+    for (const product of this.adminDistributorProducts()) {
+      const brandName = product.brand?.trim();
+      if (!brandName) {
+        continue;
+      }
+      counts.set(brandName, (counts.get(brandName) ?? 0) + 1);
+    }
+
+    const normalized: BrandSummary[] = [...counts.entries()]
+      .map(([brandName, productCount]) => ({
+        brandName,
+        productCount,
+        logoUrl: existingLogos.get(brandName) ?? this.getBrandLogoUrl(brandName),
+      }))
+      .sort((a, b) => a.brandName.localeCompare(b.brandName));
+
+    this.brands.set(normalized);
+
+    const selected = this.selectedBrand();
+    const stillExists = normalized.some((brand) => brand.brandName === selected);
+    if (!stillExists) {
+      this.selectedBrand.set(normalized[0]?.brandName ?? null);
+    }
+
+    this.resolveBrandLogoPreviews();
+  }
+
   private syncTabFromRoute(): void {
     const lastSegment = this.route.snapshot.url.at(-1)?.path;
     if (lastSegment === 'distributors' && this.isAdmin()) {
@@ -849,6 +903,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
     this.adminProducts.listAll().subscribe({
       next: (products) => {
         this.adminDistributorProducts.set(products);
+        this.buildAdminBrands();
         const selected = this.selectedDistributorCompany();
         const stillExists = products.some((product) => product.companyId === selected);
         if (!stillExists) {
