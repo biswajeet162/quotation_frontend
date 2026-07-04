@@ -364,7 +364,8 @@ export class ProductListComponent implements OnInit, OnDestroy {
           next.delete(brandName);
           return next;
         });
-        this.applyUploadedBrandLogo(brand);
+        this.brandLogoTarget.set(null);
+        this.applyUploadedBrandLogo({ ...brand, brandName: brand.brandName || brandName }, file);
       },
       error: (err) => {
         this.brandLogoUploading.update((items) => {
@@ -394,7 +395,8 @@ export class ProductListComponent implements OnInit, OnDestroy {
     if (!name) {
       return null;
     }
-    return this.brands().find((brand) => brand.brandName === name)?.logoUrl ?? null;
+    const key = this.normalizeBrandName(name);
+    return this.brands().find((brand) => this.normalizeBrandName(brand.brandName) === key)?.logoUrl ?? null;
   }
 
   toggleSort(column: ProductSortColumn): void {
@@ -852,7 +854,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
 
   private buildAdminBrands(): void {
     const existingLogos = new Map(
-      this.brands().map((brand) => [brand.brandName, brand.logoUrl] as const),
+      this.brands().map((brand) => [this.normalizeBrandName(brand.brandName), brand.logoUrl] as const),
     );
     const counts = new Map<string, number>();
     for (const product of this.adminDistributorProducts()) {
@@ -867,7 +869,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
       .map(([brandName, productCount]) => ({
         brandName,
         productCount,
-        logoUrl: existingLogos.get(brandName) ?? this.getBrandLogoUrl(brandName),
+        logoUrl: existingLogos.get(this.normalizeBrandName(brandName)) ?? this.getBrandLogoUrl(brandName),
       }))
       .sort((a, b) => a.brandName.localeCompare(b.brandName));
 
@@ -1077,26 +1079,27 @@ export class ProductListComponent implements OnInit, OnDestroy {
     );
   }
 
-  private applyUploadedBrandLogo(brand: DistributorBrand): void {
+  private applyUploadedBrandLogo(brand: DistributorBrand, previewFile?: File): void {
+    if (!brand.brandName) {
+      return;
+    }
+    if (previewFile) {
+      const objectUrl = URL.createObjectURL(previewFile);
+      this.brandLogoObjectUrls.add(objectUrl);
+      this.updateBrandLogoPreview(brand.brandName, objectUrl);
+      return;
+    }
     if (!brand.logoUrl) {
       return;
     }
-    this.catalogService.fetchBrandLogoBlob(brand.logoUrl).subscribe({
+    this.catalogService.fetchBrandLogoBlob(this.withCacheBust(brand.logoUrl)).subscribe({
       next: (blob) => {
         const objectUrl = URL.createObjectURL(blob);
         this.brandLogoObjectUrls.add(objectUrl);
-        this.brands.update((items) =>
-          items.map((item) =>
-            item.brandName === brand.brandName ? { ...item, logoUrl: objectUrl } : item,
-          ),
-        );
+        this.updateBrandLogoPreview(brand.brandName, objectUrl);
       },
       error: () => {
-        this.brands.update((items) =>
-          items.map((item) =>
-            item.brandName === brand.brandName ? { ...item, logoUrl: brand.logoUrl ?? null } : item,
-          ),
-        );
+        this.updateBrandLogoPreview(brand.brandName, brand.logoUrl ?? null);
       },
     });
   }
@@ -1171,22 +1174,38 @@ export class ProductListComponent implements OnInit, OnDestroy {
 
   private resolveBrandLogoPreviews(): void {
     this.brands().forEach((brand) => {
-      if (!brand.logoUrl) {
+      if (!brand.logoUrl || brand.logoUrl.startsWith('blob:')) {
         return;
       }
 
-      this.catalogService.fetchBrandLogoBlob(brand.logoUrl).subscribe({
+      this.catalogService.fetchBrandLogoBlob(this.withCacheBust(brand.logoUrl)).subscribe({
         next: (blob) => {
           const objectUrl = URL.createObjectURL(blob);
           this.brandLogoObjectUrls.add(objectUrl);
-          this.brands.update((items) =>
-            items.map((item) =>
-              item.brandName === brand.brandName ? { ...item, logoUrl: objectUrl } : item,
-            ),
-          );
+          this.updateBrandLogoPreview(brand.brandName, objectUrl);
         },
       });
     });
+  }
+
+  private updateBrandLogoPreview(brandName: string, logoUrl: string | null): void {
+    const key = this.normalizeBrandName(brandName);
+    this.brands.update((items) =>
+      items.map((item) =>
+        this.normalizeBrandName(item.brandName) === key ? { ...item, logoUrl } : item,
+      ),
+    );
+  }
+
+  private normalizeBrandName(brandName: string | null | undefined): string {
+    return (brandName ?? '').trim().toLowerCase();
+  }
+
+  private withCacheBust(url: string): string {
+    if (url.startsWith('blob:')) {
+      return url;
+    }
+    return `${url}${url.includes('?') ? '&' : '?'}v=${Date.now()}`;
   }
 
   private clearBrandLogoObjectUrls(): void {

@@ -204,18 +204,6 @@
       } @else {
         <div class="brands-layout admin-distributor-layout">
           <aside class="brands-sidebar">
-            <button
-              type="button"
-              class="brand-card"
-              [class.active]="selectedDistributorCompany() === null"
-              (click)="selectDistributorCompany(null)"
-            >
-              <div class="brand-logo" aria-hidden="true">All</div>
-              <div class="brand-meta">
-                <h3>All distributors</h3>
-                <p>{{ adminDistributorProducts().length }} products</p>
-              </div>
-            </button>
             @for (company of adminDistributorCompanies(); track company.id) {
               <button
                 type="button"
@@ -236,14 +224,13 @@
 
           <div class="brands-products-panel">
             <h3 class="brand-products-title">
-              {{ selectedDistributorCompany() ? 'Distributor products' : 'All distributor products' }}
+              Distributor products
             </h3>
             <div class="table-wrap admin-distributor-table-wrap">
               <table class="products-table admin-distributor-table">
                 <thead>
                   <tr>
                     <th class="col-serial">S.No</th>
-                    <th>Distributor</th>
                     <th>Brand</th>
                     <th>Designation</th>
                     <th>Description</th>
@@ -252,21 +239,17 @@
                     <th>Discount</th>
                     <th>GST</th>
                     <th>Stock</th>
-                    <th>Lead</th>
-                    <th>MOQ</th>
                     <th>Valid Till</th>
                     <th>Status</th>
                     <th>Images</th>
                     <th>Created</th>
                     <th>Updated</th>
-                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   @for (product of filteredAdminDistributorProducts(); track product.id; let index = $index) {
                     <tr>
                       <td class="serial-cell">{{ index + 1 }}</td>
-                      <td>{{ displayValue(product.companyName) }}</td>
                       <td>{{ displayValue(product.brand) }}</td>
                       <td>{{ displayValue(product.designation) }}</td>
                       <td class="admin-long-cell" [title]="product.description || ''">
@@ -279,28 +262,30 @@
                       <td>{{ formatPercent(product.discountPercentage) }}</td>
                       <td>{{ formatPercent(product.gstPercentage) }}</td>
                       <td>{{ product.stockQuantity ?? '—' }}</td>
-                      <td>{{ product.leadTimeDays != null ? product.leadTimeDays + ' days' : '—' }}</td>
-                      <td>{{ product.minOrderQuantity ?? '—' }}</td>
                       <td>{{ product.priceValidTill ?? '—' }}</td>
                       <td>
-                        <span class="status-pill" [class.inactive]="product.isActive === false">
-                          {{ product.isActive === false ? 'Inactive' : 'Active' }}
+                        <span class="admin-status-toggle-cell">
+                          <label
+                            class="active-toggle"
+                            [attr.aria-label]="product.isActive === false ? 'Activate product' : 'Deactivate product'"
+                            [title]="product.isActive === false ? 'Inactive' : 'Active'"
+                          >
+                            <input
+                              type="checkbox"
+                              [checked]="product.isActive !== false"
+                              [disabled]="isStatusUpdating(product.id)"
+                              (change)="toggleAdminProductStatus(product, $event)"
+                            />
+                            <span class="active-toggle-slider" aria-hidden="true"></span>
+                          </label>
+                          <span class="admin-status-toggle-text" [class.inactive]="product.isActive === false">
+                            {{ product.isActive === false ? 'Off' : 'On' }}
+                          </span>
                         </span>
                       </td>
                       <td>{{ product.attachmentCount ?? 0 }}</td>
                       <td>{{ formatDateTime(product.createdAt) }}</td>
                       <td>{{ formatDateTime(product.updatedAt) }}</td>
-                      <td>
-                        <button
-                          type="button"
-                          class="btn-status-toggle"
-                          [class.activate]="product.isActive === false"
-                          [disabled]="isStatusUpdating(product.id)"
-                          (click)="toggleAdminProductStatus(product, $event)"
-                        >
-                          {{ product.isActive === false ? 'Activate' : 'Deactivate' }}
-                        </button>
-                      </td>
                     </tr>
                   }
                 </tbody>
