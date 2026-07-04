@@ -109,12 +109,16 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
 
   readonly previewContactPhone = computed(() => {
     const profile = this.companyProfile();
-    return profile?.companyPhone?.trim() || '—';
+    if (!profile) {
+      return '—';
+    }
+    const consumerProfile = profile as ConsumerProfile;
+    return consumerProfile.userPhone?.trim() || '—';
   });
 
   readonly previewContactEmail = computed(() => {
     const profile = this.companyProfile();
-    return profile?.email?.trim() || profile?.companyEmail?.trim() || '—';
+    return profile?.email?.trim() || '—';
   });
 
   private logoObjectUrl: string | null = null;

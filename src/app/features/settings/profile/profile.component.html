@@ -68,10 +68,70 @@
           </section>
           }
 
+          @if (isConsumer()) {
+          <section class="profile-panel" aria-labelledby="employee-details-title">
+            <div class="panel-head panel-head-row">
+              <h2 id="employee-details-title">Your details</h2>
+              @if (!editDetailsMode()) {
+                <button
+                  type="button"
+                  class="icon-btn"
+                  aria-label="Edit your details"
+                  title="Edit your details"
+                  (click)="startDetailsEdit()"
+                  [disabled]="isBusy()"
+                >
+                  ✎
+                </button>
+              }
+            </div>
+            <dl class="info-grid info-grid-single">
+              <div class="info-item">
+                <dt>Full name</dt>
+                <dd>
+                  @if (editDetailsMode()) {
+                    <input
+                      class="inline-input"
+                      type="text"
+                      [ngModel]="form().userName"
+                      (ngModelChange)="updateFormField('userName', $event)"
+                      name="userName"
+                      required
+                    />
+                  } @else {
+                    {{ displayValue(profile.userName) }}
+                  }
+                </dd>
+              </div>
+              <div class="info-item">
+                <dt>Email</dt>
+                <dd>{{ consumerEmail(profile) }}</dd>
+              </div>
+              <div class="info-item">
+                <dt>Mobile number</dt>
+                <dd>
+                  @if (editDetailsMode()) {
+                    <input
+                      class="inline-input"
+                      type="tel"
+                      [ngModel]="form().userPhone"
+                      (ngModelChange)="updateFormField('userPhone', $event)"
+                      name="userPhone"
+                      required
+                    />
+                  } @else {
+                    {{ consumerPhone(profile) }}
+                  }
+                </dd>
+              </div>
+            </dl>
+          </section>
+          }
+
           <section class="profile-panel" aria-labelledby="company-details-title">
             <div class="panel-head panel-head-row">
-              <h2 id="company-details-title">{{ isAdmin() ? 'Portal company details' : 'Company details' }}</h2>
-              @if (!editDetailsMode()) {
+              <h2 id="company-details-title">{{ isAdmin() ? 'Portal company details' : (isConsumer() ? 'Company details' : 'Company details') }}</h2>
+              @if (!isConsumer() && !editDetailsMode()) {
                 <button
                   type="button"
                   class="icon-btn"
@@ -82,7 +142,7 @@
                 >
                   ✎
                 </button>
-              } @else {
+              } @else if (!isConsumer()) {
                 <div class="inline-actions">
                   <button type="button" class="btn-secondary btn-small" (click)="cancelDetailsEdit()" [disabled]="isBusy()">
                     Cancel
@@ -91,6 +151,26 @@
                     {{ saving() ? 'Saving…' : 'Save' }}
                   </button>
                 </div>
+              } @else if (editDetailsMode()) {
+                <div class="inline-actions">
+                  <button type="button" class="btn-secondary btn-small" (click)="cancelDetailsEdit()" [disabled]="isBusy()">
+                    Cancel
+                  </button>
+                  <button type="submit" class="btn-primary btn-small" [disabled]="isBusy()">
+                    {{ saving() ? 'Saving…' : 'Save' }}
+                  </button>
+                </div>
+              } @else {
+                <button
+                  type="button"
+                  class="icon-btn"
+                  aria-label="Edit company details"
+                  title="Edit company details"
+                  (click)="startDetailsEdit()"
+                  [disabled]="isBusy()"
+                >
+                  ✎
+                </button>
               }
             </div>
 
@@ -147,6 +227,7 @@
                     </dd>
                   </div>
                 }
+                @if (!isConsumer()) {
                 <div class="info-item">
                   <dt>Company email</dt>
                   <dd>
@@ -160,7 +241,7 @@
                         required
                       />
                     } @else {
-                      {{ displayValue(profile.companyEmail) }}
+                      {{ displayValue(distributorCompanyEmail(profile)) }}
                     }
                   </dd>
                 </div>
@@ -177,10 +258,11 @@
                         required
                       />
                     } @else {
-                      {{ displayValue(profile.companyPhone) }}
+                      {{ displayValue(distributorCompanyPhone(profile)) }}
                     }
                   </dd>
                 </div>
+                }
               </dl>
 
               <dl class="info-grid">

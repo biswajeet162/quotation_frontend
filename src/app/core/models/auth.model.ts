@@ -4,6 +4,9 @@ export interface LoginRequest {
 }
 
 export interface SignUpRequest {
+  name: string;
+  companyName: string;
+  phone: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -30,6 +33,8 @@ export interface MessageResponse {
 
 export interface GoogleSignUpRequest {
   idToken: string;
+  companyName?: string;
+  phone?: string;
 }
 
 export interface GoogleConfigResponse {

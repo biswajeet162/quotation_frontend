@@ -36,6 +36,9 @@ export class SignupComponent implements AfterViewInit {
 
   readonly form = this.fb.nonNullable.group(
     {
+      name: ['', [Validators.required]],
+      companyName: ['', [Validators.required]],
+      phone: ['', [Validators.required]],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
       confirmPassword: ['', [Validators.required]],
@@ -92,11 +95,20 @@ export class SignupComponent implements AfterViewInit {
   }
 
   private onGoogleSignUp(credential: string): void {
+    if (this.form.controls.companyName.invalid || this.form.controls.phone.invalid) {
+      this.form.controls.companyName.markAsTouched();
+      this.form.controls.phone.markAsTouched();
+      this.errorMessage.set('Enter your company name and phone number before continuing with Google.');
+      return;
+    }
+
     this.loading.set(true);
     this.errorMessage.set(null);
     this.successMessage.set(null);
 
-    this.auth.googleSignUp({ idToken: credential }).subscribe({
+    const { companyName, phone } = this.form.getRawValue();
+
+    this.auth.googleSignUp({ idToken: credential, companyName, phone }).subscribe({
       next: () => {
         this.loading.set(false);
         void this.router.navigate(['/dashboard']);

@@ -21,6 +21,8 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 interface ProfileFormState {
+  userName: string;
+  userPhone: string;
   companyName: string;
   gstNumber: string;
   panNumber: string;
@@ -36,6 +38,8 @@ interface ProfileFormState {
 type CompanyProfile = DistributorProfile | ConsumerProfile | AdminPortalProfile;
 
 const emptyForm = (): ProfileFormState => ({
+  userName: '',
+  userPhone: '',
   companyName: '',
   gstNumber: '',
   panNumber: '',
@@ -190,7 +194,12 @@ export class ProfileComponent implements OnInit {
     }
 
     const form = this.form();
-    if (!form.companyName.trim() || !form.companyEmail.trim() || !form.companyPhone.trim()) {
+    if (this.isConsumer()) {
+      if (!form.userName.trim() || !form.userPhone.trim() || !form.companyName.trim()) {
+        this.errorMessage.set('Your name, phone number, and company name are required.');
+        return;
+      }
+    } else if (!form.companyName.trim() || !form.companyEmail.trim() || !form.companyPhone.trim()) {
       this.errorMessage.set('Company name, email, and phone are required.');
       return;
     }
@@ -305,9 +314,9 @@ export class ProfileComponent implements OnInit {
 
   private saveConsumerProfile(form: ProfileFormState): Observable<ConsumerProfile> {
     const request: UpdateConsumerProfileRequest = {
+      userName: form.userName.trim(),
+      userPhone: form.userPhone.trim(),
       companyName: form.companyName.trim(),
-      companyEmail: form.companyEmail.trim(),
-      companyPhone: form.companyPhone.trim(),
       gstNumber: form.gstNumber.trim() || undefined,
       panNumber: form.panNumber.trim() || undefined,
       address: form.address.trim() || undefined,
@@ -360,18 +369,38 @@ export class ProfileComponent implements OnInit {
 
   private applyProfile(profile: CompanyProfile): void {
     this.companyProfile.set(profile);
+    const consumerProfile = this.isConsumer() ? (profile as ConsumerProfile) : null;
     this.form.set({
+      userName: consumerProfile?.userName ?? profile.userName ?? '',
+      userPhone: consumerProfile?.userPhone ?? '',
       companyName: profile.companyName ?? '',
       gstNumber: profile.gstNumber ?? '',
       panNumber: 'panNumber' in profile ? (profile.panNumber ?? '') : '',
-      companyEmail: profile.companyEmail ?? '',
-      companyPhone: profile.companyPhone ?? '',
+      companyEmail: 'companyEmail' in profile ? (profile.companyEmail ?? '') : '',
+      companyPhone: 'companyPhone' in profile ? (profile.companyPhone ?? '') : '',
       address: profile.address ?? '',
       city: profile.city ?? '',
       state: profile.state ?? '',
       country: profile.country ?? '',
       pinCode: 'pinCode' in profile ? (profile.pinCode ?? '') : '',
     });
+  }
+
+  consumerEmail(profile: CompanyProfile): string {
+    return profile.email?.trim() || '—';
+  }
+
+  consumerPhone(profile: CompanyProfile): string {
+    const consumerProfile = profile as ConsumerProfile;
+    return consumerProfile.userPhone?.trim() || '—';
+  }
+
+  distributorCompanyEmail(profile: CompanyProfile): string | undefined {
+    return 'companyEmail' in profile ? profile.companyEmail : undefined;
+  }
+
+  distributorCompanyPhone(profile: CompanyProfile): string | undefined {
+    return 'companyPhone' in profile ? profile.companyPhone : undefined;
   }
 
   private loadLogoPreview(): void {

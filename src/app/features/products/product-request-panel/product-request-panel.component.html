@@ -174,10 +174,10 @@
               @if (companyProfile()?.panNumber; as pan) {
                 <li><span class="detail-label">PAN:</span> {{ pan }}</li>
               }
-              @if (companyProfile()?.companyPhone; as phone) {
+              @if (companyProfile()?.userPhone; as phone) {
                 <li>{{ phone }}</li>
               }
-              @if (companyProfile()?.companyEmail; as email) {
+              @if (companyProfile()?.email; as email) {
                 <li>{{ email }}</li>
               }
             </ul>
