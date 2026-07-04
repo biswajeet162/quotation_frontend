@@ -461,18 +461,30 @@
 }
 
 .admin-distributor-table {
-  min-width: 120rem;
-  font-size: 0.78rem;
+  min-width: 140rem;
+  font-size: 0.8rem;
 }
 
 .admin-distributor-table th,
 .admin-distributor-table td {
-  padding: 0.48rem 0.55rem;
+  padding: 0.58rem 0.65rem;
   white-space: nowrap;
 }
 
 .admin-distributor-table td {
   color: #334155;
+}
+
+.admin-distributor-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.admin-long-cell {
+  max-width: 18rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #475569;
 }
 
 .status-pill {
@@ -508,20 +520,6 @@
 .btn-status-toggle:disabled {
   opacity: 0.55;
   cursor: not-allowed;
-}
-
-.admin-detail-row td {
-  padding-top: 0.35rem;
-  padding-bottom: 0.7rem;
-  color: #475569;
-  white-space: normal;
-  background: #f8fafc;
-  line-height: 1.45;
-}
-
-.admin-detail-separator {
-  margin: 0 0.85rem;
-  color: #cbd5e1;
 }
 
 .sort-btn {

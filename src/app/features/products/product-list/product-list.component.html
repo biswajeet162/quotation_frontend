@@ -246,6 +246,8 @@
                     <th>Distributor</th>
                     <th>Brand</th>
                     <th>Designation</th>
+                    <th>Description</th>
+                    <th>Specifications</th>
                     <th>RSP</th>
                     <th>Discount</th>
                     <th>GST</th>
@@ -267,6 +269,12 @@
                       <td>{{ displayValue(product.companyName) }}</td>
                       <td>{{ displayValue(product.brand) }}</td>
                       <td>{{ displayValue(product.designation) }}</td>
+                      <td class="admin-long-cell" [title]="product.description || ''">
+                        {{ displayValue(product.description) }}
+                      </td>
+                      <td class="admin-long-cell" [title]="product.specifications || ''">
+                        {{ displayValue(product.specifications) }}
+                      </td>
                       <td>{{ formatCurrency(product.rsp) }}</td>
                       <td>{{ formatPercent(product.discountPercentage) }}</td>
                       <td>{{ formatPercent(product.gstPercentage) }}</td>
@@ -292,14 +300,6 @@
                         >
                           {{ product.isActive === false ? 'Activate' : 'Deactivate' }}
                         </button>
-                      </td>
-                    </tr>
-                    <tr class="admin-detail-row">
-                      <td></td>
-                      <td colspan="15">
-                        <strong>Description:</strong> {{ displayValue(product.description) }}
-                        <span class="admin-detail-separator">|</span>
-                        <strong>Specifications:</strong> {{ displayValue(product.specifications) }}
                       </td>
                     </tr>
                   }
