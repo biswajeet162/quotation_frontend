@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, input, output } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../core/services/auth/auth.service';
 
@@ -24,6 +24,9 @@ interface NavItem {
 })
 export class SidebarComponent {
   protected readonly auth = inject(AuthService);
+
+  readonly collapsed = input(false);
+  readonly toggleSidebar = output<void>();
 
   private readonly allNavItems: NavItem[] = [
     { label: 'Dashboard', path: '/dashboard', icon: '◫' },

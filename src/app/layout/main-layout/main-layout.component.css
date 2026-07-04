@@ -4,6 +4,52 @@
   max-height: 100vh;
   overflow: hidden;
   background: #f1f5f9;
+  position: relative;
+}
+
+.sidebar-reopen {  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 50;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #0f172a;
+  color: #e2e8f0;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18);
+  transition: background 0.15s, transform 0.15s;
+}
+
+.sidebar-reopen:hover {
+  background: #1e293b;
+  transform: translateY(-1px);
+}
+
+.sidebar-reopen-mark {
+  width: 1.75rem;
+  height: 1.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f766e;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #fff;
+}
+
+.sidebar-reopen-icon {
+  font-size: 1rem;
+  line-height: 1;
+  color: #cbd5e1;
+}
+
+.app-shell.sidebar-collapsed .app-content {
+  padding-left: 4.25rem;
 }
 
 .app-content {

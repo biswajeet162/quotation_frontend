@@ -1,6 +1,18 @@
-<div class="app-shell">
+<div class="app-shell" [class.sidebar-collapsed]="!sidebarOpen()">
   <app-loading-overlay [loading]="navigating()" message="Loading page…" />
-  <app-sidebar />
+  <app-sidebar [collapsed]="!sidebarOpen()" (toggleSidebar)="toggleSidebar()" />
+  @if (!sidebarOpen()) {
+    <button
+      type="button"
+      class="sidebar-reopen"
+      (click)="toggleSidebar()"
+      aria-label="Show navigation"
+      title="Show navigation"
+    >
+      <span class="sidebar-reopen-mark" aria-hidden="true">Q</span>
+      <span class="sidebar-reopen-icon" aria-hidden="true">☰</span>
+    </button>
+  }
   <main class="app-content">
     <router-outlet />
   </main>

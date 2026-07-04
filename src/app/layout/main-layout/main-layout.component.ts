@@ -20,6 +20,11 @@ export class MainLayoutComponent {
   private readonly router = inject(Router);
 
   readonly navigating = signal(false);
+  readonly sidebarOpen = signal(true);
+
+  toggleSidebar(): void {
+    this.sidebarOpen.update((open) => !open);
+  }
 
   constructor() {
     this.router.events.subscribe((event) => {
