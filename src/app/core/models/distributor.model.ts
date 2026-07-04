@@ -89,6 +89,8 @@ export interface DistributorBrand {
 export interface DistributorProductEntry {
   id: string;
   productId: string;
+  companyId?: string;
+  companyName?: string;
   brand: string;
   designation: string;
   description?: string;
@@ -105,6 +107,18 @@ export interface DistributorProductEntry {
   attachments?: DistributorProductAttachment[];
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface DistributorProductAuditLog {
+  id: string;
+  distributorProductId: string;
+  actorUserId: string;
+  actorName: string;
+  actorEmail: string;
+  actorRole: 'ADMIN' | 'DISTRIBUTOR' | 'CONSUMER';
+  action: string;
+  summary?: string;
+  createdAt?: string;
 }
 
 export interface CreateDistributorProductRequest {

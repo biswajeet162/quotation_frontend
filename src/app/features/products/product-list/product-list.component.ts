@@ -1,4 +1,13 @@
-import { Component, computed, HostListener, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  HostListener,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+  WritableSignal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
@@ -7,22 +16,59 @@ import {
   CatalogProductAttachment,
   toTimelineAttachment,
 } from '../../../core/models/catalog-product.model';
-import { TimelineAttachmentMediaType } from '../../../core/models/inquiry-timeline.model';
+import {
+  InquiryTimelineAttachment,
+  TimelineAttachmentMediaType,
+} from '../../../core/models/inquiry-timeline.model';
 import { ConsumerProductCatalogService } from '../../../core/services/product/consumer-product-catalog.service';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { InquiryCartService } from '../../../core/services/inquiry/inquiry-cart.service';
 import { ProductQueryFormService } from '../../../core/services/product/product-query-form.service';
+import { AdminDistributorProductService } from '../../../core/services/admin/admin-distributor-product.service';
+import {
+  DistributorProductAttachment,
+  DistributorProductAuditLog,
+  DistributorProductEntry,
+  UpdateDistributorProductRequest,
+} from '../../../core/models/distributor.model';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 import { InquiryChatAttachmentComponent } from '../../../shared/components/inquiry-chat-attachment/inquiry-chat-attachment.component';
 
-type ProductSortColumn = 'brand' | 'designation' | 'description' | 'attachmentCount';
+type ProductSortColumn =
+  | 'brand'
+  | 'designation'
+  | 'description'
+  | 'rsp'
+  | 'stockQuantity'
+  | 'isActive'
+  | 'attachmentCount';
 type SortDirection = 'asc' | 'desc';
+type ProductMainTab = 'products' | 'brands' | 'distributors';
+type SortableProduct = CatalogProduct | DistributorProductEntry;
 
 interface BrandSummary {
   brandName: string;
   productCount: number;
   logoUrl: string | null;
 }
+
+interface AdminProductFormState {
+  brand: string;
+  designation: string;
+  description: string;
+  specifications: string;
+  rsp: string | number;
+  stockQuantity: string | number;
+}
+
+const emptyAdminProductForm = (): AdminProductFormState => ({
+  brand: '',
+  designation: '',
+  description: '',
+  specifications: '',
+  rsp: '',
+  stockQuantity: '0',
+});
 
 @Component({
   selector: 'app-product-list',
@@ -37,13 +83,18 @@ export class ProductListComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly cart = inject(InquiryCartService);
   private readonly queryForm = inject(ProductQueryFormService);
+  private readonly adminProducts = inject(AdminDistributorProductService);
 
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
+  readonly adminActionError = signal<string | null>(null);
   readonly searchQuery = signal('');
   readonly catalogProducts = signal<CatalogProduct[]>([]);
-  readonly activeMainTab = signal<'products' | 'brands'>('products');
+  readonly adminDistributorProducts = signal<DistributorProductEntry[]>([]);
+  readonly statusUpdatingIds = signal<Set<string>>(new Set());
+  readonly activeMainTab = signal<ProductMainTab>('products');
   readonly selectedBrand = signal<string | null>(null);
+  readonly selectedDistributorCompany = signal<string | null>(null);
   readonly brands = signal<BrandSummary[]>([]);
   readonly sortColumn = signal<ProductSortColumn>('brand');
   readonly sortDirection = signal<SortDirection>('asc');
@@ -56,6 +107,33 @@ export class ProductListComponent implements OnInit, OnDestroy {
   readonly attachmentsLoading = signal(false);
   readonly attachmentError = signal<string | null>(null);
 
+  readonly adminDetailsOpen = signal(false);
+  readonly adminDetailsProduct = signal<DistributorProductEntry | null>(null);
+  readonly adminDetailsAttachments = signal<InquiryTimelineAttachment[]>([]);
+  readonly adminDetailsLoading = signal(false);
+  readonly adminDetailsError = signal<string | null>(null);
+  readonly adminDetailsAttachmentTab = signal<TimelineAttachmentMediaType>('IMAGE');
+
+  readonly adminAttachmentPanelOpen = signal(false);
+  readonly adminAttachmentProduct = signal<DistributorProductEntry | null>(null);
+  readonly adminAttachments = signal<InquiryTimelineAttachment[]>([]);
+  readonly adminAttachmentsLoading = signal(false);
+  readonly adminAttachmentError = signal<string | null>(null);
+  readonly adminAttachmentTab = signal<TimelineAttachmentMediaType>('IMAGE');
+
+  readonly adminEditOpen = signal(false);
+  readonly adminSaving = signal(false);
+  readonly adminEditingProduct = signal<DistributorProductEntry | null>(null);
+  readonly adminForm = signal<AdminProductFormState>(emptyAdminProductForm());
+  readonly adminEditAttachments = signal<InquiryTimelineAttachment[]>([]);
+  readonly adminEditAttachmentsLoading = signal(false);
+  readonly adminEditAttachmentsUploading = signal(false);
+  readonly adminEditAttachmentError = signal<string | null>(null);
+  readonly adminEditAttachmentTab = signal<TimelineAttachmentMediaType>('IMAGE');
+  readonly adminAuditLogs = signal<DistributorProductAuditLog[]>([]);
+  readonly adminAuditLogsLoading = signal(false);
+  readonly adminAuditLogsError = signal<string | null>(null);
+
   readonly attachmentTabOptions: { type: TimelineAttachmentMediaType; label: string }[] = [
     { type: 'IMAGE', label: 'Images' },
     { type: 'VIDEO', label: 'Videos' },
@@ -67,6 +145,22 @@ export class ProductListComponent implements OnInit, OnDestroy {
 
   readonly attachmentsForActiveTab = computed(() =>
     this.attachments().filter((attachment) => attachment.mediaType === this.activeAttachmentTab()),
+  );
+
+  readonly adminDetailsAttachmentsForActiveTab = computed(() =>
+    this.adminDetailsAttachments().filter(
+      (attachment) => attachment.mediaType === this.adminDetailsAttachmentTab(),
+    ),
+  );
+
+  readonly adminAttachmentsForActiveTab = computed(() =>
+    this.adminAttachments().filter((attachment) => attachment.mediaType === this.adminAttachmentTab()),
+  );
+
+  readonly adminEditAttachmentsForActiveTab = computed(() =>
+    this.adminEditAttachments().filter(
+      (attachment) => attachment.mediaType === this.adminEditAttachmentTab(),
+    ),
   );
 
   readonly filteredProducts = computed(() => {
@@ -97,10 +191,59 @@ export class ProductListComponent implements OnInit, OnDestroy {
   });
 
   readonly isConsumer = () => this.auth.currentUser()?.role === 'CONSUMER';
+  readonly isAdmin = () => this.auth.currentUser()?.role === 'ADMIN';
+
+  readonly filteredAdminDistributorProducts = computed(() => {
+    const query = this.searchQuery().trim().toLowerCase();
+    const company = this.activeMainTab() === 'distributors' ? this.selectedDistributorCompany() : null;
+    return this.adminDistributorProducts().filter((product) => {
+      if (company && product.companyId !== company) {
+        return false;
+      }
+      if (!query) {
+        return true;
+      }
+      const haystack = [
+        product.companyName,
+        product.brand,
+        product.designation,
+        product.description,
+        product.specifications,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(query);
+    });
+  });
+
+  readonly sortedFilteredAdminDistributorProducts = computed(() =>
+    this.sortProducts(
+      this.filteredAdminDistributorProducts(),
+      this.sortColumn(),
+      this.sortDirection(),
+    ),
+  );
+
+  readonly adminDistributorCompanies = computed(() => {
+    const map = new Map<string, { id: string; name: string; count: number }>();
+    for (const product of this.adminDistributorProducts()) {
+      const id = product.companyId ?? 'unknown';
+      const name = product.companyName?.trim() || 'Unknown distributor';
+      const current = map.get(id);
+      if (current) {
+        current.count++;
+      } else {
+        map.set(id, { id, name, count: 1 });
+      }
+    }
+    return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
+  });
 
   readonly showNoMatchState = () =>
     !this.loading() &&
     this.activeMainTab() === 'products' &&
+    !this.isAdmin() &&
     this.searchQuery().trim().length > 0 &&
     this.filteredProducts().length === 0;
 
@@ -108,6 +251,18 @@ export class ProductListComponent implements OnInit, OnDestroy {
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
+    if (this.adminEditOpen()) {
+      this.closeAdminEdit();
+      return;
+    }
+    if (this.adminAttachmentPanelOpen()) {
+      this.closeAdminAttachments();
+      return;
+    }
+    if (this.adminDetailsOpen()) {
+      this.closeAdminDetails();
+      return;
+    }
     if (this.attachmentPanelOpen()) {
       this.closeAttachments();
       return;
@@ -134,6 +289,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
       next: (products) => {
         this.catalogProducts.set(products);
         this.loadBrands();
+        this.loadAdminDistributorProducts();
         this.loading.set(false);
       },
       error: () => {
@@ -143,9 +299,13 @@ export class ProductListComponent implements OnInit, OnDestroy {
     });
   }
 
-  setMainTab(tab: 'products' | 'brands'): void {
+  setMainTab(tab: ProductMainTab): void {
+    if (tab === 'distributors' && !this.isAdmin()) {
+      return;
+    }
     this.activeMainTab.set(tab);
-    void this.router.navigate(['../', tab === 'products' ? 'all' : 'brands'], {
+    const segment = tab === 'products' ? 'all' : tab;
+    void this.router.navigate(['../', segment], {
       relativeTo: this.route,
       replaceUrl: true,
     });
@@ -156,6 +316,10 @@ export class ProductListComponent implements OnInit, OnDestroy {
 
   selectBrand(brandName: string): void {
     this.selectedBrand.set(brandName);
+  }
+
+  selectDistributorCompany(companyId: string | null): void {
+    this.selectedDistributorCompany.set(companyId);
   }
 
   getBrandInitials(brandName: string): string {
@@ -235,6 +399,16 @@ export class ProductListComponent implements OnInit, OnDestroy {
     return toTimelineAttachment(attachment);
   }
 
+  toProductTimelineAttachment(attachment: DistributorProductAttachment): InquiryTimelineAttachment {
+    return {
+      id: attachment.id,
+      fileName: attachment.fileName,
+      contentType: attachment.contentType,
+      mediaType: attachment.mediaType,
+      url: attachment.url,
+    };
+  }
+
   useInQuery(entry: CatalogProduct, event: Event): void {
     event.stopPropagation();
     if (!this.isConsumer()) {
@@ -254,6 +428,278 @@ export class ProductListComponent implements OnInit, OnDestroy {
 
   displayValue(value: string | undefined): string {
     return value?.trim() ? value : '—';
+  }
+
+  formatCurrency(value?: number): string {
+    return value == null ? '—' : value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  }
+
+  formatPercent(value?: number): string {
+    return value == null ? '—' : `${value}%`;
+  }
+
+  formatDateTime(value?: string): string {
+    if (!value) {
+      return '—';
+    }
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+  }
+
+  formatAuditAction(action: string): string {
+    return action
+      .split('_')
+      .map((part) => part.charAt(0) + part.slice(1).toLowerCase())
+      .join(' ');
+  }
+
+  isStatusUpdating(productId: string): boolean {
+    return this.statusUpdatingIds().has(productId);
+  }
+
+  isTogglingActive(productId: string): boolean {
+    return this.isStatusUpdating(productId);
+  }
+
+  onActiveToggle(product: DistributorProductEntry): void {
+    this.toggleAdminProductStatus(product);
+  }
+
+  toggleAdminProductStatus(product: DistributorProductEntry, event?: Event): void {
+    event?.stopPropagation();
+    if (!this.isAdmin() || this.isStatusUpdating(product.id)) {
+      return;
+    }
+
+    this.statusUpdatingIds.update((ids) => new Set(ids).add(product.id));
+    const request =
+      product.isActive === false
+        ? this.adminProducts.activate(product.id)
+        : this.adminProducts.deactivate(product.id);
+
+    request.subscribe({
+      next: () => {
+        const nextActive = product.isActive === false;
+        this.adminDistributorProducts.update((list) =>
+          list.map((item) => (item.id === product.id ? { ...item, isActive: nextActive } : item)),
+        );
+        this.adminDetailsProduct.update((item) =>
+          item?.id === product.id ? { ...item, isActive: nextActive } : item,
+        );
+        this.statusUpdatingIds.update((ids) => {
+          const next = new Set(ids);
+          next.delete(product.id);
+          return next;
+        });
+        this.loadAdminAuditLogs(product.id);
+      },
+      error: () => {
+        this.statusUpdatingIds.update((ids) => {
+          const next = new Set(ids);
+          next.delete(product.id);
+          return next;
+        });
+      },
+    });
+  }
+
+  openAdminDetails(product: DistributorProductEntry): void {
+    this.adminDetailsProduct.set(product);
+    this.adminDetailsOpen.set(true);
+    this.adminDetailsError.set(null);
+    this.adminDetailsAttachmentTab.set('IMAGE');
+    this.loadAdminDetailsAttachments(product.id);
+  }
+
+  closeAdminDetails(): void {
+    this.adminDetailsOpen.set(false);
+    this.adminDetailsProduct.set(null);
+    this.adminDetailsAttachments.set([]);
+    this.adminDetailsError.set(null);
+    this.adminDetailsAttachmentTab.set('IMAGE');
+  }
+
+  setAdminDetailsAttachmentTab(tab: TimelineAttachmentMediaType): void {
+    this.adminDetailsAttachmentTab.set(tab);
+  }
+
+  adminDetailsAttachmentCountFor(tab: TimelineAttachmentMediaType): number {
+    return this.adminDetailsAttachments().filter((attachment) => attachment.mediaType === tab).length;
+  }
+
+  adminDetailsAttachmentTabLabel(): string {
+    return (
+      this.attachmentTabOptions.find((tab) => tab.type === this.adminDetailsAttachmentTab())?.label ??
+      'Attachments'
+    );
+  }
+
+  openAdminAttachments(product: DistributorProductEntry, event: Event): void {
+    event.stopPropagation();
+    this.adminAttachmentProduct.set(product);
+    this.adminAttachmentPanelOpen.set(true);
+    this.adminAttachmentError.set(null);
+    this.adminAttachmentTab.set('IMAGE');
+    this.loadAdminAttachments(product.id);
+  }
+
+  closeAdminAttachments(): void {
+    this.adminAttachmentPanelOpen.set(false);
+    this.adminAttachmentProduct.set(null);
+    this.adminAttachments.set([]);
+    this.adminAttachmentError.set(null);
+    this.adminAttachmentTab.set('IMAGE');
+  }
+
+  setAdminAttachmentTab(tab: TimelineAttachmentMediaType): void {
+    this.adminAttachmentTab.set(tab);
+  }
+
+  adminAttachmentCountFor(tab: TimelineAttachmentMediaType): number {
+    return this.adminAttachments().filter((attachment) => attachment.mediaType === tab).length;
+  }
+
+  adminAttachmentTabLabel(): string {
+    return (
+      this.attachmentTabOptions.find((tab) => tab.type === this.adminAttachmentTab())?.label ??
+      'Attachments'
+    );
+  }
+
+  openAdminEdit(product: DistributorProductEntry, event?: Event): void {
+    event?.stopPropagation();
+    this.adminEditingProduct.set(product);
+    this.adminForm.set({
+      brand: product.brand ?? '',
+      designation: product.designation ?? '',
+      description: product.description ?? '',
+      specifications: product.specifications ?? '',
+      rsp: product.rsp != null ? String(product.rsp) : '',
+      stockQuantity: product.stockQuantity != null ? String(product.stockQuantity) : '0',
+    });
+    this.adminActionError.set(null);
+    this.adminEditAttachmentError.set(null);
+    this.adminEditAttachmentTab.set('IMAGE');
+    this.adminEditOpen.set(true);
+    this.loadAdminEditAttachments(product.id);
+    this.loadAdminAuditLogs(product.id);
+  }
+
+  closeAdminEdit(): void {
+    if (this.adminSaving() || this.adminEditAttachmentsUploading()) {
+      return;
+    }
+    this.adminEditOpen.set(false);
+    this.adminEditingProduct.set(null);
+    this.adminForm.set(emptyAdminProductForm());
+    this.adminActionError.set(null);
+    this.adminEditAttachmentError.set(null);
+    this.adminEditAttachments.set([]);
+    this.adminEditAttachmentTab.set('IMAGE');
+    this.adminAuditLogs.set([]);
+    this.adminAuditLogsError.set(null);
+  }
+
+  updateAdminFormField<K extends keyof AdminProductFormState>(
+    field: K,
+    value: AdminProductFormState[K],
+  ): void {
+    this.adminForm.update((form) => ({ ...form, [field]: value }));
+  }
+
+  setAdminEditAttachmentTab(tab: TimelineAttachmentMediaType): void {
+    this.adminEditAttachmentTab.set(tab);
+    this.adminEditAttachmentError.set(null);
+  }
+
+  adminEditAttachmentCountFor(tab: TimelineAttachmentMediaType): number {
+    return this.adminEditAttachments().filter((attachment) => attachment.mediaType === tab).length;
+  }
+
+  adminEditAttachmentTabLabel(): string {
+    return (
+      this.attachmentTabOptions.find((tab) => tab.type === this.adminEditAttachmentTab())?.label ??
+      'Attachments'
+    );
+  }
+
+  saveAdminEdit(): void {
+    const product = this.adminEditingProduct();
+    const form = this.adminForm();
+    const brand = String(form.brand).trim();
+    const designation = String(form.designation).trim();
+    const rsp = this.parseNumber(form.rsp);
+
+    if (!product) {
+      return;
+    }
+    if (!brand || !designation || rsp == null) {
+      this.adminActionError.set('Brand, designation, and RSP are required.');
+      return;
+    }
+
+    const request: UpdateDistributorProductRequest = {
+      brand,
+      designation,
+      description: String(form.description ?? '').trim() || undefined,
+      specifications: String(form.specifications ?? '').trim() || undefined,
+      rsp,
+      stockQuantity: this.parseInteger(form.stockQuantity, 0),
+    };
+
+    this.adminSaving.set(true);
+    this.adminActionError.set(null);
+    this.adminProducts.update(product.id, request).subscribe({
+      next: (updated) => {
+        const attachmentCount = this.adminEditAttachments().length;
+        const merged = { ...updated, attachmentCount };
+        this.updateAdminProduct(merged);
+        this.adminEditOpen.set(false);
+        this.adminEditingProduct.set(null);
+        this.adminEditAttachments.set([]);
+        this.adminSaving.set(false);
+        this.loadBrands();
+        this.loadAdminAuditLogs(product.id);
+      },
+      error: (err) => {
+        this.adminSaving.set(false);
+        this.adminActionError.set(err?.error?.message ?? 'Could not update product. Please try again.');
+      },
+    });
+  }
+
+  onAdminImageSelected(event: Event): void {
+    this.onAdminFilesSelected(event);
+  }
+
+  onAdminVideoSelected(event: Event): void {
+    this.onAdminFilesSelected(event);
+  }
+
+  onAdminDocumentSelected(event: Event): void {
+    this.onAdminFilesSelected(event);
+  }
+
+  deleteAdminEditAttachment(attachment: InquiryTimelineAttachment): void {
+    const product = this.adminEditingProduct();
+    if (!product || this.adminEditAttachmentsUploading()) {
+      return;
+    }
+
+    this.adminEditAttachmentsUploading.set(true);
+    this.adminEditAttachmentError.set(null);
+    this.adminProducts.deleteAttachment(attachment.id).subscribe({
+      next: () => {
+        this.adminEditAttachments.update((items) => items.filter((item) => item.id !== attachment.id));
+        this.updateAdminAttachmentCount(product.id, this.adminEditAttachments().length);
+        this.adminEditAttachmentsUploading.set(false);
+        this.loadAdminAuditLogs(product.id);
+      },
+      error: () => {
+        this.adminEditAttachmentsUploading.set(false);
+        this.adminEditAttachmentError.set('Could not delete attachment.');
+      },
+    });
   }
 
   private loadBrands(): void {
@@ -288,6 +734,10 @@ export class ProductListComponent implements OnInit, OnDestroy {
 
   private syncTabFromRoute(): void {
     const lastSegment = this.route.snapshot.url.at(-1)?.path;
+    if (lastSegment === 'distributors' && this.isAdmin()) {
+      this.activeMainTab.set('distributors');
+      return;
+    }
     if (lastSegment === 'brands') {
       this.activeMainTab.set('brands');
       return;
@@ -295,17 +745,177 @@ export class ProductListComponent implements OnInit, OnDestroy {
     this.activeMainTab.set('products');
   }
 
-  private sortProducts(
-    list: CatalogProduct[],
+  private loadAdminDistributorProducts(): void {
+    if (!this.isAdmin()) {
+      this.adminDistributorProducts.set([]);
+      return;
+    }
+    this.adminProducts.listAll().subscribe({
+      next: (products) => {
+        this.adminDistributorProducts.set(products);
+        const selected = this.selectedDistributorCompany();
+        const stillExists = products.some((product) => product.companyId === selected);
+        if (!stillExists) {
+          this.selectedDistributorCompany.set(null);
+        }
+      },
+      error: () => {
+        this.adminDistributorProducts.set([]);
+      },
+    });
+  }
+
+  private loadAdminAttachments(productId: string): void {
+    this.adminAttachmentsLoading.set(true);
+    this.adminAttachmentError.set(null);
+    this.adminProducts.listAttachments(productId).subscribe({
+      next: (attachments) => {
+        const mapped = attachments.map((attachment) => this.toProductTimelineAttachment(attachment));
+        this.adminAttachments.set(mapped);
+        this.adminAttachmentsLoading.set(false);
+        this.selectInitialAdminAttachmentTab(mapped, this.adminAttachmentTab);
+      },
+      error: () => {
+        this.adminAttachmentsLoading.set(false);
+        this.adminAttachmentError.set('Could not load attachments.');
+      },
+    });
+  }
+
+  private loadAdminEditAttachments(productId: string): void {
+    this.adminEditAttachmentsLoading.set(true);
+    this.adminEditAttachmentError.set(null);
+    this.adminProducts.listAttachments(productId).subscribe({
+      next: (attachments) => {
+        const mapped = attachments.map((attachment) => this.toProductTimelineAttachment(attachment));
+        this.adminEditAttachments.set(mapped);
+        this.adminEditAttachmentsLoading.set(false);
+        this.updateAdminAttachmentCount(productId, mapped.length);
+        this.selectInitialAdminAttachmentTab(mapped, this.adminEditAttachmentTab);
+      },
+      error: () => {
+        this.adminEditAttachmentsLoading.set(false);
+        this.adminEditAttachmentError.set('Could not load attachments.');
+      },
+    });
+  }
+
+  private loadAdminDetailsAttachments(productId: string): void {
+    this.adminDetailsLoading.set(true);
+    this.adminDetailsError.set(null);
+    this.adminProducts.listAttachments(productId).subscribe({
+      next: (attachments) => {
+        const mapped = attachments.map((attachment) => this.toProductTimelineAttachment(attachment));
+        this.adminDetailsAttachments.set(mapped);
+        this.adminDetailsLoading.set(false);
+        this.selectInitialAdminAttachmentTab(mapped, this.adminDetailsAttachmentTab);
+      },
+      error: () => {
+        this.adminDetailsLoading.set(false);
+        this.adminDetailsError.set('Could not load product details.');
+      },
+    });
+  }
+
+  loadAdminAuditLogs(productId: string): void {
+    if (!this.isAdmin()) {
+      this.adminAuditLogs.set([]);
+      return;
+    }
+    this.adminAuditLogsLoading.set(true);
+    this.adminAuditLogsError.set(null);
+    this.adminProducts.listAuditLogs(productId).subscribe({
+      next: (logs) => {
+        this.adminAuditLogs.set(logs);
+        this.adminAuditLogsLoading.set(false);
+      },
+      error: () => {
+        this.adminAuditLogs.set([]);
+        this.adminAuditLogsLoading.set(false);
+        this.adminAuditLogsError.set('Could not load product change logs.');
+      },
+    });
+  }
+
+  private onAdminFilesSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    input.value = '';
+    this.uploadAdminEditFiles(files);
+  }
+
+  private uploadAdminEditFiles(files: File[]): void {
+    const product = this.adminEditingProduct();
+    if (!product || files.length === 0) {
+      return;
+    }
+
+    this.adminEditAttachmentsUploading.set(true);
+    this.adminEditAttachmentError.set(null);
+    this.adminProducts.uploadAttachments(product.id, files).subscribe({
+      next: (uploaded) => {
+        const mapped = uploaded.map((attachment) => this.toProductTimelineAttachment(attachment));
+        this.adminEditAttachments.update((items) => [...items, ...mapped]);
+        this.updateAdminAttachmentCount(product.id, this.adminEditAttachments().length);
+        if (mapped.length > 0) {
+          this.adminEditAttachmentTab.set(mapped[0].mediaType);
+        }
+        this.adminEditAttachmentsUploading.set(false);
+        this.loadAdminAuditLogs(product.id);
+      },
+      error: (err) => {
+        this.adminEditAttachmentsUploading.set(false);
+        this.adminEditAttachmentError.set(err?.error?.message ?? 'Could not upload attachment.');
+      },
+    });
+  }
+
+  private updateAdminProduct(updated: DistributorProductEntry): void {
+    this.adminDistributorProducts.update((list) =>
+      list.map((item) => (item.id === updated.id ? updated : item)),
+    );
+    this.adminDetailsProduct.update((item) => (item?.id === updated.id ? updated : item));
+    this.adminAttachmentProduct.update((item) => (item?.id === updated.id ? updated : item));
+  }
+
+  private updateAdminAttachmentCount(productId: string, count: number): void {
+    this.adminDistributorProducts.update((list) =>
+      list.map((item) => (item.id === productId ? { ...item, attachmentCount: count } : item)),
+    );
+    this.adminEditingProduct.update((item) =>
+      item?.id === productId ? { ...item, attachmentCount: count } : item,
+    );
+    this.adminDetailsProduct.update((item) =>
+      item?.id === productId ? { ...item, attachmentCount: count } : item,
+    );
+    this.adminAttachmentProduct.update((item) =>
+      item?.id === productId ? { ...item, attachmentCount: count } : item,
+    );
+  }
+
+  private sortProducts<T extends SortableProduct>(
+    list: T[],
     column: ProductSortColumn,
     direction: SortDirection,
-  ): CatalogProduct[] {
+  ): T[] {
     const factor = direction === 'asc' ? 1 : -1;
     return [...list].sort((a, b) => this.compareByColumn(a, b, column) * factor);
   }
 
-  private compareByColumn(a: CatalogProduct, b: CatalogProduct, column: ProductSortColumn): number {
+  private compareByColumn(a: SortableProduct, b: SortableProduct, column: ProductSortColumn): number {
     switch (column) {
+      case 'rsp':
+        return ((a as DistributorProductEntry).rsp ?? 0) - ((b as DistributorProductEntry).rsp ?? 0);
+      case 'stockQuantity':
+        return (
+          ((a as DistributorProductEntry).stockQuantity ?? 0) -
+          ((b as DistributorProductEntry).stockQuantity ?? 0)
+        );
+      case 'isActive':
+        return (
+          Number((a as DistributorProductEntry).isActive ?? false) -
+          Number((b as DistributorProductEntry).isActive ?? false)
+        );
       case 'attachmentCount':
         return (a.attachmentCount ?? 0) - (b.attachmentCount ?? 0);
       case 'designation':
@@ -316,6 +926,29 @@ export class ProductListComponent implements OnInit, OnDestroy {
       default:
         return (a.brand ?? '').localeCompare(b.brand ?? '');
     }
+  }
+
+  private selectInitialAdminAttachmentTab(
+    attachments: InquiryTimelineAttachment[],
+    tabSignal: WritableSignal<TimelineAttachmentMediaType>,
+  ): void {
+    const firstWithItems = this.attachmentTabOptions
+      .map((tab) => tab.type)
+      .find((type) => attachments.some((attachment) => attachment.mediaType === type));
+    tabSignal.set(firstWithItems ?? 'IMAGE');
+  }
+
+  private parseNumber(value: string | number | null | undefined): number | undefined {
+    if (value === null || value === undefined || String(value).trim() === '') {
+      return undefined;
+    }
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+
+  private parseInteger(value: string | number | null | undefined, fallback: number): number {
+    const parsed = this.parseNumber(value);
+    return parsed === undefined ? fallback : Math.max(0, Math.trunc(parsed));
   }
 
   private resolveBrandLogoPreviews(): void {

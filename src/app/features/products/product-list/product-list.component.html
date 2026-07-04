@@ -20,6 +20,16 @@
         >
           Brands
         </button>
+        @if (isAdmin()) {
+          <button
+            type="button"
+            class="top-tab"
+            [class.active]="activeMainTab() === 'distributors'"
+            (click)="setMainTab('distributors')"
+          >
+            Distributors
+          </button>
+        }
       </div>
     </div>
     <button type="button" class="btn-secondary" (click)="loadProducts()" [disabled]="loading()">
@@ -27,19 +37,27 @@
     </button>
   </header>
 
-  @if (activeMainTab() === 'products') {
+  @if (activeMainTab() === 'products' || activeMainTab() === 'distributors') {
     <div class="toolbar">
       <div class="search-field">
         <label for="catalog-search">Search</label>
         <input
           id="catalog-search"
           type="search"
-          placeholder="Brand, designation, description…"
+          [placeholder]="
+            activeMainTab() === 'distributors'
+              ? 'Distributor, brand, designation, specs…'
+              : 'Brand, designation, description…'
+          "
           [ngModel]="searchQuery()"
           (ngModelChange)="searchQuery.set($event)"
         />
       </div>
-      <span class="result-count">{{ sortedFilteredProducts().length }} product(s)</span>
+      @if (activeMainTab() === 'distributors') {
+        <span class="result-count">{{ filteredAdminDistributorProducts().length }} distributor product(s)</span>
+      } @else if (!isAdmin()) {
+        <span class="result-count">{{ sortedFilteredProducts().length }} product(s)</span>
+      }
     </div>
   }
 
@@ -56,10 +74,241 @@
           </button>
         }
       </div>
+    } @else if (activeMainTab() === 'products' && isAdmin()) {
+      @if (adminDistributorProducts().length === 0) {
+        <p class="state-message">No distributor products found.</p>
+      } @else if (sortedFilteredAdminDistributorProducts().length === 0) {
+        <p class="state-message">No distributor products match your search.</p>
+      } @else {
+        <div class="table-wrap">
+          <table class="products-table">
+            <thead>
+              <tr>
+                <th class="col-serial">S.No</th>
+                <th class="col-brand sort-col">
+                  <button type="button" class="sort-btn" (click)="toggleSort('brand')">
+                    Brand <span>{{ sortIcon('brand') }}</span>
+                  </button>
+                </th>
+                <th class="col-designation sort-col">
+                  <button type="button" class="sort-btn" (click)="toggleSort('designation')">
+                    Designation <span>{{ sortIcon('designation') }}</span>
+                  </button>
+                </th>
+                <th class="col-description sort-col">
+                  <button type="button" class="sort-btn" (click)="toggleSort('description')">
+                    Description <span>{{ sortIcon('description') }}</span>
+                  </button>
+                </th>
+                <th class="col-rsp sort-col">
+                  <button type="button" class="sort-btn" (click)="toggleSort('rsp')">
+                    RSP <span>{{ sortIcon('rsp') }}</span>
+                  </button>
+                </th>
+                <th class="col-stock sort-col">
+                  <button type="button" class="sort-btn" (click)="toggleSort('stockQuantity')">
+                    Stock <span>{{ sortIcon('stockQuantity') }}</span>
+                  </button>
+                </th>
+                <th class="col-active sort-col">
+                  <button type="button" class="sort-btn" (click)="toggleSort('isActive')">
+                    Active <span>{{ sortIcon('isActive') }}</span>
+                  </button>
+                </th>
+                <th class="col-attachment sort-col">
+                  <button type="button" class="sort-btn" (click)="toggleSort('attachmentCount')">
+                    Attachment <span>{{ sortIcon('attachmentCount') }}</span>
+                  </button>
+                </th>
+                <th class="col-edit">Edit</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (product of sortedFilteredAdminDistributorProducts(); track product.id; let index = $index) {
+                <tr
+                  [class.inactive-row]="product.isActive === false"
+                  class="product-row"
+                  (click)="openAdminDetails(product)"
+                >
+                  <td class="serial-cell">{{ index + 1 }}</td>
+                  <td class="brand-cell" [title]="product.brand">
+                    @let brandLogoUrl = getBrandLogoUrl(product.brand);
+                    <span class="brand-cell-content">
+                      <span class="brand-cell-logo" aria-hidden="true">
+                        @if (brandLogoUrl) {
+                          <img [src]="brandLogoUrl" [alt]="product.brand + ' logo'" />
+                        } @else {
+                          <span>{{ getBrandInitials(product.brand) }}</span>
+                        }
+                      </span>
+                      <span class="brand-cell-name">{{ product.brand }}</span>
+                    </span>
+                  </td>
+                  <td class="designation-cell" [title]="product.designation">{{ product.designation }}</td>
+                  <td class="description-cell" [title]="product.description || ''">
+                    {{ product.description || '—' }}
+                  </td>
+                  <td class="rsp-cell">{{ product.rsp ?? '—' }}</td>
+                  <td class="stock-cell">{{ product.stockQuantity ?? 0 }}</td>
+                  <td class="active-cell">
+                    <label
+                      class="active-toggle"
+                      [attr.aria-label]="product.isActive === false ? 'Activate product' : 'Deactivate product'"
+                    >
+                      <input
+                        type="checkbox"
+                        [checked]="product.isActive !== false"
+                        [disabled]="isTogglingActive(product.id)"
+                        (click)="$event.stopPropagation()"
+                        (change)="onActiveToggle(product)"
+                      />
+                      <span class="active-toggle-slider" aria-hidden="true"></span>
+                    </label>
+                  </td>
+                  <td class="attachment-cell">
+                    <button
+                      type="button"
+                      class="btn-attachment"
+                      (click)="openAdminAttachments(product, $event)"
+                      [attr.aria-label]="'Manage attachments for ' + product.brand + ' ' + product.designation"
+                      title="Attachments"
+                    >
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path
+                          d="M16.5 6v11.5a4 4 0 1 1-8 0V5a2.5 2.5 0 1 1 5 0v10.5a1.5 1.5 0 1 1-3 0V6"
+                        />
+                      </svg>
+                      @if ((product.attachmentCount ?? 0) > 0) {
+                        <span class="attachment-badge">{{ product.attachmentCount }}</span>
+                      }
+                    </button>
+                  </td>
+                  <td class="actions-cell">
+                    <button type="button" class="btn-edit" (click)="openAdminEdit(product, $event)">
+                      Edit
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
     } @else if (activeMainTab() === 'products' && catalogProducts().length === 0) {
       <p class="state-message">No active products in catalog.</p>
     } @else if (activeMainTab() === 'products' && filteredProducts().length === 0) {
       <p class="state-message">No products match your search.</p>
+    } @else if (activeMainTab() === 'distributors') {
+      @if (adminDistributorProducts().length === 0) {
+        <p class="state-message">No distributor products found.</p>
+      } @else {
+        <div class="brands-layout admin-distributor-layout">
+          <aside class="brands-sidebar">
+            <button
+              type="button"
+              class="brand-card"
+              [class.active]="selectedDistributorCompany() === null"
+              (click)="selectDistributorCompany(null)"
+            >
+              <div class="brand-logo" aria-hidden="true">All</div>
+              <div class="brand-meta">
+                <h3>All distributors</h3>
+                <p>{{ adminDistributorProducts().length }} products</p>
+              </div>
+            </button>
+            @for (company of adminDistributorCompanies(); track company.id) {
+              <button
+                type="button"
+                class="brand-card"
+                [class.active]="selectedDistributorCompany() === company.id"
+                (click)="selectDistributorCompany(company.id)"
+              >
+                <div class="brand-logo" aria-hidden="true">
+                  {{ getBrandInitials(company.name) }}
+                </div>
+                <div class="brand-meta">
+                  <h3>{{ company.name }}</h3>
+                  <p>{{ company.count }} products</p>
+                </div>
+              </button>
+            }
+          </aside>
+
+          <div class="brands-products-panel">
+            <h3 class="brand-products-title">
+              {{ selectedDistributorCompany() ? 'Distributor products' : 'All distributor products' }}
+            </h3>
+            <div class="table-wrap admin-distributor-table-wrap">
+              <table class="products-table admin-distributor-table">
+                <thead>
+                  <tr>
+                    <th class="col-serial">S.No</th>
+                    <th>Distributor</th>
+                    <th>Brand</th>
+                    <th>Designation</th>
+                    <th>RSP</th>
+                    <th>Discount</th>
+                    <th>GST</th>
+                    <th>Stock</th>
+                    <th>Lead</th>
+                    <th>MOQ</th>
+                    <th>Valid Till</th>
+                    <th>Status</th>
+                    <th>Images</th>
+                    <th>Created</th>
+                    <th>Updated</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (product of filteredAdminDistributorProducts(); track product.id; let index = $index) {
+                    <tr>
+                      <td class="serial-cell">{{ index + 1 }}</td>
+                      <td>{{ displayValue(product.companyName) }}</td>
+                      <td>{{ displayValue(product.brand) }}</td>
+                      <td>{{ displayValue(product.designation) }}</td>
+                      <td>{{ formatCurrency(product.rsp) }}</td>
+                      <td>{{ formatPercent(product.discountPercentage) }}</td>
+                      <td>{{ formatPercent(product.gstPercentage) }}</td>
+                      <td>{{ product.stockQuantity ?? '—' }}</td>
+                      <td>{{ product.leadTimeDays != null ? product.leadTimeDays + ' days' : '—' }}</td>
+                      <td>{{ product.minOrderQuantity ?? '—' }}</td>
+                      <td>{{ product.priceValidTill ?? '—' }}</td>
+                      <td>
+                        <span class="status-pill" [class.inactive]="product.isActive === false">
+                          {{ product.isActive === false ? 'Inactive' : 'Active' }}
+                        </span>
+                      </td>
+                      <td>{{ product.attachmentCount ?? 0 }}</td>
+                      <td>{{ formatDateTime(product.createdAt) }}</td>
+                      <td>{{ formatDateTime(product.updatedAt) }}</td>
+                      <td>
+                        <button
+                          type="button"
+                          class="btn-status-toggle"
+                          [class.activate]="product.isActive === false"
+                          [disabled]="isStatusUpdating(product.id)"
+                          (click)="toggleAdminProductStatus(product, $event)"
+                        >
+                          {{ product.isActive === false ? 'Activate' : 'Deactivate' }}
+                        </button>
+                      </td>
+                    </tr>
+                    <tr class="admin-detail-row">
+                      <td></td>
+                      <td colspan="15">
+                        <strong>Description:</strong> {{ displayValue(product.description) }}
+                        <span class="admin-detail-separator">|</span>
+                        <strong>Specifications:</strong> {{ displayValue(product.specifications) }}
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      }
     } @else if (activeMainTab() === 'brands') {
       @if (brands().length === 0) {
         <p class="state-message">No brands found in catalog.</p>
@@ -278,6 +527,363 @@
   }
 </section>
 
+@if (adminEditOpen()) {
+  <div class="modal-backdrop" role="presentation" (click)="closeAdminEdit()"></div>
+  <div
+    class="modal-dialog admin-edit-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="admin-product-edit-title"
+    (click)="$event.stopPropagation()"
+  >
+    <header class="modal-header">
+      <h2 id="admin-product-edit-title">Edit product</h2>
+      <button type="button" class="modal-close" aria-label="Close" (click)="closeAdminEdit()">×</button>
+    </header>
+
+    <form class="modal-body" (ngSubmit)="saveAdminEdit()">
+      @if (adminActionError()) {
+        <div class="alert alert-error" role="alert">{{ adminActionError() }}</div>
+      }
+
+      <div class="form-grid">
+        <div class="form-field">
+          <label for="admin-brand">Brand *</label>
+          <input
+            id="admin-brand"
+            name="adminBrand"
+            type="text"
+            [ngModel]="adminForm().brand"
+            (ngModelChange)="updateAdminFormField('brand', $event)"
+          />
+        </div>
+        <div class="form-field">
+          <label for="admin-designation">Designation *</label>
+          <input
+            id="admin-designation"
+            name="adminDesignation"
+            type="text"
+            [ngModel]="adminForm().designation"
+            (ngModelChange)="updateAdminFormField('designation', $event)"
+          />
+        </div>
+        <div class="form-field">
+          <label for="admin-rsp">RSP *</label>
+          <input
+            id="admin-rsp"
+            name="adminRsp"
+            type="number"
+            min="0"
+            step="0.01"
+            [ngModel]="adminForm().rsp"
+            (ngModelChange)="updateAdminFormField('rsp', $event)"
+          />
+        </div>
+        <div class="form-field">
+          <label for="admin-stock">Stock quantity</label>
+          <input
+            id="admin-stock"
+            name="adminStock"
+            type="number"
+            min="0"
+            [ngModel]="adminForm().stockQuantity"
+            (ngModelChange)="updateAdminFormField('stockQuantity', $event)"
+          />
+        </div>
+        <div class="form-field form-field-wide">
+          <label for="admin-description">Description</label>
+          <textarea
+            id="admin-description"
+            name="adminDescription"
+            rows="2"
+            [ngModel]="adminForm().description"
+            (ngModelChange)="updateAdminFormField('description', $event)"
+          ></textarea>
+        </div>
+        <div class="form-field form-field-wide">
+          <label for="admin-specifications">Specifications</label>
+          <textarea
+            id="admin-specifications"
+            name="adminSpecifications"
+            rows="2"
+            [ngModel]="adminForm().specifications"
+            (ngModelChange)="updateAdminFormField('specifications', $event)"
+          ></textarea>
+        </div>
+      </div>
+
+      <section class="form-attachments">
+        <h3>Attachments</h3>
+        <p class="attachment-note">Manage product attachments directly while editing.</p>
+
+        <input
+          #adminImageInput
+          type="file"
+          class="visually-hidden"
+          accept="image/*"
+          multiple
+          (change)="onAdminImageSelected($event)"
+        />
+        <input
+          #adminVideoInput
+          type="file"
+          class="visually-hidden"
+          accept="video/*"
+          multiple
+          (change)="onAdminVideoSelected($event)"
+        />
+        <input
+          #adminDocumentInput
+          type="file"
+          class="visually-hidden"
+          accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.pps,.ppsx,.txt,.csv,.rtf,.odt,.ods"
+          multiple
+          (change)="onAdminDocumentSelected($event)"
+        />
+
+        <nav class="attachment-tabs" aria-label="Attachment types">
+          @for (tab of attachmentTabOptions; track tab.type) {
+            <button
+              type="button"
+              class="attachment-tab"
+              [class.active]="adminEditAttachmentTab() === tab.type"
+              (click)="setAdminEditAttachmentTab(tab.type)"
+            >
+              {{ tab.label }}
+              @if (adminEditAttachmentCountFor(tab.type) > 0) {
+                <span class="tab-count">{{ adminEditAttachmentCountFor(tab.type) }}</span>
+              }
+            </button>
+          }
+        </nav>
+
+        <div class="attachment-tab-panel">
+          <div class="attachment-tab-header">
+            <h3>{{ adminEditAttachmentTabLabel() }}</h3>
+            @switch (adminEditAttachmentTab()) {
+              @case ('IMAGE') {
+                <button
+                  type="button"
+                  class="btn-add-attachment"
+                  (click)="adminImageInput.click()"
+                  [disabled]="adminEditAttachmentsUploading() || adminEditAttachmentsLoading()"
+                >
+                  Add image
+                </button>
+              }
+              @case ('VIDEO') {
+                <button
+                  type="button"
+                  class="btn-add-attachment"
+                  (click)="adminVideoInput.click()"
+                  [disabled]="adminEditAttachmentsUploading() || adminEditAttachmentsLoading()"
+                >
+                  Add video
+                </button>
+              }
+              @case ('DOCUMENT') {
+                <button
+                  type="button"
+                  class="btn-add-attachment"
+                  (click)="adminDocumentInput.click()"
+                  [disabled]="adminEditAttachmentsUploading() || adminEditAttachmentsLoading()"
+                >
+                  Add file
+                </button>
+              }
+              @case ('AUDIO') {
+                <button type="button" class="btn-add-attachment" disabled>Record voice</button>
+              }
+            }
+          </div>
+
+          @if (adminEditAttachmentError()) {
+            <div class="alert alert-error" role="alert">{{ adminEditAttachmentError() }}</div>
+          }
+          @if (adminEditAttachmentsUploading()) {
+            <p class="state-message">Uploading…</p>
+          }
+          @if (adminEditAttachmentsLoading()) {
+            <p class="state-message">Loading attachments…</p>
+          } @else if (adminEditAttachmentsForActiveTab().length === 0) {
+            <p class="state-message attachment-empty">
+              No {{ adminEditAttachmentTabLabel().toLowerCase() }} yet. Use the add button above.
+            </p>
+          } @else {
+            <ul class="attachment-list">
+              @for (attachment of adminEditAttachmentsForActiveTab(); track attachment.id) {
+                <li class="attachment-item attachment-manage-item">
+                  <div class="attachment-preview">
+                    <app-inquiry-chat-attachment
+                      [attachment]="attachment"
+                      [attachmentSource]="'product'"
+                      [previewMode]="'panel'"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    class="btn-attachment-delete"
+                    (click)="deleteAdminEditAttachment(attachment)"
+                    [disabled]="adminEditAttachmentsUploading()"
+                    aria-label="Remove attachment"
+                  >
+                    Remove
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </section>
+
+      <section class="audit-log-panel">
+        <div class="audit-log-header">
+          <h3>Change logs</h3>
+          @if (adminEditingProduct(); as product) {
+            <button type="button" class="btn-audit-refresh" (click)="loadAdminAuditLogs(product.id)">
+              Refresh
+            </button>
+          }
+        </div>
+        @if (adminAuditLogsLoading()) {
+          <p class="state-message">Loading logs…</p>
+        } @else if (adminAuditLogsError()) {
+          <div class="alert alert-error" role="alert">{{ adminAuditLogsError() }}</div>
+        } @else if (adminAuditLogs().length === 0) {
+          <p class="state-message attachment-empty">No change logs yet for this product.</p>
+        } @else {
+          <ul class="audit-log-list">
+            @for (log of adminAuditLogs(); track log.id) {
+              <li class="audit-log-item">
+                <div>
+                  <strong>{{ formatAuditAction(log.action) }}</strong>
+                  <p>{{ log.summary || 'Product changed.' }}</p>
+                </div>
+                <div class="audit-log-meta">
+                  <span>{{ log.actorName }} · {{ log.actorRole }}</span>
+                  <span>{{ log.actorEmail }}</span>
+                  <span>{{ formatDateTime(log.createdAt) }}</span>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+
+      <footer class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="closeAdminEdit()" [disabled]="adminSaving()">
+          Cancel
+        </button>
+        <button type="submit" class="btn-primary" [disabled]="adminSaving()">
+          {{ adminSaving() ? 'Saving…' : 'Save changes' }}
+        </button>
+      </footer>
+    </form>
+  </div>
+}
+
+@if (adminDetailsOpen()) {
+  <div class="modal-backdrop" role="presentation" (click)="closeAdminDetails()"></div>
+  <div
+    class="modal-dialog details-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="admin-product-details-title"
+    (click)="$event.stopPropagation()"
+  >
+    <header class="modal-header">
+      <div class="modal-header-main">
+        @if (adminDetailsProduct(); as product) {
+          @let brandLogoUrl = getBrandLogoUrl(product.brand);
+          <span class="modal-brand-logo" aria-hidden="true">
+            @if (brandLogoUrl) {
+              <img [src]="brandLogoUrl" [alt]="product.brand + ' logo'" />
+            } @else {
+              <span>{{ getBrandInitials(product.brand) }}</span>
+            }
+          </span>
+          <div class="modal-header-text">
+            <h2 id="admin-product-details-title">Product details</h2>
+            <p class="attachment-subtitle">{{ product.brand }} · {{ product.designation }}</p>
+          </div>
+        } @else {
+          <h2 id="admin-product-details-title">Product details</h2>
+        }
+      </div>
+      <button type="button" class="modal-close" aria-label="Close" (click)="closeAdminDetails()">×</button>
+    </header>
+
+    <div class="modal-body attachment-body">
+      @if (adminDetailsProduct(); as product) {
+        <div class="details-list">
+          <div class="details-row">
+            <span class="details-label">Brand</span>
+            <span class="details-value">{{ product.brand }}</span>
+          </div>
+          <div class="details-row">
+            <span class="details-label">Designation</span>
+            <span class="details-value">{{ product.designation }}</span>
+          </div>
+          <div class="details-row">
+            <span class="details-label">RSP</span>
+            <span class="details-value">{{ product.rsp ?? '—' }}</span>
+          </div>
+          <div class="details-row">
+            <span class="details-label">Stock</span>
+            <span class="details-value">{{ product.stockQuantity ?? 0 }}</span>
+          </div>
+          <div class="details-row">
+            <span class="details-label">Description</span>
+            <span class="details-value">{{ product.description || '—' }}</span>
+          </div>
+          <div class="details-row">
+            <span class="details-label">Specifications</span>
+            <span class="details-value">{{ product.specifications || '—' }}</span>
+          </div>
+        </div>
+      }
+
+      <nav class="attachment-tabs" aria-label="Detail attachment types">
+        @for (tab of attachmentTabOptions; track tab.type) {
+          <button
+            type="button"
+            class="attachment-tab"
+            [class.active]="adminDetailsAttachmentTab() === tab.type"
+            (click)="setAdminDetailsAttachmentTab(tab.type)"
+          >
+            {{ tab.label }}
+            @if (adminDetailsAttachmentCountFor(tab.type) > 0) {
+              <span class="tab-count">{{ adminDetailsAttachmentCountFor(tab.type) }}</span>
+            }
+          </button>
+        }
+      </nav>
+
+      @if (adminDetailsLoading()) {
+        <p class="state-message">Loading product details…</p>
+      } @else if (adminDetailsError()) {
+        <div class="alert-error" role="alert">{{ adminDetailsError() }}</div>
+      } @else if (adminDetailsAttachmentsForActiveTab().length === 0) {
+        <p class="state-message attachment-empty">
+          No {{ adminDetailsAttachmentTabLabel().toLowerCase() }} found for this product.
+        </p>
+      } @else {
+        <ul class="attachment-list">
+          @for (attachment of adminDetailsAttachmentsForActiveTab(); track attachment.id) {
+            <li class="attachment-item">
+              <app-inquiry-chat-attachment
+                [attachment]="attachment"
+                [attachmentSource]="'product'"
+                [previewMode]="'panel'"
+              />
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  </div>
+}
+
 @if (selectedProduct(); as product) {
   <div class="modal-backdrop" role="presentation" (click)="closeDetail()"></div>
   <div
@@ -318,6 +924,73 @@
       }
       <button type="button" class="btn-secondary" (click)="closeDetail()">Close</button>
     </footer>
+  </div>
+}
+
+@if (adminAttachmentPanelOpen()) {
+  <div class="modal-backdrop" role="presentation" (click)="closeAdminAttachments()"></div>
+  <div
+    class="modal-dialog attachment-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="admin-product-attachment-title"
+    (click)="$event.stopPropagation()"
+  >
+    <header class="modal-header">
+      <div>
+        <h2 id="admin-product-attachment-title">Attachments</h2>
+        @if (adminAttachmentProduct(); as product) {
+          <p class="attachment-subtitle">{{ product.brand }} · {{ product.designation }}</p>
+        }
+      </div>
+      <button type="button" class="modal-close" aria-label="Close" (click)="closeAdminAttachments()">×</button>
+    </header>
+
+    <div class="modal-body attachment-body">
+      @if (adminAttachmentError()) {
+        <div class="alert alert-error" role="alert">{{ adminAttachmentError() }}</div>
+      }
+
+      <nav class="attachment-tabs" aria-label="Attachment types">
+        @for (tab of attachmentTabOptions; track tab.type) {
+          <button
+            type="button"
+            class="attachment-tab"
+            [class.active]="adminAttachmentTab() === tab.type"
+            (click)="setAdminAttachmentTab(tab.type)"
+          >
+            {{ tab.label }}
+            @if (adminAttachmentCountFor(tab.type) > 0) {
+              <span class="tab-count">{{ adminAttachmentCountFor(tab.type) }}</span>
+            }
+          </button>
+        }
+      </nav>
+
+      <div class="attachment-tab-panel">
+        <h3 class="attachment-tab-heading">{{ adminAttachmentTabLabel() }}</h3>
+
+        @if (adminAttachmentsLoading()) {
+          <p class="state-message">Loading attachments…</p>
+        } @else if (adminAttachmentsForActiveTab().length === 0) {
+          <p class="state-message attachment-empty">
+            No {{ adminAttachmentTabLabel().toLowerCase() }} for this product.
+          </p>
+        } @else {
+          <ul class="attachment-list">
+            @for (attachment of adminAttachmentsForActiveTab(); track attachment.id) {
+              <li class="attachment-item">
+                <app-inquiry-chat-attachment
+                  [attachment]="attachment"
+                  [attachmentSource]="'product'"
+                  [previewMode]="'panel'"
+                />
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    </div>
   </div>
 }
 

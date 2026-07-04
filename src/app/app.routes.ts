@@ -66,6 +66,14 @@ export const routes: Routes = [
         canActivate: [roleGuard(['ADMIN', 'CONSUMER'])],
       },
       {
+        path: 'products/distributors',
+        loadComponent: () =>
+          import('./features/products/product-list/product-list.component').then(
+            (m) => m.ProductListComponent,
+          ),
+        canActivate: [roleGuard(['ADMIN'])],
+      },
+      {
         path: 'distributor/tracking',
         loadComponent: () =>
           import(
