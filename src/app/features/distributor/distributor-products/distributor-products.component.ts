@@ -432,8 +432,9 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
         });
       }),
     ).subscribe({
-      next: () => {
-        this.loadBrands();
+      next: (brand) => {
+        this.brandLogoTarget.set(null);
+        this.applyUploadedBrandLogo({ ...brand, brandName: brand.brandName || brandName }, file);
       },
       error: () => {
         this.actionError.set('Could not update brand logo.');
@@ -459,7 +460,8 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
     if (!name) {
       return null;
     }
-    return this.brands().find((brand) => brand.brandName === name)?.logoUrl ?? null;
+    const key = this.normalizeBrandName(name);
+    return this.brands().find((brand) => this.normalizeBrandName(brand.brandName) === key)?.logoUrl ?? null;
   }
 
 
@@ -1697,7 +1699,7 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
 
   private resolveBrandLogoPreviews(): void {
     this.brands().forEach((brand) => {
-      if (!brand.logoUrl) {
+      if (!brand.logoUrl || brand.logoUrl.startsWith('blob:')) {
         return;
       }
 
@@ -1705,14 +1707,48 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
         next: (blob) => {
           const objectUrl = URL.createObjectURL(blob);
           this.brandLogoObjectUrls.add(objectUrl);
-          this.brands.update((items) =>
-            items.map((item) =>
-              item.brandName === brand.brandName ? { ...item, logoUrl: objectUrl } : item,
-            ),
-          );
+          this.updateBrandLogoPreview(brand.brandName, objectUrl);
         },
       });
     });
+  }
+
+  private applyUploadedBrandLogo(brand: DistributorBrand, previewFile?: File): void {
+    if (!brand.brandName) {
+      return;
+    }
+    if (previewFile) {
+      const objectUrl = URL.createObjectURL(previewFile);
+      this.brandLogoObjectUrls.add(objectUrl);
+      this.updateBrandLogoPreview(brand.brandName, objectUrl);
+      return;
+    }
+    if (!brand.logoUrl) {
+      return;
+    }
+    this.productService.fetchBrandLogoBlob(brand.logoUrl).subscribe({
+      next: (blob) => {
+        const objectUrl = URL.createObjectURL(blob);
+        this.brandLogoObjectUrls.add(objectUrl);
+        this.updateBrandLogoPreview(brand.brandName, objectUrl);
+      },
+      error: () => {
+        this.updateBrandLogoPreview(brand.brandName, brand.logoUrl ?? null);
+      },
+    });
+  }
+
+  private updateBrandLogoPreview(brandName: string, logoUrl: string | null): void {
+    const key = this.normalizeBrandName(brandName);
+    this.brands.update((items) =>
+      items.map((item) =>
+        this.normalizeBrandName(item.brandName) === key ? { ...item, logoUrl } : item,
+      ),
+    );
+  }
+
+  private normalizeBrandName(brandName: string | null | undefined): string {
+    return this.toTrimmedString(brandName).toLowerCase();
   }
 
   private clearBrandLogoObjectUrls(): void {

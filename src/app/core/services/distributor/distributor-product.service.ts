@@ -62,11 +62,11 @@ export class DistributorProductService {
 
   fetchAttachmentBlob(relativeUrl: string): Observable<Blob> {
     const path = relativeUrl.startsWith('/') ? relativeUrl.slice(1) : relativeUrl;
-    return this.http.get(`${environment.apiUrl}/${path}`, { responseType: 'blob' });
+    return this.http.get(this.withCacheBust(`${environment.apiUrl}/${path}`), { responseType: 'blob' });
   }
 
   fetchBrandLogoBlob(url: string): Observable<Blob> {
-    return this.http.get(url, { responseType: 'blob' });
+    return this.http.get(this.withCacheBust(url), { responseType: 'blob' });
   }
 
   uploadBrandLogo(brandName: string, file: File): Observable<DistributorBrand> {
@@ -86,5 +86,12 @@ export class DistributorProductService {
       ? brand.logoUrl
       : `${environment.apiUrl}${brand.logoUrl.startsWith('/') ? '' : '/'}${brand.logoUrl}`;
     return { ...brand, logoUrl };
+  }
+
+  private withCacheBust(url: string): string {
+    if (url.startsWith('blob:')) {
+      return url;
+    }
+    return `${url}${url.includes('?') ? '&' : '?'}v=${Date.now()}`;
   }
 }
