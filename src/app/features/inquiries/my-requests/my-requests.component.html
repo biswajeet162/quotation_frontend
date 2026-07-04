@@ -2,7 +2,17 @@
   <section class="page-card form-section">
     <header class="page-header">
       <h1>Create quotation</h1>
-      <button type="button" class="btn-clear" (click)="requestPanel.clearForm()">Clear form</button>
+      <div class="header-actions">
+        <button type="button" class="btn-clear" (click)="clearForm()">Clear form</button>
+        <button
+          type="button"
+          class="btn-preview-header"
+          (click)="openPreview()"
+          [disabled]="!canPreview()"
+        >
+          Preview
+        </button>
+      </div>
     </header>
 
     <app-product-request-panel #requestPanel (submitted)="onSubmitted()" />

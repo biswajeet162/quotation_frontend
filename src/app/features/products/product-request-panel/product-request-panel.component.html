@@ -112,20 +112,13 @@
               </td>
             </tr>
           }
+          <tr class="add-line-row">
+            <td colspan="7">
+              <button type="button" class="btn-add-line" (click)="addRow()">Add more lines</button>
+            </td>
+          </tr>
         </tbody>
       </table>
-    </div>
-
-    <div class="lines-table-footer">
-      <button type="button" class="btn-add-line" (click)="addRow()">Add more lines</button>
-      <button
-        type="button"
-        class="btn-preview-lines"
-        (click)="openPreview()"
-        [disabled]="previewRows().length === 0"
-      >
-        Preview
-      </button>
     </div>
 
     @if (submitError()) {

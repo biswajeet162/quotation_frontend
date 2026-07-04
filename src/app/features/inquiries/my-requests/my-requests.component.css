@@ -1,6 +1,14 @@
+:host {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
 .queries-page {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
   gap: 1.25rem;
 }
 
@@ -9,6 +17,19 @@
   border-radius: 12px;
   padding: 1.5rem;
   border: 1px solid #e2e8f0;
+  min-height: 0;
+}
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.form-section app-product-request-panel {
+  flex: 1;
+  min-height: 0;
 }
 
 .page-header {
@@ -24,7 +45,15 @@
   font-size: 1.5rem;
 }
 
-.page-header .btn-clear {
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-shrink: 0;
+}
+
+.page-header .btn-clear,
+.page-header .btn-preview-header {
   padding: 0.45rem 1rem;
   border-radius: 8px;
   font-size: 0.8125rem;
@@ -45,4 +74,21 @@
   background: #f8fafc;
   border-color: #94a3b8;
   color: #0f172a;
+}
+
+.page-header .btn-preview-header {
+  border: 1px solid #0f766e;
+  background: #fff;
+  color: #0f766e;
+}
+
+.page-header .btn-preview-header:hover:not(:disabled) {
+  background: #f0fdfa;
+  border-color: #0d9488;
+  color: #0d9488;
+}
+
+.page-header .btn-preview-header:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
