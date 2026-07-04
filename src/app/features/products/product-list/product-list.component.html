@@ -313,6 +313,13 @@
       @if (brands().length === 0) {
         <p class="state-message">No brands found in catalog.</p>
       } @else {
+        <input
+          #adminBrandLogoInput
+          type="file"
+          class="visually-hidden"
+          accept="image/*"
+          (change)="onAdminBrandLogoSelected($event)"
+        />
         <div class="brands-layout">
           <aside class="brands-sidebar">
             @for (brand of brands(); track brand.brandName) {
@@ -322,11 +329,25 @@
                 [class.active]="selectedBrand() === brand.brandName"
                 (click)="selectBrand(brand.brandName)"
               >
-                <div class="brand-logo">
-                  @if (brand.logoUrl) {
-                    <img [src]="brand.logoUrl" [alt]="brand.brandName + ' logo'" />
-                  } @else {
-                    <span>{{ getBrandInitials(brand.brandName) }}</span>
+                <div class="brand-logo-wrap">
+                  <div class="brand-logo">
+                    @if (brand.logoUrl) {
+                      <img [src]="brand.logoUrl" [alt]="brand.brandName + ' logo'" />
+                    } @else {
+                      <span>{{ getBrandInitials(brand.brandName) }}</span>
+                    }
+                  </div>
+                  @if (isAdmin()) {
+                    <button
+                      type="button"
+                      class="brand-logo-edit"
+                      [disabled]="isBrandLogoUploading(brand.brandName)"
+                      (click)="$event.stopPropagation(); prepareBrandLogoUpload(brand.brandName); adminBrandLogoInput.click()"
+                      aria-label="Update brand logo"
+                      title="Update brand logo"
+                    >
+                      {{ isBrandLogoUploading(brand.brandName) ? '...' : '✎' }}
+                    </button>
                   }
                 </div>
                 <div class="brand-meta">
@@ -338,7 +359,126 @@
           </aside>
 
           <div class="brands-products-panel">
-            @if (selectedBrandProducts().length > 0) {
+            @if (isAdmin()) {
+              @if (selectedAdminBrandProducts().length > 0) {
+                <h3 class="brand-products-title">{{ selectedBrand() }} products</h3>
+                <div class="table-wrap">
+                  <table class="products-table">
+                    <thead>
+                      <tr>
+                        <th class="col-serial">S.No</th>
+                        <th class="col-brand sort-col">
+                          <button type="button" class="sort-btn" (click)="toggleSort('brand')">
+                            Brand <span>{{ sortIcon('brand') }}</span>
+                          </button>
+                        </th>
+                        <th class="col-designation sort-col">
+                          <button type="button" class="sort-btn" (click)="toggleSort('designation')">
+                            Designation <span>{{ sortIcon('designation') }}</span>
+                          </button>
+                        </th>
+                        <th class="col-description sort-col">
+                          <button type="button" class="sort-btn" (click)="toggleSort('description')">
+                            Description <span>{{ sortIcon('description') }}</span>
+                          </button>
+                        </th>
+                        <th class="col-rsp sort-col">
+                          <button type="button" class="sort-btn" (click)="toggleSort('rsp')">
+                            RSP <span>{{ sortIcon('rsp') }}</span>
+                          </button>
+                        </th>
+                        <th class="col-stock sort-col">
+                          <button type="button" class="sort-btn" (click)="toggleSort('stockQuantity')">
+                            Stock <span>{{ sortIcon('stockQuantity') }}</span>
+                          </button>
+                        </th>
+                        <th class="col-active sort-col">
+                          <button type="button" class="sort-btn" (click)="toggleSort('isActive')">
+                            Active <span>{{ sortIcon('isActive') }}</span>
+                          </button>
+                        </th>
+                        <th class="col-attachment sort-col">
+                          <button type="button" class="sort-btn" (click)="toggleSort('attachmentCount')">
+                            Attachment <span>{{ sortIcon('attachmentCount') }}</span>
+                          </button>
+                        </th>
+                        <th class="col-edit">Edit</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (product of selectedAdminBrandProducts(); track product.id; let index = $index) {
+                        <tr
+                          [class.inactive-row]="product.isActive === false"
+                          class="product-row"
+                          (click)="openAdminDetails(product)"
+                        >
+                          <td class="serial-cell">{{ index + 1 }}</td>
+                          <td class="brand-cell" [title]="product.brand">
+                            @let brandLogoUrl = getBrandLogoUrl(product.brand);
+                            <span class="brand-cell-content">
+                              <span class="brand-cell-logo" aria-hidden="true">
+                                @if (brandLogoUrl) {
+                                  <img [src]="brandLogoUrl" [alt]="product.brand + ' logo'" />
+                                } @else {
+                                  <span>{{ getBrandInitials(product.brand) }}</span>
+                                }
+                              </span>
+                              <span class="brand-cell-name">{{ product.brand }}</span>
+                            </span>
+                          </td>
+                          <td class="designation-cell" [title]="product.designation">{{ product.designation }}</td>
+                          <td class="description-cell" [title]="product.description || ''">
+                            {{ product.description || '—' }}
+                          </td>
+                          <td class="rsp-cell">{{ product.rsp ?? '—' }}</td>
+                          <td class="stock-cell">{{ product.stockQuantity ?? 0 }}</td>
+                          <td class="active-cell">
+                            <label
+                              class="active-toggle"
+                              [attr.aria-label]="product.isActive === false ? 'Activate product' : 'Deactivate product'"
+                            >
+                              <input
+                                type="checkbox"
+                                [checked]="product.isActive !== false"
+                                [disabled]="isTogglingActive(product.id)"
+                                (click)="$event.stopPropagation()"
+                                (change)="onActiveToggle(product)"
+                              />
+                              <span class="active-toggle-slider" aria-hidden="true"></span>
+                            </label>
+                          </td>
+                          <td class="attachment-cell">
+                            <button
+                              type="button"
+                              class="btn-attachment"
+                              (click)="openAdminAttachments(product, $event)"
+                              [attr.aria-label]="'Manage attachments for ' + product.brand + ' ' + product.designation"
+                              title="Attachments"
+                            >
+                              <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path
+                                  d="M16.5 6v11.5a4 4 0 1 1-8 0V5a2.5 2.5 0 1 1 5 0v10.5a1.5 1.5 0 1 1-3 0V6"
+                                />
+                              </svg>
+                              @if ((product.attachmentCount ?? 0) > 0) {
+                                <span class="attachment-badge">{{ product.attachmentCount }}</span>
+                              }
+                            </button>
+                          </td>
+                          <td class="actions-cell">
+                            <button type="button" class="btn-edit" (click)="openAdminEdit(product, $event)">
+                              Edit
+                            </button>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              } @else {
+                <p class="state-message">No products for selected brand.</p>
+              }
+            } @else if (selectedBrandProducts().length > 0) {
               <h3 class="brand-products-title">{{ selectedBrand() }} products</h3>
               <div class="table-wrap">
                 <table class="products-table">

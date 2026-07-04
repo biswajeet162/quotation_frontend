@@ -26,6 +26,7 @@ import { InquiryCartService } from '../../../core/services/inquiry/inquiry-cart.
 import { ProductQueryFormService } from '../../../core/services/product/product-query-form.service';
 import { AdminDistributorProductService } from '../../../core/services/admin/admin-distributor-product.service';
 import {
+  DistributorBrand,
   DistributorProductAttachment,
   DistributorProductAuditLog,
   DistributorProductEntry,
@@ -96,6 +97,8 @@ export class ProductListComponent implements OnInit, OnDestroy {
   readonly selectedBrand = signal<string | null>(null);
   readonly selectedDistributorCompany = signal<string | null>(null);
   readonly brands = signal<BrandSummary[]>([]);
+  readonly brandLogoUploading = signal<ReadonlySet<string>>(new Set());
+  readonly brandLogoTarget = signal<string | null>(null);
   readonly sortColumn = signal<ProductSortColumn>('brand');
   readonly sortDirection = signal<SortDirection>('asc');
 
@@ -188,6 +191,17 @@ export class ProductListComponent implements OnInit, OnDestroy {
       return [] as CatalogProduct[];
     }
     const list = this.catalogProducts().filter((product) => (product.brand ?? '').trim() === brand);
+    return this.sortProducts(list, this.sortColumn(), this.sortDirection());
+  });
+
+  readonly selectedAdminBrandProducts = computed(() => {
+    const brand = this.selectedBrand();
+    if (!brand) {
+      return [] as DistributorProductEntry[];
+    }
+    const list = this.adminDistributorProducts().filter(
+      (product) => (product.brand ?? '').trim() === brand,
+    );
     return this.sortProducts(list, this.sortColumn(), this.sortDirection());
   });
 
@@ -317,6 +331,50 @@ export class ProductListComponent implements OnInit, OnDestroy {
 
   selectBrand(brandName: string): void {
     this.selectedBrand.set(brandName);
+  }
+
+  isBrandLogoUploading(brandName: string): boolean {
+    return this.brandLogoUploading().has(brandName);
+  }
+
+  prepareBrandLogoUpload(brandName: string): void {
+    this.brandLogoTarget.set(brandName);
+  }
+
+  onAdminBrandLogoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    const brandName = this.brandLogoTarget();
+    input.value = '';
+
+    if (!brandName || !file || !this.isAdmin()) {
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      this.errorMessage.set('Please select an image file for brand logo.');
+      return;
+    }
+
+    this.errorMessage.set(null);
+    this.brandLogoUploading.update((items) => new Set(items).add(brandName));
+    this.adminProducts.uploadBrandLogo(brandName, file).subscribe({
+      next: (brand) => {
+        this.brandLogoUploading.update((items) => {
+          const next = new Set(items);
+          next.delete(brandName);
+          return next;
+        });
+        this.applyUploadedBrandLogo(brand);
+      },
+      error: (err) => {
+        this.brandLogoUploading.update((items) => {
+          const next = new Set(items);
+          next.delete(brandName);
+          return next;
+        });
+        this.errorMessage.set(err?.error?.message ?? 'Could not update brand logo.');
+      },
+    });
   }
 
   selectDistributorCompany(companyId: string | null): void {
@@ -962,6 +1020,30 @@ export class ProductListComponent implements OnInit, OnDestroy {
     this.adminAttachmentProduct.update((item) =>
       item?.id === productId ? { ...item, attachmentCount: count } : item,
     );
+  }
+
+  private applyUploadedBrandLogo(brand: DistributorBrand): void {
+    if (!brand.logoUrl) {
+      return;
+    }
+    this.catalogService.fetchBrandLogoBlob(brand.logoUrl).subscribe({
+      next: (blob) => {
+        const objectUrl = URL.createObjectURL(blob);
+        this.brandLogoObjectUrls.add(objectUrl);
+        this.brands.update((items) =>
+          items.map((item) =>
+            item.brandName === brand.brandName ? { ...item, logoUrl: objectUrl } : item,
+          ),
+        );
+      },
+      error: () => {
+        this.brands.update((items) =>
+          items.map((item) =>
+            item.brandName === brand.brandName ? { ...item, logoUrl: brand.logoUrl ?? null } : item,
+          ),
+        );
+      },
+    });
   }
 
   private sortProducts<T extends SortableProduct>(

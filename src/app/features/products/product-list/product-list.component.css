@@ -161,10 +161,39 @@
   flex-shrink: 0;
 }
 
+.brand-logo-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
 .brand-logo img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.brand-logo-edit {
+  position: absolute;
+  right: -0.2rem;
+  bottom: -0.2rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 999px;
+  border: 1px solid #0f766e;
+  background: #fff;
+  color: #0f766e;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.brand-logo-edit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .brand-meta h3 {
