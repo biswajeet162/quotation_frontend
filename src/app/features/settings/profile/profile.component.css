@@ -1,18 +1,26 @@
+:host {
+  display: block;
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
 .profile-page {
   display: flex;
   flex-direction: column;
   gap: 1rem;
   width: 100%;
-  min-height: 100%;
   box-sizing: border-box;
+  padding-bottom: 0.5in;
 }
 
 .profile-form {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  flex: 1;
-  min-height: 0;
 }
 
 .page-header {
@@ -133,7 +141,6 @@
 }
 
 .profile-panel {
-  flex: 1;
   background: #fff;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
