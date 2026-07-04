@@ -15,6 +15,7 @@
 
       @if (companyProfile(); as profile) {
         <form class="profile-form" (ngSubmit)="saveProfile()">
+          @if (!isAdmin()) {
           <section class="company-banner" aria-labelledby="company-banner-title">
             <div class="logo-panel">
               <input
@@ -55,10 +56,21 @@
               </p>
             </div>
           </section>
+          } @else {
+          <section class="company-banner company-banner-admin" aria-labelledby="company-banner-title">
+            <div class="company-identity">
+              <p class="page-eyebrow">Portal company</p>
+              <h1 id="company-banner-title">{{ form().companyName || profile.companyName }}</h1>
+              <p class="company-meta">
+                Signed in as <strong>{{ profile.userName }}</strong> · {{ profile.email }}
+              </p>
+            </div>
+          </section>
+          }
 
           <section class="profile-panel" aria-labelledby="company-details-title">
             <div class="panel-head panel-head-row">
-              <h2 id="company-details-title">Company details</h2>
+              <h2 id="company-details-title">{{ isAdmin() ? 'Portal company details' : 'Company details' }}</h2>
               @if (!editDetailsMode()) {
                 <button
                   type="button"
@@ -117,7 +129,7 @@
                     }
                   </dd>
                 </div>
-                @if (isConsumer()) {
+                @if (showExtendedCompanyFields()) {
                   <div class="info-item">
                     <dt>PAN number</dt>
                     <dd>
@@ -220,7 +232,7 @@
                     }
                   </dd>
                 </div>
-                @if (isConsumer()) {
+                @if (showExtendedCompanyFields()) {
                   <div class="info-item">
                     <dt>PIN code</dt>
                     <dd>

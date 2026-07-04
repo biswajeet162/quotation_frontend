@@ -2,11 +2,13 @@ import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angula
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Observable, switchMap } from 'rxjs';
+import { AdminPortalProfile, UpdateAdminPortalProfileRequest } from '../../../core/models/admin-portal-profile.model';
 import { ConsumerProfile, UpdateConsumerProfileRequest } from '../../../core/models/consumer.model';
 import {
   DistributorProfile,
   UpdateDistributorProfileRequest,
 } from '../../../core/models/distributor.model';
+import { AdminPortalProfileService } from '../../../core/services/admin/admin-portal-profile.service';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { ConsumerDashboardService } from '../../../core/services/consumer/consumer-dashboard.service';
 import { DistributorDashboardService } from '../../../core/services/distributor/distributor-dashboard.service';
@@ -31,7 +33,7 @@ interface ProfileFormState {
   pinCode: string;
 }
 
-type CompanyProfile = DistributorProfile | ConsumerProfile;
+type CompanyProfile = DistributorProfile | ConsumerProfile | AdminPortalProfile;
 
 const emptyForm = (): ProfileFormState => ({
   companyName: '',
@@ -55,6 +57,7 @@ const emptyForm = (): ProfileFormState => ({
 export class ProfileComponent implements OnInit {
   private readonly distributorDashboardService = inject(DistributorDashboardService);
   private readonly consumerDashboardService = inject(ConsumerDashboardService);
+  private readonly adminPortalProfileService = inject(AdminPortalProfileService);
   private readonly destroyRef = inject(DestroyRef);
   protected readonly auth = inject(AuthService);
 
@@ -69,7 +72,8 @@ export class ProfileComponent implements OnInit {
 
   readonly isDistributor = computed(() => this.auth.currentUser()?.role === 'DISTRIBUTOR');
   readonly isConsumer = computed(() => this.auth.currentUser()?.role === 'CONSUMER');
-  readonly hasCompanyProfile = computed(() => this.isDistributor() || this.isConsumer());
+  readonly isAdmin = computed(() => this.auth.currentUser()?.role === 'ADMIN');
+  readonly hasCompanyProfile = computed(() => this.isDistributor() || this.isConsumer() || this.isAdmin());
   readonly isBusy = computed(() => this.loading() || this.saving());
 
   private serverLogoObjectUrl: string | null = null;
@@ -98,6 +102,20 @@ export class ProfileComponent implements OnInit {
         error: () => {
           this.loading.set(false);
           this.errorMessage.set('Could not load your profile details.');
+        },
+      });
+      return;
+    }
+
+    if (this.isAdmin()) {
+      this.adminPortalProfileService.getProfile().subscribe({
+        next: (profile) => {
+          this.applyProfile(profile);
+          this.loading.set(false);
+        },
+        error: () => {
+          this.loading.set(false);
+          this.errorMessage.set('Could not load portal company details.');
         },
       });
       return;
@@ -189,6 +207,14 @@ export class ProfileComponent implements OnInit {
       return;
     }
 
+    if (this.isAdmin()) {
+      this.saveAdminProfile(form).subscribe({
+        next: (updated) => this.onProfileSaved(updated),
+        error: (error: unknown) => this.onProfileSaveError(error),
+      });
+      return;
+    }
+
     this.saveDistributorProfile(form).subscribe({
       next: (updated) => this.onProfileSaved(updated),
       error: (error: unknown) => this.onProfileSaveError(error),
@@ -273,6 +299,10 @@ export class ProfileComponent implements OnInit {
     return 'pinCode' in profile ? profile.pinCode : undefined;
   }
 
+  showExtendedCompanyFields(): boolean {
+    return this.isConsumer() || this.isAdmin();
+  }
+
   private saveConsumerProfile(form: ProfileFormState): Observable<ConsumerProfile> {
     const request: UpdateConsumerProfileRequest = {
       companyName: form.companyName.trim(),
@@ -290,6 +320,25 @@ export class ProfileComponent implements OnInit {
     return this.consumerDashboardService
       .updateProfile(request)
       .pipe(switchMap(() => this.consumerDashboardService.getProfile()));
+  }
+
+  private saveAdminProfile(form: ProfileFormState): Observable<AdminPortalProfile> {
+    const request: UpdateAdminPortalProfileRequest = {
+      companyName: form.companyName.trim(),
+      companyEmail: form.companyEmail.trim(),
+      companyPhone: form.companyPhone.trim(),
+      gstNumber: form.gstNumber.trim() || undefined,
+      panNumber: form.panNumber.trim() || undefined,
+      address: form.address.trim() || undefined,
+      city: form.city.trim() || undefined,
+      state: form.state.trim() || undefined,
+      country: form.country.trim() || undefined,
+      pinCode: form.pinCode.trim() || undefined,
+    };
+
+    return this.adminPortalProfileService
+      .updateProfile(request)
+      .pipe(switchMap(() => this.adminPortalProfileService.getProfile()));
   }
 
   private saveDistributorProfile(form: ProfileFormState): Observable<DistributorProfile> {
