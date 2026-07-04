@@ -17,3 +17,7 @@
     <router-outlet />
   </main>
 </div>
+
+@if (showCompanySetup()) {
+  <app-company-setup-modal (completed)="onCompanySetupCompleted()" />
+}

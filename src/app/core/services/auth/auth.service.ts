@@ -57,6 +57,9 @@ export class AuthService {
   }
 
   applyAuthResponse(response: AuthResponse): void {
+    if (!response.token?.trim()) {
+      return;
+    }
     this.persistSession(response);
   }
 
@@ -72,7 +75,11 @@ export class AuthService {
   }
 
   getToken(): string | null {
-    return localStorage.getItem(STORAGE_KEYS.token);
+    const token = localStorage.getItem(STORAGE_KEYS.token);
+    if (!token || token === 'undefined' || token === 'null') {
+      return null;
+    }
+    return token;
   }
 
   updateStoredCompanyName(companyName: string): void {
@@ -87,7 +94,7 @@ export class AuthService {
   }
 
   isAuthenticated(): boolean {
-    return !!this.getToken();
+    return !!this.getToken() && !!this.currentUserSignal();
   }
 
   private persistSession(response: AuthResponse): void {
@@ -95,13 +102,28 @@ export class AuthService {
       userId: response.userId,
       email: response.email,
       role: response.role,
-      companyId: response.companyId,
-      companyName: response.companyName,
+      companyId: response.companyId ?? null,
+      companyName: response.companyName ?? null,
+      needsCompanySetup: response.needsCompanySetup === true,
     };
 
     localStorage.setItem(STORAGE_KEYS.token, response.token);
     localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(user));
     this.currentUserSignal.set(user);
+  }
+
+  setNeedsCompanySetup(needsCompanySetup: boolean): void {
+    const user = this.currentUserSignal();
+    if (!user) {
+      return;
+    }
+    const updated: AuthUser = { ...user, needsCompanySetup };
+    localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(updated));
+    this.currentUserSignal.set(updated);
+  }
+
+  needsCompanySetup(): boolean {
+    return this.currentUserSignal()?.needsCompanySetup === true;
   }
 
   private loadUserFromStorage(): AuthUser | null {

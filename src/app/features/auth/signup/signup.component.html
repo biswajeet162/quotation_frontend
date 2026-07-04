@@ -4,7 +4,7 @@
   <div class="auth-card">
     <div class="auth-brand">
       <h1>Create account</h1>
-      <p>Sign up as a consumer employee under your company</p>
+      <p>Sign up as a consumer — you will choose your company after your first login</p>
     </div>
 
     @if (successMessage()) {
@@ -49,22 +49,6 @@
           />
           @if (form.controls.name.touched && form.controls.name.hasError('required')) {
             <span class="field-error">Full name is required</span>
-          }
-        </div>
-
-        <div class="field">
-          <label for="companyName">Company</label>
-          <select id="companyName" formControlName="companyName">
-            <option value="" disabled>Select your company</option>
-            @for (company of companyOptions(); track company.id) {
-              <option [value]="company.name">{{ company.name }}</option>
-            }
-          </select>
-          @if (form.controls.companyName.touched && form.controls.companyName.hasError('required')) {
-            <span class="field-error">Company is required</span>
-          }
-          @if (companyOptions().length === 0) {
-            <span class="field-hint">Ask your administrator to register your company first.</span>
           }
         </div>
 

@@ -1,0 +1,275 @@
+<div class="setup-backdrop" role="dialog" aria-modal="true" aria-labelledby="company-setup-title">
+  <div class="setup-card">
+    <header class="setup-header">
+      <h2 id="company-setup-title">Link your company</h2>
+    </header>
+
+    @if (errorMessage()) {
+      <div class="alert-error" role="alert">{{ errorMessage() }}</div>
+    }
+
+    <div class="mode-tabs" role="tablist" aria-label="Company setup mode">
+      <button
+        type="button"
+        class="mode-tab"
+        [class.active]="mode() === 'choose'"
+        [disabled]="companies().length === 0 || loadingCompanies()"
+        (click)="setMode('choose')"
+      >
+        Existing company
+      </button>
+      <button
+        type="button"
+        class="mode-tab"
+        [class.active]="mode() === 'create'"
+        (click)="setMode('create')"
+      >
+        New company
+      </button>
+    </div>
+
+    @if (mode() === 'choose') {
+      <label class="company-picker">
+        <span class="picker-label">Select company</span>
+        <select
+          [ngModel]="selectedCompanyId()"
+          (ngModelChange)="onCompanyChange($event)"
+          name="companyId"
+          [disabled]="loadingCompanies() || companies().length === 0"
+        >
+          <option value="" disabled>Choose your company</option>
+          @for (company of companies(); track company.id) {
+            <option [value]="company.id">{{ company.name }}</option>
+          }
+        </select>
+      </label>
+    }
+
+    <form class="setup-form" (ngSubmit)="submit()">
+      <section class="company-banner" aria-label="Company logo">
+        @if (mode() === 'create') {
+          <div class="logo-panel">
+            <input
+              #newLogoInput
+              type="file"
+              class="visually-hidden"
+              accept="image/*"
+              (change)="onNewLogoSelected($event)"
+            />
+            <div class="logo-wrap">
+              <div class="logo-display">
+                @if (newLogoPreviewUrl()) {
+                  <img [src]="newLogoPreviewUrl()!" [alt]="bannerCompanyName() + ' logo'" />
+                } @else {
+                  <span class="logo-placeholder">
+                    <span class="logo-placeholder-icon">◆</span>
+                    <span>No logo</span>
+                  </span>
+                }
+              </div>
+              <button
+                type="button"
+                class="icon-btn logo-edit-btn"
+                aria-label="Add company logo"
+                title="Add company logo"
+                (click)="newLogoInput.click()"
+                [disabled]="saving()"
+              >
+                ✎
+              </button>
+            </div>
+          </div>
+        } @else {
+          <div class="logo-panel">
+            <div class="logo-wrap">
+              <div class="logo-display">
+                @if (selectedLogoPreviewUrl()) {
+                  <img [src]="selectedLogoPreviewUrl()!" [alt]="bannerCompanyName() + ' logo'" />
+                } @else {
+                  <span class="logo-fallback">{{ companyInitials(bannerCompanyName()) }}</span>
+                }
+              </div>
+            </div>
+          </div>
+        }
+
+        <div class="company-identity">
+          <h3>{{ bannerCompanyName() }}</h3>
+          <p class="company-meta">
+            @if (mode() === 'create') {
+              Add your company logo and details below
+            } @else if (selectedCompany()) {
+              Company profile preview
+            } @else {
+              Choose a company to preview its logo and details
+            }
+          </p>
+        </div>
+      </section>
+
+      <section class="profile-panel">
+        <div class="panel-head">
+          <h3>Company details</h3>
+        </div>
+
+        <div class="details-columns">
+          <dl class="info-grid">
+            <div class="info-item">
+              <dt>Company name</dt>
+              <dd>
+                @if (mode() === 'create') {
+                  <input
+                    class="inline-input"
+                    type="text"
+                    [ngModel]="companyForm().companyName"
+                    (ngModelChange)="updateCompanyField('companyName', $event)"
+                    name="companyName"
+                    placeholder="Biswajeet Corp"
+                    required
+                  />
+                } @else {
+                  {{ displayValue(selectedCompany()?.name) }}
+                }
+              </dd>
+            </div>
+            <div class="info-item">
+              <dt>GST number</dt>
+              <dd>
+                @if (mode() === 'create') {
+                  <input
+                    class="inline-input"
+                    type="text"
+                    [ngModel]="companyForm().gstNumber"
+                    (ngModelChange)="updateCompanyField('gstNumber', $event)"
+                    name="gstNumber"
+                  />
+                } @else {
+                  {{ displayValue(selectedCompany()?.gstNumber) }}
+                }
+              </dd>
+            </div>
+            <div class="info-item">
+              <dt>PAN number</dt>
+              <dd>
+                @if (mode() === 'create') {
+                  <input
+                    class="inline-input"
+                    type="text"
+                    [ngModel]="companyForm().panNumber"
+                    (ngModelChange)="updateCompanyField('panNumber', $event)"
+                    name="panNumber"
+                  />
+                } @else {
+                  {{ displayValue(selectedCompany()?.panNumber) }}
+                }
+              </dd>
+            </div>
+          </dl>
+
+          <dl class="info-grid">
+            <div class="info-item">
+              <dt>Street address</dt>
+              <dd>
+                @if (mode() === 'create') {
+                  <input
+                    class="inline-input"
+                    type="text"
+                    [ngModel]="companyForm().address"
+                    (ngModelChange)="updateCompanyField('address', $event)"
+                    name="address"
+                  />
+                } @else {
+                  {{ displayValue(selectedCompany()?.address) }}
+                }
+              </dd>
+            </div>
+            <div class="info-item">
+              <dt>City</dt>
+              <dd>
+                @if (mode() === 'create') {
+                  <input
+                    class="inline-input"
+                    type="text"
+                    [ngModel]="companyForm().city"
+                    (ngModelChange)="updateCompanyField('city', $event)"
+                    name="city"
+                  />
+                } @else {
+                  {{ displayValue(selectedCompany()?.city) }}
+                }
+              </dd>
+            </div>
+            <div class="info-item">
+              <dt>State</dt>
+              <dd>
+                @if (mode() === 'create') {
+                  <input
+                    class="inline-input"
+                    type="text"
+                    [ngModel]="companyForm().state"
+                    (ngModelChange)="updateCompanyField('state', $event)"
+                    name="state"
+                  />
+                } @else {
+                  {{ displayValue(selectedCompany()?.state) }}
+                }
+              </dd>
+            </div>
+            <div class="info-item">
+              <dt>PIN code</dt>
+              <dd>
+                @if (mode() === 'create') {
+                  <input
+                    class="inline-input"
+                    type="text"
+                    [ngModel]="companyForm().pinCode"
+                    (ngModelChange)="updateCompanyField('pinCode', $event)"
+                    name="pinCode"
+                  />
+                } @else {
+                  {{ displayValue(selectedCompany()?.pinCode) }}
+                }
+              </dd>
+            </div>
+            <div class="info-item">
+              <dt>Country</dt>
+              <dd>
+                @if (mode() === 'create') {
+                  <input
+                    class="inline-input"
+                    type="text"
+                    [ngModel]="companyForm().country"
+                    (ngModelChange)="updateCompanyField('country', $event)"
+                    name="country"
+                  />
+                } @else {
+                  {{ displayValue(selectedCompany()?.country) }}
+                }
+              </dd>
+            </div>
+            <div class="info-item">
+              <dt>Registered address</dt>
+              <dd class="address-value">
+                @if (mode() === 'create') {
+                  {{ formatAddress(companyForm()) }}
+                } @else {
+                  @if (selectedCompany(); as company) {
+                    {{ formatAddress(company) }}
+                  } @else {
+                    —
+                  }
+                }
+              </dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      <footer class="setup-footer">
+        <button type="submit" class="btn-primary" [disabled]="saving() || loadingCompanies()">
+          {{ saving() ? 'Saving…' : 'Continue' }}
+        </button>
+      </footer>
+    </form>
+  </div>
+</div>

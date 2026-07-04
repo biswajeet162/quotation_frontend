@@ -5,7 +5,6 @@ export interface LoginRequest {
 
 export interface SignUpRequest {
   name: string;
-  companyName: string;
   phone: string;
   email: string;
   password: string;
@@ -47,8 +46,9 @@ export interface AuthResponse {
   userId: string;
   email: string;
   role: string;
-  companyId: string;
-  companyName: string;
+  companyId?: string | null;
+  companyName?: string | null;
+  needsCompanySetup?: boolean;
   message?: string;
 }
 
@@ -56,6 +56,7 @@ export interface AuthUser {
   userId: string;
   email: string;
   role: string;
-  companyId: string;
-  companyName: string;
+  companyId?: string | null;
+  companyName?: string | null;
+  needsCompanySetup?: boolean;
 }
