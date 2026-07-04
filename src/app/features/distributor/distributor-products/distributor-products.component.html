@@ -2,26 +2,7 @@
   <app-loading-overlay [loading]="overlayLoading()" message="Loading your products…" />
 
   <header class="page-header">
-    <div>
-      <div class="top-tabs" role="tablist" aria-label="Distributor product views">
-        <button
-          type="button"
-          class="top-tab"
-          [class.active]="activeMainTab() === 'products'"
-          (click)="setMainTab('products')"
-        >
-          My products
-        </button>
-        <button
-          type="button"
-          class="top-tab"
-          [class.active]="activeMainTab() === 'brands'"
-          (click)="setMainTab('brands')"
-        >
-          Brands
-        </button>
-      </div>
-    </div>
+    <h1 class="page-title">{{ pageTitle() }}</h1>
     <div class="header-actions">
       @if (activeMainTab() === 'products') {
         <button type="button" class="btn-primary" (click)="openCreate()">Add product</button>

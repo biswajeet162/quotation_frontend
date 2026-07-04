@@ -1,6 +1,7 @@
 import {
   Component,
   computed,
+  DestroyRef,
   HostListener,
   inject,
   OnDestroy,
@@ -8,6 +9,7 @@ import {
   signal,
   WritableSignal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
@@ -82,6 +84,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly cart = inject(InquiryCartService);
   private readonly queryForm = inject(ProductQueryFormService);
   private readonly adminProducts = inject(AdminDistributorProductService);
@@ -94,6 +97,16 @@ export class ProductListComponent implements OnInit, OnDestroy {
   readonly adminDistributorProducts = signal<DistributorProductEntry[]>([]);
   readonly statusUpdatingIds = signal<Set<string>>(new Set());
   readonly activeMainTab = signal<ProductMainTab>('products');
+  readonly pageTitle = computed(() => {
+    switch (this.activeMainTab()) {
+      case 'brands':
+        return 'Brands';
+      case 'distributors':
+        return 'Distributors';
+      default:
+        return 'Products';
+    }
+  });
   readonly selectedBrand = signal<string | null>(null);
   readonly selectedDistributorCompany = signal<string | null>(null);
   readonly brands = signal<BrandSummary[]>([]);
@@ -289,6 +302,9 @@ export class ProductListComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.syncTabFromRoute();
+    this.route.url.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.syncTabFromRoute();
+    });
     this.loadProducts();
   }
 
@@ -312,21 +328,6 @@ export class ProductListComponent implements OnInit, OnDestroy {
         this.errorMessage.set('Failed to load products. Please try again.');
       },
     });
-  }
-
-  setMainTab(tab: ProductMainTab): void {
-    if (tab === 'distributors' && !this.isAdmin()) {
-      return;
-    }
-    this.activeMainTab.set(tab);
-    const segment = tab === 'products' ? 'all' : tab;
-    void this.router.navigate(['../', segment], {
-      relativeTo: this.route,
-      replaceUrl: true,
-    });
-    if (tab === 'brands' && !this.selectedBrand() && this.brands().length > 0) {
-      this.selectedBrand.set(this.brands()[0].brandName);
-    }
   }
 
   selectBrand(brandName: string): void {
@@ -892,6 +893,9 @@ export class ProductListComponent implements OnInit, OnDestroy {
     }
     if (lastSegment === 'brands') {
       this.activeMainTab.set('brands');
+      if (!this.selectedBrand() && this.brands().length > 0) {
+        this.selectedBrand.set(this.brands()[0].brandName);
+      }
       return;
     }
     this.activeMainTab.set('products');

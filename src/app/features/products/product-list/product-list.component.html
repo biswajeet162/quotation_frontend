@@ -2,36 +2,7 @@
   <app-loading-overlay [loading]="loading()" message="Loading products…" />
 
   <header class="page-header">
-    <div>
-      <div class="top-tabs" role="tablist" aria-label="Product catalog views">
-        <button
-          type="button"
-          class="top-tab"
-          [class.active]="activeMainTab() === 'products'"
-          (click)="setMainTab('products')"
-        >
-          Products
-        </button>
-        <button
-          type="button"
-          class="top-tab"
-          [class.active]="activeMainTab() === 'brands'"
-          (click)="setMainTab('brands')"
-        >
-          Brands
-        </button>
-        @if (isAdmin()) {
-          <button
-            type="button"
-            class="top-tab"
-            [class.active]="activeMainTab() === 'distributors'"
-            (click)="setMainTab('distributors')"
-          >
-            Distributors
-          </button>
-        }
-      </div>
-    </div>
+    <h1 class="page-title">{{ pageTitle() }}</h1>
     <button type="button" class="btn-secondary" (click)="loadProducts()" [disabled]="loading()">
       Refresh
     </button>

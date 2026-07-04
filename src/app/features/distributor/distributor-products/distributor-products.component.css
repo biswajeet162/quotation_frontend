@@ -29,39 +29,17 @@
 .page-header {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 1rem;
 }
 
-.page-header h1 {
-  margin: 0 0 0.35rem;
+.page-title {
+  margin: 0;
   font-size: 1.5rem;
-}
-
-.top-tabs {
-  display: inline-flex;
-  gap: 0.4rem;
-  padding: 0.2rem;
-  border-radius: 10px;
-  background: #f1f5f9;
-}
-
-.top-tab {
-  border: none;
-  background: transparent;
-  color: #475569;
-  padding: 0.42rem 0.85rem;
-  border-radius: 8px;
-  font-size: 0.86rem;
   font-weight: 700;
-  cursor: pointer;
-}
-
-.top-tab.active {
-  background: #fff;
-  color: #0f766e;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  color: #0f172a;
 }
 
 .muted {

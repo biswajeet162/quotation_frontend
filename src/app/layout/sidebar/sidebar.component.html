@@ -13,10 +13,32 @@
 
   <nav class="sidebar-nav" aria-label="Main navigation">
     @for (item of navItems(); track item.path) {
-      <a [routerLink]="item.path" routerLinkActive="active" class="nav-link">
-        <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
-        <span>{{ item.label }}</span>
-      </a>
+      <div class="nav-group">
+        <a
+          [routerLink]="item.path"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="item.children?.length ? { exact: false } : { exact: true }"
+          class="nav-link"
+          [class.nav-group-parent]="item.children?.length"
+        >
+          <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
+          <span>{{ item.label }}</span>
+        </a>
+        @if (item.children?.length) {
+          <div class="nav-children">
+            @for (child of item.children; track child.path) {
+              <a
+                [routerLink]="child.path"
+                routerLinkActive="active"
+                [routerLinkActiveOptions]="{ exact: true }"
+                class="nav-link nav-child-link"
+              >
+                <span>{{ child.label }}</span>
+              </a>
+            }
+          </div>
+        }
+      </div>
     }
   </nav>
 

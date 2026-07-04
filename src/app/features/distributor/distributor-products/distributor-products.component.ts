@@ -1,5 +1,6 @@
-import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Component, computed, DestroyRef, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute } from '@angular/router';
 
 import { FormsModule } from '@angular/forms';
 import { finalize, map, of, switchMap, timeout } from 'rxjs';
@@ -109,8 +110,8 @@ const emptyForm = (): ProductFormState => ({
 export class DistributorProductsComponent implements OnInit, OnDestroy {
 
   private readonly productService = inject(DistributorProductService);
-  private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
 
 
 
@@ -129,6 +130,9 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
   readonly searchQuery = signal('');
 
   readonly activeMainTab = signal<'products' | 'brands'>('products');
+  readonly pageTitle = computed(() =>
+    this.activeMainTab() === 'brands' ? 'Brands' : 'My products',
+  );
 
   readonly selectedBrand = signal<string | null>(null);
 
@@ -313,10 +317,11 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
 
 
   ngOnInit(): void {
-
     this.syncTabFromRoute();
+    this.route.url.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.syncTabFromRoute();
+    });
     this.load();
-
   }
 
 
@@ -363,17 +368,16 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
 
 
 
-  setMainTab(tab: 'products' | 'brands'): void {
-
-    this.activeMainTab.set(tab);
-    void this.router.navigate(['../', tab === 'products' ? 'my-products' : 'brands'], {
-      relativeTo: this.route,
-      replaceUrl: true,
-    });
-    if (tab === 'brands' && !this.selectedBrand() && this.brands().length > 0) {
-      this.selectedBrand.set(this.brands()[0].brandName);
+  private syncTabFromRoute(): void {
+    const lastSegment = this.route.snapshot.url.at(-1)?.path;
+    if (lastSegment === 'brands') {
+      this.activeMainTab.set('brands');
+      if (!this.selectedBrand() && this.brands().length > 0) {
+        this.selectedBrand.set(this.brands()[0].brandName);
+      }
+      return;
     }
-
+    this.activeMainTab.set('products');
   }
 
 
@@ -1650,15 +1654,6 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
         this.selectedBrand.set(null);
       },
     });
-  }
-
-  private syncTabFromRoute(): void {
-    const lastSegment = this.route.snapshot.url.at(-1)?.path;
-    if (lastSegment === 'brands') {
-      this.activeMainTab.set('brands');
-      return;
-    }
-    this.activeMainTab.set('products');
   }
 
   private sortProducts(
