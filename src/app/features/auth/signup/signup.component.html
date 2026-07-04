@@ -53,16 +53,18 @@
         </div>
 
         <div class="field">
-          <label for="companyName">Company name</label>
-          <input
-            id="companyName"
-            type="text"
-            formControlName="companyName"
-            placeholder="Alpha Corporation"
-            autocomplete="organization"
-          />
+          <label for="companyName">Company</label>
+          <select id="companyName" formControlName="companyName">
+            <option value="" disabled>Select your company</option>
+            @for (company of companyOptions(); track company.id) {
+              <option [value]="company.name">{{ company.name }}</option>
+            }
+          </select>
           @if (form.controls.companyName.touched && form.controls.companyName.hasError('required')) {
-            <span class="field-error">Company name is required</span>
+            <span class="field-error">Company is required</span>
+          }
+          @if (companyOptions().length === 0) {
+            <span class="field-hint">Ask your administrator to register your company first.</span>
           }
         </div>
 

@@ -5,6 +5,7 @@ import { Observable, tap } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { STORAGE_KEYS } from '../../constants/storage.constants';
 import { AuthResponse, AuthUser, ForgotPasswordRequest, GoogleSignUpRequest, LoginRequest, MessageResponse, ResetPasswordRequest, SignUpRequest, SignUpResponse } from '../../models/auth.model';
+import { ConsumerCompanyOption } from '../../models/admin-company.model';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -23,6 +24,10 @@ export class AuthService {
 
   signUp(request: SignUpRequest): Observable<SignUpResponse> {
     return this.http.post<SignUpResponse>(`${environment.apiUrl}/auth/signup`, request);
+  }
+
+  listConsumerCompanies(): Observable<ConsumerCompanyOption[]> {
+    return this.http.get<ConsumerCompanyOption[]>(`${environment.apiUrl}/auth/consumer-companies`);
   }
 
   googleSignUp(request: GoogleSignUpRequest): Observable<AuthResponse> {

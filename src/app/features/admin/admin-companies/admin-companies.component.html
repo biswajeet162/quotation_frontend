@@ -1,0 +1,389 @@
+<section class="page-card">
+  <app-loading-overlay [loading]="overlayLoading()" message="Loading companies…" />
+
+  <header class="page-header">
+    <div>
+      <h1>Companies</h1>
+      <p class="muted">Create consumer companies, manage branding, and add employees under each company.</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn-primary" (click)="openCreateCompany()">Add company</button>
+      <button type="button" class="btn-secondary" (click)="load()" [disabled]="loading()">Refresh</button>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="search-field">
+      <label for="company-search">Search companies</label>
+      <input
+        id="company-search"
+        type="search"
+        placeholder="Name, email, city…"
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)"
+      />
+    </div>
+    <label class="toggle-field">
+      <input
+        type="checkbox"
+        [ngModel]="showInactive()"
+        (ngModelChange)="showInactive.set($event)"
+      />
+      Show inactive
+    </label>
+  </div>
+
+  @if (!loading()) {
+    @if (errorMessage()) {
+      <div class="alert-error" role="alert">{{ errorMessage() }}</div>
+    } @else if (filteredCompanies().length === 0) {
+      <p class="state-message">No companies found.</p>
+    } @else {
+      <div class="companies-layout">
+        <div class="company-list" role="listbox" aria-label="Consumer companies">
+          @for (company of filteredCompanies(); track company.id) {
+            <button
+              type="button"
+              class="company-item"
+              [class.selected]="selectedId() === company.id"
+              [class.inactive-item]="company.isActive === false"
+              (click)="selectCompany(company)"
+            >
+              <span class="company-item-name">{{ company.name }}</span>
+              <span class="company-item-meta">
+                {{ company.employeeCount }} employee{{ company.employeeCount === 1 ? '' : 's' }}
+                @if (company.city) {
+                  · {{ company.city }}
+                }
+              </span>
+            </button>
+          }
+        </div>
+
+        <aside class="company-detail" aria-live="polite">
+          @if (!selectedId()) {
+            <div class="detail-empty">
+              <p>Select a company to view details and employees.</p>
+            </div>
+          } @else if (detailLoading()) {
+            <p class="state-message">Loading details…</p>
+          } @else {
+          @if (selectedDetail(); as detail) {
+            @if (successMessage()) {
+              <div class="alert-success" role="status">{{ successMessage() }}</div>
+            }
+            @if (actionError() && !companyFormOpen() && !employeeFormOpen()) {
+              <div class="alert-error" role="alert">{{ actionError() }}</div>
+            }
+
+            <div class="detail-header">
+              <div class="detail-title-block">
+                <div class="logo-panel">
+                  <input
+                    #logoInput
+                    type="file"
+                    class="visually-hidden"
+                    accept="image/*"
+                    (change)="onLogoSelected($event)"
+                  />
+                  <div class="logo-wrap">
+                    @if (logoPreviewUrl()) {
+                      <img [src]="logoPreviewUrl()!" [alt]="detail.name + ' logo'" />
+                    } @else {
+                      <span class="logo-placeholder">No logo</span>
+                    }
+                  </div>
+                  <button type="button" class="btn-secondary btn-small" (click)="logoInput.click()">
+                    Upload logo
+                  </button>
+                </div>
+                <div>
+                  <h2>{{ detail.name }}</h2>
+                  <p class="detail-meta">
+                    {{ detail.email }} · {{ detail.phone }}
+                    @if (detail.isActive === false) {
+                      · Inactive
+                    }
+                  </p>
+                </div>
+              </div>
+              <div class="detail-actions">
+                <button type="button" class="btn-secondary" (click)="openEditCompany()">Edit company</button>
+                <button type="button" class="btn-primary" (click)="openAddEmployee()">Add employee</button>
+              </div>
+            </div>
+
+            <section class="detail-section">
+              <h3>Company details</h3>
+              <dl class="info-grid">
+                <div class="info-item"><dt>GST</dt><dd>{{ displayValue(detail.gstNumber) }}</dd></div>
+                <div class="info-item"><dt>PAN</dt><dd>{{ displayValue(detail.panNumber) }}</dd></div>
+                <div class="info-item"><dt>Address</dt><dd>{{ displayValue(detail.address) }}</dd></div>
+                <div class="info-item"><dt>City</dt><dd>{{ displayValue(detail.city) }}</dd></div>
+                <div class="info-item"><dt>State</dt><dd>{{ displayValue(detail.state) }}</dd></div>
+                <div class="info-item"><dt>Country</dt><dd>{{ displayValue(detail.country) }}</dd></div>
+                <div class="info-item"><dt>PIN code</dt><dd>{{ displayValue(detail.pinCode) }}</dd></div>
+                <div class="info-item"><dt>Created</dt><dd>{{ formatDate(detail.createdAt) }}</dd></div>
+              </dl>
+            </section>
+
+            <section class="detail-section">
+              <div class="section-head">
+                <h3>Employees</h3>
+                <span class="muted">{{ detail.employees.length }} total</span>
+              </div>
+
+              @if (detail.employees.length === 0) {
+                <p class="state-message">No employees yet. Add the first employee for this company.</p>
+              } @else {
+                <div class="table-wrap">
+                  <table class="employees-table">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Status</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (employee of detail.employees; track employee.id) {
+                        <tr [class.inactive-row]="employee.isActive === false">
+                          <td>{{ employee.name }}</td>
+                          <td>{{ employee.email }}</td>
+                          <td>{{ displayValue(employee.phone) }}</td>
+                          <td>
+                            <span class="status-chip" [class.inactive]="employee.isActive === false">
+                              {{ employee.isActive === false ? 'Inactive' : 'Active' }}
+                            </span>
+                          </td>
+                          <td>
+                            @if (employee.isActive !== false) {
+                              <button
+                                type="button"
+                                class="link-btn"
+                                (click)="deactivateEmployee(employee.id, employee.name)"
+                              >
+                                Deactivate
+                              </button>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            </section>
+          }
+          }
+        </aside>
+      </div>
+    }
+  }
+</section>
+
+@if (companyFormOpen()) {
+  <div class="modal-backdrop" (click)="closeCompanyForm()">
+    <div class="modal-panel" role="dialog" aria-labelledby="company-form-title" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2 id="company-form-title">
+          {{ companyFormMode() === 'create' ? 'Add company' : 'Edit company' }}
+        </h2>
+        <button type="button" class="icon-close" (click)="closeCompanyForm()" aria-label="Close">×</button>
+      </header>
+
+      @if (actionError()) {
+        <div class="alert-error" role="alert">{{ actionError() }}</div>
+      }
+
+      <form class="modal-form" (ngSubmit)="saveCompanyForm()">
+        <div class="form-grid">
+          <label>
+            Company name
+            <input
+              type="text"
+              [ngModel]="companyForm().name"
+              (ngModelChange)="updateCompanyFormField('name', $event)"
+              name="companyName"
+              required
+            />
+          </label>
+          <label>
+            Company email
+            <input
+              type="email"
+              [ngModel]="companyForm().email"
+              (ngModelChange)="updateCompanyFormField('email', $event)"
+              name="companyEmail"
+              required
+            />
+          </label>
+          <label>
+            Company phone
+            <input
+              type="tel"
+              [ngModel]="companyForm().phone"
+              (ngModelChange)="updateCompanyFormField('phone', $event)"
+              name="companyPhone"
+              required
+            />
+          </label>
+          <label>
+            GST number
+            <input
+              type="text"
+              [ngModel]="companyForm().gstNumber"
+              (ngModelChange)="updateCompanyFormField('gstNumber', $event)"
+              name="gstNumber"
+            />
+          </label>
+          <label>
+            PAN number
+            <input
+              type="text"
+              [ngModel]="companyForm().panNumber"
+              (ngModelChange)="updateCompanyFormField('panNumber', $event)"
+              name="panNumber"
+            />
+          </label>
+          <label>
+            PIN code
+            <input
+              type="text"
+              [ngModel]="companyForm().pinCode"
+              (ngModelChange)="updateCompanyFormField('pinCode', $event)"
+              name="pinCode"
+            />
+          </label>
+          <label class="full-width">
+            Street address
+            <input
+              type="text"
+              [ngModel]="companyForm().address"
+              (ngModelChange)="updateCompanyFormField('address', $event)"
+              name="address"
+            />
+          </label>
+          <label>
+            City
+            <input
+              type="text"
+              [ngModel]="companyForm().city"
+              (ngModelChange)="updateCompanyFormField('city', $event)"
+              name="city"
+            />
+          </label>
+          <label>
+            State
+            <input
+              type="text"
+              [ngModel]="companyForm().state"
+              (ngModelChange)="updateCompanyFormField('state', $event)"
+              name="state"
+            />
+          </label>
+          <label>
+            Country
+            <input
+              type="text"
+              [ngModel]="companyForm().country"
+              (ngModelChange)="updateCompanyFormField('country', $event)"
+              name="country"
+            />
+          </label>
+          @if (companyFormMode() === 'edit') {
+            <label class="toggle-field full-width">
+              <input
+                type="checkbox"
+                [ngModel]="companyForm().isActive"
+                (ngModelChange)="updateCompanyFormField('isActive', $event)"
+                name="isActive"
+              />
+              Company is active
+            </label>
+          }
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeCompanyForm()" [disabled]="saving()">
+            Cancel
+          </button>
+          <button type="submit" class="btn-primary" [disabled]="saving()">
+            {{ saving() ? 'Saving…' : 'Save company' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+@if (employeeFormOpen()) {
+  <div class="modal-backdrop" (click)="closeEmployeeForm()">
+    <div class="modal-panel" role="dialog" aria-labelledby="employee-form-title" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2 id="employee-form-title">Add employee</h2>
+        <button type="button" class="icon-close" (click)="closeEmployeeForm()" aria-label="Close">×</button>
+      </header>
+
+      @if (actionError()) {
+        <div class="alert-error" role="alert">{{ actionError() }}</div>
+      }
+
+      <form class="modal-form" (ngSubmit)="saveEmployeeForm()">
+        <div class="form-grid">
+          <label>
+            Full name
+            <input
+              type="text"
+              [ngModel]="employeeForm().name"
+              (ngModelChange)="updateEmployeeFormField('name', $event)"
+              name="employeeName"
+              required
+            />
+          </label>
+          <label>
+            Email
+            <input
+              type="email"
+              [ngModel]="employeeForm().email"
+              (ngModelChange)="updateEmployeeFormField('email', $event)"
+              name="employeeEmail"
+              required
+            />
+          </label>
+          <label>
+            Phone
+            <input
+              type="tel"
+              [ngModel]="employeeForm().phone"
+              (ngModelChange)="updateEmployeeFormField('phone', $event)"
+              name="employeePhone"
+              required
+            />
+          </label>
+          <label>
+            Password
+            <input
+              type="password"
+              [ngModel]="employeeForm().password"
+              (ngModelChange)="updateEmployeeFormField('password', $event)"
+              name="employeePassword"
+              required
+            />
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeEmployeeForm()" [disabled]="saving()">
+            Cancel
+          </button>
+          <button type="submit" class="btn-primary" [disabled]="saving()">
+            {{ saving() ? 'Saving…' : 'Add employee' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

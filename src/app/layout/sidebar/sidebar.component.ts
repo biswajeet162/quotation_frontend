@@ -55,6 +55,7 @@ export class SidebarComponent {
     { label: 'Create quotation', path: '/requests', icon: '◎', roles: ['CONSUMER'] },
     { label: 'Tracking', path: '/tracking', icon: '◷', roles: ['CONSUMER'] },
     { label: 'Review queries', path: '/admin/queries', icon: '◉', roles: ['ADMIN'] },
+    { label: 'Companies', path: '/admin/companies', icon: '◆', roles: ['ADMIN'] },
     { label: 'Users', path: '/admin/users', icon: '◈', roles: ['ADMIN'] },
     { label: 'Company profile', path: '/profile', icon: '◇', roles: ['DISTRIBUTOR'] },
     { label: 'Profile', path: '/profile', icon: '◇', roles: ['ADMIN', 'CONSUMER'] },

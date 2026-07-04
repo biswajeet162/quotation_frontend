@@ -34,6 +34,8 @@ export class SignupComponent implements AfterViewInit {
   readonly registeredEmail = signal<string | null>(null);
   readonly googleSignInEnabled = signal(false);
 
+  readonly companyOptions = signal<{ id: string; name: string }[]>([]);
+
   readonly form = this.fb.nonNullable.group(
     {
       name: ['', [Validators.required]],
@@ -47,7 +49,15 @@ export class SignupComponent implements AfterViewInit {
   );
 
   ngAfterViewInit(): void {
+    this.loadCompanyOptions();
     void this.initGoogleSignUpButton();
+  }
+
+  private loadCompanyOptions(): void {
+    this.auth.listConsumerCompanies().subscribe({
+      next: (options) => this.companyOptions.set(options),
+      error: () => this.companyOptions.set([]),
+    });
   }
 
   onSubmit(): void {
