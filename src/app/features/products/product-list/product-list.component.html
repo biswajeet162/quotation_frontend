@@ -951,6 +951,31 @@
         <div class="alert alert-error" role="alert">{{ adminAttachmentError() }}</div>
       }
 
+      <input
+        #adminPanelImageInput
+        type="file"
+        class="visually-hidden"
+        accept="image/*"
+        multiple
+        (change)="onAdminPanelImageSelected($event)"
+      />
+      <input
+        #adminPanelVideoInput
+        type="file"
+        class="visually-hidden"
+        accept="video/*"
+        multiple
+        (change)="onAdminPanelVideoSelected($event)"
+      />
+      <input
+        #adminPanelDocumentInput
+        type="file"
+        class="visually-hidden"
+        accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.pps,.ppsx,.txt,.csv,.rtf,.odt,.ods"
+        multiple
+        (change)="onAdminPanelDocumentSelected($event)"
+      />
+
       <nav class="attachment-tabs" aria-label="Attachment types">
         @for (tab of attachmentTabOptions; track tab.type) {
           <button
@@ -968,23 +993,74 @@
       </nav>
 
       <div class="attachment-tab-panel">
-        <h3 class="attachment-tab-heading">{{ adminAttachmentTabLabel() }}</h3>
+        <div class="attachment-tab-header">
+          <h3>{{ adminAttachmentTabLabel() }}</h3>
+          @switch (adminAttachmentTab()) {
+            @case ('IMAGE') {
+              <button
+                type="button"
+                class="btn-add-attachment"
+                (click)="adminPanelImageInput.click()"
+                [disabled]="adminAttachmentsUploading() || adminAttachmentsLoading()"
+              >
+                Add image
+              </button>
+            }
+            @case ('VIDEO') {
+              <button
+                type="button"
+                class="btn-add-attachment"
+                (click)="adminPanelVideoInput.click()"
+                [disabled]="adminAttachmentsUploading() || adminAttachmentsLoading()"
+              >
+                Add video
+              </button>
+            }
+            @case ('DOCUMENT') {
+              <button
+                type="button"
+                class="btn-add-attachment"
+                (click)="adminPanelDocumentInput.click()"
+                [disabled]="adminAttachmentsUploading() || adminAttachmentsLoading()"
+              >
+                Add file
+              </button>
+            }
+            @case ('AUDIO') {
+              <button type="button" class="btn-add-attachment" disabled>Record voice</button>
+            }
+          }
+        </div>
 
+        @if (adminAttachmentsUploading()) {
+          <p class="state-message">Uploading…</p>
+        }
         @if (adminAttachmentsLoading()) {
           <p class="state-message">Loading attachments…</p>
         } @else if (adminAttachmentsForActiveTab().length === 0) {
           <p class="state-message attachment-empty">
-            No {{ adminAttachmentTabLabel().toLowerCase() }} for this product.
+            No {{ adminAttachmentTabLabel().toLowerCase() }} yet. Use the add button above.
           </p>
         } @else {
           <ul class="attachment-list">
             @for (attachment of adminAttachmentsForActiveTab(); track attachment.id) {
-              <li class="attachment-item">
-                <app-inquiry-chat-attachment
-                  [attachment]="attachment"
-                  [attachmentSource]="'product'"
-                  [previewMode]="'panel'"
-                />
+              <li class="attachment-item attachment-manage-item">
+                <div class="attachment-preview">
+                  <app-inquiry-chat-attachment
+                    [attachment]="attachment"
+                    [attachmentSource]="'product'"
+                    [previewMode]="'panel'"
+                  />
+                </div>
+                <button
+                  type="button"
+                  class="btn-attachment-delete"
+                  (click)="deleteAdminAttachment(attachment)"
+                  [disabled]="adminAttachmentsUploading()"
+                  aria-label="Remove attachment"
+                >
+                  Remove
+                </button>
               </li>
             }
           </ul>

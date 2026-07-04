@@ -118,6 +118,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
   readonly adminAttachmentProduct = signal<DistributorProductEntry | null>(null);
   readonly adminAttachments = signal<InquiryTimelineAttachment[]>([]);
   readonly adminAttachmentsLoading = signal(false);
+  readonly adminAttachmentsUploading = signal(false);
   readonly adminAttachmentError = signal<string | null>(null);
   readonly adminAttachmentTab = signal<TimelineAttachmentMediaType>('IMAGE');
 
@@ -405,7 +406,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
       fileName: attachment.fileName,
       contentType: attachment.contentType,
       mediaType: attachment.mediaType,
-      url: attachment.url,
+      url: this.resolveAdminAttachmentUrl(attachment.url),
     };
   }
 
@@ -544,6 +545,9 @@ export class ProductListComponent implements OnInit, OnDestroy {
   }
 
   closeAdminAttachments(): void {
+    if (this.adminAttachmentsUploading()) {
+      return;
+    }
     this.adminAttachmentPanelOpen.set(false);
     this.adminAttachmentProduct.set(null);
     this.adminAttachments.set([]);
@@ -564,6 +568,40 @@ export class ProductListComponent implements OnInit, OnDestroy {
       this.attachmentTabOptions.find((tab) => tab.type === this.adminAttachmentTab())?.label ??
       'Attachments'
     );
+  }
+
+  onAdminPanelImageSelected(event: Event): void {
+    this.onAdminPanelFilesSelected(event);
+  }
+
+  onAdminPanelVideoSelected(event: Event): void {
+    this.onAdminPanelFilesSelected(event);
+  }
+
+  onAdminPanelDocumentSelected(event: Event): void {
+    this.onAdminPanelFilesSelected(event);
+  }
+
+  deleteAdminAttachment(attachment: InquiryTimelineAttachment): void {
+    const product = this.adminAttachmentProduct();
+    if (!product || this.adminAttachmentsUploading()) {
+      return;
+    }
+
+    this.adminAttachmentsUploading.set(true);
+    this.adminAttachmentError.set(null);
+    this.adminProducts.deleteAttachment(attachment.id).subscribe({
+      next: () => {
+        this.adminAttachments.update((items) => items.filter((item) => item.id !== attachment.id));
+        this.updateAdminAttachmentCount(product.id, this.adminAttachments().length);
+        this.adminAttachmentsUploading.set(false);
+        this.loadAdminAuditLogs(product.id);
+      },
+      error: () => {
+        this.adminAttachmentsUploading.set(false);
+        this.adminAttachmentError.set('Could not delete attachment.');
+      },
+    });
   }
 
   openAdminEdit(product: DistributorProductEntry, event?: Event): void {
@@ -844,6 +882,13 @@ export class ProductListComponent implements OnInit, OnDestroy {
     this.uploadAdminEditFiles(files);
   }
 
+  private onAdminPanelFilesSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    input.value = '';
+    this.uploadAdminPanelFiles(files);
+  }
+
   private uploadAdminEditFiles(files: File[]): void {
     const product = this.adminEditingProduct();
     if (!product || files.length === 0) {
@@ -866,6 +911,32 @@ export class ProductListComponent implements OnInit, OnDestroy {
       error: (err) => {
         this.adminEditAttachmentsUploading.set(false);
         this.adminEditAttachmentError.set(err?.error?.message ?? 'Could not upload attachment.');
+      },
+    });
+  }
+
+  private uploadAdminPanelFiles(files: File[]): void {
+    const product = this.adminAttachmentProduct();
+    if (!product || files.length === 0) {
+      return;
+    }
+
+    this.adminAttachmentsUploading.set(true);
+    this.adminAttachmentError.set(null);
+    this.adminProducts.uploadAttachments(product.id, files).subscribe({
+      next: (uploaded) => {
+        const mapped = uploaded.map((attachment) => this.toProductTimelineAttachment(attachment));
+        this.adminAttachments.update((items) => [...items, ...mapped]);
+        this.updateAdminAttachmentCount(product.id, this.adminAttachments().length);
+        if (mapped.length > 0) {
+          this.adminAttachmentTab.set(mapped[0].mediaType);
+        }
+        this.adminAttachmentsUploading.set(false);
+        this.loadAdminAuditLogs(product.id);
+      },
+      error: (err) => {
+        this.adminAttachmentsUploading.set(false);
+        this.adminAttachmentError.set(err?.error?.message ?? 'Could not upload attachment.');
       },
     });
   }
@@ -949,6 +1020,16 @@ export class ProductListComponent implements OnInit, OnDestroy {
   private parseInteger(value: string | number | null | undefined, fallback: number): number {
     const parsed = this.parseNumber(value);
     return parsed === undefined ? fallback : Math.max(0, Math.trunc(parsed));
+  }
+
+  private resolveAdminAttachmentUrl(url: string): string {
+    if (url.startsWith('/admin/distributor-products/attachments/')) {
+      return url;
+    }
+    if (url.startsWith('/distributor-products/attachments/')) {
+      return url.replace('/distributor-products/attachments/', '/admin/distributor-products/attachments/');
+    }
+    return url;
   }
 
   private resolveBrandLogoPreviews(): void {
