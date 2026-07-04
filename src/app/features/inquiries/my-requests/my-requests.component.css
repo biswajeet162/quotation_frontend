@@ -57,12 +57,12 @@
   padding: 0.45rem 1rem;
   border-radius: 8px;
   font-size: 0.8125rem;
-  font-weight: 500;
+  font-weight: 700;
   line-height: 1.25;
   cursor: pointer;
-  border: 1px solid #cbd5e1;
-  background: #fff;
-  color: #334155;
+  border: 1px solid #0f766e;
+  background: #0f766e;
+  color: #fff;
   flex-shrink: 0;
   transition:
     background 0.15s ease,
@@ -71,21 +71,21 @@
 }
 
 .page-header .btn-clear:hover {
-  background: #f8fafc;
-  border-color: #94a3b8;
-  color: #0f172a;
+  background: #0d6b64;
+  border-color: #0d6b64;
+  color: #fff;
 }
 
 .page-header .btn-preview-header {
-  border: 1px solid #0f766e;
-  background: #fff;
-  color: #0f766e;
+  border-color: #0f766e;
+  background: #0f766e;
+  color: #fff;
 }
 
 .page-header .btn-preview-header:hover:not(:disabled) {
-  background: #f0fdfa;
-  border-color: #0d9488;
-  color: #0d9488;
+  background: #0d6b64;
+  border-color: #0d6b64;
+  color: #fff;
 }
 
 .page-header .btn-preview-header:disabled {

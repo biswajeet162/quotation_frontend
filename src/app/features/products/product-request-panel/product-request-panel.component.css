@@ -40,7 +40,7 @@
   padding: 0.45rem 1rem;
   border-radius: 8px;
   font-size: 0.8125rem;
-  font-weight: 500;
+  font-weight: 700;
   line-height: 1.25;
   cursor: pointer;
   transition:
@@ -51,14 +51,14 @@
 
 .btn-add-line {
   border: 1px solid #0f766e;
-  background: #fff;
-  color: #0f766e;
+  background: #0f766e;
+  color: #fff;
 }
 
 .btn-add-line:hover {
-  background: #f0fdfa;
-  border-color: #0d9488;
-  color: #0d9488;
+  background: #0d6b64;
+  border-color: #0d6b64;
+  color: #fff;
 }
 
 .lines-table .add-line-row td {
