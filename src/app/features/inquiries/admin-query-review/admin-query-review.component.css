@@ -157,22 +157,23 @@
   font-size: 0.9rem;
   font-weight: 600;
   color: #0f172a;
+  margin-top: 0.15rem;
 }
 
-.query-meta {
+.query-company {
   display: block;
-  font-size: 0.78rem;
-  color: #64748b;
+  margin-top: 0.2rem;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #0f766e;
+  letter-spacing: 0.01em;
 }
 
-.source-tag {
-  display: inline-block;
-  margin-top: 0.35rem;
-  font-size: 0.68rem;
-  padding: 0.1rem 0.4rem;
-  border-radius: 4px;
-  background: #e2e8f0;
-  color: #475569;
+.query-posted {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.72rem;
+  color: #64748b;
 }
 
 .query-detail {

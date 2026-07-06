@@ -27,7 +27,6 @@ import { InquiryChatAttachmentComponent } from '../../../shared/components/inqui
 import { ChatAudioPlayerComponent } from '../../../shared/components/chat-audio-player/chat-audio-player.component';
 import {
   formatExpectedDeliveryDate,
-  getAdminInquiryListLabel,
   getInquiryListStep,
   getRequestSourceLabel,
 } from '../../../shared/utils/inquiry-display.util';
@@ -208,7 +207,6 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   readonly getRequestSourceLabel = getRequestSourceLabel;
   readonly formatExpectedDeliveryDate = formatExpectedDeliveryDate;
   readonly getInquiryListStep = getInquiryListStep;
-  readonly getAdminInquiryListLabel = getAdminInquiryListLabel;
 
   assignedDistributorCount(inquiry: Inquiry): number {
     return inquiry.distributors?.length ?? 0;
@@ -892,6 +890,23 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
 
     const parsed = typeof value === 'number' ? value : Number(value);
     return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  formatPostedDate(iso?: string): string {
+    if (!iso) {
+      return '—';
+    }
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) {
+      return iso;
+    }
+    return date.toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
   }
 
   formatChatTime(iso?: string): string {
