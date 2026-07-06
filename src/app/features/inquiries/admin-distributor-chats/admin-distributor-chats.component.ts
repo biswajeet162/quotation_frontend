@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { Inquiry, InquiryDistributor } from '../../../core/models/inquiry.model';
+import { Inquiry, InquiryDistributor, InquiryItem } from '../../../core/models/inquiry.model';
 import {
   InquiryTimelineEntry,
   InquiryTimelineAttachment,
@@ -36,12 +36,20 @@ import {
   noticeDisplayLabel,
 } from '../../../shared/utils/timeline-chat.util';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
+import { toItemTimelineAttachment } from '../../../shared/utils/attachment-media-type.util';
 
 interface PendingAttachment {
   id: string;
   file: File;
   previewUrl?: string;
   mediaType: TimelineAttachmentMediaType;
+}
+
+interface AdminInquiryLineDraft {
+  hsnCode?: string;
+  mrp?: number;
+  discountPercentage?: number;
+  gstPercentage?: number;
 }
 
 @Component({
@@ -73,6 +81,10 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   readonly recording = signal(false);
   readonly recordingSeconds = signal(0);
   readonly recordingLevels = signal<number[]>(Array.from({ length: 24 }, () => 0.15));
+
+  readonly itemAttachmentViewerOpen = signal(false);
+  readonly itemAttachmentViewerItem = signal<InquiryItem | null>(null);
+  readonly lineDrafts = signal<Map<string, AdminInquiryLineDraft>>(new Map());
 
   private readonly detailScrollRef = viewChild<ElementRef<HTMLElement>>('detailScroll');
   private readonly messageInputRef = viewChild<ElementRef<HTMLTextAreaElement>>('messageInput');
@@ -593,6 +605,181 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
 
   distributorStatusLabel(distributor: InquiryDistributor): string {
     return distributor.responseReceived ? 'Responded' : 'Pending response';
+  }
+
+  getDistributorListStep(distributor: InquiryDistributor): 'grey' | 'yellow' | 'green' {
+    return distributor.responseReceived ? 'green' : 'yellow';
+  }
+
+  distributorEmailLabel(distributor: InquiryDistributor): string {
+    if (!distributor.emailSent) {
+      return '—';
+    }
+    return distributor.emailSentAt ? `Sent ${this.formatShortDate(distributor.emailSentAt)}` : 'Sent';
+  }
+
+  distributorResponseLabel(distributor: InquiryDistributor): string {
+    if (!distributor.responseReceived) {
+      return '—';
+    }
+    return distributor.responseReceivedAt
+      ? this.formatShortDate(distributor.responseReceivedAt)
+      : 'Received';
+  }
+
+  productCountLabel(items?: Inquiry['items']): string {
+    const count = items?.length ?? 0;
+    return count === 1 ? '1 product' : `${count} products`;
+  }
+
+  totalItemQuantity(items?: Inquiry['items']): number {
+    return (items ?? []).reduce((sum, item) => sum + (item.quantity ?? 0), 0);
+  }
+
+  displayProductField(value?: string): string {
+    const trimmed = value?.trim();
+    return trimmed ? trimmed : '—';
+  }
+
+  lineDraftKey(inquiryId: string, item: InquiryItem): string {
+    return `${inquiryId}:${item.id ?? item.productId}`;
+  }
+
+  getLineDraft(inquiryId: string, item: InquiryItem): AdminInquiryLineDraft {
+    return this.lineDrafts().get(this.lineDraftKey(inquiryId, item)) ?? {};
+  }
+
+  updateLineTextField(
+    inquiryId: string,
+    item: InquiryItem,
+    field: 'hsnCode',
+    value: string,
+  ): void {
+    const trimmed = value.trim();
+    this.patchLineDraft(inquiryId, item, { [field]: trimmed || undefined });
+  }
+
+  updateLineNumberField(
+    inquiryId: string,
+    item: InquiryItem,
+    field: 'mrp' | 'discountPercentage' | 'gstPercentage',
+    value: string | number | null,
+  ): void {
+    const parsed = this.parseOptionalNumber(value);
+    this.patchLineDraft(inquiryId, item, { [field]: parsed ?? undefined });
+  }
+
+  lineAmount(inquiryId: string, item: InquiryItem, draft?: AdminInquiryLineDraft): number | null {
+    const lineDraft = draft ?? this.getLineDraft(inquiryId, item);
+    if (lineDraft.mrp == null) {
+      return null;
+    }
+
+    const discount = lineDraft.discountPercentage ?? 0;
+    const unitAfterDiscount = lineDraft.mrp * (1 - discount / 100);
+    return unitAfterDiscount * item.quantity;
+  }
+
+  lineNetValue(inquiryId: string, item: InquiryItem, draft?: AdminInquiryLineDraft): number | null {
+    const amount = this.lineAmount(inquiryId, item, draft);
+    if (amount == null) {
+      return null;
+    }
+
+    const lineDraft = draft ?? this.getLineDraft(inquiryId, item);
+    const gst = lineDraft.gstPercentage ?? 0;
+    return amount * (1 + gst / 100);
+  }
+
+  formatCurrency(value: number | null | undefined): string {
+    return value == null ? '—' : value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  }
+
+  itemAttachmentCount(item: InquiryItem): number {
+    return item.attachments?.length ?? 0;
+  }
+
+  itemAttachmentLabel(item: InquiryItem): string {
+    const count = this.itemAttachmentCount(item);
+    return count === 1 ? '1 image' : `${count} images`;
+  }
+
+  openItemAttachments(item: InquiryItem, event: Event): void {
+    event.stopPropagation();
+    this.itemAttachmentViewerItem.set(item);
+    this.itemAttachmentViewerOpen.set(true);
+  }
+
+  closeItemAttachments(): void {
+    this.itemAttachmentViewerOpen.set(false);
+    this.itemAttachmentViewerItem.set(null);
+  }
+
+  toItemTimelineAttachment(
+    attachment: NonNullable<InquiryItem['attachments']>[number],
+  ): InquiryTimelineAttachment {
+    return toItemTimelineAttachment(attachment);
+  }
+
+  itemAttachmentViewerLabel(item: InquiryItem): string {
+    const brand = item.productBrand?.trim();
+    const designation = item.productName?.trim();
+    if (brand && designation) {
+      return `${brand} · ${designation}`;
+    }
+    return brand || designation || 'Product images';
+  }
+
+  formatPostedDate(iso?: string): string {
+    if (!iso) {
+      return '—';
+    }
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) {
+      return iso;
+    }
+    return date.toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  }
+
+  private patchLineDraft(
+    inquiryId: string,
+    item: InquiryItem,
+    patch: Partial<AdminInquiryLineDraft>,
+  ): void {
+    const key = this.lineDraftKey(inquiryId, item);
+    this.lineDrafts.update((drafts) => {
+      const next = new Map(drafts);
+      next.set(key, { ...(next.get(key) ?? {}), ...patch });
+      return next;
+    });
+  }
+
+  private parseOptionalNumber(value: string | number | null | undefined): number | null {
+    if (value === '' || value == null) {
+      return null;
+    }
+
+    const parsed = typeof value === 'number' ? value : Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  private formatShortDate(iso: string): string {
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) {
+      return iso;
+    }
+    return date.toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
   }
 
   private resolveRecordingMimeType(): string | undefined {

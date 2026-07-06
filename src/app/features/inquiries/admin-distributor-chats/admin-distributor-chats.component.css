@@ -149,13 +149,6 @@
   box-shadow: inset 3px 0 0 #0f766e;
 }
 
-.query-id {
-  display: block;
-  font-size: 0.72rem;
-  color: #64748b;
-  font-weight: 600;
-}
-
 .query-title {
   display: block;
   font-size: 0.9rem;
@@ -165,8 +158,252 @@
 
 .query-meta {
   display: block;
+  margin-top: 0.2rem;
   font-size: 0.78rem;
   color: #64748b;
+}
+
+.query-company {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #0f766e;
+  letter-spacing: 0.01em;
+}
+
+.query-posted {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.72rem;
+  color: #64748b;
+}
+
+.detail-company {
+  font-weight: 700;
+  color: #0f766e;
+}
+
+.detail-meta-sep {
+  color: #cbd5e1;
+}
+
+.products-panel {
+  margin: 0.75rem 0;
+}
+
+.products-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.products-panel-title {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.products-panel h3 {
+  margin: 0;
+}
+
+.products-count,
+.total-qty-label {
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.total-qty-label {
+  font-weight: 600;
+}
+
+.products-empty {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.preview-table-wrap {
+  margin-top: 0.65rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: auto;
+}
+
+.admin-pricing-table-wrap {
+  max-width: 100%;
+}
+
+.preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  table-layout: fixed;
+}
+
+.admin-pricing-table {
+  min-width: 78rem;
+  table-layout: auto;
+}
+
+.admin-pricing-table .col-sno {
+  width: 3rem;
+  text-align: center;
+}
+
+.admin-pricing-table .col-designation {
+  min-width: 7.5rem;
+}
+
+.admin-pricing-table .col-hsn-code {
+  min-width: 6.5rem;
+}
+
+.admin-pricing-table .col-brand {
+  min-width: 6rem;
+}
+
+.admin-pricing-table .col-description {
+  min-width: 9rem;
+}
+
+.admin-pricing-table .col-qty {
+  width: 3.25rem;
+  text-align: center;
+}
+
+.admin-pricing-table .col-mrp,
+.admin-pricing-table .col-discount,
+.admin-pricing-table .col-gst {
+  min-width: 5.5rem;
+}
+
+.admin-pricing-table .col-amount,
+.admin-pricing-table .col-net-value {
+  min-width: 5.5rem;
+}
+
+.admin-pricing-table .col-expected-delivery {
+  min-width: 7.5rem;
+  white-space: nowrap;
+}
+
+.admin-pricing-table .col-attachment {
+  width: 6.5rem;
+  text-align: center;
+}
+
+.preview-table .consumer-cell.col-designation,
+.preview-table .consumer-cell.col-brand,
+.preview-table .consumer-cell.col-qty {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.preview-table th.col-designation,
+.preview-table th.col-brand,
+.preview-table th.col-qty {
+  font-weight: 700;
+}
+
+.preview-table .preview-multiline {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.preview-table th,
+.preview-table td {
+  padding: 0.5rem 0.55rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+  vertical-align: top;
+}
+
+.preview-table .col-sno,
+.preview-table .col-qty,
+.preview-table .col-attachment {
+  vertical-align: middle;
+  text-align: center;
+}
+
+.line-input {
+  width: 100%;
+  min-width: 4.5rem;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font: inherit;
+  color: #0f172a;
+  background: #fff;
+}
+
+.line-input:focus {
+  outline: none;
+  border-color: #0f766e;
+  box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.15);
+}
+
+.line-input-number {
+  text-align: right;
+}
+
+.line-input-readonly {
+  display: block;
+  border: 1px solid #0f172a;
+  background: #e2e8f0;
+  color: #64748b;
+  cursor: default;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  box-sizing: border-box;
+}
+
+.preview-table th {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  background: #f8fafc;
+}
+
+.preview-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.btn-attachment-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #0f766e;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.item-attachment-dialog {
+  max-width: 520px;
+  text-align: left;
+}
+
+.item-attachment-subtitle {
+  margin: 0 0 1rem;
+  font-size: 0.88rem;
+  color: #64748b;
+}
+
+.item-attachment-list {
+  list-style: none;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 60vh;
+  overflow-y: auto;
 }
 
 .source-tag {
@@ -278,39 +515,9 @@
   padding-top: 0.85rem;
 }
 
-.detail-summary h3 {
-  margin: 0.75rem 0 0.35rem;
-  font-size: 0.95rem;
-}
-
 .detail-note {
   margin: 0.35rem 0;
   font-size: 0.85rem;
-}
-
-.detail-header-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  flex-shrink: 0;
-  justify-content: flex-end;
-}
-
-.btn-delete {
-  padding: 0.5rem 0.85rem;
-  border-radius: 8px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  cursor: pointer;
-  background: #fff;
-  border: 1px solid #fecaca;
-  color: #b91c1c;
-  white-space: nowrap;
-}
-
-.btn-delete:hover {
-  background: #fef2f2;
-  border-color: #f87171;
 }
 
 .query-detail h2 {
@@ -322,39 +529,15 @@
   margin: 0;
   font-size: 0.85rem;
   color: #64748b;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
 }
 
-.badge-warn {
-  margin-left: 0.5rem;
-  padding: 0.15rem 0.5rem;
-  border-radius: 999px;
-  background: #fef3c7;
-  color: #92400e;
-  font-size: 0.75rem;
-}
-
-.clarification-box {
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  background: #fffbeb;
-  border: 1px solid #fcd34d;
-  margin-bottom: 1rem;
-}
-
-.clarification-box p {
-  margin: 0.35rem 0 0;
-}
-
-.product-lines {
-  margin: 0.35rem 0 0.75rem;
-  padding-left: 0;
-  list-style: none;
-}
-
-.product-lines li {
-  padding: 0.5rem 0;
-  border-bottom: 1px solid #f1f5f9;
-  font-size: 0.9rem;
+.detail-summary h3 {
+  margin: 0.75rem 0 0.35rem;
+  font-size: 0.95rem;
 }
 
 .line-badge {
