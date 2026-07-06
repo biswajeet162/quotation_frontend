@@ -622,12 +622,13 @@
 }
 
 @if (quotationPanelOpen() && selectedInquiry(); as inquiry) {
-  <div class="quotation-overlay" role="presentation">
+  <div class="quotation-overlay" (click)="closeQuotationPanel()" role="presentation">
     <div
       class="quotation-dialog"
       role="dialog"
       aria-modal="true"
       aria-labelledby="quotation-dialog-title"
+      (click)="$event.stopPropagation()"
     >
       <div class="quotation-dialog-header">
         <div>
