@@ -31,6 +31,7 @@ export interface DistributorInquiry {
   assignmentId: string;
   responseReceived: boolean;
   responseReceivedAt?: string;
+  responsePdfAvailable?: boolean;
   receivedAt?: string;
   createdAt?: string;
 }

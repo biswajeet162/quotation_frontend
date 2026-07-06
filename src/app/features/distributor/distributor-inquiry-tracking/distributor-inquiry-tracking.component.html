@@ -358,76 +358,23 @@
                     </div>
                   }
 
-                  <div class="quotation-web-pdf-wrap" aria-label="Your quotation document preview">
-                    <div class="quotation-web-pdf-toolbar">
-                      <span class="quotation-web-pdf-label">{{ distributorQuotationPdfLabel(inquiry) }}</span>
-                      <span class="quotation-web-pdf-meta">Web preview</span>
-                    </div>
-                    <div class="quotation-web-pdf-page">
-                      <div class="quotation-web-pdf-top">
-                        <div>
-                          <p class="quotation-web-pdf-kicker">Your quotation</p>
-                          <h4 class="quotation-web-pdf-title">{{ inquiry.title }}</h4>
-                          <p class="quotation-web-pdf-ref">{{ inquiry.inquiryId }}</p>
-                        </div>
-                        <div class="quotation-web-pdf-date-block">
-                          <span class="quotation-web-pdf-date-label">Quotation date</span>
-                          <span class="quotation-web-pdf-date-value">{{
-                            submittedQuotationDateLabel(inquiry)
-                          }}</span>
-                        </div>
+                  <div class="submission-pdf-attachment your-quotation-pdf-attachment" aria-label="Your quotation PDF">
+                    @if (responsePdfLoading()) {
+                      <p class="pdf-state-message" role="status">Checking your quotation PDF…</p>
+                    } @else if (responsePdfAvailable()) {
+                      <div class="pdf-attachment-chip">
+                        <span class="pdf-attachment-icon" aria-hidden="true">📄</span>
+                        <span class="pdf-attachment-name">{{ distributorQuotationPdfLabel(inquiry) }}</span>
+                        <span class="pdf-attachment-meta">PDF attached</span>
+                        <button
+                          type="button"
+                          class="btn-attachment-link pdf-view-link"
+                          (click)="openResponsePdfViewer()"
+                        >
+                          View
+                        </button>
                       </div>
-
-                      <h5 class="quotation-web-pdf-section-title">Quoted items</h5>
-                      <div class="quotation-web-pdf-table-wrap">
-                      <table class="quotation-web-pdf-table">
-                        <thead>
-                          <tr>
-                            <th>S.No.</th>
-                            <th>Designation</th>
-                            <th>Brand</th>
-                            <th>HSN</th>
-                            <th>Description</th>
-                            <th>Qty</th>
-                            <th>MRP</th>
-                            <th>Disc. %</th>
-                            <th>Amount</th>
-                            <th>GST %</th>
-                            <th>Net value</th>
-                            <th>Expected delivery</th>
-                            <th>Our delivery</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          @for (item of inquiry.items ?? []; track item.id ?? item.productId) {
-                            @if (getSubmittedLineDraft(inquiry.id, item); as quoted) {
-                              <tr>
-                                <td>{{ $index + 1 }}</td>
-                                <td>{{ displayProductField(item.productName) }}</td>
-                                <td>{{ displayProductField(item.productBrand) }}</td>
-                                <td>{{ displayProductField(quoted.hsnCode) }}</td>
-                                <td>{{ displayProductField(item.productDescription) }}</td>
-                                <td>{{ item.quantity }}</td>
-                                <td>{{ formatOptionalNumber(quoted.mrp) }}</td>
-                                <td>{{ formatOptionalPercent(quoted.discountPercentage) }}</td>
-                                <td>{{ formatCurrency(submittedLineAmount(inquiry.id, item)) }}</td>
-                                <td>{{ formatOptionalPercent(quoted.gstPercentage) }}</td>
-                                <td>{{ formatCurrency(submittedLineNetValue(inquiry.id, item)) }}</td>
-                                <td>{{ formatExpectedDeliveryDate(item.expectedDeliveryDate) }}</td>
-                                <td>{{ formatExpectedDeliveryDate(quoted.ourDeliveryDate) }}</td>
-                              </tr>
-                            }
-                          }
-                        </tbody>
-                      </table>
-                      </div>
-
-                      <div class="quotation-web-pdf-terms">
-                        <h5>Terms</h5>
-                        <p>Pricing and delivery timelines are as quoted above.</p>
-                        <p>Offer validity: 30 days from quotation date.</p>
-                      </div>
-                    </div>
+                    }
                   </div>
                 </section>
               }
@@ -995,8 +942,8 @@
     >
       <div class="pdf-viewer-header">
         <div>
-          <h2 id="pdf-viewer-title">Quotation PDF</h2>
-          <p class="pdf-viewer-subtitle">{{ submissionPdfLabel(inquiry) }}</p>
+          <h2 id="pdf-viewer-title">{{ pdfViewerTitle(inquiry) }}</h2>
+          <p class="pdf-viewer-subtitle">{{ pdfViewerLabel(inquiry) }}</p>
         </div>
         <button
           type="button"
@@ -1011,7 +958,7 @@
         <iframe
           class="pdf-viewer-frame"
           [src]="pdfSafeUrl()!"
-          [title]="submissionPdfLabel(inquiry)"
+          [title]="pdfViewerLabel(inquiry)"
         ></iframe>
       }
     </div>

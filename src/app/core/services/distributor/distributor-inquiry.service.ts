@@ -26,6 +26,24 @@ export class DistributorInquiryService {
     return this.http.get(`${this.baseUrl}/${id}/pdf`, { responseType: 'blob' });
   }
 
+  downloadQuotationPdf(id: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/${id}/quotation-pdf`, { responseType: 'blob' });
+  }
+
+  submitQuotation(
+    id: string,
+    lines: {
+      inquiryItemId: string;
+      hsnCode?: string;
+      mrp: number;
+      discountPercentage?: number;
+      gstPercentage: number;
+      ourDeliveryDate?: string;
+    }[],
+  ): Observable<DistributorInquiry> {
+    return this.http.post<DistributorInquiry>(`${this.baseUrl}/${id}/quotation`, { lines });
+  }
+
   postMessage(
     id: string,
     message: string,

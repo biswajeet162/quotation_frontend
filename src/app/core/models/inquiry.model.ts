@@ -33,6 +33,11 @@ export interface InquiryItem {
   adminMrp?: number;
   adminDiscountPercentage?: number;
   adminGstPercentage?: number;
+  distributorHsnCode?: string;
+  distributorMrp?: number;
+  distributorDiscountPercentage?: number;
+  distributorGstPercentage?: number;
+  distributorOurDeliveryDate?: string;
 }
 
 /** Returned to consumers after POST /inquiries (no admin/line-item payload). */

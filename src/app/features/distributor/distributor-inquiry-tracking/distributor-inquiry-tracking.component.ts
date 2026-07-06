@@ -57,12 +57,7 @@ interface DistributorInquiryLineDraft {
   ourDeliveryDate?: string;
 }
 
-interface DistributorQuotationSnapshot {
-  submittedAt: string;
-  lines: Record<string, DistributorInquiryLineDraft>;
-}
-
-const SUBMITTED_QUOTATIONS_STORAGE_KEY = 'distributor-submitted-quotations';
+type PdfViewerSource = 'request' | 'response';
 
 @Component({
   selector: 'app-distributor-inquiry-tracking',
@@ -100,17 +95,20 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   readonly itemAttachmentViewerOpen = signal(false);
   readonly itemAttachmentViewerItem = signal<InquiryItem | null>(null);
   readonly lineDrafts = signal<Map<string, DistributorInquiryLineDraft>>(new Map());
-  readonly submittedQuotations = signal<Map<string, DistributorQuotationSnapshot>>(new Map());
   readonly chatPanelOpen = signal(false);
   readonly quotationPanelOpen = signal(false);
   readonly quotationSending = signal(false);
   readonly quotationError = signal<string | null>(null);
   readonly pdfLoading = signal(false);
   readonly pdfAvailable = signal(false);
+  readonly responsePdfLoading = signal(false);
+  readonly responsePdfAvailable = signal(false);
   readonly pdfViewerOpen = signal(false);
+  readonly pdfViewerSource = signal<PdfViewerSource>('request');
   readonly pdfSafeUrl = signal<SafeResourceUrl | null>(null);
 
   private pdfBlob: Blob | null = null;
+  private responsePdfBlob: Blob | null = null;
   private pdfViewerObjectUrl: string | null = null;
 
   private readonly detailScrollRef = viewChild<ElementRef<HTMLElement>>('detailScroll');
@@ -198,7 +196,6 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   );
 
   ngOnInit(): void {
-    this.loadSubmittedQuotationsFromStorage();
     const preselect = this.route.snapshot.queryParamMap.get('inquiry');
     if (preselect) {
       this.selectedId.set(preselect);
@@ -289,22 +286,25 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   }
 
   hasSubmittedQuotation(inquiry: DistributorInquiry): boolean {
-    return inquiry.responseReceived && !!this.getSubmittedQuotation(inquiry.id);
+    return !!inquiry.responseReceived;
   }
 
   submittedQuotationDateLabel(inquiry: DistributorInquiry): string {
-    const snapshot = this.getSubmittedQuotation(inquiry.id);
-    const iso = snapshot?.submittedAt ?? inquiry.responseReceivedAt;
-    return this.formatQuotationDate(iso);
+    return this.formatQuotationDate(inquiry.responseReceivedAt);
   }
 
-  getSubmittedLineDraft(inquiryId: string, item: InquiryItem): DistributorInquiryLineDraft {
-    const snapshot = this.getSubmittedQuotation(inquiryId);
-    if (!snapshot) {
-      return {};
-    }
+  getSubmittedLineDraft(_inquiryId: string, item: InquiryItem): DistributorInquiryLineDraft {
+    return {
+      hsnCode: item.distributorHsnCode,
+      mrp: item.distributorMrp,
+      discountPercentage: item.distributorDiscountPercentage,
+      gstPercentage: item.distributorGstPercentage,
+      ourDeliveryDate: item.distributorOurDeliveryDate,
+    };
+  }
 
-    return snapshot.lines[this.lineDraftKey(inquiryId, item)] ?? {};
+  hasSubmittedLine(item: InquiryItem): boolean {
+    return item.distributorMrp != null && item.distributorGstPercentage != null;
   }
 
   submittedLineAmount(inquiryId: string, item: InquiryItem): number | null {
@@ -315,13 +315,33 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     return this.lineNetValue(inquiryId, item, this.getSubmittedLineDraft(inquiryId, item));
   }
 
+  pdfViewerTitle(inquiry: DistributorInquiry): string {
+    return this.pdfViewerSource() === 'response' ? 'Your quotation PDF' : 'Quotation PDF';
+  }
+
+  pdfViewerLabel(inquiry: DistributorInquiry): string {
+    return this.pdfViewerSource() === 'response'
+      ? this.distributorQuotationPdfLabel(inquiry)
+      : this.submissionPdfLabel(inquiry);
+  }
+
   openPdfViewer(): void {
-    if (!this.pdfBlob) {
+    this.openPdfViewerForSource('request');
+  }
+
+  openResponsePdfViewer(): void {
+    this.openPdfViewerForSource('response');
+  }
+
+  private openPdfViewerForSource(source: PdfViewerSource): void {
+    const blob = source === 'response' ? this.responsePdfBlob : this.pdfBlob;
+    if (!blob) {
       return;
     }
 
+    this.pdfViewerSource.set(source);
     this.revokePdfViewerUrl();
-    this.pdfViewerObjectUrl = URL.createObjectURL(this.pdfBlob);
+    this.pdfViewerObjectUrl = URL.createObjectURL(blob);
     this.pdfSafeUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(this.pdfViewerObjectUrl));
     this.pdfViewerOpen.set(true);
   }
@@ -359,16 +379,30 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const message = this.buildQuotationMessage(inquiry);
+    const lines = (inquiry.items ?? []).map((item) => {
+      const draft = this.getLineDraft(inquiry.id, item);
+      return {
+        inquiryItemId: item.id ?? item.productId,
+        hsnCode: draft.hsnCode,
+        mrp: draft.mrp!,
+        discountPercentage: draft.discountPercentage,
+        gstPercentage: draft.gstPercentage!,
+        ourDeliveryDate: draft.ourDeliveryDate,
+      };
+    });
+
     this.quotationSending.set(true);
     this.quotationError.set(null);
 
-    this.distributorInquiryService.postMessage(inquiry.id, message).subscribe({
+    this.distributorInquiryService.submitQuotation(inquiry.id, lines).subscribe({
       next: (updated) => {
         this.quotationSending.set(false);
-        this.snapshotSubmittedQuotation(inquiry);
         this.closeQuotationPanel();
         this.selectedInquiry.set(updated);
+        this.responsePdfAvailable.set(!!updated.responsePdfAvailable);
+        if (updated.responsePdfAvailable) {
+          this.loadResponsePdf(updated.id);
+        }
         this.inquirySummaries.update((list) =>
           list.map((summary) =>
             summary.inquiryUuid === updated.id
@@ -407,10 +441,16 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     this.closePdfViewer();
     this.pdfBlob = null;
     this.pdfAvailable.set(false);
+    this.responsePdfBlob = null;
+    this.responsePdfAvailable.set(false);
     this.distributorInquiryService.getById(id).subscribe({
       next: (inquiry) => {
         this.selectedInquiry.set(inquiry);
         this.loadSubmissionPdf(id);
+        this.responsePdfAvailable.set(!!inquiry.responsePdfAvailable);
+        if (inquiry.responsePdfAvailable) {
+          this.loadResponsePdf(id);
+        }
       },
       error: () => {
         this.selectedInquiry.set(null);
@@ -434,6 +474,24 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
         this.pdfLoading.set(false);
         this.pdfAvailable.set(false);
         this.pdfBlob = null;
+      },
+    });
+  }
+
+  private loadResponsePdf(inquiryId: string): void {
+    this.responsePdfLoading.set(true);
+    this.responsePdfBlob = null;
+
+    this.distributorInquiryService.downloadQuotationPdf(inquiryId).subscribe({
+      next: (blob) => {
+        this.responsePdfBlob = blob;
+        this.responsePdfAvailable.set(true);
+        this.responsePdfLoading.set(false);
+      },
+      error: () => {
+        this.responsePdfLoading.set(false);
+        this.responsePdfAvailable.set(false);
+        this.responsePdfBlob = null;
       },
     });
   }
@@ -1186,83 +1244,6 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
       next.set(key, { ...(next.get(key) ?? {}), ...patch });
       return next;
     });
-  }
-
-  private buildQuotationMessage(inquiry: DistributorInquiry): string {
-    const lines = (inquiry.items ?? []).map((item, index) => {
-      const draft = this.getLineDraft(inquiry.id, item);
-      const designation = this.displayProductField(item.productName);
-      const brand = this.displayProductField(item.productBrand);
-      const hsn = draft.hsnCode?.trim() || '—';
-      const mrp = this.formatCurrency(draft.mrp);
-      const discount = draft.discountPercentage ?? 0;
-      const amount = this.formatCurrency(this.lineAmount(inquiry.id, item, draft));
-      const gst = draft.gstPercentage ?? 0;
-      const netValue = this.formatCurrency(this.lineNetValue(inquiry.id, item, draft));
-      const ourDelivery = draft.ourDeliveryDate?.trim()
-        ? this.formatExpectedDeliveryDate(draft.ourDeliveryDate)
-        : '—';
-
-      return [
-        `${index + 1}. ${brand} · ${designation}`,
-        `Qty ${item.quantity} · HSN ${hsn}`,
-        `MRP ${mrp} · Disc ${discount}% · Amount ${amount} · GST ${gst}% · Net ${netValue}`,
-        `Our delivery: ${ourDelivery}`,
-      ].join('\n');
-    });
-
-    return ['Quotation:', '', ...lines].join('\n');
-  }
-
-  private getSubmittedQuotation(inquiryId: string): DistributorQuotationSnapshot | null {
-    return this.submittedQuotations().get(inquiryId) ?? null;
-  }
-
-  private snapshotSubmittedQuotation(inquiry: DistributorInquiry): void {
-    const lines: Record<string, DistributorInquiryLineDraft> = {};
-    for (const item of inquiry.items ?? []) {
-      const key = this.lineDraftKey(inquiry.id, item);
-      lines[key] = { ...this.getLineDraft(inquiry.id, item) };
-    }
-
-    const snapshot: DistributorQuotationSnapshot = {
-      submittedAt: new Date().toISOString(),
-      lines,
-    };
-
-    this.submittedQuotations.update((map) => {
-      const next = new Map(map);
-      next.set(inquiry.id, snapshot);
-      return next;
-    });
-    this.persistSubmittedQuotations();
-  }
-
-  private loadSubmittedQuotationsFromStorage(): void {
-    if (typeof sessionStorage === 'undefined') {
-      return;
-    }
-
-    try {
-      const raw = sessionStorage.getItem(SUBMITTED_QUOTATIONS_STORAGE_KEY);
-      if (!raw) {
-        return;
-      }
-
-      const parsed = JSON.parse(raw) as Record<string, DistributorQuotationSnapshot>;
-      this.submittedQuotations.set(new Map(Object.entries(parsed)));
-    } catch {
-      this.submittedQuotations.set(new Map());
-    }
-  }
-
-  private persistSubmittedQuotations(): void {
-    if (typeof sessionStorage === 'undefined') {
-      return;
-    }
-
-    const record = Object.fromEntries(this.submittedQuotations().entries());
-    sessionStorage.setItem(SUBMITTED_QUOTATIONS_STORAGE_KEY, JSON.stringify(record));
   }
 
   private parseOptionalNumber(value: string | number | null | undefined): number | null {
