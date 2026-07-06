@@ -781,6 +781,29 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
     return entry.recipientEmail?.trim() || '—';
   }
 
+  isLastDistributorSendInBatch(entries: InquiryTimelineEntry[], index: number): boolean {
+    const entry = entries[index];
+    if (!isDistributorSendNotice(entry)) {
+      return false;
+    }
+    const next = entries[index + 1];
+    return !next || !isDistributorSendNotice(next);
+  }
+
+  distributorSendBatchAttachments(entries: InquiryTimelineEntry[], endIndex: number) {
+    let start = endIndex;
+    while (start > 0 && isDistributorSendNotice(entries[start - 1])) {
+      start--;
+    }
+    for (let index = start; index <= endIndex; index++) {
+      const attachments = entries[index].attachments;
+      if (attachments?.length) {
+        return attachments;
+      }
+    }
+    return [];
+  }
+
   formatOptionalNumber(value?: number): string {
     return value == null ? '—' : value.toLocaleString(undefined, { maximumFractionDigits: 2 });
   }

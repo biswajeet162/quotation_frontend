@@ -597,6 +597,22 @@
   opacity: 0.82;
 }
 
+.chat-distributor-send-notice {
+  width: 100%;
+  margin: 0.4rem 0 0.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.chat-distributor-send-shared {
+  width: 100%;
+  margin: 0 0 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
 .chat-distributor-send-block {
   width: 100%;
   margin: 0.4rem 0 0.85rem;
