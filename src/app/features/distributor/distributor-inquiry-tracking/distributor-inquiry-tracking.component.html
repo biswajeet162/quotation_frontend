@@ -102,6 +102,11 @@
                       {{ lineSourceLabel(item.lineSource) }}
                     </span>
                     {{ item.productBrand }} {{ item.productName }} — qty {{ item.quantity }}
+                    @if (item.expectedDeliveryDate) {
+                      <span class="muted">
+                        · expected {{ formatExpectedDeliveryDate(item.expectedDeliveryDate) }}
+                      </span>
+                    }
                     @if (item.notes) {
                       <span class="muted">({{ item.notes }})</span>
                     }

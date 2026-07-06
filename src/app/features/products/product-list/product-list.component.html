@@ -41,7 +41,7 @@
         <p>Nothing in the catalog matches your search.</p>
         @if (isConsumer()) {
           <button type="button" class="btn-primary" (click)="goToQueryFromSearch()">
-            Create quotation from search
+            Create inquiry from search
           </button>
         }
       </div>
@@ -515,7 +515,7 @@
                         @if (isConsumer()) {
                           <td class="actions-cell">
                             <button type="button" class="btn-add" (click)="useInQuery(product, $event)">
-                              Add to quotation
+                              Add to inquiry
                             </button>
                           </td>
                         }
@@ -610,7 +610,7 @@
                 @if (isConsumer()) {
                   <td class="actions-cell">
                     <button type="button" class="btn-add" (click)="useInQuery(product, $event)">
-                      Add to quotation
+                      Add to inquiry
                     </button>
                   </td>
                 }
@@ -1015,7 +1015,7 @@
     <footer class="modal-footer">
       @if (isConsumer()) {
         <button type="button" class="btn-primary" (click)="useInQuery(product, $event); closeDetail()">
-          Add to quotation
+          Add to inquiry
         </button>
       }
       <button type="button" class="btn-secondary" (click)="closeDetail()">Close</button>

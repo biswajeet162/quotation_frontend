@@ -52,7 +52,7 @@ export class SidebarComponent {
       ],
     },
     { label: 'Tracking', path: '/distributor/tracking', icon: '◷', roles: ['DISTRIBUTOR'] },
-    { label: 'Create quotation', path: '/requests', icon: '◎', roles: ['CONSUMER'] },
+    { label: 'Create inquiry', path: '/requests', icon: '◎', roles: ['CONSUMER'] },
     { label: 'Tracking', path: '/tracking', icon: '◷', roles: ['CONSUMER'] },
     { label: 'Review queries', path: '/admin/queries', icon: '◉', roles: ['ADMIN'] },
     { label: 'Companies', path: '/admin/companies', icon: '◆', roles: ['ADMIN'] },

@@ -21,6 +21,7 @@ import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
 import { InquiryChatAttachmentComponent } from '../../../shared/components/inquiry-chat-attachment/inquiry-chat-attachment.component';
 import { ChatAudioPlayerComponent } from '../../../shared/components/chat-audio-player/chat-audio-player.component';
 import {
+  formatExpectedDeliveryDate,
   getAdminInquiryListLabel,
   getInquiryListStep,
   getRequestSourceLabel,
@@ -143,6 +144,7 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
           item.productBrand,
           item.productName,
           item.notes,
+          item.expectedDeliveryDate,
         ]),
       ]
         .filter(Boolean)
@@ -180,6 +182,7 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   readonly noticeDisplayDetail = (entry: InquiryTimelineEntry) =>
     noticeDisplayDetail(entry, 'ADMIN');
   readonly getRequestSourceLabel = getRequestSourceLabel;
+  readonly formatExpectedDeliveryDate = formatExpectedDeliveryDate;
   readonly getInquiryListStep = getInquiryListStep;
   readonly getAdminInquiryListLabel = getAdminInquiryListLabel;
 

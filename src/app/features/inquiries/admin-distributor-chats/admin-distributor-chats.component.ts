@@ -19,7 +19,7 @@ import {
 import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
 import { InquiryChatAttachmentComponent } from '../../../shared/components/inquiry-chat-attachment/inquiry-chat-attachment.component';
 import { ChatAudioPlayerComponent } from '../../../shared/components/chat-audio-player/chat-audio-player.component';
-import { getRequestSourceLabel } from '../../../shared/utils/inquiry-display.util';
+import { formatExpectedDeliveryDate, getRequestSourceLabel } from '../../../shared/utils/inquiry-display.util';
 import {
   canReplyToTimelineEntry,
   ChatReplyTarget,
@@ -134,6 +134,7 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   readonly noticeDisplayDetail = (entry: InquiryTimelineEntry) =>
     noticeDisplayDetail(entry, 'ADMIN');
   readonly getRequestSourceLabel = getRequestSourceLabel;
+  readonly formatExpectedDeliveryDate = formatExpectedDeliveryDate;
 
   readonly messageFieldLabel = computed(() => {
     const distributor = this.selectedDistributor();

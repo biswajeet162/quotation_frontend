@@ -23,6 +23,7 @@ export interface ProductFormDraft {
   specifications: string;
   quantity: number;
   lineNotes: string;
+  expectedDeliveryDate: string;
   lineSource: InquiryLineSource;
 }
 
@@ -34,6 +35,7 @@ export const emptyProductFormDraft = (): ProductFormDraft => ({
   specifications: '',
   quantity: 1,
   lineNotes: '',
+  expectedDeliveryDate: '',
   lineSource: 'NEW_PRODUCT',
 });
 

@@ -26,6 +26,7 @@ export interface InquiryItem {
   productDescription?: string;
   quantity: number;
   notes?: string;
+  expectedDeliveryDate?: string;
   lineSource?: InquiryLineSource;
   attachments?: InquiryItemAttachment[];
 }
@@ -93,6 +94,7 @@ export interface CreateInquiryRequest {
     productId: string;
     quantity: number;
     notes?: string;
+    expectedDeliveryDate?: string;
     lineSource?: InquiryLineSource;
     rowClientId?: string;
     attachmentIds?: string[];

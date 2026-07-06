@@ -157,8 +157,8 @@
                           <th class="col-designation">Designation</th>
                           <th class="col-brand">Brand</th>
                           <th class="col-qty">Qty</th>
-                          <th class="col-spec">Specification</th>
                           <th class="col-description">Description</th>
+                          <th class="col-expected-delivery">Expected delivery</th>
                           <th class="col-attachment">Attachments</th>
                         </tr>
                       </thead>
@@ -177,16 +177,13 @@
                             </td>
                             <td class="qty-cell">{{ item.quantity }}</td>
                             <td
-                              class="spec-cell"
-                              [title]="displaySpecifications(item.productSpecifications)"
-                            >
-                              {{ displaySpecifications(item.productSpecifications) }}
-                            </td>
-                            <td
                               class="description-cell"
                               [title]="displayProductField(item.productDescription)"
                             >
                               {{ displayProductField(item.productDescription) }}
+                            </td>
+                            <td class="expected-delivery-cell">
+                              {{ formatExpectedDeliveryDate(item.expectedDeliveryDate) }}
                             </td>
                             <td class="attachment-cell">
                               @if (itemAttachmentCount(item) > 0) {

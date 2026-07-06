@@ -12,6 +12,7 @@ import { ConsumerInquiryCreated } from '../../../core/models/inquiry.model';
 import { ProductFormDraft, ProductFormRow, RowLocalAttachment } from '../../../core/models/product-form.model';
 import { InquiryTimelineAttachment, TimelineAttachmentMediaType } from '../../../core/models/inquiry-timeline.model';
 import { formatSpecificationsInline } from '../../../shared/utils/specifications-display.util';
+import { formatExpectedDeliveryDate } from '../../../shared/utils/inquiry-display.util';
 import { resolveAttachmentMediaType } from '../../../shared/utils/attachment-media-type.util';
 import { ProductFieldAutocompleteComponent } from '../product-field-autocomplete/product-field-autocomplete.component';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
@@ -80,10 +81,19 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
 
   readonly rows = this.formState.rows;
   readonly highlight = this.formState.highlight;
+  readonly formatExpectedDeliveryDate = formatExpectedDeliveryDate;
 
   readonly quotationDate = computed(() => this.formatQuotationDate(new Date()));
 
   readonly termsText = signal('');
+
+  readonly minExpectedDeliveryDate = computed(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = (today.getMonth() + 1).toString().padStart(2, '0');
+    const day = today.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  });
 
   readonly termsLines = computed(() =>
     this.termsText()
@@ -441,7 +451,7 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
   submitRequest(): void {
     const user = this.auth.currentUser();
     if (!user || user.role !== 'CONSUMER') {
-      this.submitError.set('Only consumer accounts can create quotations.');
+      this.submitError.set('Only consumer accounts can create inquiries.');
       return;
     }
 
@@ -503,6 +513,7 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
               productId,
               quantity: row.quantity,
               notes: row.lineNotes.trim() || undefined,
+              expectedDeliveryDate: row.expectedDeliveryDate.trim() || undefined,
               lineSource: row.lineSource,
               rowClientId: row.rowId,
               attachmentIds: this.formState.attachmentIdsForRow(row),

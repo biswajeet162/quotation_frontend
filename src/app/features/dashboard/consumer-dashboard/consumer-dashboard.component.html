@@ -12,7 +12,7 @@
       <p class="muted">Summary of your quotation requests and where they stand in the pipeline.</p>
     </div>
     <div class="header-actions">
-      <a routerLink="/requests" class="btn-primary">Create quotation</a>
+      <a routerLink="/requests" class="btn-primary">Create inquiry</a>
       <a routerLink="/tracking" class="btn-secondary">View tracking</a>
     </div>
   </header>
@@ -56,7 +56,7 @@
       @if (recent().length === 0) {
         <p class="muted panel-empty">
           You have not submitted any quotation requests yet.
-          <a routerLink="/requests">Create your first quotation</a>.
+          <a routerLink="/requests">Create your first inquiry</a>.
         </p>
       } @else {
         <ul class="recent-list">
@@ -84,7 +84,7 @@
     <nav class="quick-nav" aria-label="Quick navigation">
       <a routerLink="/requests" class="quick-card">
         <span class="quick-icon">◎</span>
-        <span class="quick-title">Create quotation</span>
+        <span class="quick-title">Create inquiry</span>
         <span class="quick-desc">Search catalog and submit a new request</span>
       </a>
       <a routerLink="/tracking" class="quick-card">

@@ -10,6 +10,17 @@ export type ConsumerInquiryPhase =
 
 export type InquiryListStep = 'grey' | 'yellow' | 'green';
 
+export function formatExpectedDeliveryDate(iso?: string): string {
+  if (!iso?.trim()) {
+    return '—';
+  }
+  const [year, month, day] = iso.split('-');
+  if (!year || !month || !day) {
+    return iso;
+  }
+  return `${day}-${month}-${year}`;
+}
+
 export interface InquiryDisplayStatus {
   phase: ConsumerInquiryPhase;
   label: string;

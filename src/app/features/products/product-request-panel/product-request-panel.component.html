@@ -11,7 +11,7 @@
       } @else if (inquiry.acknowledgementEmailMessage) {
         <p class="success-email-warning" role="alert">{{ inquiry.acknowledgementEmailMessage }}</p>
       }
-      <button type="button" class="btn-text" (click)="submitAnother()">Create another quotation</button>
+      <button type="button" class="btn-text" (click)="submitAnother()">Create another inquiry</button>
     </div>
   }
 
@@ -20,11 +20,15 @@
       <table class="lines-table">
         <thead>
           <tr>
-            <th class="col-designation">Designation</th>
-            <th class="col-brand">Brand</th>
+            <th class="col-designation">
+              Designation<span class="required-mark" aria-hidden="true">*</span>
+            </th>
+            <th class="col-brand">
+              Brand<span class="required-mark" aria-hidden="true">*</span>
+            </th>
             <th class="col-qty">Qty</th>
-            <th>Specification</th>
-            <th>Description</th>
+            <th class="col-description">Description</th>
+            <th class="col-expected-delivery">Expected delivery</th>
             <th class="col-attachment">Your attachments</th>
             <th class="col-actions" aria-label="Remove"></th>
           </tr>
@@ -62,15 +66,6 @@
                   (ngModelChange)="updateRowQuantity(row.rowId, $event)"
                 />
               </td>
-              <td class="col-specification">
-                <textarea
-                  rows="1"
-                  [ngModel]="row.specifications"
-                  (ngModelChange)="updateRowField(row.rowId, 'specifications', $event)"
-                  placeholder="Specification"
-                  [attr.aria-label]="'Specification for row ' + ($index + 1)"
-                ></textarea>
-              </td>
               <td class="col-description">
                 <textarea
                   rows="1"
@@ -79,6 +74,15 @@
                   placeholder="Description"
                   [attr.aria-label]="'Description for row ' + ($index + 1)"
                 ></textarea>
+              </td>
+              <td class="col-expected-delivery">
+                <input
+                  type="date"
+                  [min]="minExpectedDeliveryDate()"
+                  [ngModel]="row.expectedDeliveryDate"
+                  (ngModelChange)="updateRowField(row.rowId, 'expectedDeliveryDate', $event)"
+                  [attr.aria-label]="'Expected delivery for row ' + ($index + 1)"
+                />
               </td>
               <td class="col-attachment">
                 <button
@@ -210,11 +214,15 @@
             <thead>
               <tr>
                 <th class="col-sno">S.No.</th>
-                <th class="col-designation">Designation</th>
-                <th class="col-brand">Brand</th>
+                <th class="col-designation">
+                  Designation<span class="required-mark" aria-hidden="true">*</span>
+                </th>
+                <th class="col-brand">
+                  Brand<span class="required-mark" aria-hidden="true">*</span>
+                </th>
                 <th class="col-qty">Qty</th>
-                <th>Specification</th>
-                <th>Description</th>
+                <th class="col-description">Description</th>
+                <th class="col-expected-delivery">Expected delivery</th>
                 <th class="col-attachment">Attachments</th>
               </tr>
             </thead>
@@ -230,8 +238,10 @@
                   <td class="col-designation">{{ previewField(row.designation) }}</td>
                   <td class="col-brand">{{ previewField(row.brand) }}</td>
                   <td class="col-qty">{{ row.quantity }}</td>
-                  <td class="preview-multiline">{{ previewField(row.specifications) }}</td>
                   <td class="preview-multiline">{{ previewField(row.description) }}</td>
+                  <td class="col-expected-delivery">
+                    {{ formatExpectedDeliveryDate(row.expectedDeliveryDate) }}
+                  </td>
                   <td class="col-attachment">
                     {{ rowAttachmentCount(row) > 0 ? rowAttachmentCount(row) : '—' }}
                   </td>

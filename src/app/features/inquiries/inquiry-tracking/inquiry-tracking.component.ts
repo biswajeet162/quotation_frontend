@@ -12,6 +12,7 @@ import { InquiryChatAttachmentComponent } from '../../../shared/components/inqui
 import { ChatAudioPlayerComponent } from '../../../shared/components/chat-audio-player/chat-audio-player.component';
 import {
   getConsumerInquiryDisplay,
+  formatExpectedDeliveryDate,
   getInquiryListStep,
   getRequestSourceLabel,
 } from '../../../shared/utils/inquiry-display.util';
@@ -148,6 +149,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
           item.productBrand,
           item.productName,
           item.notes,
+          item.expectedDeliveryDate,
         ]),
       ]
         .filter(Boolean)
@@ -206,6 +208,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     noticeDisplayDetail(entry, 'CONSUMER');
 
   readonly getRequestSourceLabel = getRequestSourceLabel;
+  readonly formatExpectedDeliveryDate = formatExpectedDeliveryDate;
   readonly getConsumerInquiryDisplay = getConsumerInquiryDisplay;
   readonly getInquiryListStep = getInquiryListStep;
 
