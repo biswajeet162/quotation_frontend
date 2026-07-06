@@ -9,6 +9,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { DistributorInquiry, DistributorInquirySummary } from '../../../core/models/distributor.model';
 import { InquiryItem } from '../../../core/models/inquiry.model';
@@ -53,6 +54,7 @@ interface DistributorInquiryLineDraft {
   mrp?: number;
   discountPercentage?: number;
   gstPercentage?: number;
+  ourDeliveryDate?: string;
 }
 
 @Component({
@@ -64,6 +66,7 @@ interface DistributorInquiryLineDraft {
 export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   private readonly distributorInquiryService = inject(DistributorInquiryService);
   private readonly route = inject(ActivatedRoute);
+  private readonly sanitizer = inject(DomSanitizer);
 
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
@@ -90,6 +93,12 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   readonly itemAttachmentViewerOpen = signal(false);
   readonly itemAttachmentViewerItem = signal<InquiryItem | null>(null);
   readonly lineDrafts = signal<Map<string, DistributorInquiryLineDraft>>(new Map());
+  readonly chatPanelOpen = signal(false);
+  readonly pdfLoading = signal(false);
+  readonly pdfError = signal<string | null>(null);
+  readonly pdfSafeUrl = signal<SafeResourceUrl | null>(null);
+
+  private pdfObjectUrl: string | null = null;
 
   private readonly detailScrollRef = viewChild<ElementRef<HTMLElement>>('detailScroll');
   private readonly messageInputRef = viewChild<ElementRef<HTMLTextAreaElement>>('messageInput');
@@ -146,6 +155,10 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
 
   readonly chatTimelineEntries = computed(() => buildChatTimelineEntries(this.timelineEntries()));
 
+  readonly distributorMessageEntries = computed(() =>
+    this.chatTimelineEntries().filter((entry) => !isTimelineNotice(entry)),
+  );
+
   readonly canSendMessage = computed(
     () => this.messageText().trim().length > 0 || this.pendingAttachments().length > 0,
   );
@@ -182,6 +195,7 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.cleanupRecordingResources(false);
     this.clearPendingAttachments();
+    this.revokePdfUrl();
   }
 
   load(): void {
@@ -221,12 +235,21 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   selectInquiry(id: string): void {
     this.cancelVoiceRecording();
     this.clearPendingAttachments();
+    this.chatPanelOpen.set(false);
     this.selectedId.set(id);
     this.messageError.set(null);
     this.messageText.set('');
     this.clearReplyTarget();
     this.timelineEntries.set([]);
     this.loadSelectedInquiry(id);
+  }
+
+  toggleChatPanel(): void {
+    const next = !this.chatPanelOpen();
+    this.chatPanelOpen.set(next);
+    if (next && this.selectedInquiry()) {
+      this.loadTimeline();
+    }
   }
 
   private syncSelection(): void {
@@ -236,6 +259,7 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
       return;
     }
     this.clearPendingAttachments();
+    this.chatPanelOpen.set(false);
     const nextId = visible[0]?.inquiryUuid ?? null;
     this.selectedId.set(nextId);
     this.selectedInquiry.set(null);
@@ -247,16 +271,44 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   }
 
   private loadSelectedInquiry(id: string): void {
+    this.revokePdfUrl();
     this.distributorInquiryService.getById(id).subscribe({
       next: (inquiry) => {
         this.selectedInquiry.set(inquiry);
-        this.loadTimeline();
+        this.loadSubmissionPdf(id);
       },
       error: () => {
         this.selectedInquiry.set(null);
         this.timelineError.set('Could not load this quotation request.');
       },
     });
+  }
+
+  private loadSubmissionPdf(inquiryId: string): void {
+    this.pdfLoading.set(true);
+    this.pdfError.set(null);
+    this.pdfSafeUrl.set(null);
+
+    this.distributorInquiryService.downloadSubmissionPdf(inquiryId).subscribe({
+      next: (blob) => {
+        this.revokePdfUrl();
+        this.pdfObjectUrl = URL.createObjectURL(blob);
+        this.pdfSafeUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(this.pdfObjectUrl));
+        this.pdfLoading.set(false);
+      },
+      error: () => {
+        this.pdfLoading.set(false);
+        this.pdfError.set('Quotation PDF is not available for this request.');
+      },
+    });
+  }
+
+  private revokePdfUrl(): void {
+    if (this.pdfObjectUrl) {
+      URL.revokeObjectURL(this.pdfObjectUrl);
+      this.pdfObjectUrl = null;
+    }
+    this.pdfSafeUrl.set(null);
   }
 
   loadTimeline(options?: { silent?: boolean; scrollToBottom?: boolean; preserveScroll?: boolean }): void {
@@ -670,6 +722,23 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   ): void {
     const parsed = this.parseOptionalNumber(value);
     this.patchLineDraft(inquiryId, item, { [field]: parsed ?? undefined });
+  }
+
+  updateLineDateField(inquiryId: string, item: InquiryItem, value: string): void {
+    const trimmed = value.trim();
+    this.patchLineDraft(inquiryId, item, { ourDeliveryDate: trimmed || undefined });
+  }
+
+  isRequiredFieldMissing(
+    inquiryId: string,
+    item: InquiryItem,
+    field: 'mrp' | 'gstPercentage',
+  ): boolean {
+    const draft = this.getLineDraft(inquiryId, item);
+    if (field === 'mrp') {
+      return draft.mrp == null;
+    }
+    return draft.gstPercentage == null;
   }
 
   lineAmount(inquiryId: string, item: InquiryItem, draft?: DistributorInquiryLineDraft): number | null {

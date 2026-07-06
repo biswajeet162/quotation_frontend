@@ -22,6 +22,10 @@ export class DistributorInquiryService {
     return this.http.get<InquiryTimeline>(`${this.baseUrl}/${id}/timeline`);
   }
 
+  downloadSubmissionPdf(id: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/${id}/pdf`, { responseType: 'blob' });
+  }
+
   postMessage(
     id: string,
     message: string,
