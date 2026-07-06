@@ -3,11 +3,17 @@ import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../services/auth/auth.service';
 
 export function roleGuard(allowedRoles: string[]): CanActivateFn {
-  return () => {
+  return (_route, state) => {
     const auth = inject(AuthService);
     const router = inject(Router);
-    const role = auth.currentUser()?.role;
 
+    if (!auth.isAuthenticated()) {
+      return router.createUrlTree(['/login'], {
+        queryParams: state.url && state.url !== '/' ? { returnUrl: state.url } : undefined,
+      });
+    }
+
+    const role = auth.currentUser()?.role;
     if (role && allowedRoles.includes(role)) {
       return true;
     }
