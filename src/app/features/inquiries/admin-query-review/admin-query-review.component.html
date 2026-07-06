@@ -83,6 +83,20 @@
               >
                 {{ actionLoading() ? 'Working…' : 'Send to distributors' }}
               </button>
+            } @else if (assignedDistributorCount(inquiry) > 0) {
+              <button
+                type="button"
+                class="detail-header-distributor-link"
+                (click)="openDistributorChats(inquiry.id)"
+                title="Open distributor chats in a new tab"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3ZM5 5h6V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6h-2v6H5V5Z"
+                  />
+                </svg>
+                Open distributors list
+              </button>
             }
           </div>
 
@@ -121,28 +135,6 @@
                     </span>
                   }
                 </div>
-
-                @if (assignedDistributorCount(inquiry) > 0) {
-                  <p class="distributor-sent-row">
-                    <span class="distributor-sent-count">
-                      Sent to {{ assignedDistributorCount(inquiry) }}
-                      distributor{{ assignedDistributorCount(inquiry) === 1 ? '' : 's' }}
-                    </span>
-                    <button
-                      type="button"
-                      class="external-link"
-                      (click)="openDistributorChats(inquiry.id)"
-                      title="Open distributor chats in a new tab"
-                    >
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path
-                          d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3ZM5 5h6V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6h-2v6H5V5Z"
-                        />
-                      </svg>
-                      Open distributor chats
-                    </button>
-                  </p>
-                }
 
                 @if ((inquiry.items ?? []).length > 0) {
                   <div class="preview-table-wrap admin-pricing-table-wrap">
@@ -300,9 +292,7 @@
                 <div class="chat-thread">
                   @for (entry of chatTimelineEntries(); track entry.id) {
                     @if (isTimelineNotice(entry)) {
-                      @if (
-                        isSentToDistributorsNotice(entry) && (inquiry.items ?? []).length > 0
-                      ) {
+                      @if (isSentToDistributorsNotice(entry)) {
                         <div class="chat-distributor-send-block">
                           <div class="chat-status-notice" [id]="'chat-msg-' + entry.id">
                             <span class="chat-status-notice-label">{{ noticeDisplayLabel(entry) }}</span>
@@ -312,6 +302,7 @@
                             <span class="chat-status-notice-time">{{ formatChatTime(entry.occurredAt) }}</span>
                           </div>
 
+                          @if ((inquiry.items ?? []).length > 0) {
                           <div class="chat-sent-pricing-table">
                             <div class="chat-pricing-table-wrap">
                               <table class="preview-table admin-pricing-table chat-pricing-table">
@@ -400,6 +391,7 @@
                               </table>
                             </div>
                           </div>
+                          }
                         </div>
                       } @else {
                         <div class="chat-status-notice" [id]="'chat-msg-' + entry.id">
