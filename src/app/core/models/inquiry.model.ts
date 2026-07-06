@@ -29,6 +29,10 @@ export interface InquiryItem {
   expectedDeliveryDate?: string;
   lineSource?: InquiryLineSource;
   attachments?: InquiryItemAttachment[];
+  adminHsnCode?: string;
+  adminMrp?: number;
+  adminDiscountPercentage?: number;
+  adminGstPercentage?: number;
 }
 
 /** Returned to consumers after POST /inquiries (no admin/line-item payload). */
@@ -148,6 +152,15 @@ export interface DistributorOption {
   products: DistributorProductOption[];
 }
 
+export interface AdminInquiryLinePricing {
+  inquiryItemId: string;
+  hsnCode?: string;
+  mrp?: number;
+  discountPercentage?: number;
+  gstPercentage?: number;
+}
+
 export interface SubmitToDistributorsRequest {
   distributorCompanyIds: string[];
+  linePricing?: AdminInquiryLinePricing[];
 }

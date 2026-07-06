@@ -35,6 +35,7 @@ export interface InquiryTimelineEntry {
   actorRole?: string;
   fromCompanyName?: string;
   toCompanyName?: string;
+  recipientEmail?: string;
   attachments?: InquiryTimelineAttachment[];
   replyTo?: InquiryTimelineReplyTo;
 }

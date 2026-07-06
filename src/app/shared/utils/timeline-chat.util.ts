@@ -24,6 +24,10 @@ export function isSentToDistributorsNotice(entry: InquiryTimelineEntry): boolean
   );
 }
 
+export function isDistributorSendNotice(entry: InquiryTimelineEntry): boolean {
+  return entry.noticeCode === 'SENT_TO_DISTRIBUTOR';
+}
+
 export function noticeDisplayLabel(
   entry: InquiryTimelineEntry,
   viewer: TimelineViewerRole,

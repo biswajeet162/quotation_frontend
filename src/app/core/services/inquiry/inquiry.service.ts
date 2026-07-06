@@ -12,6 +12,7 @@ import {
   InquiryDraftAttachment,
   InquiryStatus,
   SubmitToDistributorsRequest,
+  AdminInquiryLinePricing,
 } from '../../models/inquiry.model';
 
 @Injectable({ providedIn: 'root' })
@@ -134,8 +135,12 @@ export class InquiryService {
     return this.http.get<Inquiry[]>(`${this.baseUrl}/status/${status}`);
   }
 
-  submitToDistributors(id: string, distributorCompanyIds: string[]): Observable<Inquiry> {
-    const body: SubmitToDistributorsRequest = { distributorCompanyIds };
+  submitToDistributors(
+    id: string,
+    distributorCompanyIds: string[],
+    linePricing?: AdminInquiryLinePricing[],
+  ): Observable<Inquiry> {
+    const body: SubmitToDistributorsRequest = { distributorCompanyIds, linePricing };
     return this.http.post<Inquiry>(`${this.baseUrl}/${id}/submit-to-distributors`, body);
   }
 

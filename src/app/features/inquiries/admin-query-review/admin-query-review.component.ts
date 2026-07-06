@@ -40,7 +40,7 @@ import {
 } from '../../../shared/utils/chat-reply.util';
 import {
   buildChatTimelineEntries,
-  isSentToDistributorsNotice,
+  isDistributorSendNotice,
   isTimelineNotice,
   noticeDisplayDetail,
   noticeDisplayLabel,
@@ -198,7 +198,7 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   readonly replyTargetLabel = replyTargetLabel;
   readonly shouldShowBubbleReply = shouldShowBubbleReply;
   readonly isTimelineNotice = isTimelineNotice;
-  readonly isSentToDistributorsNotice = isSentToDistributorsNotice;
+  readonly isDistributorSendNotice = isDistributorSendNotice;
   readonly noticeDisplayLabel = (entry: InquiryTimelineEntry) =>
     noticeDisplayLabel(entry, 'ADMIN');
   readonly noticeDisplayDetail = (entry: InquiryTimelineEntry) =>
@@ -296,6 +296,9 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
     this.timelineEntries.set([]);
 
     const inquiry = this.inquiries().find((q) => q.id === id);
+    if (inquiry) {
+      this.hydrateLineDraftsFromInquiry(inquiry);
+    }
     this.markAwaitingConsumer.set(inquiry?.status === 'NEW');
     this.loadTimeline();
   }
@@ -473,7 +476,7 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
     this.actionError.set(null);
     this.distributorOptionsError.set(null);
 
-    this.inquiryService.submitToDistributors(inquiry.id, selected).subscribe({
+    this.inquiryService.submitToDistributors(inquiry.id, selected, this.buildLinePricingPayload(inquiry)).subscribe({
       next: (updated) => {
         this.captureDistributorSendSnapshot(inquiry);
         this.replaceInquiry(updated);
@@ -753,16 +756,29 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   }
 
   getLineDraft(inquiryId: string, item: InquiryItem): AdminInquiryLineDraft {
-    return this.lineDrafts().get(this.lineDraftKey(inquiryId, item)) ?? {};
+    const key = this.lineDraftKey(inquiryId, item);
+    const draft = this.lineDrafts().get(key);
+    if (draft && this.hasLineDraftValues(draft)) {
+      return draft;
+    }
+    return this.lineDraftFromPersistedItem(item);
   }
 
   getChatLineDraft(inquiryId: string, item: InquiryItem): AdminInquiryLineDraft {
     const snapshot = this.distributorSendSnapshots().get(inquiryId);
     const key = this.lineDraftKey(inquiryId, item);
-    if (snapshot?.lineDrafts[key]) {
+    if (snapshot?.lineDrafts[key] && this.hasLineDraftValues(snapshot.lineDrafts[key])) {
       return snapshot.lineDrafts[key];
     }
     return this.getLineDraft(inquiryId, item);
+  }
+
+  distributorSendContactName(entry: InquiryTimelineEntry): string {
+    return entry.toCompanyName?.trim() || entry.detail?.trim() || 'Distributor';
+  }
+
+  distributorSendContactEmail(entry: InquiryTimelineEntry): string {
+    return entry.recipientEmail?.trim() || '—';
   }
 
   formatOptionalNumber(value?: number): string {
@@ -881,6 +897,53 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
     });
   }
 
+  private buildLinePricingPayload(inquiry: Inquiry) {
+    return (inquiry.items ?? [])
+      .filter((item) => item.id)
+      .map((item) => {
+        const draft = this.getLineDraft(inquiry.id, item);
+        if (!this.hasLineDraftValues(draft)) {
+          return null;
+        }
+        return {
+          inquiryItemId: item.id!,
+          hsnCode: draft.hsnCode,
+          mrp: draft.mrp,
+          discountPercentage: draft.discountPercentage,
+          gstPercentage: draft.gstPercentage,
+        };
+      })
+      .filter((line): line is NonNullable<typeof line> => line != null);
+  }
+
+  private lineDraftFromPersistedItem(item: InquiryItem): AdminInquiryLineDraft {
+    return {
+      hsnCode: item.adminHsnCode,
+      mrp: item.adminMrp,
+      discountPercentage: item.adminDiscountPercentage,
+      gstPercentage: item.adminGstPercentage,
+    };
+  }
+
+  private hasLineDraftValues(draft: AdminInquiryLineDraft): boolean {
+    return (
+      !!draft.hsnCode?.trim() ||
+      draft.mrp != null ||
+      draft.discountPercentage != null ||
+      draft.gstPercentage != null
+    );
+  }
+
+  private hydrateLineDraftsFromInquiry(inquiry: Inquiry): void {
+    for (const item of inquiry.items ?? []) {
+      const persisted = this.lineDraftFromPersistedItem(item);
+      if (!this.hasLineDraftValues(persisted)) {
+        continue;
+      }
+      this.patchLineDraft(inquiry.id, item, persisted);
+    }
+  }
+
   private parseOptionalNumber(value: string | number | null | undefined): number | null {
     if (value === '' || value == null) {
       return null;
@@ -925,6 +988,7 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
 
   private replaceInquiry(updated: Inquiry): void {
     this.inquiries.update((list) => list.map((q) => (q.id === updated.id ? updated : q)));
+    this.hydrateLineDraftsFromInquiry(updated);
   }
 
   private resolveRecordingMimeType(): string | undefined {
