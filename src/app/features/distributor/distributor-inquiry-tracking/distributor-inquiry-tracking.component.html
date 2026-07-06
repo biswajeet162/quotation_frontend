@@ -89,7 +89,7 @@
                 </svg>
                 Chat
               </button>
-              @if (canMessage(inquiry)) {
+              @if (canMessage(inquiry) && !hasSubmittedQuotation(inquiry)) {
                 <button type="button" class="btn-primary" (click)="openQuotationPanel()">
                   Create your quotation
                 </button>
@@ -116,10 +116,10 @@
                 <p class="detail-note"><strong>Search term:</strong> {{ inquiry.searchTerm }}</p>
               }
 
-              <div class="products-panel">
+              <div class="products-panel quotation-request-section">
                 <div class="products-panel-header">
                   <div class="products-panel-title">
-                    <h3>Requested items</h3>
+                    <h3>Quotation request</h3>
                     <span class="products-count">{{ productCountLabel(inquiry.items) }}</span>
                   </div>
                   @if (totalItemQuantity(inquiry.items) > 0) {
@@ -254,6 +254,183 @@
                   </div>
                 }
               </div>
+
+              @if (hasSubmittedQuotation(inquiry)) {
+                <div class="inquiry-section-divider" aria-hidden="true">
+                  <span>Your response</span>
+                </div>
+
+                <section class="your-quotation-section" aria-label="Your quotation">
+                  <div class="your-quotation-header">
+                    <div>
+                      <h3>Your quotation</h3>
+                      <p class="your-quotation-date">
+                        Submitted on {{ submittedQuotationDateLabel(inquiry) }}
+                      </p>
+                    </div>
+                  </div>
+
+                  @if ((inquiry.items ?? []).length > 0) {
+                    <div class="preview-table-wrap pricing-table-wrap your-quotation-table-wrap">
+                      <table class="preview-table pricing-table your-quotation-table">
+                        <thead>
+                          <tr>
+                            <th class="col-sno">S.No.</th>
+                            <th class="col-designation">Designation</th>
+                            <th class="col-brand">Brand</th>
+                            <th class="col-hsn-code">HSN code</th>
+                            <th class="col-description">Description</th>
+                            <th class="col-qty">Qty</th>
+                            <th class="col-mrp">MRP</th>
+                            <th class="col-discount">Disc. %</th>
+                            <th class="col-amount">Amount</th>
+                            <th class="col-gst">GST %</th>
+                            <th class="col-net-value">Net value</th>
+                            <th class="col-expected-delivery">Expected delivery</th>
+                            <th class="col-our-delivery">Our delivery date</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (item of inquiry.items ?? []; track item.id ?? item.productId) {
+                            @if (getSubmittedLineDraft(inquiry.id, item); as quoted) {
+                              <tr>
+                                <td class="col-sno">{{ $index + 1 }}</td>
+                                <td
+                                  class="col-designation consumer-cell"
+                                  [title]="displayProductField(item.productName)"
+                                >
+                                  {{ displayProductField(item.productName) }}
+                                </td>
+                                <td
+                                  class="col-brand consumer-cell"
+                                  [title]="displayProductField(item.productBrand)"
+                                >
+                                  {{ displayProductField(item.productBrand) }}
+                                </td>
+                                <td class="col-hsn-code">
+                                  <span class="line-input line-input-readonly your-quotation-readonly">
+                                    {{ displayProductField(quoted.hsnCode) }}
+                                  </span>
+                                </td>
+                                <td
+                                  class="col-description consumer-cell preview-multiline"
+                                  [title]="displayProductField(item.productDescription)"
+                                >
+                                  {{ displayProductField(item.productDescription) }}
+                                </td>
+                                <td class="col-qty consumer-cell">{{ item.quantity }}</td>
+                                <td class="col-mrp">
+                                  <span class="line-input line-input-number line-input-readonly your-quotation-readonly">
+                                    {{ formatOptionalNumber(quoted.mrp) }}
+                                  </span>
+                                </td>
+                                <td class="col-discount">
+                                  <span class="line-input line-input-number line-input-readonly your-quotation-readonly">
+                                    {{ formatOptionalPercent(quoted.discountPercentage) }}
+                                  </span>
+                                </td>
+                                <td class="col-amount">
+                                  <span class="line-input line-input-number line-input-readonly your-quotation-readonly">
+                                    {{ formatCurrency(submittedLineAmount(inquiry.id, item)) }}
+                                  </span>
+                                </td>
+                                <td class="col-gst">
+                                  <span class="line-input line-input-number line-input-readonly your-quotation-readonly">
+                                    {{ formatOptionalPercent(quoted.gstPercentage) }}
+                                  </span>
+                                </td>
+                                <td class="col-net-value">
+                                  <span class="line-input line-input-number line-input-readonly your-quotation-readonly">
+                                    {{ formatCurrency(submittedLineNetValue(inquiry.id, item)) }}
+                                  </span>
+                                </td>
+                                <td class="col-expected-delivery consumer-cell">
+                                  {{ formatExpectedDeliveryDate(item.expectedDeliveryDate) }}
+                                </td>
+                                <td class="col-our-delivery consumer-cell">
+                                  {{ formatExpectedDeliveryDate(quoted.ourDeliveryDate) }}
+                                </td>
+                              </tr>
+                            }
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  }
+
+                  <div class="quotation-web-pdf-wrap" aria-label="Your quotation document preview">
+                    <div class="quotation-web-pdf-toolbar">
+                      <span class="quotation-web-pdf-label">{{ distributorQuotationPdfLabel(inquiry) }}</span>
+                      <span class="quotation-web-pdf-meta">Web preview</span>
+                    </div>
+                    <div class="quotation-web-pdf-page">
+                      <div class="quotation-web-pdf-top">
+                        <div>
+                          <p class="quotation-web-pdf-kicker">Your quotation</p>
+                          <h4 class="quotation-web-pdf-title">{{ inquiry.title }}</h4>
+                          <p class="quotation-web-pdf-ref">{{ inquiry.inquiryId }}</p>
+                        </div>
+                        <div class="quotation-web-pdf-date-block">
+                          <span class="quotation-web-pdf-date-label">Quotation date</span>
+                          <span class="quotation-web-pdf-date-value">{{
+                            submittedQuotationDateLabel(inquiry)
+                          }}</span>
+                        </div>
+                      </div>
+
+                      <h5 class="quotation-web-pdf-section-title">Quoted items</h5>
+                      <div class="quotation-web-pdf-table-wrap">
+                      <table class="quotation-web-pdf-table">
+                        <thead>
+                          <tr>
+                            <th>S.No.</th>
+                            <th>Designation</th>
+                            <th>Brand</th>
+                            <th>HSN</th>
+                            <th>Description</th>
+                            <th>Qty</th>
+                            <th>MRP</th>
+                            <th>Disc. %</th>
+                            <th>Amount</th>
+                            <th>GST %</th>
+                            <th>Net value</th>
+                            <th>Expected delivery</th>
+                            <th>Our delivery</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (item of inquiry.items ?? []; track item.id ?? item.productId) {
+                            @if (getSubmittedLineDraft(inquiry.id, item); as quoted) {
+                              <tr>
+                                <td>{{ $index + 1 }}</td>
+                                <td>{{ displayProductField(item.productName) }}</td>
+                                <td>{{ displayProductField(item.productBrand) }}</td>
+                                <td>{{ displayProductField(quoted.hsnCode) }}</td>
+                                <td>{{ displayProductField(item.productDescription) }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>{{ formatOptionalNumber(quoted.mrp) }}</td>
+                                <td>{{ formatOptionalPercent(quoted.discountPercentage) }}</td>
+                                <td>{{ formatCurrency(submittedLineAmount(inquiry.id, item)) }}</td>
+                                <td>{{ formatOptionalPercent(quoted.gstPercentage) }}</td>
+                                <td>{{ formatCurrency(submittedLineNetValue(inquiry.id, item)) }}</td>
+                                <td>{{ formatExpectedDeliveryDate(item.expectedDeliveryDate) }}</td>
+                                <td>{{ formatExpectedDeliveryDate(quoted.ourDeliveryDate) }}</td>
+                              </tr>
+                            }
+                          }
+                        </tbody>
+                      </table>
+                      </div>
+
+                      <div class="quotation-web-pdf-terms">
+                        <h5>Terms</h5>
+                        <p>Pricing and delivery timelines are as quoted above.</p>
+                        <p>Offer validity: 30 days from quotation date.</p>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              }
             </div>
 
             @if (chatPanelOpen()) {

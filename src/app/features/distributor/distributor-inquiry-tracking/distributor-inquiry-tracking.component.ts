@@ -57,6 +57,13 @@ interface DistributorInquiryLineDraft {
   ourDeliveryDate?: string;
 }
 
+interface DistributorQuotationSnapshot {
+  submittedAt: string;
+  lines: Record<string, DistributorInquiryLineDraft>;
+}
+
+const SUBMITTED_QUOTATIONS_STORAGE_KEY = 'distributor-submitted-quotations';
+
 @Component({
   selector: 'app-distributor-inquiry-tracking',
   imports: [FormsModule, InquiryChatAttachmentComponent, ChatAudioPlayerComponent, LoadingOverlayComponent],
@@ -93,6 +100,7 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   readonly itemAttachmentViewerOpen = signal(false);
   readonly itemAttachmentViewerItem = signal<InquiryItem | null>(null);
   readonly lineDrafts = signal<Map<string, DistributorInquiryLineDraft>>(new Map());
+  readonly submittedQuotations = signal<Map<string, DistributorQuotationSnapshot>>(new Map());
   readonly chatPanelOpen = signal(false);
   readonly quotationPanelOpen = signal(false);
   readonly quotationSending = signal(false);
@@ -190,6 +198,7 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   );
 
   ngOnInit(): void {
+    this.loadSubmittedQuotationsFromStorage();
     const preselect = this.route.snapshot.queryParamMap.get('inquiry');
     if (preselect) {
       this.selectedId.set(preselect);
@@ -275,6 +284,37 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     return `${inquiry.inquiryId}-request.pdf`;
   }
 
+  distributorQuotationPdfLabel(inquiry: DistributorInquiry): string {
+    return `${inquiry.inquiryId}-your-quotation.pdf`;
+  }
+
+  hasSubmittedQuotation(inquiry: DistributorInquiry): boolean {
+    return inquiry.responseReceived && !!this.getSubmittedQuotation(inquiry.id);
+  }
+
+  submittedQuotationDateLabel(inquiry: DistributorInquiry): string {
+    const snapshot = this.getSubmittedQuotation(inquiry.id);
+    const iso = snapshot?.submittedAt ?? inquiry.responseReceivedAt;
+    return this.formatQuotationDate(iso);
+  }
+
+  getSubmittedLineDraft(inquiryId: string, item: InquiryItem): DistributorInquiryLineDraft {
+    const snapshot = this.getSubmittedQuotation(inquiryId);
+    if (!snapshot) {
+      return {};
+    }
+
+    return snapshot.lines[this.lineDraftKey(inquiryId, item)] ?? {};
+  }
+
+  submittedLineAmount(inquiryId: string, item: InquiryItem): number | null {
+    return this.lineAmount(inquiryId, item, this.getSubmittedLineDraft(inquiryId, item));
+  }
+
+  submittedLineNetValue(inquiryId: string, item: InquiryItem): number | null {
+    return this.lineNetValue(inquiryId, item, this.getSubmittedLineDraft(inquiryId, item));
+  }
+
   openPdfViewer(): void {
     if (!this.pdfBlob) {
       return;
@@ -326,6 +366,7 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     this.distributorInquiryService.postMessage(inquiry.id, message).subscribe({
       next: (updated) => {
         this.quotationSending.set(false);
+        this.snapshotSubmittedQuotation(inquiry);
         this.closeQuotationPanel();
         this.selectedInquiry.set(updated);
         this.inquirySummaries.update((list) =>
@@ -936,6 +977,21 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     return Number.isNaN(date.getTime()) ? iso : date.toLocaleString();
   }
 
+  formatQuotationDate(iso?: string): string {
+    if (!iso) {
+      return '—';
+    }
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) {
+      return iso;
+    }
+    return date.toLocaleDateString(undefined, {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+  }
+
   formatChatTime(iso?: string): string {
     if (!iso) {
       return '';
@@ -1132,15 +1188,6 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     });
   }
 
-  private parseOptionalNumber(value: string | number | null | undefined): number | null {
-    if (value === '' || value == null) {
-      return null;
-    }
-
-    const parsed = typeof value === 'number' ? value : Number(value);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-
   private buildQuotationMessage(inquiry: DistributorInquiry): string {
     const lines = (inquiry.items ?? []).map((item, index) => {
       const draft = this.getLineDraft(inquiry.id, item);
@@ -1165,5 +1212,65 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     });
 
     return ['Quotation:', '', ...lines].join('\n');
+  }
+
+  private getSubmittedQuotation(inquiryId: string): DistributorQuotationSnapshot | null {
+    return this.submittedQuotations().get(inquiryId) ?? null;
+  }
+
+  private snapshotSubmittedQuotation(inquiry: DistributorInquiry): void {
+    const lines: Record<string, DistributorInquiryLineDraft> = {};
+    for (const item of inquiry.items ?? []) {
+      const key = this.lineDraftKey(inquiry.id, item);
+      lines[key] = { ...this.getLineDraft(inquiry.id, item) };
+    }
+
+    const snapshot: DistributorQuotationSnapshot = {
+      submittedAt: new Date().toISOString(),
+      lines,
+    };
+
+    this.submittedQuotations.update((map) => {
+      const next = new Map(map);
+      next.set(inquiry.id, snapshot);
+      return next;
+    });
+    this.persistSubmittedQuotations();
+  }
+
+  private loadSubmittedQuotationsFromStorage(): void {
+    if (typeof sessionStorage === 'undefined') {
+      return;
+    }
+
+    try {
+      const raw = sessionStorage.getItem(SUBMITTED_QUOTATIONS_STORAGE_KEY);
+      if (!raw) {
+        return;
+      }
+
+      const parsed = JSON.parse(raw) as Record<string, DistributorQuotationSnapshot>;
+      this.submittedQuotations.set(new Map(Object.entries(parsed)));
+    } catch {
+      this.submittedQuotations.set(new Map());
+    }
+  }
+
+  private persistSubmittedQuotations(): void {
+    if (typeof sessionStorage === 'undefined') {
+      return;
+    }
+
+    const record = Object.fromEntries(this.submittedQuotations().entries());
+    sessionStorage.setItem(SUBMITTED_QUOTATIONS_STORAGE_KEY, JSON.stringify(record));
+  }
+
+  private parseOptionalNumber(value: string | number | null | undefined): number | null {
+    if (value === '' || value == null) {
+      return null;
+    }
+
+    const parsed = typeof value === 'number' ? value : Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
   }
 }

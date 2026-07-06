@@ -30,6 +30,7 @@ export interface DistributorInquiry {
   items?: InquiryItem[];
   assignmentId: string;
   responseReceived: boolean;
+  responseReceivedAt?: string;
   receivedAt?: string;
   createdAt?: string;
 }
