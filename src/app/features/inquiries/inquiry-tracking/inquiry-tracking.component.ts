@@ -14,7 +14,6 @@ import {
   getConsumerInquiryDisplay,
   formatExpectedDeliveryDate,
   getInquiryListStep,
-  getRequestSourceLabel,
 } from '../../../shared/utils/inquiry-display.util';
 import {
   buildReplyPreview,
@@ -207,10 +206,9 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   readonly noticeDisplayDetail = (entry: InquiryTimelineEntry) =>
     noticeDisplayDetail(entry, 'CONSUMER');
 
-  readonly getRequestSourceLabel = getRequestSourceLabel;
+  readonly getInquiryListStep = getInquiryListStep;
   readonly formatExpectedDeliveryDate = formatExpectedDeliveryDate;
   readonly getConsumerInquiryDisplay = getConsumerInquiryDisplay;
-  readonly getInquiryListStep = getInquiryListStep;
 
   readonly messageFieldLabel = computed(() => {
     const inquiry = this.selectedInquiry();
@@ -856,6 +854,23 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
       return `${brand} · ${designation}`;
     }
     return brand || designation || 'Product attachments';
+  }
+
+  formatPostedDate(iso?: string): string {
+    if (!iso) {
+      return '—';
+    }
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) {
+      return iso;
+    }
+    return date.toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
   }
 
   formatDate(iso?: string): string {
