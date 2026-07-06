@@ -94,25 +94,147 @@
                 <p class="detail-note"><strong>Search term:</strong> {{ inquiry.searchTerm }}</p>
               }
 
-              <h3>Products</h3>
-              <ul class="product-lines">
-                @for (item of inquiry.items ?? []; track item.id ?? item.productId) {
-                  <li>
-                    <span class="line-badge" [class.new-product]="item.lineSource === 'NEW_PRODUCT'">
-                      {{ lineSourceLabel(item.lineSource) }}
+              <div class="products-panel">
+                <div class="products-panel-header">
+                  <div class="products-panel-title">
+                    <h3>Requested items</h3>
+                    <span class="products-count">{{ productCountLabel(inquiry.items) }}</span>
+                  </div>
+                  @if (totalItemQuantity(inquiry.items) > 0) {
+                    <span class="total-qty-label">
+                      Total quantity — {{ totalItemQuantity(inquiry.items) }}
                     </span>
-                    {{ item.productBrand }} {{ item.productName }} — qty {{ item.quantity }}
-                    @if (item.expectedDeliveryDate) {
-                      <span class="muted">
-                        · expected {{ formatExpectedDeliveryDate(item.expectedDeliveryDate) }}
-                      </span>
-                    }
-                    @if (item.notes) {
-                      <span class="muted">({{ item.notes }})</span>
-                    }
-                  </li>
+                  }
+                </div>
+
+                @if ((inquiry.items ?? []).length > 0) {
+                  <div class="preview-table-wrap pricing-table-wrap">
+                    <table class="preview-table pricing-table">
+                      <thead>
+                        <tr>
+                          <th class="col-sno">S.No.</th>
+                          <th class="col-designation">Designation</th>
+                          <th class="col-brand">Brand</th>
+                          <th class="col-hsn-code">HSN code</th>
+                          <th class="col-description">Description</th>
+                          <th class="col-qty">Qty</th>
+                          <th class="col-mrp">MRP</th>
+                          <th class="col-discount">Disc. %</th>
+                          <th class="col-amount">Amount</th>
+                          <th class="col-gst">GST %</th>
+                          <th class="col-net-value">Net value</th>
+                          <th class="col-expected-delivery">Expected delivery</th>
+                          <th class="col-attachment">Images</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (item of inquiry.items ?? []; track item.id ?? item.productId) {
+                          <tr>
+                            <td class="col-sno">{{ $index + 1 }}</td>
+                            <td class="col-designation consumer-cell" [title]="displayProductField(item.productName)">
+                              {{ displayProductField(item.productName) }}
+                            </td>
+                            <td class="col-brand consumer-cell" [title]="displayProductField(item.productBrand)">
+                              {{ displayProductField(item.productBrand) }}
+                            </td>
+                            <td class="col-hsn-code">
+                              <input
+                                type="text"
+                                class="line-input"
+                                [ngModel]="getLineDraft(inquiry.id, item).hsnCode ?? ''"
+                                (ngModelChange)="updateLineTextField(inquiry.id, item, 'hsnCode', $event)"
+                                placeholder="—"
+                                aria-label="HSN code"
+                              />
+                            </td>
+                            <td
+                              class="col-description consumer-cell preview-multiline"
+                              [title]="displayProductField(item.productDescription)"
+                            >
+                              {{ displayProductField(item.productDescription) }}
+                            </td>
+                            <td class="col-qty consumer-cell">{{ item.quantity }}</td>
+                            <td class="col-mrp">
+                              <input
+                                type="number"
+                                class="line-input line-input-number"
+                                min="0"
+                                step="0.01"
+                                [ngModel]="getLineDraft(inquiry.id, item).mrp ?? ''"
+                                (ngModelChange)="updateLineNumberField(inquiry.id, item, 'mrp', $event)"
+                                placeholder="—"
+                                aria-label="MRP"
+                              />
+                            </td>
+                            <td class="col-discount">
+                              <input
+                                type="number"
+                                class="line-input line-input-number"
+                                min="0"
+                                max="100"
+                                step="0.01"
+                                [ngModel]="getLineDraft(inquiry.id, item).discountPercentage ?? ''"
+                                (ngModelChange)="updateLineNumberField(inquiry.id, item, 'discountPercentage', $event)"
+                                placeholder="—"
+                                aria-label="Discount percentage"
+                              />
+                            </td>
+                            <td class="col-amount">
+                              <span class="line-input line-input-number line-input-readonly" aria-readonly="true">
+                                {{ formatCurrency(lineAmount(inquiry.id, item)) }}
+                              </span>
+                            </td>
+                            <td class="col-gst">
+                              <input
+                                type="number"
+                                class="line-input line-input-number"
+                                min="0"
+                                max="100"
+                                step="0.01"
+                                [ngModel]="getLineDraft(inquiry.id, item).gstPercentage ?? ''"
+                                (ngModelChange)="updateLineNumberField(inquiry.id, item, 'gstPercentage', $event)"
+                                placeholder="—"
+                                aria-label="GST percentage"
+                              />
+                            </td>
+                            <td class="col-net-value">
+                              <span class="line-input line-input-number line-input-readonly" aria-readonly="true">
+                                {{ formatCurrency(lineNetValue(inquiry.id, item)) }}
+                              </span>
+                            </td>
+                            <td class="col-expected-delivery consumer-cell">
+                              {{ formatExpectedDeliveryDate(item.expectedDeliveryDate) }}
+                            </td>
+                            <td class="col-attachment">
+                              @if (itemAttachmentCount(item) > 0) {
+                                <button
+                                  type="button"
+                                  class="btn-attachment-link"
+                                  (click)="openItemAttachments(item, $event)"
+                                  [attr.aria-label]="
+                                    'View ' +
+                                    itemAttachmentLabel(item) +
+                                    ' for ' +
+                                    displayProductField(item.productBrand) +
+                                    ' ' +
+                                    displayProductField(item.productName)
+                                  "
+                                >
+                                  {{ itemAttachmentLabel(item) }}
+                                </button>
+                              } @else {
+                                —
+                              }
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                } @else {
+                  <p class="products-empty">No products in this request.</p>
                 }
-              </ul>
+              </div>
 
               <p class="status-row">
                 <strong>Status:</strong> {{ inquiry.status }}
@@ -466,3 +588,31 @@
   }
   }
 </section>
+
+@if (itemAttachmentViewerOpen() && itemAttachmentViewerItem(); as attachmentItem) {
+  <div class="confirm-overlay" (click)="closeItemAttachments()" role="presentation">
+    <div
+      class="confirm-dialog item-attachment-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="item-attachment-title"
+      (click)="$event.stopPropagation()"
+    >
+      <h2 id="item-attachment-title">Images</h2>
+      <p class="item-attachment-subtitle">{{ itemAttachmentViewerLabel(attachmentItem) }}</p>
+      <ul class="item-attachment-list">
+        @for (attachment of attachmentItem.attachments ?? []; track attachment.id) {
+          <li>
+            <app-inquiry-chat-attachment
+              [attachment]="toItemTimelineAttachment(attachment)"
+              [previewMode]="'panel'"
+            />
+          </li>
+        }
+      </ul>
+      <div class="confirm-actions">
+        <button type="button" class="btn-secondary" (click)="closeItemAttachments()">Close</button>
+      </div>
+    </div>
+  </div>
+}

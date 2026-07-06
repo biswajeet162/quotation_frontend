@@ -11,6 +11,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { DistributorInquiry, DistributorInquirySummary } from '../../../core/models/distributor.model';
+import { InquiryItem } from '../../../core/models/inquiry.model';
 import {
   InquiryTimelineEntry,
   InquiryTimelineAttachment,
@@ -36,6 +37,7 @@ import {
   noticeDisplayLabel,
 } from '../../../shared/utils/timeline-chat.util';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
+import { toItemTimelineAttachment } from '../../../shared/utils/attachment-media-type.util';
 
 type StatusFilter = 'all' | 'pending' | 'responded' | 'CLOSED';
 
@@ -44,6 +46,13 @@ interface PendingAttachment {
   file: File;
   previewUrl?: string;
   mediaType: TimelineAttachmentMediaType;
+}
+
+interface DistributorInquiryLineDraft {
+  hsnCode?: string;
+  mrp?: number;
+  discountPercentage?: number;
+  gstPercentage?: number;
 }
 
 @Component({
@@ -77,6 +86,10 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   readonly recording = signal(false);
   readonly recordingSeconds = signal(0);
   readonly recordingLevels = signal<number[]>(Array.from({ length: 24 }, () => 0.15));
+
+  readonly itemAttachmentViewerOpen = signal(false);
+  readonly itemAttachmentViewerItem = signal<InquiryItem | null>(null);
+  readonly lineDrafts = signal<Map<string, DistributorInquiryLineDraft>>(new Map());
 
   private readonly detailScrollRef = viewChild<ElementRef<HTMLElement>>('detailScroll');
   private readonly messageInputRef = viewChild<ElementRef<HTMLTextAreaElement>>('messageInput');
@@ -617,8 +630,111 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     this.loadTimeline({ silent: true, preserveScroll: true });
   }
 
-  lineSourceLabel(lineSource?: string): string {
-    return lineSource === 'NEW_PRODUCT' ? 'New product from search' : 'Catalog match';
+  productCountLabel(items?: DistributorInquiry['items']): string {
+    const count = items?.length ?? 0;
+    return count === 1 ? '1 product' : `${count} products`;
+  }
+
+  totalItemQuantity(items?: DistributorInquiry['items']): number {
+    return (items ?? []).reduce((sum, item) => sum + (item.quantity ?? 0), 0);
+  }
+
+  displayProductField(value?: string): string {
+    const trimmed = value?.trim();
+    return trimmed ? trimmed : '—';
+  }
+
+  lineDraftKey(inquiryId: string, item: InquiryItem): string {
+    return `${inquiryId}:${item.id ?? item.productId}`;
+  }
+
+  getLineDraft(inquiryId: string, item: InquiryItem): DistributorInquiryLineDraft {
+    return this.lineDrafts().get(this.lineDraftKey(inquiryId, item)) ?? {};
+  }
+
+  updateLineTextField(
+    inquiryId: string,
+    item: InquiryItem,
+    field: 'hsnCode',
+    value: string,
+  ): void {
+    const trimmed = value.trim();
+    this.patchLineDraft(inquiryId, item, { [field]: trimmed || undefined });
+  }
+
+  updateLineNumberField(
+    inquiryId: string,
+    item: InquiryItem,
+    field: 'mrp' | 'discountPercentage' | 'gstPercentage',
+    value: string | number | null,
+  ): void {
+    const parsed = this.parseOptionalNumber(value);
+    this.patchLineDraft(inquiryId, item, { [field]: parsed ?? undefined });
+  }
+
+  lineAmount(inquiryId: string, item: InquiryItem, draft?: DistributorInquiryLineDraft): number | null {
+    const lineDraft = draft ?? this.getLineDraft(inquiryId, item);
+    if (lineDraft.mrp == null) {
+      return null;
+    }
+
+    const discount = lineDraft.discountPercentage ?? 0;
+    const unitAfterDiscount = lineDraft.mrp * (1 - discount / 100);
+    return unitAfterDiscount * item.quantity;
+  }
+
+  lineNetValue(
+    inquiryId: string,
+    item: InquiryItem,
+    draft?: DistributorInquiryLineDraft,
+  ): number | null {
+    const amount = this.lineAmount(inquiryId, item, draft);
+    if (amount == null) {
+      return null;
+    }
+
+    const lineDraft = draft ?? this.getLineDraft(inquiryId, item);
+    const gst = lineDraft.gstPercentage ?? 0;
+    return amount * (1 + gst / 100);
+  }
+
+  formatCurrency(value: number | null | undefined): string {
+    return value == null ? '—' : value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  }
+
+  itemAttachmentCount(item: InquiryItem): number {
+    return item.attachments?.length ?? 0;
+  }
+
+  itemAttachmentLabel(item: InquiryItem): string {
+    const count = this.itemAttachmentCount(item);
+    return count === 1 ? '1 image' : `${count} images`;
+  }
+
+  openItemAttachments(item: InquiryItem, event: Event): void {
+    event.stopPropagation();
+    this.itemAttachmentViewerItem.set(item);
+    this.itemAttachmentViewerOpen.set(true);
+  }
+
+  closeItemAttachments(): void {
+    this.itemAttachmentViewerOpen.set(false);
+    this.itemAttachmentViewerItem.set(null);
+  }
+
+  toItemTimelineAttachment(
+    attachment: NonNullable<InquiryItem['attachments']>[number],
+  ): InquiryTimelineAttachment {
+    return toItemTimelineAttachment(attachment);
+  }
+
+  itemAttachmentViewerLabel(item: InquiryItem): string {
+    const brand = item.productBrand?.trim();
+    const designation = item.productName?.trim();
+    if (brand && designation) {
+      return `${brand} · ${designation}`;
+    }
+    return brand || designation || 'Product images';
   }
 
   formatDate(iso?: string): string {
@@ -810,5 +926,27 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     requestAnimationFrame(() => {
       this.messageInputRef()?.nativeElement?.focus();
     });
+  }
+
+  private patchLineDraft(
+    inquiryId: string,
+    item: InquiryItem,
+    patch: Partial<DistributorInquiryLineDraft>,
+  ): void {
+    const key = this.lineDraftKey(inquiryId, item);
+    this.lineDrafts.update((drafts) => {
+      const next = new Map(drafts);
+      next.set(key, { ...(next.get(key) ?? {}), ...patch });
+      return next;
+    });
+  }
+
+  private parseOptionalNumber(value: string | number | null | undefined): number | null {
+    if (value === '' || value == null) {
+      return null;
+    }
+
+    const parsed = typeof value === 'number' ? value : Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
   }
 }
