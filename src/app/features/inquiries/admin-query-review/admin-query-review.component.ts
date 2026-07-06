@@ -28,7 +28,6 @@ import { ChatAudioPlayerComponent } from '../../../shared/components/chat-audio-
 import {
   formatExpectedDeliveryDate,
   getInquiryListStep,
-  getRequestSourceLabel,
 } from '../../../shared/utils/inquiry-display.util';
 import {
   canReplyToTimelineEntry,
@@ -204,7 +203,6 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
     noticeDisplayLabel(entry, 'ADMIN');
   readonly noticeDisplayDetail = (entry: InquiryTimelineEntry) =>
     noticeDisplayDetail(entry, 'ADMIN');
-  readonly getRequestSourceLabel = getRequestSourceLabel;
   readonly formatExpectedDeliveryDate = formatExpectedDeliveryDate;
   readonly getInquiryListStep = getInquiryListStep;
 
@@ -738,7 +736,7 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
 
   productCountLabel(items?: Inquiry['items']): string {
     const count = items?.length ?? 0;
-    return count === 1 ? '1 item' : `${count} items`;
+    return count === 1 ? '1 product' : `${count} products`;
   }
 
   totalItemQuantity(items?: Inquiry['items']): number {

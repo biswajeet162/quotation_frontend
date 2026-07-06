@@ -76,8 +76,13 @@
             <div>
               <h2>{{ inquiry.title }}</h2>
               <p class="detail-meta">
-                {{ inquiry.inquiryId }} · {{ inquiry.companyName }} ·
-                {{ getRequestSourceLabel(inquiry.requestSource) }}
+                <span>{{ inquiry.inquiryId }}</span>
+                <span class="detail-meta-sep" aria-hidden="true">·</span>
+                <span class="detail-company">{{ inquiry.companyName || '—' }}</span>
+                <span class="detail-meta-sep" aria-hidden="true">·</span>
+                <span>{{ productCountLabel(inquiry.items) }}</span>
+                <span class="detail-meta-sep" aria-hidden="true">·</span>
+                <span>{{ formatPostedDate(inquiry.createdAt) }}</span>
               </p>
             </div>
             @if (inquiry.status === 'NEW') {

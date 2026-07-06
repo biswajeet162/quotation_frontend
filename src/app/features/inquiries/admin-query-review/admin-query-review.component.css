@@ -358,6 +358,19 @@
   margin: 0;
   font-size: 0.85rem;
   color: #64748b;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.detail-meta-sep {
+  color: #cbd5e1;
+}
+
+.detail-company {
+  font-weight: 700;
+  color: #0f766e;
 }
 
 .products-panel {
