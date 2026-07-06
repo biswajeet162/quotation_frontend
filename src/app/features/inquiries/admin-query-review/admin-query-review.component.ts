@@ -472,6 +472,12 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const pricingError = this.validateLinePricing(inquiry);
+    if (pricingError) {
+      this.distributorOptionsError.set(pricingError);
+      return;
+    }
+
     this.actionLoading.set(true);
     this.actionError.set(null);
     this.distributorOptionsError.set(null);
@@ -828,7 +834,14 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
     field: 'mrp' | 'discountPercentage' | 'gstPercentage',
     value: string | number | null,
   ): void {
-    const parsed = this.parseOptionalNumber(value);
+    let parsed = this.parseOptionalNumber(value);
+    if (parsed != null) {
+      if (field === 'mrp' && parsed < 0) {
+        parsed = 0;
+      } else if ((field === 'discountPercentage' || field === 'gstPercentage') && (parsed < 0 || parsed > 100)) {
+        return;
+      }
+    }
     this.patchLineDraft(inquiryId, item, { [field]: parsed ?? undefined });
   }
 
@@ -918,6 +931,28 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
       next.set(inquiry.id, { lineDrafts });
       return next;
     });
+  }
+
+  private validateLinePricing(inquiry: Inquiry): string | null {
+    for (const item of inquiry.items ?? []) {
+      const draft = this.getLineDraft(inquiry.id, item);
+      const label = [item.productBrand, item.productName]
+        .map((part) => part?.trim())
+        .filter(Boolean)
+        .join(' · ');
+      const productLabel = label || 'a product line';
+
+      if (draft.mrp != null && draft.mrp < 0) {
+        return `MRP cannot be negative for ${productLabel}.`;
+      }
+      if (draft.discountPercentage != null && (draft.discountPercentage < 0 || draft.discountPercentage > 100)) {
+        return `Discount % must be between 0 and 100 for ${productLabel}.`;
+      }
+      if (draft.gstPercentage != null && (draft.gstPercentage < 0 || draft.gstPercentage > 100)) {
+        return `GST % must be between 0 and 100 for ${productLabel}.`;
+      }
+    }
+    return null;
   }
 
   private buildLinePricingPayload(inquiry: Inquiry) {
