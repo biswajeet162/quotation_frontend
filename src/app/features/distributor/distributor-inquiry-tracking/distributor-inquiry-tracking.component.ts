@@ -94,11 +94,16 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   readonly itemAttachmentViewerItem = signal<InquiryItem | null>(null);
   readonly lineDrafts = signal<Map<string, DistributorInquiryLineDraft>>(new Map());
   readonly chatPanelOpen = signal(false);
+  readonly quotationPanelOpen = signal(false);
+  readonly quotationSending = signal(false);
+  readonly quotationError = signal<string | null>(null);
   readonly pdfLoading = signal(false);
-  readonly pdfError = signal<string | null>(null);
+  readonly pdfAvailable = signal(false);
+  readonly pdfViewerOpen = signal(false);
   readonly pdfSafeUrl = signal<SafeResourceUrl | null>(null);
 
-  private pdfObjectUrl: string | null = null;
+  private pdfBlob: Blob | null = null;
+  private pdfViewerObjectUrl: string | null = null;
 
   private readonly detailScrollRef = viewChild<ElementRef<HTMLElement>>('detailScroll');
   private readonly messageInputRef = viewChild<ElementRef<HTMLTextAreaElement>>('messageInput');
@@ -195,7 +200,8 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.cleanupRecordingResources(false);
     this.clearPendingAttachments();
-    this.revokePdfUrl();
+    this.revokePdfViewerUrl();
+    this.pdfBlob = null;
   }
 
   load(): void {
@@ -236,6 +242,9 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     this.cancelVoiceRecording();
     this.clearPendingAttachments();
     this.chatPanelOpen.set(false);
+    this.quotationPanelOpen.set(false);
+    this.closePdfViewer();
+    this.quotationError.set(null);
     this.selectedId.set(id);
     this.messageError.set(null);
     this.messageText.set('');
@@ -250,6 +259,89 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     if (next && this.selectedInquiry()) {
       this.loadTimeline();
     }
+  }
+
+  openQuotationPanel(): void {
+    this.quotationError.set(null);
+    this.quotationPanelOpen.set(true);
+  }
+
+  closeQuotationPanel(): void {
+    this.quotationPanelOpen.set(false);
+    this.quotationError.set(null);
+  }
+
+  submissionPdfLabel(inquiry: DistributorInquiry): string {
+    return `${inquiry.inquiryId}-request.pdf`;
+  }
+
+  openPdfViewer(): void {
+    if (!this.pdfBlob) {
+      return;
+    }
+
+    this.revokePdfViewerUrl();
+    this.pdfViewerObjectUrl = URL.createObjectURL(this.pdfBlob);
+    this.pdfSafeUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(this.pdfViewerObjectUrl));
+    this.pdfViewerOpen.set(true);
+  }
+
+  closePdfViewer(): void {
+    this.pdfViewerOpen.set(false);
+    this.revokePdfViewerUrl();
+  }
+
+  canSubmitQuotation(inquiry: DistributorInquiry): boolean {
+    const items = inquiry.items ?? [];
+    if (items.length === 0) {
+      return false;
+    }
+
+    return items.every((item) => {
+      const draft = this.getLineDraft(inquiry.id, item);
+      return draft.mrp != null && draft.gstPercentage != null;
+    });
+  }
+
+  sendQuotation(): void {
+    const inquiry = this.selectedInquiry();
+    if (!inquiry) {
+      return;
+    }
+
+    if (!this.canMessage(inquiry)) {
+      this.quotationError.set('This request is closed. You cannot send a quotation.');
+      return;
+    }
+
+    if (!this.canSubmitQuotation(inquiry)) {
+      this.quotationError.set('Fill MRP and GST % for every product before sending.');
+      return;
+    }
+
+    const message = this.buildQuotationMessage(inquiry);
+    this.quotationSending.set(true);
+    this.quotationError.set(null);
+
+    this.distributorInquiryService.postMessage(inquiry.id, message).subscribe({
+      next: (updated) => {
+        this.quotationSending.set(false);
+        this.closeQuotationPanel();
+        this.selectedInquiry.set(updated);
+        this.inquirySummaries.update((list) =>
+          list.map((summary) =>
+            summary.inquiryUuid === updated.id
+              ? { ...summary, responseReceived: updated.responseReceived, status: updated.status }
+              : summary,
+          ),
+        );
+        this.loadTimeline({ silent: true, scrollToBottom: true });
+      },
+      error: (err) => {
+        this.quotationSending.set(false);
+        this.quotationError.set(err?.error?.message ?? 'Could not send your quotation.');
+      },
+    });
   }
 
   private syncSelection(): void {
@@ -271,7 +363,9 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   }
 
   private loadSelectedInquiry(id: string): void {
-    this.revokePdfUrl();
+    this.closePdfViewer();
+    this.pdfBlob = null;
+    this.pdfAvailable.set(false);
     this.distributorInquiryService.getById(id).subscribe({
       next: (inquiry) => {
         this.selectedInquiry.set(inquiry);
@@ -286,27 +380,27 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
 
   private loadSubmissionPdf(inquiryId: string): void {
     this.pdfLoading.set(true);
-    this.pdfError.set(null);
-    this.pdfSafeUrl.set(null);
+    this.pdfAvailable.set(false);
+    this.pdfBlob = null;
 
     this.distributorInquiryService.downloadSubmissionPdf(inquiryId).subscribe({
       next: (blob) => {
-        this.revokePdfUrl();
-        this.pdfObjectUrl = URL.createObjectURL(blob);
-        this.pdfSafeUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(this.pdfObjectUrl));
+        this.pdfBlob = blob;
+        this.pdfAvailable.set(true);
         this.pdfLoading.set(false);
       },
       error: () => {
         this.pdfLoading.set(false);
-        this.pdfError.set('Quotation PDF is not available for this request.');
+        this.pdfAvailable.set(false);
+        this.pdfBlob = null;
       },
     });
   }
 
-  private revokePdfUrl(): void {
-    if (this.pdfObjectUrl) {
-      URL.revokeObjectURL(this.pdfObjectUrl);
-      this.pdfObjectUrl = null;
+  private revokePdfViewerUrl(): void {
+    if (this.pdfViewerObjectUrl) {
+      URL.revokeObjectURL(this.pdfViewerObjectUrl);
+      this.pdfViewerObjectUrl = null;
     }
     this.pdfSafeUrl.set(null);
   }
@@ -771,6 +865,34 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     return value == null ? '—' : value.toLocaleString(undefined, { maximumFractionDigits: 2 });
   }
 
+  formatOptionalNumber(value?: number): string {
+    return value == null ? '—' : value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  }
+
+  formatOptionalPercent(value?: number): string {
+    return value == null ? '—' : `${value}%`;
+  }
+
+  adminLineAmount(item: InquiryItem): number | null {
+    if (item.adminMrp == null) {
+      return null;
+    }
+
+    const discount = item.adminDiscountPercentage ?? 0;
+    const unitAfterDiscount = item.adminMrp * (1 - discount / 100);
+    return unitAfterDiscount * item.quantity;
+  }
+
+  adminLineNetValue(item: InquiryItem): number | null {
+    const amount = this.adminLineAmount(item);
+    if (amount == null) {
+      return null;
+    }
+
+    const gst = item.adminGstPercentage ?? 0;
+    return amount * (1 + gst / 100);
+  }
+
   itemAttachmentCount(item: InquiryItem): number {
     return item.attachments?.length ?? 0;
   }
@@ -1017,5 +1139,31 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
 
     const parsed = typeof value === 'number' ? value : Number(value);
     return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  private buildQuotationMessage(inquiry: DistributorInquiry): string {
+    const lines = (inquiry.items ?? []).map((item, index) => {
+      const draft = this.getLineDraft(inquiry.id, item);
+      const designation = this.displayProductField(item.productName);
+      const brand = this.displayProductField(item.productBrand);
+      const hsn = draft.hsnCode?.trim() || '—';
+      const mrp = this.formatCurrency(draft.mrp);
+      const discount = draft.discountPercentage ?? 0;
+      const amount = this.formatCurrency(this.lineAmount(inquiry.id, item, draft));
+      const gst = draft.gstPercentage ?? 0;
+      const netValue = this.formatCurrency(this.lineNetValue(inquiry.id, item, draft));
+      const ourDelivery = draft.ourDeliveryDate?.trim()
+        ? this.formatExpectedDeliveryDate(draft.ourDeliveryDate)
+        : '—';
+
+      return [
+        `${index + 1}. ${brand} · ${designation}`,
+        `Qty ${item.quantity} · HSN ${hsn}`,
+        `MRP ${mrp} · Disc ${discount}% · Amount ${amount} · GST ${gst}% · Net ${netValue}`,
+        `Our delivery: ${ourDelivery}`,
+      ].join('\n');
+    });
+
+    return ['Quotation:', '', ...lines].join('\n');
   }
 }
