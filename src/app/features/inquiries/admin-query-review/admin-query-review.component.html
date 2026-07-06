@@ -109,48 +109,102 @@
                 <p class="detail-note"><strong>Consumer notes:</strong> {{ inquiry.description }}</p>
               }
 
-              <h3>Products</h3>
-
-              @if (assignedDistributorCount(inquiry) > 0) {
-                <p class="distributor-sent-row">
-                  <span class="distributor-sent-count">
-                    Sent to {{ assignedDistributorCount(inquiry) }}
-                    distributor{{ assignedDistributorCount(inquiry) === 1 ? '' : 's' }}
-                  </span>
-                  <button
-                    type="button"
-                    class="external-link"
-                    (click)="openDistributorChats(inquiry.id)"
-                    title="Open distributor chats in a new tab"
-                  >
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path
-                        d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3ZM5 5h6V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6h-2v6H5V5Z"
-                      />
-                    </svg>
-                    Open distributor chats
-                  </button>
-                </p>
-              }
-
-              <ul class="product-lines">
-                @for (item of inquiry.items ?? []; track item.id ?? item.productId) {
-                  <li>
-                    <span class="line-badge" [class.new-product]="item.lineSource === 'NEW_PRODUCT'">
-                      {{ lineSourceLabel(item.lineSource) }}
+              <div class="products-panel">
+                <div class="products-panel-header">
+                  <div class="products-panel-title">
+                    <h3>Requested items</h3>
+                    <span class="products-count">{{ productCountLabel(inquiry.items) }}</span>
+                  </div>
+                  @if (totalItemQuantity(inquiry.items) > 0) {
+                    <span class="total-qty-label">
+                      Total quantity — {{ totalItemQuantity(inquiry.items) }}
                     </span>
-                    {{ item.productBrand }} {{ item.productName }} — qty {{ item.quantity }}
-                    @if (item.expectedDeliveryDate) {
-                      <span class="muted">
-                        · expected {{ formatExpectedDeliveryDate(item.expectedDeliveryDate) }}
-                      </span>
-                    }
-                    @if (item.notes) {
-                      <span class="muted">({{ item.notes }})</span>
-                    }
-                  </li>
+                  }
+                </div>
+
+                @if (assignedDistributorCount(inquiry) > 0) {
+                  <p class="distributor-sent-row">
+                    <span class="distributor-sent-count">
+                      Sent to {{ assignedDistributorCount(inquiry) }}
+                      distributor{{ assignedDistributorCount(inquiry) === 1 ? '' : 's' }}
+                    </span>
+                    <button
+                      type="button"
+                      class="external-link"
+                      (click)="openDistributorChats(inquiry.id)"
+                      title="Open distributor chats in a new tab"
+                    >
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path
+                          d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3ZM5 5h6V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6h-2v6H5V5Z"
+                        />
+                      </svg>
+                      Open distributor chats
+                    </button>
+                  </p>
                 }
-              </ul>
+
+                @if ((inquiry.items ?? []).length > 0) {
+                  <div class="preview-table-wrap">
+                    <table class="preview-table preview-items-table">
+                      <thead>
+                        <tr>
+                          <th class="col-sno">S.No.</th>
+                          <th class="col-designation">Designation</th>
+                          <th class="col-brand">Brand</th>
+                          <th class="col-qty">Qty</th>
+                          <th class="col-description">Description</th>
+                          <th class="col-expected-delivery">Expected delivery</th>
+                          <th class="col-attachment">Images</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (item of inquiry.items ?? []; track item.id ?? item.productId) {
+                          <tr>
+                            <td class="col-sno">{{ $index + 1 }}</td>
+                            <td class="col-designation" [title]="displayProductField(item.productName)">
+                              {{ displayProductField(item.productName) }}
+                            </td>
+                            <td class="col-brand" [title]="displayProductField(item.productBrand)">
+                              {{ displayProductField(item.productBrand) }}
+                            </td>
+                            <td class="col-qty">{{ item.quantity }}</td>
+                            <td class="preview-multiline" [title]="displayProductField(item.productDescription)">
+                              {{ displayProductField(item.productDescription) }}
+                            </td>
+                            <td class="col-expected-delivery">
+                              {{ formatExpectedDeliveryDate(item.expectedDeliveryDate) }}
+                            </td>
+                            <td class="col-attachment">
+                              @if (itemAttachmentCount(item) > 0) {
+                                <button
+                                  type="button"
+                                  class="btn-attachment-link"
+                                  (click)="openItemAttachments(item, $event)"
+                                  [attr.aria-label]="
+                                    'View ' +
+                                    itemAttachmentLabel(item) +
+                                    ' for ' +
+                                    displayProductField(item.productBrand) +
+                                    ' ' +
+                                    displayProductField(item.productName)
+                                  "
+                                >
+                                  {{ itemAttachmentLabel(item) }}
+                                </button>
+                              } @else {
+                                —
+                              }
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                } @else {
+                  <p class="products-empty">No products in this request.</p>
+                }
+              </div>
 
               <p class="status-row">
                 <strong>Status:</strong> {{ inquiry.status }}
@@ -520,6 +574,34 @@
   }
   }
 </section>
+
+@if (itemAttachmentViewerOpen() && itemAttachmentViewerItem(); as attachmentItem) {
+  <div class="confirm-overlay" (click)="closeItemAttachments()" role="presentation">
+    <div
+      class="confirm-dialog item-attachment-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="item-attachment-title"
+      (click)="$event.stopPropagation()"
+    >
+      <h2 id="item-attachment-title">Images</h2>
+      <p class="item-attachment-subtitle">{{ itemAttachmentViewerLabel(attachmentItem) }}</p>
+      <ul class="item-attachment-list">
+        @for (attachment of attachmentItem.attachments ?? []; track attachment.id) {
+          <li>
+            <app-inquiry-chat-attachment
+              [attachment]="toItemTimelineAttachment(attachment)"
+              [previewMode]="'panel'"
+            />
+          </li>
+        }
+      </ul>
+      <div class="confirm-actions">
+        <button type="button" class="btn-secondary" (click)="closeItemAttachments()">Close</button>
+      </div>
+    </div>
+  </div>
+}
 
 @if (distributorPickerOpen()) {
   <div

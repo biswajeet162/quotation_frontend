@@ -10,7 +10,12 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { DistributorOption, Inquiry, InquiryStatus } from '../../../core/models/inquiry.model';
+import {
+  DistributorOption,
+  Inquiry,
+  InquiryItem,
+  InquiryStatus,
+} from '../../../core/models/inquiry.model';
 import {
   InquiryTimelineAttachment,
   InquiryTimelineEntry,
@@ -42,6 +47,7 @@ import {
   noticeDisplayLabel,
 } from '../../../shared/utils/timeline-chat.util';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
+import { toItemTimelineAttachment } from '../../../shared/utils/attachment-media-type.util';
 
 type StatusFilter = 'all' | InquiryStatus | 'ACTION_REQUIRED';
 
@@ -91,6 +97,9 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   readonly recording = signal(false);
   readonly recordingSeconds = signal(0);
   readonly recordingLevels = signal<number[]>(Array.from({ length: 24 }, () => 0.15));
+
+  readonly itemAttachmentViewerOpen = signal(false);
+  readonly itemAttachmentViewerItem = signal<InquiryItem | null>(null);
 
   private readonly detailScrollRef = viewChild<ElementRef<HTMLElement>>('detailScroll');
   private readonly messageInputRef = viewChild<ElementRef<HTMLTextAreaElement>>('messageInput');
@@ -713,8 +722,53 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
     this.loadTimeline({ silent: true, preserveScroll: true });
   }
 
-  lineSourceLabel(lineSource?: string): string {
-    return lineSource === 'NEW_PRODUCT' ? 'New product from search' : 'Catalog match';
+  productCountLabel(items?: Inquiry['items']): string {
+    const count = items?.length ?? 0;
+    return count === 1 ? '1 item' : `${count} items`;
+  }
+
+  totalItemQuantity(items?: Inquiry['items']): number {
+    return (items ?? []).reduce((sum, item) => sum + (item.quantity ?? 0), 0);
+  }
+
+  displayProductField(value?: string): string {
+    const trimmed = value?.trim();
+    return trimmed ? trimmed : '—';
+  }
+
+  itemAttachmentCount(item: InquiryItem): number {
+    return item.attachments?.length ?? 0;
+  }
+
+  itemAttachmentLabel(item: InquiryItem): string {
+    const count = this.itemAttachmentCount(item);
+    return count === 1 ? '1 image' : `${count} images`;
+  }
+
+  openItemAttachments(item: InquiryItem, event: Event): void {
+    event.stopPropagation();
+    this.itemAttachmentViewerItem.set(item);
+    this.itemAttachmentViewerOpen.set(true);
+  }
+
+  closeItemAttachments(): void {
+    this.itemAttachmentViewerOpen.set(false);
+    this.itemAttachmentViewerItem.set(null);
+  }
+
+  toItemTimelineAttachment(
+    attachment: NonNullable<InquiryItem['attachments']>[number],
+  ): InquiryTimelineAttachment {
+    return toItemTimelineAttachment(attachment);
+  }
+
+  itemAttachmentViewerLabel(item: InquiryItem): string {
+    const brand = item.productBrand?.trim();
+    const designation = item.productName?.trim();
+    if (brand && designation) {
+      return `${brand} · ${designation}`;
+    }
+    return brand || designation || 'Product images';
   }
 
   formatChatTime(iso?: string): string {
