@@ -372,6 +372,10 @@
   overflow: auto;
 }
 
+.admin-pricing-table-wrap {
+  max-width: 100%;
+}
+
 .preview-table {
   width: 100%;
   border-collapse: collapse;
@@ -379,32 +383,61 @@
   table-layout: fixed;
 }
 
-.preview-items-table .col-sno {
+.admin-pricing-table {
+  min-width: 78rem;
+  table-layout: auto;
+}
+
+.admin-pricing-table .col-sno {
+  width: 3rem;
+  text-align: center;
+}
+
+.admin-pricing-table .col-designation {
+  min-width: 7.5rem;
+}
+
+.admin-pricing-table .col-hsn-code {
+  min-width: 6.5rem;
+}
+
+.admin-pricing-table .col-brand {
+  min-width: 6rem;
+}
+
+.admin-pricing-table .col-description {
+  min-width: 9rem;
+}
+
+.admin-pricing-table .col-qty {
   width: 3.25rem;
   text-align: center;
 }
 
-.preview-items-table .col-designation {
-  width: 18%;
+.admin-pricing-table .col-mrp,
+.admin-pricing-table .col-discount,
+.admin-pricing-table .col-gst {
+  min-width: 5.5rem;
 }
 
-.preview-items-table .col-brand {
-  width: 12%;
+.admin-pricing-table .col-amount,
+.admin-pricing-table .col-net-value {
+  min-width: 5.5rem;
 }
 
-.preview-items-table .col-expected-delivery {
-  width: 11%;
+.admin-pricing-table .col-expected-delivery {
+  min-width: 7.5rem;
   white-space: nowrap;
 }
 
-.preview-items-table .col-qty {
-  width: 3.5rem;
+.admin-pricing-table .col-attachment {
+  width: 6.5rem;
   text-align: center;
 }
 
-.preview-table .col-designation,
-.preview-table .col-brand,
-.preview-table .col-qty {
+.preview-table .consumer-cell.col-designation,
+.preview-table .consumer-cell.col-brand,
+.preview-table .consumer-cell.col-qty {
   font-weight: 700;
   color: #0f172a;
 }
@@ -413,11 +446,6 @@
 .preview-table th.col-brand,
 .preview-table th.col-qty {
   font-weight: 700;
-}
-
-.preview-items-table .col-attachment {
-  width: 6.5rem;
-  text-align: center;
 }
 
 .preview-table .preview-multiline {
@@ -438,6 +466,38 @@
 .preview-table .col-attachment {
   vertical-align: middle;
   text-align: center;
+}
+
+.line-input {
+  width: 100%;
+  min-width: 4.5rem;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font: inherit;
+  color: #0f172a;
+  background: #fff;
+}
+
+.line-input:focus {
+  outline: none;
+  border-color: #0f766e;
+  box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.15);
+}
+
+.line-input-number {
+  text-align: right;
+}
+
+.line-input-readonly {
+  display: block;
+  border: 1px solid #0f172a;
+  background: #e2e8f0;
+  color: #64748b;
+  cursor: default;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  box-sizing: border-box;
 }
 
 .preview-table th {
@@ -461,6 +521,82 @@
   font-weight: 600;
   text-decoration: underline;
   cursor: pointer;
+}
+
+.chat-status-notice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  width: 100%;
+  margin: 0.4rem 0;
+  padding: 0.7rem 0.95rem;
+  border-radius: 12px;
+  background: rgba(254, 243, 199, 0.94);
+  border: 1px solid rgba(251, 191, 36, 0.65);
+  box-shadow: 0 3px 14px rgba(245, 158, 11, 0.18);
+  text-align: center;
+}
+
+.chat-status-notice-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #92400e;
+}
+
+.chat-status-notice-detail {
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: #a16207;
+  max-width: 36rem;
+}
+
+.chat-status-notice-time {
+  font-size: 0.65rem;
+  color: #b45309;
+  opacity: 0.82;
+}
+
+.chat-distributor-send-block {
+  width: 100%;
+  margin: 0.4rem 0 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.chat-sent-pricing-table {
+  width: 100%;
+  padding: 0;
+  background: transparent;
+}
+
+.chat-pricing-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.chat-pricing-table {
+  min-width: 72rem;
+  background: #fff;
+  border-radius: 8px;
+}
+
+.chat-readonly-value {
+  min-height: 1.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  white-space: nowrap;
+}
+
+.chat-pricing-table .col-hsn-code .chat-readonly-value,
+.chat-pricing-table .col-description .chat-readonly-value {
+  justify-content: flex-start;
 }
 
 .products-empty {

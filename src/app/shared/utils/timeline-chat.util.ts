@@ -17,6 +17,13 @@ export function isTimelineNotice(entry: InquiryTimelineEntry): boolean {
   );
 }
 
+export function isSentToDistributorsNotice(entry: InquiryTimelineEntry): boolean {
+  return (
+    entry.noticeCode === 'SENT_TO_DISTRIBUTORS' ||
+    (entry.kind === 'MILESTONE' && entry.title === 'Sent to distributors')
+  );
+}
+
 export function noticeDisplayLabel(
   entry: InquiryTimelineEntry,
   viewer: TimelineViewerRole,

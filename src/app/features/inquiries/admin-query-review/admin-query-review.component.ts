@@ -42,6 +42,7 @@ import {
 } from '../../../shared/utils/chat-reply.util';
 import {
   buildChatTimelineEntries,
+  isSentToDistributorsNotice,
   isTimelineNotice,
   noticeDisplayDetail,
   noticeDisplayLabel,
@@ -56,6 +57,17 @@ interface PendingAttachment {
   file: File;
   previewUrl?: string;
   mediaType: TimelineAttachmentMediaType;
+}
+
+interface AdminInquiryLineDraft {
+  hsnCode?: string;
+  mrp?: number;
+  discountPercentage?: number;
+  gstPercentage?: number;
+}
+
+interface DistributorSendPricingSnapshot {
+  lineDrafts: Record<string, AdminInquiryLineDraft>;
 }
 
 @Component({
@@ -100,6 +112,8 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
 
   readonly itemAttachmentViewerOpen = signal(false);
   readonly itemAttachmentViewerItem = signal<InquiryItem | null>(null);
+  readonly lineDrafts = signal<Map<string, AdminInquiryLineDraft>>(new Map());
+  readonly distributorSendSnapshots = signal<Map<string, DistributorSendPricingSnapshot>>(new Map());
 
   private readonly detailScrollRef = viewChild<ElementRef<HTMLElement>>('detailScroll');
   private readonly messageInputRef = viewChild<ElementRef<HTMLTextAreaElement>>('messageInput');
@@ -186,6 +200,7 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   readonly replyTargetLabel = replyTargetLabel;
   readonly shouldShowBubbleReply = shouldShowBubbleReply;
   readonly isTimelineNotice = isTimelineNotice;
+  readonly isSentToDistributorsNotice = isSentToDistributorsNotice;
   readonly noticeDisplayLabel = (entry: InquiryTimelineEntry) =>
     noticeDisplayLabel(entry, 'ADMIN');
   readonly noticeDisplayDetail = (entry: InquiryTimelineEntry) =>
@@ -464,6 +479,7 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
 
     this.inquiryService.submitToDistributors(inquiry.id, selected).subscribe({
       next: (updated) => {
+        this.captureDistributorSendSnapshot(inquiry);
         this.replaceInquiry(updated);
         this.actionLoading.set(false);
         this.distributorPickerOpen.set(false);
@@ -736,6 +752,77 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
     return trimmed ? trimmed : '—';
   }
 
+  lineDraftKey(inquiryId: string, item: InquiryItem): string {
+    return `${inquiryId}:${item.id ?? item.productId}`;
+  }
+
+  getLineDraft(inquiryId: string, item: InquiryItem): AdminInquiryLineDraft {
+    return this.lineDrafts().get(this.lineDraftKey(inquiryId, item)) ?? {};
+  }
+
+  getChatLineDraft(inquiryId: string, item: InquiryItem): AdminInquiryLineDraft {
+    const snapshot = this.distributorSendSnapshots().get(inquiryId);
+    const key = this.lineDraftKey(inquiryId, item);
+    if (snapshot?.lineDrafts[key]) {
+      return snapshot.lineDrafts[key];
+    }
+    return this.getLineDraft(inquiryId, item);
+  }
+
+  formatOptionalNumber(value?: number): string {
+    return value == null ? '—' : value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  }
+
+  formatOptionalPercent(value?: number): string {
+    return value == null ? '—' : `${value}%`;
+  }
+
+  updateLineTextField(
+    inquiryId: string,
+    item: InquiryItem,
+    field: 'hsnCode',
+    value: string,
+  ): void {
+    const trimmed = value.trim();
+    this.patchLineDraft(inquiryId, item, { [field]: trimmed || undefined });
+  }
+
+  updateLineNumberField(
+    inquiryId: string,
+    item: InquiryItem,
+    field: 'mrp' | 'discountPercentage' | 'gstPercentage',
+    value: string | number | null,
+  ): void {
+    const parsed = this.parseOptionalNumber(value);
+    this.patchLineDraft(inquiryId, item, { [field]: parsed ?? undefined });
+  }
+
+  lineAmount(inquiryId: string, item: InquiryItem, draft?: AdminInquiryLineDraft): number | null {
+    const lineDraft = draft ?? this.getLineDraft(inquiryId, item);
+    if (lineDraft.mrp == null) {
+      return null;
+    }
+
+    const discount = lineDraft.discountPercentage ?? 0;
+    const unitAfterDiscount = lineDraft.mrp * (1 - discount / 100);
+    return unitAfterDiscount * item.quantity;
+  }
+
+  lineNetValue(inquiryId: string, item: InquiryItem, draft?: AdminInquiryLineDraft): number | null {
+    const amount = this.lineAmount(inquiryId, item, draft);
+    if (amount == null) {
+      return null;
+    }
+
+    const lineDraft = draft ?? this.getLineDraft(inquiryId, item);
+    const gst = lineDraft.gstPercentage ?? 0;
+    return amount * (1 + gst / 100);
+  }
+
+  formatCurrency(value: number | null | undefined): string {
+    return value == null ? '—' : value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  }
+
   itemAttachmentCount(item: InquiryItem): number {
     return item.attachments?.length ?? 0;
   }
@@ -769,6 +856,42 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
       return `${brand} · ${designation}`;
     }
     return brand || designation || 'Product images';
+  }
+
+  private patchLineDraft(
+    inquiryId: string,
+    item: InquiryItem,
+    patch: Partial<AdminInquiryLineDraft>,
+  ): void {
+    const key = this.lineDraftKey(inquiryId, item);
+    this.lineDrafts.update((drafts) => {
+      const next = new Map(drafts);
+      next.set(key, { ...(next.get(key) ?? {}), ...patch });
+      return next;
+    });
+  }
+
+  private captureDistributorSendSnapshot(inquiry: Inquiry): void {
+    const lineDrafts: Record<string, AdminInquiryLineDraft> = {};
+    for (const item of inquiry.items ?? []) {
+      const key = this.lineDraftKey(inquiry.id, item);
+      lineDrafts[key] = { ...this.getLineDraft(inquiry.id, item) };
+    }
+
+    this.distributorSendSnapshots.update((snapshots) => {
+      const next = new Map(snapshots);
+      next.set(inquiry.id, { lineDrafts });
+      return next;
+    });
+  }
+
+  private parseOptionalNumber(value: string | number | null | undefined): number | null {
+    if (value === '' || value == null) {
+      return null;
+    }
+
+    const parsed = typeof value === 'number' ? value : Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
   }
 
   formatChatTime(iso?: string): string {
