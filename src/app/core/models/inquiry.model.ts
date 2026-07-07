@@ -169,3 +169,9 @@ export interface SubmitToDistributorsRequest {
   distributorCompanyIds: string[];
   linePricing?: AdminInquiryLinePricing[];
 }
+
+export interface FinalizeQuotationRequest {
+  distributorCompanyId: string;
+  linePricing: AdminInquiryLinePricing[];
+  message?: string;
+}

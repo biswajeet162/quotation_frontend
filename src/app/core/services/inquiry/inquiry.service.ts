@@ -14,6 +14,7 @@ import {
   InquiryStatus,
   SubmitToDistributorsRequest,
   AdminInquiryLinePricing,
+  FinalizeQuotationRequest,
 } from '../../models/inquiry.model';
 
 @Injectable({ providedIn: 'root' })
@@ -143,6 +144,10 @@ export class InquiryService {
   ): Observable<Inquiry> {
     const body: SubmitToDistributorsRequest = { distributorCompanyIds, linePricing };
     return this.http.post<Inquiry>(`${this.baseUrl}/${id}/submit-to-distributors`, body);
+  }
+
+  finalizeQuotation(id: string, request: FinalizeQuotationRequest): Observable<Inquiry> {
+    return this.http.post<Inquiry>(`${this.baseUrl}/${id}/finalize-quotation`, request);
   }
 
   getDistributorOptions(id: string): Observable<DistributorOption[]> {

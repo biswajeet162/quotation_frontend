@@ -39,6 +39,7 @@ import {
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 import { toItemTimelineAttachment } from '../../../shared/utils/attachment-media-type.util';
 import { QuotationComparisonModalComponent } from '../quotation-comparison-modal/quotation-comparison-modal.component';
+import { FinalizeQuotationModalComponent } from '../finalize-quotation-modal/finalize-quotation-modal.component';
 
 interface PendingAttachment {
   id: string;
@@ -63,6 +64,7 @@ interface AdminInquiryLineDraft {
     ChatAudioPlayerComponent,
     LoadingOverlayComponent,
     QuotationComparisonModalComponent,
+    FinalizeQuotationModalComponent,
   ],
   templateUrl: './admin-distributor-chats.component.html',
   styleUrl: './admin-distributor-chats.component.css',
@@ -97,6 +99,7 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   readonly quotationItems = signal<InquiryItem[]>([]);
   readonly quotationItemsLoading = signal(false);
   readonly comparisonModalOpen = signal(false);
+  readonly finalizeModalOpen = signal(false);
 
   private readonly detailScrollRef = viewChild<ElementRef<HTMLElement>>('detailScroll');
   private readonly messageInputRef = viewChild<ElementRef<HTMLTextAreaElement>>('messageInput');
@@ -125,6 +128,29 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   );
 
   readonly canOpenComparison = computed(() => this.respondedDistributorCount() > 0);
+
+  readonly canFinalizeDistributor = computed(() => {
+    const inquiry = this.inquiry();
+    const distributor = this.selectedDistributor();
+    return (
+      !!inquiry &&
+      inquiry.status !== 'CLOSED' &&
+      inquiry.status !== 'FINAL_SENT' &&
+      !!distributor?.responseReceived &&
+      this.quotationItems().some((item) => item.distributorMrp != null)
+    );
+  });
+
+  readonly canAskRequotation = computed(() => {
+    const inquiry = this.inquiry();
+    const distributor = this.selectedDistributor();
+    return (
+      !!inquiry &&
+      inquiry.status !== 'CLOSED' &&
+      !!distributor?.responseReceived &&
+      this.canMessage(inquiry)
+    );
+  });
 
   readonly filteredDistributors = computed(() => {
     const query = this.searchQuery().trim().toLowerCase();
@@ -231,6 +257,40 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
 
   onComparisonDistributorSelected(companyId: string): void {
     this.selectDistributor(companyId);
+  }
+
+  openFinalizeModal(): void {
+    if (!this.canFinalizeDistributor()) {
+      return;
+    }
+    if (this.quotationItems().length === 0) {
+      this.loadQuotationItems();
+    }
+    this.finalizeModalOpen.set(true);
+  }
+
+  closeFinalizeModal(): void {
+    this.finalizeModalOpen.set(false);
+  }
+
+  onQuotationFinalized(): void {
+    const inquiry = this.inquiry();
+    if (inquiry) {
+      this.loadInquiry(inquiry.id);
+    }
+  }
+
+  askForRequotation(): void {
+    const distributor = this.selectedDistributor();
+    if (!this.canAskRequotation() || !distributor) {
+      return;
+    }
+    this.messageError.set(null);
+    this.messageText.set(
+      `Hi ${this.distributorLabel(distributor)}, please review your quotation and submit a revised quote with updated pricing and delivery dates.`,
+    );
+    this.clearReplyTarget();
+    this.goToDetailBottom();
   }
 
   selectDistributor(companyId: string): void {

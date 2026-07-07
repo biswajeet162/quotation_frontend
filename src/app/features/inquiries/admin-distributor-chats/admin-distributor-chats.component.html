@@ -91,6 +91,28 @@
                     <span>{{ formatPostedDate(inquiry.createdAt) }}</span>
                   </p>
                 </div>
+                @if (distributor.responseReceived) {
+                  <div class="detail-header-actions">
+                    <button
+                      type="button"
+                      class="btn-secondary btn-requote"
+                      (click)="askForRequotation()"
+                      [disabled]="!canAskRequotation()"
+                      title="Ask this distributor to submit a revised quotation"
+                    >
+                      Ask for re-quotations
+                    </button>
+                    <button
+                      type="button"
+                      class="btn-primary"
+                      (click)="openFinalizeModal()"
+                      [disabled]="!canFinalizeDistributor() || quotationItemsLoading()"
+                      title="Review pricing and send the final quotation to the consumer"
+                    >
+                      Finalize
+                    </button>
+                  </div>
+                }
               </div>
 
               <div class="detail-scroll-wrap">
@@ -758,4 +780,13 @@
   [inquiry]="inquiry()"
   (closed)="closeComparisonModal()"
   (distributorSelected)="onComparisonDistributorSelected($event)"
+/>
+
+<app-finalize-quotation-modal
+  [open]="finalizeModalOpen()"
+  [inquiry]="inquiry()"
+  [distributor]="selectedDistributor()"
+  [quotationItems]="quotationItems()"
+  (closed)="closeFinalizeModal()"
+  (finalized)="onQuotationFinalized()"
 />

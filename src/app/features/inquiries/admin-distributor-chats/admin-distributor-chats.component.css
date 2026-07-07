@@ -472,6 +472,17 @@
   border-bottom: 1px solid #e2e8f0;
 }
 
+.detail-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.btn-requote {
+  white-space: nowrap;
+}
+
 .detail-scroll-wrap {
   position: relative;
   flex: 1;
