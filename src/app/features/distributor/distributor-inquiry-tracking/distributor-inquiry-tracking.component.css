@@ -600,9 +600,13 @@
   min-width: 7.5rem;
 }
 
-.line-input-missing {
-  border-color: #f87171;
-  background: #fff7f7;
+.line-input-required {
+  border-color: #e57373;
+}
+
+.line-input-required:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.12);
 }
 
 .submission-pdf-attachment {
@@ -732,6 +736,39 @@
   overflow: hidden;
 }
 
+.quotation-dialog-title-block {
+  flex: 0 1 26%;
+  max-width: 30%;
+  min-width: 11rem;
+}
+
+.quotation-dialog-header-end {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-left: 1rem;
+}
+
+.quotation-chat-note {
+  margin: 0;
+  padding: 0.2rem 0;
+  font-size: clamp(0.8rem, 1.05vw, 0.92rem);
+  font-weight: 500;
+  line-height: 1.45;
+  color: #dc2626;
+  text-align: right;
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.quotation-chat-note strong {
+  font-weight: 700;
+}
+
 .quotation-dialog-header {
   display: flex;
   align-items: flex-start;
@@ -743,12 +780,12 @@
 
 .quotation-overlay .quotation-dialog-header h2 {
   margin: 0;
-  font-size: clamp(1.35rem, 2.2vw, 1.65rem);
+  font-size: clamp(1.2rem, 1.9vw, 1.45rem);
 }
 
 .quotation-overlay .quotation-dialog-subtitle {
   margin: 0.35rem 0 0;
-  font-size: clamp(0.9rem, 1.4vw, 1rem);
+  font-size: clamp(0.82rem, 1.2vw, 0.92rem);
   color: #64748b;
 }
 
@@ -767,6 +804,17 @@
   color: #0f172a;
 }
 
+@media (max-width: 900px) {
+  .quotation-dialog-title-block {
+    flex-basis: 34%;
+    max-width: 38%;
+  }
+
+  .quotation-chat-note {
+    white-space: normal;
+  }
+}
+
 .quotation-dialog-body {
   flex: 1;
   min-height: 0;
@@ -780,16 +828,16 @@
 }
 
 .quotation-overlay .preview-table {
-  font-size: clamp(0.9rem, 1.25vw, 1.05rem);
+  font-size: clamp(0.82rem, 1.1vw, 0.95rem);
 }
 
 .quotation-overlay .preview-table th,
 .quotation-overlay .preview-table td {
-  padding: clamp(0.55rem, 1.1vw, 0.75rem) clamp(0.6rem, 1.2vw, 0.85rem);
+  padding: clamp(0.45rem, 1vw, 0.65rem) clamp(0.5rem, 1.1vw, 0.75rem);
 }
 
 .quotation-overlay .preview-table th {
-  font-size: clamp(0.75rem, 1.1vw, 0.88rem);
+  font-size: clamp(0.68rem, 1vw, 0.8rem);
 }
 
 .quotation-overlay .pricing-table {
@@ -798,10 +846,32 @@
   table-layout: auto;
 }
 
+.quotation-overlay .pricing-table .col-mrp,
+.quotation-overlay .pricing-table .col-discount,
+.quotation-overlay .pricing-table .col-gst,
+.quotation-overlay .pricing-table .col-amount,
+.quotation-overlay .pricing-table .col-net-value {
+  min-width: 7.25rem;
+}
+
 .quotation-overlay .line-input {
-  padding: clamp(0.45rem, 0.9vw, 0.6rem) clamp(0.5rem, 1vw, 0.65rem);
-  font-size: clamp(0.9rem, 1.2vw, 1.05rem);
-  min-width: 5rem;
+  padding: clamp(0.38rem, 0.8vw, 0.52rem) clamp(0.45rem, 0.9vw, 0.58rem);
+  font-size: clamp(0.82rem, 1.05vw, 0.93rem);
+  min-width: 6.75rem;
+}
+
+.quotation-overlay .line-input-number {
+  min-width: 7rem;
+}
+
+.quotation-overlay .line-input-required {
+  border-width: 2px;
+  border-color: #e57373;
+}
+
+.quotation-overlay .line-input-required:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.12);
 }
 
 .quotation-overlay .line-input-date {
@@ -809,17 +879,17 @@
 }
 
 .quotation-overlay .btn-attachment-link {
-  font-size: clamp(0.88rem, 1.15vw, 1rem);
+  font-size: clamp(0.8rem, 1.05vw, 0.92rem);
 }
 
 .quotation-overlay .products-empty {
-  font-size: clamp(0.9rem, 1.2vw, 1.05rem);
+  font-size: clamp(0.82rem, 1.05vw, 0.93rem);
 }
 
 .quotation-error {
   margin-top: 0.85rem;
   flex-shrink: 0;
-  font-size: clamp(0.88rem, 1.15vw, 1rem);
+  font-size: clamp(0.8rem, 1.05vw, 0.92rem);
 }
 
 .quotation-dialog-actions {
@@ -834,8 +904,8 @@
 
 .quotation-overlay .quotation-dialog-actions .btn-primary,
 .quotation-overlay .quotation-dialog-actions .btn-secondary {
-  font-size: clamp(0.9rem, 1.2vw, 1.05rem);
-  padding: clamp(0.55rem, 1vw, 0.7rem) clamp(1rem, 1.8vw, 1.25rem);
+  font-size: clamp(0.82rem, 1.05vw, 0.93rem);
+  padding: clamp(0.48rem, 0.9vw, 0.62rem) clamp(0.9rem, 1.6vw, 1.1rem);
 }
 
 .pdf-state-message {

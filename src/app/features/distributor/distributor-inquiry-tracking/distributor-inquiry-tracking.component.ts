@@ -268,6 +268,10 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   }
 
   openQuotationPanel(): void {
+    const inquiry = this.selectedInquiry();
+    if (inquiry) {
+      this.hydrateLineDraftsFromInquiry(inquiry, true);
+    }
     this.quotationError.set(null);
     this.quotationPanelOpen.set(true);
   }
@@ -446,6 +450,7 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     this.distributorInquiryService.getById(id).subscribe({
       next: (inquiry) => {
         this.selectedInquiry.set(inquiry);
+        this.hydrateLineDraftsFromInquiry(inquiry, true);
         this.loadSubmissionPdf(id);
         this.responsePdfAvailable.set(!!inquiry.responsePdfAvailable);
         if (inquiry.responsePdfAvailable) {
@@ -922,18 +927,6 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     this.patchLineDraft(inquiryId, item, { ourDeliveryDate: trimmed || undefined });
   }
 
-  isRequiredFieldMissing(
-    inquiryId: string,
-    item: InquiryItem,
-    field: 'mrp' | 'gstPercentage',
-  ): boolean {
-    const draft = this.getLineDraft(inquiryId, item);
-    if (field === 'mrp') {
-      return draft.mrp == null;
-    }
-    return draft.gstPercentage == null;
-  }
-
   lineAmount(inquiryId: string, item: InquiryItem, draft?: DistributorInquiryLineDraft): number | null {
     const lineDraft = draft ?? this.getLineDraft(inquiryId, item);
     if (lineDraft.mrp == null) {
@@ -1244,6 +1237,66 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
       next.set(key, { ...(next.get(key) ?? {}), ...patch });
       return next;
     });
+  }
+
+  private hydrateLineDraftsFromInquiry(inquiry: DistributorInquiry, onlyMissing = false): void {
+    for (const item of inquiry.items ?? []) {
+      this.seedLineDraftFromItem(inquiry.id, item, onlyMissing);
+    }
+  }
+
+  private lineDraftFromPersistedItem(item: InquiryItem): DistributorInquiryLineDraft {
+    return {
+      hsnCode: item.distributorHsnCode ?? item.adminHsnCode,
+      mrp: item.distributorMrp ?? item.adminMrp,
+      discountPercentage: item.distributorDiscountPercentage ?? item.adminDiscountPercentage,
+      gstPercentage: item.distributorGstPercentage ?? item.adminGstPercentage,
+      ourDeliveryDate: item.distributorOurDeliveryDate,
+    };
+  }
+
+  private hasPersistedLineDraftValues(draft: DistributorInquiryLineDraft): boolean {
+    return (
+      !!draft.hsnCode?.trim() ||
+      draft.mrp != null ||
+      draft.discountPercentage != null ||
+      draft.gstPercentage != null ||
+      !!draft.ourDeliveryDate?.trim()
+    );
+  }
+
+  private seedLineDraftFromItem(
+    inquiryId: string,
+    item: InquiryItem,
+    onlyMissing: boolean,
+  ): void {
+    const persisted = this.lineDraftFromPersistedItem(item);
+    if (!this.hasPersistedLineDraftValues(persisted)) {
+      return;
+    }
+
+    const existing = this.getLineDraft(inquiryId, item);
+    const patch: Partial<DistributorInquiryLineDraft> = {};
+
+    if (persisted.hsnCode?.trim() && (!onlyMissing || !existing.hsnCode?.trim())) {
+      patch.hsnCode = persisted.hsnCode.trim();
+    }
+    if (persisted.mrp != null && (!onlyMissing || existing.mrp == null)) {
+      patch.mrp = persisted.mrp;
+    }
+    if (persisted.discountPercentage != null && (!onlyMissing || existing.discountPercentage == null)) {
+      patch.discountPercentage = persisted.discountPercentage;
+    }
+    if (persisted.gstPercentage != null && (!onlyMissing || existing.gstPercentage == null)) {
+      patch.gstPercentage = persisted.gstPercentage;
+    }
+    if (persisted.ourDeliveryDate?.trim() && (!onlyMissing || !existing.ourDeliveryDate?.trim())) {
+      patch.ourDeliveryDate = persisted.ourDeliveryDate.trim();
+    }
+
+    if (Object.keys(patch).length > 0) {
+      this.patchLineDraft(inquiryId, item, patch);
+    }
   }
 
   private parseOptionalNumber(value: string | number | null | undefined): number | null {

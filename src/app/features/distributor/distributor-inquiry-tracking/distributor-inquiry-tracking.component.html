@@ -755,18 +755,23 @@
       (click)="$event.stopPropagation()"
     >
       <div class="quotation-dialog-header">
-        <div>
+        <div class="quotation-dialog-title-block">
           <h2 id="quotation-dialog-title">Create your quotation</h2>
           <p class="quotation-dialog-subtitle">{{ inquiry.title }} · {{ inquiry.inquiryId }}</p>
         </div>
-        <button
-          type="button"
-          class="quotation-dialog-close"
-          aria-label="Close quotation form"
-          (click)="closeQuotationPanel()"
-        >
-          ×
-        </button>
+        <div class="quotation-dialog-header-end">
+          <p class="quotation-chat-note" role="note">
+            You can always use your <strong>Chat</strong> button to chat with us in case of any question.
+          </p>
+          <button
+            type="button"
+            class="quotation-dialog-close"
+            aria-label="Close quotation form"
+            (click)="closeQuotationPanel()"
+          >
+            ×
+          </button>
+        </div>
       </div>
 
       <div class="quotation-dialog-body">
@@ -821,8 +826,7 @@
                   <td class="col-mrp">
                     <input
                       type="number"
-                      class="line-input line-input-number"
-                      [class.line-input-missing]="isRequiredFieldMissing(inquiry.id, item, 'mrp')"
+                      class="line-input line-input-number line-input-required"
                       min="0"
                       step="0.01"
                       [ngModel]="getLineDraft(inquiry.id, item).mrp ?? ''"
@@ -853,8 +857,7 @@
                   <td class="col-gst">
                     <input
                       type="number"
-                      class="line-input line-input-number"
-                      [class.line-input-missing]="isRequiredFieldMissing(inquiry.id, item, 'gstPercentage')"
+                      class="line-input line-input-number line-input-required"
                       min="0"
                       max="100"
                       step="0.01"
