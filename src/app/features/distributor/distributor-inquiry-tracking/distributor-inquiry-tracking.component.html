@@ -74,21 +74,26 @@
               </p>
             </div>
             <div class="detail-header-actions">
-              <button
-                type="button"
-                class="btn-chat-toggle"
-                [class.is-open]="chatPanelOpen()"
-                (click)="toggleChatPanel()"
-                [attr.aria-expanded]="chatPanelOpen()"
-                aria-controls="distributor-chat-panel"
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Zm0 14H5.17L4 17.17V4h16v12Z"
-                  />
-                </svg>
-                Chat
-              </button>
+              <span class="btn-chat-toggle-wrap" [class.is-open]="chatPanelOpen()">
+                <span class="btn-chat-toggle-ring" aria-hidden="true"></span>
+                <span class="btn-chat-toggle-ring btn-chat-toggle-ring--delayed" aria-hidden="true"></span>
+                <span class="btn-chat-toggle-ring btn-chat-toggle-ring--delayed-2" aria-hidden="true"></span>
+                <button
+                  type="button"
+                  class="btn-chat-toggle"
+                  [class.is-open]="chatPanelOpen()"
+                  (click)="toggleChatPanel()"
+                  [attr.aria-expanded]="chatPanelOpen()"
+                  aria-controls="distributor-chat-panel"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Zm0 14H5.17L4 17.17V4h16v12Z"
+                    />
+                  </svg>
+                  Chat
+                </button>
+              </span>
               @if (canMessage(inquiry) && !hasSubmittedQuotation(inquiry)) {
                 <button type="button" class="btn-primary" (click)="openQuotationPanel()">
                   Create your quotation
