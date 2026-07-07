@@ -44,6 +44,13 @@
             <article class="summary-card summary-consumer">
               <span class="summary-label">Consumer pays</span>
               <span class="summary-value">{{ formatCurrency(consumerGrandTotal()) }}</span>
+              <span
+                class="summary-percent"
+                [class.summary-positive]="(marginPercentTotal() ?? 0) > 0"
+                [class.summary-negative]="(marginPercentTotal() ?? 0) < 0"
+              >
+                {{ formatSignedPercent(marginPercentTotal()) }} vs distributor
+              </span>
               <span class="summary-hint">Your final price (incl. GST)</span>
             </article>
             <article class="summary-card summary-margin">
@@ -54,6 +61,13 @@
                 [class.summary-negative]="(marginTotal() ?? 0) < 0"
               >
                 {{ formatSignedCurrency(marginTotal()) }}
+              </span>
+              <span
+                class="summary-percent"
+                [class.summary-positive]="(marginPercentTotal() ?? 0) > 0"
+                [class.summary-negative]="(marginPercentTotal() ?? 0) < 0"
+              >
+                {{ formatSignedPercent(marginPercentTotal()) }}
               </span>
               <span class="summary-hint">Consumer total − distributor total</span>
             </article>
@@ -140,7 +154,8 @@
                       [class.cell-margin-positive]="(lineMargin(inquiry.id, item) ?? 0) > 0"
                       [class.cell-margin-negative]="(lineMargin(inquiry.id, item) ?? 0) < 0"
                     >
-                      {{ formatSignedCurrency(lineMargin(inquiry.id, item)) }}
+                      <span class="margin-amount">{{ formatSignedCurrency(lineMargin(inquiry.id, item)) }}</span>
+                      <span class="margin-percent">{{ formatSignedPercent(lineMarginPercent(inquiry.id, item)) }}</span>
                     </td>
                     <td class="col-delivery">
                       {{ formatExpectedDeliveryDate(getLineDraft(inquiry.id, item).deliveryDate) }}
@@ -164,7 +179,8 @@
                     [class.cell-margin-positive]="(marginTotal() ?? 0) > 0"
                     [class.cell-margin-negative]="(marginTotal() ?? 0) < 0"
                   >
-                    <strong>{{ formatSignedCurrency(marginTotal()) }}</strong>
+                    <strong class="margin-amount">{{ formatSignedCurrency(marginTotal()) }}</strong>
+                    <strong class="margin-percent">{{ formatSignedPercent(marginPercentTotal()) }}</strong>
                   </td>
                   <td></td>
                 </tr>

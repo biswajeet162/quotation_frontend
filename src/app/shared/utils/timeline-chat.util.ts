@@ -31,6 +31,7 @@ export function isDistributorSendNotice(entry: InquiryTimelineEntry): boolean {
 export function isDistributorQuotationNotice(entry: InquiryTimelineEntry): boolean {
   return (
     entry.noticeCode === 'DISTRIBUTOR_QUOTATION_SUBMITTED' ||
+    entry.title === 'Distributor shared quotation' ||
     (entry.title === 'Quotation submitted' && entry.actorRole === 'DISTRIBUTOR')
   );
 }
@@ -59,8 +60,18 @@ export function noticeDisplayLabel(
       ? `Sent to ${distributorName}`
       : 'Checking our inventory';
   }
-  if (entry.noticeCode === 'DISTRIBUTOR_QUOTATION_SUBMITTED' || entry.title === 'Quotation submitted') {
-    return viewer === 'ADMIN' ? 'Quotation submitted' : entry.title;
+  if (
+    entry.noticeCode === 'DISTRIBUTOR_QUOTATION_SUBMITTED' ||
+    entry.title === 'Distributor shared quotation' ||
+    entry.title === 'Quotation submitted'
+  ) {
+    if (viewer === 'ADMIN') {
+      const distributorName = entry.actorName?.trim() || entry.fromCompanyName?.trim();
+      return distributorName
+        ? `${distributorName} shared their quotation`
+        : 'Distributor shared their quotation';
+    }
+    return entry.title === 'Quotation submitted' ? 'Quotation submitted' : 'Quotation shared';
   }
   if (isFinalQuotationNotice(entry)) {
     return viewer === 'CONSUMER' ? 'Your final quotation is ready' : 'Final quotation sent';
@@ -84,7 +95,14 @@ export function noticeDisplayDetail(
   if (entry.noticeCode === 'SENT_TO_DISTRIBUTOR') {
     return null;
   }
-  if (entry.noticeCode === 'DISTRIBUTOR_QUOTATION_SUBMITTED' || entry.title === 'Quotation submitted') {
+  if (
+    entry.noticeCode === 'DISTRIBUTOR_QUOTATION_SUBMITTED' ||
+    entry.title === 'Distributor shared quotation' ||
+    entry.title === 'Quotation submitted'
+  ) {
+    if (viewer === 'ADMIN') {
+      return 'They have shared their pricing below. Review the quotation table and PDF.';
+    }
     return entry.message?.trim() || entry.detail?.trim() || null;
   }
   if (isFinalQuotationNotice(entry) || isFinalQuotationForwardedNotice(entry)) {

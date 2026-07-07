@@ -148,6 +148,27 @@
   color: #94a3b8;
 }
 
+.summary-percent {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.col-margin {
+  white-space: nowrap;
+}
+
+.margin-amount {
+  display: block;
+}
+
+.margin-percent {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
 .finalize-table-wrap {
   overflow: auto;
   border: 1px solid #e2e8f0;

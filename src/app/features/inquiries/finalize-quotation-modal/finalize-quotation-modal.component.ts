@@ -65,6 +65,10 @@ export class FinalizeQuotationModalComponent {
     return consumer - distributor;
   });
 
+  readonly marginPercentTotal = computed(() =>
+    this.percentChange(this.distributorGrandTotal(), this.consumerGrandTotal()),
+  );
+
   constructor() {
     effect(() => {
       if (this.open()) {
@@ -137,6 +141,13 @@ export class FinalizeQuotationModalComponent {
     return consumer - distributor;
   }
 
+  lineMarginPercent(inquiryId: string, item: InquiryItem): number | null {
+    return this.percentChange(
+      this.distributorLineNetValue(inquiryId, item),
+      this.consumerLineNetValue(inquiryId, item),
+    );
+  }
+
   formatCurrency(value: number | null | undefined): string {
     return value == null ? '—' : `₹${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
   }
@@ -147,6 +158,14 @@ export class FinalizeQuotationModalComponent {
     }
     const prefix = value > 0 ? '+' : value < 0 ? '−' : '';
     return `${prefix}${this.formatCurrency(Math.abs(value))}`;
+  }
+
+  formatSignedPercent(value: number | null | undefined): string {
+    if (value == null) {
+      return '—';
+    }
+    const prefix = value > 0 ? '+' : value < 0 ? '−' : '';
+    return `${prefix}${Math.abs(value).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`;
   }
 
   formatPercent(value: number | null | undefined): string {
@@ -238,6 +257,19 @@ export class FinalizeQuotationModalComponent {
     this.consumerMessage.set('');
   }
 
+  private sumNetValues(getter: (item: InquiryItem) => number | null): number | null {
+    let total = 0;
+    let hasValue = false;
+    for (const item of this.items()) {
+      const net = getter(item);
+      if (net != null) {
+        total += net;
+        hasValue = true;
+      }
+    }
+    return hasValue ? total : null;
+  }
+
   private computeLineAmount(
     mrp: number | null | undefined,
     discountPercentage: number | null | undefined,
@@ -251,17 +283,11 @@ export class FinalizeQuotationModalComponent {
     return unitAfterDiscount * quantity;
   }
 
-  private sumNetValues(getter: (item: InquiryItem) => number | null): number | null {
-    let total = 0;
-    let hasValue = false;
-    for (const item of this.items()) {
-      const net = getter(item);
-      if (net != null) {
-        total += net;
-        hasValue = true;
-      }
+  private percentChange(base: number | null, value: number | null): number | null {
+    if (base == null || value == null || base === 0) {
+      return null;
     }
-    return hasValue ? total : null;
+    return ((value - base) / base) * 100;
   }
 
   private lineDraftKey(inquiryId: string, item: InquiryItem): string {

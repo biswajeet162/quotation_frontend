@@ -20,6 +20,7 @@ import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
 import { InquiryChatAttachmentComponent } from '../../../shared/components/inquiry-chat-attachment/inquiry-chat-attachment.component';
 import { ChatAudioPlayerComponent } from '../../../shared/components/chat-audio-player/chat-audio-player.component';
 import { formatExpectedDeliveryDate, getRequestSourceLabel } from '../../../shared/utils/inquiry-display.util';
+import { quotationLinePricingFromAdmin } from '../../../shared/utils/inquiry-pricing.util';
 import {
   canReplyToTimelineEntry,
   ChatReplyTarget,
@@ -827,6 +828,18 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
     return value == null ? '—' : `${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}%`;
   }
 
+  hasFinalPricingLine(item: InquiryItem): boolean {
+    return item.adminMrp != null;
+  }
+
+  finalLineAmount(item: InquiryItem): number | null {
+    return quotationLinePricingFromAdmin(item).amount;
+  }
+
+  finalLineNetValue(item: InquiryItem): number | null {
+    return quotationLinePricingFromAdmin(item).netValue;
+  }
+
   getQuotationLineDraft(item: InquiryItem): AdminInquiryLineDraft {
     return {
       hsnCode: item.distributorHsnCode,
@@ -872,6 +885,10 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
     return !!distributor?.responseReceived;
   }
 
+  hasFinalQuotationPdfFallback(): boolean {
+    return this.inquiry()?.status === 'FINAL_SENT';
+  }
+
   openQuotationPdf(): void {
     const inquiry = this.inquiry();
     const distributorCompanyId = this.selectedDistributorCompanyId();
@@ -880,6 +897,21 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
     }
 
     this.inquiryService.downloadDistributorQuotationPdf(inquiry.id, distributorCompanyId).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank', 'noopener');
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      },
+    });
+  }
+
+  openSubmissionPdf(): void {
+    const inquiry = this.inquiry();
+    if (!inquiry) {
+      return;
+    }
+
+    this.inquiryService.downloadSubmissionPdf(inquiry.id).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
         window.open(url, '_blank', 'noopener');
