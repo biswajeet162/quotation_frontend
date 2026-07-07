@@ -26,7 +26,7 @@ import {
   shouldShowBubbleReply,
 } from '../../../shared/utils/chat-reply.util';
 import {
-  buildChatTimelineEntries,
+  buildConsumerChatTimelineEntries,
   isFinalQuotationNotice,
   isTimelineNotice,
   noticeDisplayDetail,
@@ -189,7 +189,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   });
 
   readonly chatTimelineEntries = computed(() =>
-    buildChatTimelineEntries(this.timelineEntries()),
+    buildConsumerChatTimelineEntries(this.timelineEntries()),
   );
 
   readonly canSendMessage = computed(

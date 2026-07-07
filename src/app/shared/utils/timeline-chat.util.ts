@@ -10,6 +10,26 @@ export function buildChatTimelineEntries(entries: InquiryTimelineEntry[]): Inqui
     );
 }
 
+export function buildConsumerChatTimelineEntries(entries: InquiryTimelineEntry[]): InquiryTimelineEntry[] {
+  return buildChatTimelineEntries(entries).filter(isConsumerChannelEntry);
+}
+
+export function isConsumerChannelEntry(entry: InquiryTimelineEntry): boolean {
+  if (entry.actorRole === 'DISTRIBUTOR') {
+    return false;
+  }
+  if (isDistributorQuotationNotice(entry)) {
+    return false;
+  }
+  if (isFinalQuotationForwardedNotice(entry)) {
+    return false;
+  }
+  if (entry.noticeCode === 'SENT_TO_DISTRIBUTOR') {
+    return false;
+  }
+  return true;
+}
+
 export function isTimelineNotice(entry: InquiryTimelineEntry): boolean {
   return (
     entry.kind === 'NOTICE' ||
