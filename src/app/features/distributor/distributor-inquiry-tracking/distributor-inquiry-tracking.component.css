@@ -775,7 +775,7 @@
   z-index: 2100;
   display: flex;
   flex-direction: column;
-  padding: 0.5in 0.45in;
+  padding: 0.5in 0.25in;
   box-sizing: border-box;
   background: rgba(15, 23, 42, 0.45);
   backdrop-filter: blur(2px);
