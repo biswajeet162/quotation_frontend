@@ -3,14 +3,32 @@
 
   <header class="page-header">
     <h1>Distributors list</h1>
-    <button
-      type="button"
-      class="btn-secondary"
-      (click)="inquiry() && loadInquiry(inquiry()!.id)"
-      [disabled]="loading()"
-    >
-      Refresh
-    </button>
+    <div class="page-header-actions">
+      <button
+        type="button"
+        class="btn-comparison"
+        (click)="openComparisonModal()"
+        [disabled]="loading() || !canOpenComparison()"
+        [title]="
+          canOpenComparison()
+            ? 'Compare quotations from all responded distributors'
+            : 'Available once at least one distributor responds'
+        "
+      >
+        Quotation comparison
+        @if (respondedDistributorCount() > 0) {
+          <span class="btn-comparison-count">({{ respondedDistributorCount() }})</span>
+        }
+      </button>
+      <button
+        type="button"
+        class="btn-secondary"
+        (click)="inquiry() && loadInquiry(inquiry()!.id)"
+        [disabled]="loading()"
+      >
+        Refresh
+      </button>
+    </div>
   </header>
 
   @if (!loading()) {
@@ -734,3 +752,10 @@
     </div>
   </div>
 }
+
+<app-quotation-comparison-modal
+  [open]="comparisonModalOpen()"
+  [inquiry]="inquiry()"
+  (closed)="closeComparisonModal()"
+  (distributorSelected)="onComparisonDistributorSelected($event)"
+/>

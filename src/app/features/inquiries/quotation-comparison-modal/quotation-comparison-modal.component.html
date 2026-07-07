@@ -1,0 +1,222 @@
+@if (open()) {
+  <div class="comparison-overlay" (click)="close()" role="presentation">
+    <div
+      class="comparison-dialog"
+      (click)="$event.stopPropagation()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="comparison-title"
+    >
+      <header class="comparison-header">
+        <div class="comparison-title-block">
+          <h2 id="comparison-title">Quotation comparison</h2>
+          @if (inquiry(); as inquiry) {
+            <p class="comparison-subtitle">
+              <span>{{ inquiry.title }}</span>
+              <span class="comparison-subtitle-sep" aria-hidden="true">·</span>
+              <span>{{ inquiry.inquiryId }}</span>
+              @if (inquiry.companyName) {
+                <span class="comparison-subtitle-sep" aria-hidden="true">·</span>
+                <span>{{ inquiry.companyName }}</span>
+              }
+            </p>
+          }
+        </div>
+        <button type="button" class="comparison-close" (click)="close()" aria-label="Close comparison">
+          ×
+        </button>
+      </header>
+
+      @if (loading()) {
+        <div class="comparison-loading">
+          <div class="comparison-spinner" aria-hidden="true"></div>
+          <p>Loading distributor quotations…</p>
+        </div>
+      } @else if (errorMessage()) {
+        <div class="comparison-alert" role="alert">{{ errorMessage() }}</div>
+      } @else if (respondedDistributors().length === 0) {
+        <div class="comparison-empty">
+          <p>No distributors have submitted quotations yet.</p>
+          <p class="comparison-empty-hint">Check back once at least one distributor responds.</p>
+        </div>
+      } @else {
+        <div class="comparison-body">
+          <section class="comparison-summary-section">
+            <h3>Overview</h3>
+            <p class="comparison-section-hint">
+              Compare total pricing, savings, and delivery commitments across all responded distributors.
+            </p>
+            <div class="comparison-cards">
+              @for (summary of distributorSummaries(); track summary.distributor.companyId) {
+                <article
+                  class="comparison-card"
+                  [class.is-best-price]="summary.isBestPrice"
+                  [class.is-fastest]="summary.isFastestDelivery"
+                  [class.is-highlighted]="highlightedCompanyId() === summary.distributor.companyId"
+                >
+                  <div class="comparison-card-header">
+                    <h4>{{ distributorLabel(summary.distributor) }}</h4>
+                    <div class="comparison-badges">
+                      @if (summary.isBestPrice) {
+                        <span class="badge badge-best-price">Best price</span>
+                      }
+                      @if (summary.isFastestDelivery) {
+                        <span class="badge badge-fastest">Fastest delivery</span>
+                      }
+                    </div>
+                  </div>
+
+                  <dl class="comparison-metrics">
+                    <div class="metric metric-primary">
+                      <dt>Total (incl. GST)</dt>
+                      <dd>{{ formatCurrency(summary.totalNetValue) }}</dd>
+                    </div>
+                    <div class="metric">
+                      <dt>Subtotal (excl. GST)</dt>
+                      <dd>{{ formatCurrency(summary.totalAmount) }}</dd>
+                    </div>
+                    <div class="metric">
+                      <dt>Avg. discount</dt>
+                      <dd>{{ formatPercent(summary.avgDiscount) }}</dd>
+                    </div>
+                    <div class="metric">
+                      <dt>Savings vs MRP</dt>
+                      <dd [class.savings-positive]="(summary.savingsVsMrp ?? 0) > 0">
+                        {{ formatSavings(summary.savingsVsMrp) }}
+                      </dd>
+                    </div>
+                    @if (summary.savingsVsAdmin != null) {
+                      <div class="metric">
+                        <dt>vs admin baseline</dt>
+                        <dd [class.savings-positive]="summary.savingsVsAdmin > 0">
+                          {{ formatSavings(summary.savingsVsAdmin) }}
+                        </dd>
+                      </div>
+                    }
+                    <div class="metric">
+                      <dt>Delivery window</dt>
+                      <dd>
+                        @if (summary.earliestDelivery && summary.latestDelivery) {
+                          @if (summary.earliestDelivery === summary.latestDelivery) {
+                            {{ formatExpectedDeliveryDate(summary.earliestDelivery) }}
+                          } @else {
+                            {{ formatExpectedDeliveryDate(summary.earliestDelivery) }}
+                            –
+                            {{ formatExpectedDeliveryDate(summary.latestDelivery) }}
+                          }
+                        } @else {
+                          —
+                        }
+                      </dd>
+                    </div>
+                    <div class="metric">
+                      <dt>Responded on</dt>
+                      <dd>{{ formatResponseDate(summary.distributor.responseReceivedAt) }}</dd>
+                    </div>
+                  </dl>
+
+                  <button
+                    type="button"
+                    class="btn-select-distributor"
+                    (click)="selectDistributor(summary.distributor.companyId)"
+                  >
+                    Select this distributor
+                  </button>
+                </article>
+              }
+            </div>
+          </section>
+
+          <section class="comparison-detail-section">
+            <h3>Line-by-line comparison</h3>
+            <p class="comparison-section-hint">
+              Green highlights show the lowest net value per product. Admin baseline is your reference pricing.
+            </p>
+
+            <div class="comparison-table-wrap">
+              <table class="comparison-table">
+                <thead>
+                  <tr>
+                    <th class="col-product sticky-col">Product</th>
+                    <th class="col-qty">Qty</th>
+                    <th class="col-admin">Admin baseline</th>
+                    @for (summary of distributorSummaries(); track summary.distributor.companyId) {
+                      <th class="col-distributor">
+                        {{ distributorLabel(summary.distributor) }}
+                      </th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of productRows(); track row.itemKey) {
+                    <tr>
+                      <td class="col-product sticky-col">
+                        <div class="product-cell">
+                          <span class="product-name">{{ row.productName }}</span>
+                          @if (row.productBrand) {
+                            <span class="product-brand">{{ row.productBrand }}</span>
+                          }
+                          @if (row.expectedDeliveryDate) {
+                            <span class="product-expected">
+                              Expected: {{ formatExpectedDeliveryDate(row.expectedDeliveryDate) }}
+                            </span>
+                          }
+                        </div>
+                      </td>
+                      <td class="col-qty">{{ row.quantity }}</td>
+                      <td class="col-admin">
+                        <span class="cell-value">{{ formatCurrency(row.adminNetValue) }}</span>
+                      </td>
+                      @for (summary of distributorSummaries(); track summary.distributor.companyId) {
+                        @if (getQuoteForRow(row, summary.distributor.companyId); as quote) {
+                          <td
+                            class="col-distributor"
+                            [class.cell-best]="quote.isBestPrice"
+                          >
+                            <div class="quote-cell">
+                              <span class="cell-value cell-net">{{ formatCurrency(quote.netValue) }}</span>
+                              @if (quote.mrp != null) {
+                                <span class="cell-meta">
+                                  MRP {{ formatCurrency(quote.mrp) }}
+                                  @if (quote.discountPercentage > 0) {
+                                    · {{ formatPercent(quote.discountPercentage) }} off
+                                  }
+                                </span>
+                              }
+                              @if (quote.deliveryDate) {
+                                <span class="cell-meta cell-delivery">
+                                  Delivers {{ formatExpectedDeliveryDate(quote.deliveryDate) }}
+                                </span>
+                              }
+                            </div>
+                          </td>
+                        }
+                      }
+                    </tr>
+                  }
+                </tbody>
+                <tfoot>
+                  <tr class="totals-row">
+                    <td class="col-product sticky-col"><strong>Grand total (incl. GST)</strong></td>
+                    <td class="col-qty"></td>
+                    <td class="col-admin">
+                      <strong>{{ formatCurrency(adminTotalNetValue()) }}</strong>
+                    </td>
+                    @for (summary of distributorSummaries(); track summary.distributor.companyId) {
+                      <td
+                        class="col-distributor"
+                        [class.cell-best]="summary.isBestPrice"
+                      >
+                        <strong>{{ formatCurrency(summary.totalNetValue) }}</strong>
+                      </td>
+                    }
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </section>
+        </div>
+      }
+    </div>
+  </div>
+}

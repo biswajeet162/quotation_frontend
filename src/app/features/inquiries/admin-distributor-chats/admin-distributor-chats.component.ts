@@ -38,6 +38,7 @@ import {
 } from '../../../shared/utils/timeline-chat.util';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 import { toItemTimelineAttachment } from '../../../shared/utils/attachment-media-type.util';
+import { QuotationComparisonModalComponent } from '../quotation-comparison-modal/quotation-comparison-modal.component';
 
 interface PendingAttachment {
   id: string;
@@ -56,7 +57,13 @@ interface AdminInquiryLineDraft {
 
 @Component({
   selector: 'app-admin-distributor-chats',
-  imports: [FormsModule, InquiryChatAttachmentComponent, ChatAudioPlayerComponent, LoadingOverlayComponent],
+  imports: [
+    FormsModule,
+    InquiryChatAttachmentComponent,
+    ChatAudioPlayerComponent,
+    LoadingOverlayComponent,
+    QuotationComparisonModalComponent,
+  ],
   templateUrl: './admin-distributor-chats.component.html',
   styleUrl: './admin-distributor-chats.component.css',
 })
@@ -89,6 +96,7 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   readonly lineDrafts = signal<Map<string, AdminInquiryLineDraft>>(new Map());
   readonly quotationItems = signal<InquiryItem[]>([]);
   readonly quotationItemsLoading = signal(false);
+  readonly comparisonModalOpen = signal(false);
 
   private readonly detailScrollRef = viewChild<ElementRef<HTMLElement>>('detailScroll');
   private readonly messageInputRef = viewChild<ElementRef<HTMLTextAreaElement>>('messageInput');
@@ -111,6 +119,12 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
       (a.companyName ?? '').localeCompare(b.companyName ?? '', undefined, { sensitivity: 'base' }),
     );
   });
+
+  readonly respondedDistributorCount = computed(
+    () => this.distributors().filter((distributor) => distributor.responseReceived).length,
+  );
+
+  readonly canOpenComparison = computed(() => this.respondedDistributorCount() > 0);
 
   readonly filteredDistributors = computed(() => {
     const query = this.searchQuery().trim().toLowerCase();
@@ -202,6 +216,21 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   onSearchChange(value: string): void {
     this.searchQuery.set(value);
     this.syncDistributorSelection();
+  }
+
+  openComparisonModal(): void {
+    if (!this.canOpenComparison()) {
+      return;
+    }
+    this.comparisonModalOpen.set(true);
+  }
+
+  closeComparisonModal(): void {
+    this.comparisonModalOpen.set(false);
+  }
+
+  onComparisonDistributorSelected(companyId: string): void {
+    this.selectDistributor(companyId);
   }
 
   selectDistributor(companyId: string): void {

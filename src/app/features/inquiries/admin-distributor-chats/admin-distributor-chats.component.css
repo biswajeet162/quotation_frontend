@@ -31,6 +31,41 @@
   flex-shrink: 0;
 }
 
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.btn-comparison {
+  padding: 0.55rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: #2563eb;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.btn-comparison:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.btn-comparison:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-comparison-count {
+  font-weight: 500;
+  opacity: 0.9;
+}
+
 .page-card h1 {
   margin: 0;
   font-size: 1.25rem;
