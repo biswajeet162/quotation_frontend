@@ -297,7 +297,8 @@
                         </thead>
                         <tbody>
                           @for (item of inquiry.items ?? []; track item.id ?? item.productId) {
-                            @if (getSubmittedLineDraft(inquiry.id, item); as quoted) {
+                            @if (hasSubmittedLine(item)) {
+                              @if (getSubmittedLineDraft(inquiry.id, item); as quoted) {
                               <tr>
                                 <td class="col-sno">{{ $index + 1 }}</td>
                                 <td
@@ -356,6 +357,7 @@
                                   {{ formatExpectedDeliveryDate(quoted.ourDeliveryDate) }}
                                 </td>
                               </tr>
+                              }
                             }
                           }
                         </tbody>

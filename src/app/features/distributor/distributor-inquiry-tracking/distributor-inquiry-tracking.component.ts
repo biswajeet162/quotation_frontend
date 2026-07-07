@@ -290,7 +290,7 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   }
 
   hasSubmittedQuotation(inquiry: DistributorInquiry): boolean {
-    return !!inquiry.responseReceived;
+    return (inquiry.items ?? []).some((item) => this.hasSubmittedLine(item));
   }
 
   submittedQuotationDateLabel(inquiry: DistributorInquiry): string {
