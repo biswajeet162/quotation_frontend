@@ -46,7 +46,15 @@ export class InquiryChatAttachmentComponent implements OnInit {
   readonly attachmentBlob = signal<Blob | null>(null);
   readonly viewerOpen = signal(false);
   readonly documentReaderOpen = signal(false);
+  readonly pdfViewerOpen = signal(false);
   readonly documentNotice = signal<string | null>(null);
+
+  readonly isPdfDocument = computed(() => {
+    const attachment = this.attachment();
+    const name = attachment.fileName?.toLowerCase() ?? '';
+    const type = attachment.contentType?.toLowerCase() ?? '';
+    return type.includes('pdf') || name.endsWith('.pdf');
+  });
 
   readonly documentTooLarge = computed(() => {
     const blob = this.attachmentBlob();
@@ -133,12 +141,30 @@ export class InquiryChatAttachmentComponent implements OnInit {
     event.stopPropagation();
     this.documentNotice.set(null);
 
+    if (this.isPdfDocument()) {
+      this.openPdfViewer(event);
+      return;
+    }
+
     if (this.documentTooLarge()) {
       this.documentNotice.set(documentPreviewSizeMessage());
       return;
     }
 
     this.documentReaderOpen.set(true);
+  }
+
+  openPdfViewer(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!this.objectUrl()) {
+      return;
+    }
+    this.pdfViewerOpen.set(true);
+  }
+
+  closePdfViewer(): void {
+    this.pdfViewerOpen.set(false);
   }
 
   downloadDocument(event: Event): void {
@@ -168,6 +194,10 @@ export class InquiryChatAttachmentComponent implements OnInit {
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
+    if (this.pdfViewerOpen()) {
+      this.closePdfViewer();
+      return;
+    }
     if (this.documentReaderOpen()) {
       this.closeDocumentReader();
       return;

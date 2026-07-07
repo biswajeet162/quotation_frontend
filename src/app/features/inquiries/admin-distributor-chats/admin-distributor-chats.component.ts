@@ -32,6 +32,7 @@ import {
 import {
   buildChatTimelineEntries,
   isDistributorQuotationNotice,
+  isFinalQuotationForwardedNotice,
   isTimelineNotice,
   noticeDisplayDetail,
   noticeDisplayLabel,
@@ -186,6 +187,7 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   readonly shouldShowBubbleReply = shouldShowBubbleReply;
   readonly isTimelineNotice = isTimelineNotice;
   readonly isDistributorQuotationNotice = isDistributorQuotationNotice;
+  readonly isFinalQuotationForwardedNotice = isFinalQuotationForwardedNotice;
   readonly noticeDisplayLabel = (entry: InquiryTimelineEntry) =>
     noticeDisplayLabel(entry, 'ADMIN');
   readonly noticeDisplayDetail = (entry: InquiryTimelineEntry) =>
@@ -277,6 +279,7 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
     const inquiry = this.inquiry();
     if (inquiry) {
       this.loadInquiry(inquiry.id);
+      this.loadTimeline({ silent: true, preserveScroll: false });
     }
   }
 

@@ -24,8 +24,8 @@
 
       <div class="finalize-body">
         <p class="finalize-hint">
-          Review the distributor's quoted prices below. Adjust <strong>Our discount</strong> for each line
-          before sending the final quotation to the consumer.
+          Compare distributor quote vs what the consumer will pay. Edit <strong>Our MRP</strong> and
+          <strong>Our disc.</strong> — they start with the same values as the distributor quote.
         </p>
 
         @if (errorMessage()) {
@@ -35,21 +35,54 @@
         @if (items().length === 0) {
           <p class="finalize-empty">No quotation lines are available from this distributor.</p>
         } @else {
+          <div class="comparison-summary">
+            <article class="summary-card summary-distributor">
+              <span class="summary-label">Distributor total</span>
+              <span class="summary-value">{{ formatCurrency(distributorGrandTotal()) }}</span>
+              <span class="summary-hint">What they quoted (incl. GST)</span>
+            </article>
+            <article class="summary-card summary-consumer">
+              <span class="summary-label">Consumer pays</span>
+              <span class="summary-value">{{ formatCurrency(consumerGrandTotal()) }}</span>
+              <span class="summary-hint">Your final price (incl. GST)</span>
+            </article>
+            <article class="summary-card summary-margin">
+              <span class="summary-label">Difference</span>
+              <span
+                class="summary-value"
+                [class.summary-positive]="(marginTotal() ?? 0) > 0"
+                [class.summary-negative]="(marginTotal() ?? 0) < 0"
+              >
+                {{ formatSignedCurrency(marginTotal()) }}
+              </span>
+              <span class="summary-hint">Consumer total − distributor total</span>
+            </article>
+          </div>
+
           <div class="finalize-table-wrap">
             <table class="finalize-table">
               <thead>
+                <tr class="group-header-row">
+                  <th colspan="5" class="group-spacer"></th>
+                  <th colspan="4" class="group-header group-distributor">Distributor quoted</th>
+                  <th colspan="5" class="group-header group-consumer">Consumer price (editable)</th>
+                  <th class="group-spacer"></th>
+                </tr>
                 <tr>
-                  <th class="col-sno">S.No.</th>
-                  <th class="col-designation">Designation</th>
+                  <th class="col-sno">#</th>
+                  <th class="col-designation">Product</th>
                   <th class="col-brand">Brand</th>
                   <th class="col-hsn">HSN</th>
                   <th class="col-qty">Qty</th>
-                  <th class="col-mrp">MRP</th>
-                  <th class="col-dist-disc">Dist. disc.</th>
-                  <th class="col-our-disc">Our disc.</th>
-                  <th class="col-amount">Amount</th>
-                  <th class="col-gst">GST %</th>
-                  <th class="col-net">Net value</th>
+                  <th class="col-num col-distributor">MRP</th>
+                  <th class="col-num col-distributor">Disc.</th>
+                  <th class="col-num col-distributor">Amount</th>
+                  <th class="col-num col-distributor">Net</th>
+                  <th class="col-input col-consumer">Our MRP</th>
+                  <th class="col-input col-consumer">Our disc.</th>
+                  <th class="col-num col-consumer">Amount</th>
+                  <th class="col-num col-consumer">Net</th>
+                  <th class="col-num col-margin">Δ</th>
                   <th class="col-delivery">Delivery</th>
                 </tr>
               </thead>
@@ -61,16 +94,33 @@
                     <td class="col-brand">{{ displayProductField(item.productBrand) }}</td>
                     <td class="col-hsn">{{ displayProductField(getLineDraft(inquiry.id, item).hsnCode) }}</td>
                     <td class="col-qty">{{ item.quantity }}</td>
-                    <td class="col-mrp cell-readonly">
-                      {{ formatCurrency(getLineDraft(inquiry.id, item).mrp) }}
+                    <td class="col-num col-distributor">
+                      {{ formatCurrency(getLineDraft(inquiry.id, item).distributorMrp) }}
                     </td>
-                    <td class="col-dist-disc cell-readonly">
+                    <td class="col-num col-distributor">
                       {{ formatPercent(getLineDraft(inquiry.id, item).distributorDiscountPercentage) }}
                     </td>
-                    <td class="col-our-disc">
+                    <td class="col-num col-distributor">
+                      {{ formatCurrency(distributorLineAmount(inquiry.id, item)) }}
+                    </td>
+                    <td class="col-num col-distributor cell-dist-net">
+                      {{ formatCurrency(distributorLineNetValue(inquiry.id, item)) }}
+                    </td>
+                    <td class="col-input col-consumer">
                       <input
                         type="number"
-                        class="line-input line-input-number"
+                        class="line-input line-input-compact"
+                        min="0"
+                        step="0.01"
+                        [ngModel]="getLineDraft(inquiry.id, item).ourMrp ?? ''"
+                        (ngModelChange)="updateOurMrp(inquiry.id, item, $event)"
+                        aria-label="Our MRP"
+                      />
+                    </td>
+                    <td class="col-input col-consumer">
+                      <input
+                        type="number"
+                        class="line-input line-input-compact"
                         min="0"
                         max="100"
                         step="0.01"
@@ -79,30 +129,43 @@
                         aria-label="Our discount percentage"
                       />
                     </td>
-                    <td class="col-amount cell-readonly">
-                      {{ formatCurrency(lineAmount(inquiry.id, item)) }}
+                    <td class="col-num col-consumer">
+                      {{ formatCurrency(consumerLineAmount(inquiry.id, item)) }}
                     </td>
-                    <td class="col-gst cell-readonly">
-                      {{ formatPercent(getLineDraft(inquiry.id, item).gstPercentage) }}
+                    <td class="col-num col-consumer cell-consumer-net">
+                      {{ formatCurrency(consumerLineNetValue(inquiry.id, item)) }}
                     </td>
-                    <td class="col-net cell-readonly cell-highlight">
-                      {{ formatCurrency(lineNetValue(inquiry.id, item)) }}
+                    <td
+                      class="col-num col-margin"
+                      [class.cell-margin-positive]="(lineMargin(inquiry.id, item) ?? 0) > 0"
+                      [class.cell-margin-negative]="(lineMargin(inquiry.id, item) ?? 0) < 0"
+                    >
+                      {{ formatSignedCurrency(lineMargin(inquiry.id, item)) }}
                     </td>
-                    <td class="col-delivery cell-readonly">
+                    <td class="col-delivery">
                       {{ formatExpectedDeliveryDate(getLineDraft(inquiry.id, item).deliveryDate) }}
                     </td>
                   </tr>
                 }
               </tbody>
               <tfoot>
-                <tr>
-                  <td colspan="10" class="totals-label">Distributor total (incl. GST)</td>
-                  <td class="col-net cell-readonly">{{ formatCurrency(distributorGrandTotal()) }}</td>
-                  <td></td>
-                </tr>
-                <tr class="totals-row-final">
-                  <td colspan="10" class="totals-label">Consumer total (incl. GST)</td>
-                  <td class="col-net cell-highlight">{{ formatCurrency(grandTotalNetValue()) }}</td>
+                <tr class="totals-row">
+                  <td colspan="5" class="totals-label">Grand total (incl. GST)</td>
+                  <td colspan="3" class="col-distributor"></td>
+                  <td class="col-num col-distributor cell-dist-net">
+                    <strong>{{ formatCurrency(distributorGrandTotal()) }}</strong>
+                  </td>
+                  <td colspan="3" class="col-consumer"></td>
+                  <td class="col-num col-consumer cell-consumer-net">
+                    <strong>{{ formatCurrency(consumerGrandTotal()) }}</strong>
+                  </td>
+                  <td
+                    class="col-num col-margin"
+                    [class.cell-margin-positive]="(marginTotal() ?? 0) > 0"
+                    [class.cell-margin-negative]="(marginTotal() ?? 0) < 0"
+                  >
+                    <strong>{{ formatSignedCurrency(marginTotal()) }}</strong>
+                  </td>
                   <td></td>
                 </tr>
               </tfoot>

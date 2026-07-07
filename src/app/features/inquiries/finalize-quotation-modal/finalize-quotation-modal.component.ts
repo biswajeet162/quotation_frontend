@@ -3,12 +3,12 @@ import { FormsModule } from '@angular/forms';
 import { Inquiry, InquiryDistributor, InquiryItem } from '../../../core/models/inquiry.model';
 import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
 import { formatExpectedDeliveryDate } from '../../../shared/utils/inquiry-display.util';
-import { quotationLinePricingFromDistributor } from '../../../shared/utils/inquiry-pricing.util';
 
 export interface FinalizeLineDraft {
   hsnCode?: string;
-  mrp?: number;
+  distributorMrp?: number;
   distributorDiscountPercentage?: number;
+  ourMrp?: number;
   ourDiscountPercentage?: number;
   gstPercentage?: number;
   deliveryDate?: string;
@@ -40,34 +40,29 @@ export class FinalizeQuotationModalComponent {
 
   readonly items = computed(() => this.quotationItems().filter((item) => item.distributorMrp != null));
 
-  readonly grandTotalNetValue = computed(() => {
+  readonly distributorGrandTotal = computed(() => {
     const inquiry = this.inquiry();
     if (!inquiry) {
       return null;
     }
-    let total = 0;
-    let hasValue = false;
-    for (const item of this.items()) {
-      const net = this.lineNetValue(inquiry.id, item);
-      if (net != null) {
-        total += net;
-        hasValue = true;
-      }
-    }
-    return hasValue ? total : null;
+    return this.sumNetValues((item) => this.distributorLineNetValue(inquiry.id, item));
   });
 
-  readonly distributorGrandTotal = computed(() => {
-    let total = 0;
-    let hasValue = false;
-    for (const item of this.items()) {
-      const pricing = quotationLinePricingFromDistributor(item);
-      if (pricing.netValue != null) {
-        total += pricing.netValue;
-        hasValue = true;
-      }
+  readonly consumerGrandTotal = computed(() => {
+    const inquiry = this.inquiry();
+    if (!inquiry) {
+      return null;
     }
-    return hasValue ? total : null;
+    return this.sumNetValues((item) => this.consumerLineNetValue(inquiry.id, item));
+  });
+
+  readonly marginTotal = computed(() => {
+    const distributor = this.distributorGrandTotal();
+    const consumer = this.consumerGrandTotal();
+    if (distributor == null || consumer == null) {
+      return null;
+    }
+    return consumer - distributor;
   });
 
   constructor() {
@@ -87,6 +82,11 @@ export class FinalizeQuotationModalComponent {
     return this.lineDrafts().get(this.lineDraftKey(inquiryId, item)) ?? {};
   }
 
+  updateOurMrp(inquiryId: string, item: InquiryItem, value: string | number | null): void {
+    const parsed = this.parseOptionalNumber(value);
+    this.patchLineDraft(inquiryId, item, { ourMrp: parsed ?? undefined });
+  }
+
   updateOurDiscount(
     inquiryId: string,
     item: InquiryItem,
@@ -96,18 +96,17 @@ export class FinalizeQuotationModalComponent {
     this.patchLineDraft(inquiryId, item, { ourDiscountPercentage: parsed ?? undefined });
   }
 
-  lineAmount(inquiryId: string, item: InquiryItem): number | null {
+  distributorLineAmount(inquiryId: string, item: InquiryItem): number | null {
     const draft = this.getLineDraft(inquiryId, item);
-    if (draft.mrp == null) {
-      return null;
-    }
-    const discount = draft.ourDiscountPercentage ?? 0;
-    const unitAfterDiscount = draft.mrp * (1 - discount / 100);
-    return unitAfterDiscount * item.quantity;
+    return this.computeLineAmount(
+      draft.distributorMrp,
+      draft.distributorDiscountPercentage,
+      item.quantity,
+    );
   }
 
-  lineNetValue(inquiryId: string, item: InquiryItem): number | null {
-    const amount = this.lineAmount(inquiryId, item);
+  distributorLineNetValue(inquiryId: string, item: InquiryItem): number | null {
+    const amount = this.distributorLineAmount(inquiryId, item);
     if (amount == null) {
       return null;
     }
@@ -115,12 +114,39 @@ export class FinalizeQuotationModalComponent {
     return amount * (1 + gst / 100);
   }
 
-  distributorLineNetValue(item: InquiryItem): number | null {
-    return quotationLinePricingFromDistributor(item).netValue;
+  consumerLineAmount(inquiryId: string, item: InquiryItem): number | null {
+    const draft = this.getLineDraft(inquiryId, item);
+    return this.computeLineAmount(draft.ourMrp, draft.ourDiscountPercentage, item.quantity);
+  }
+
+  consumerLineNetValue(inquiryId: string, item: InquiryItem): number | null {
+    const amount = this.consumerLineAmount(inquiryId, item);
+    if (amount == null) {
+      return null;
+    }
+    const gst = this.getLineDraft(inquiryId, item).gstPercentage ?? 0;
+    return amount * (1 + gst / 100);
+  }
+
+  lineMargin(inquiryId: string, item: InquiryItem): number | null {
+    const consumer = this.consumerLineNetValue(inquiryId, item);
+    const distributor = this.distributorLineNetValue(inquiryId, item);
+    if (consumer == null || distributor == null) {
+      return null;
+    }
+    return consumer - distributor;
   }
 
   formatCurrency(value: number | null | undefined): string {
     return value == null ? '—' : `₹${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+  }
+
+  formatSignedCurrency(value: number | null | undefined): string {
+    if (value == null) {
+      return '—';
+    }
+    const prefix = value > 0 ? '+' : value < 0 ? '−' : '';
+    return `${prefix}${this.formatCurrency(Math.abs(value))}`;
   }
 
   formatPercent(value: number | null | undefined): string {
@@ -145,13 +171,13 @@ export class FinalizeQuotationModalComponent {
       .filter((item) => item.id)
       .map((item) => {
         const draft = this.getLineDraft(inquiry.id, item);
-        if (draft.mrp == null) {
+        if (draft.ourMrp == null) {
           return null;
         }
         return {
           inquiryItemId: item.id!,
           hsnCode: draft.hsnCode,
-          mrp: draft.mrp,
+          mrp: draft.ourMrp,
           discountPercentage: draft.ourDiscountPercentage ?? 0,
           gstPercentage: draft.gstPercentage,
         };
@@ -197,18 +223,45 @@ export class FinalizeQuotationModalComponent {
       if (item.distributorMrp == null) {
         continue;
       }
+      const distributorDiscount = item.distributorDiscountPercentage ?? 0;
       next.set(this.lineDraftKey(inquiry.id, item), {
         hsnCode: item.distributorHsnCode,
-        mrp: item.distributorMrp,
-        distributorDiscountPercentage: item.distributorDiscountPercentage,
-        ourDiscountPercentage:
-          item.adminDiscountPercentage ?? item.distributorDiscountPercentage ?? 0,
+        distributorMrp: item.distributorMrp,
+        distributorDiscountPercentage: distributorDiscount,
+        ourMrp: item.distributorMrp,
+        ourDiscountPercentage: distributorDiscount,
         gstPercentage: item.distributorGstPercentage,
         deliveryDate: item.distributorOurDeliveryDate,
       });
     }
     this.lineDrafts.set(next);
     this.consumerMessage.set('');
+  }
+
+  private computeLineAmount(
+    mrp: number | null | undefined,
+    discountPercentage: number | null | undefined,
+    quantity: number,
+  ): number | null {
+    if (mrp == null) {
+      return null;
+    }
+    const discount = discountPercentage ?? 0;
+    const unitAfterDiscount = mrp * (1 - discount / 100);
+    return unitAfterDiscount * quantity;
+  }
+
+  private sumNetValues(getter: (item: InquiryItem) => number | null): number | null {
+    let total = 0;
+    let hasValue = false;
+    for (const item of this.items()) {
+      const net = getter(item);
+      if (net != null) {
+        total += net;
+        hasValue = true;
+      }
+    }
+    return hasValue ? total : null;
   }
 
   private lineDraftKey(inquiryId: string, item: InquiryItem): string {

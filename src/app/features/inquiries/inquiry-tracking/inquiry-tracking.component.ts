@@ -27,10 +27,12 @@ import {
 } from '../../../shared/utils/chat-reply.util';
 import {
   buildChatTimelineEntries,
+  isFinalQuotationNotice,
   isTimelineNotice,
   noticeDisplayDetail,
   noticeDisplayLabel,
 } from '../../../shared/utils/timeline-chat.util';
+import { quotationLinePricingFromAdmin } from '../../../shared/utils/inquiry-pricing.util';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 import { formatSpecificationsInline } from '../../../shared/utils/specifications-display.util';
 import { toItemTimelineAttachment } from '../../../shared/utils/attachment-media-type.util';
@@ -201,6 +203,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   readonly replyTargetLabel = replyTargetLabel;
   readonly shouldShowBubbleReply = shouldShowBubbleReply;
   readonly isTimelineNotice = isTimelineNotice;
+  readonly isFinalQuotationNotice = isFinalQuotationNotice;
   readonly noticeDisplayLabel = (entry: InquiryTimelineEntry) =>
     noticeDisplayLabel(entry, 'CONSUMER');
   readonly noticeDisplayDetail = (entry: InquiryTimelineEntry) =>
@@ -339,6 +342,20 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     }
   }
 
+  private refreshInquiryItems(inquiryId: string): void {
+    this.inquiryService.getMyInquiries().subscribe({
+      next: (list) => {
+        const updated = list.find((inquiry) => inquiry.id === inquiryId);
+        if (!updated) {
+          return;
+        }
+        this.inquiries.update((current) =>
+          current.map((inquiry) => (inquiry.id === inquiryId ? { ...inquiry, ...updated } : inquiry)),
+        );
+      },
+    });
+  }
+
   loadTimeline(options?: { silent?: boolean; scrollToBottom?: boolean; preserveScroll?: boolean }): void {
     const inquiry = this.selectedInquiry();
     if (!inquiry) {
@@ -372,6 +389,13 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
               : q,
           ),
         );
+
+        if (
+          timeline.currentStatus === 'FINAL_SENT' ||
+          (timeline.entries ?? []).some((entry) => entry.noticeCode === 'FINAL_QUOTATION_SENT')
+        ) {
+          this.refreshInquiryItems(inquiry.id);
+        }
 
         if (options?.scrollToBottom) {
           this.scrollDetailToBottom();
@@ -819,6 +843,30 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   displayProductField(value?: string): string {
     const trimmed = value?.trim();
     return trimmed ? trimmed : '—';
+  }
+
+  hasFinalPricingLine(item: InquiryItem): boolean {
+    return item.adminMrp != null;
+  }
+
+  formatCurrency(value: number | null | undefined): string {
+    return value == null ? '—' : value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  }
+
+  formatOptionalPercent(value: number | null | undefined): string {
+    return value == null ? '—' : `${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}%`;
+  }
+
+  finalLineAmount(item: InquiryItem): number | null {
+    return quotationLinePricingFromAdmin(item).amount;
+  }
+
+  finalLineNetValue(item: InquiryItem): number | null {
+    return quotationLinePricingFromAdmin(item).netValue;
+  }
+
+  quotationPdfAttachments(entry: InquiryTimelineEntry): InquiryTimelineAttachment[] {
+    return (entry.attachments ?? []).filter((attachment) => attachment.mediaType === 'DOCUMENT');
   }
 
   displaySpecifications(value?: string): string {

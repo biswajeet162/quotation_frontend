@@ -238,6 +238,103 @@
                 <div class="chat-thread">
                   @for (entry of chatTimelineEntries(); track entry.id) {
                     @if (isTimelineNotice(entry)) {
+                      @if (isFinalQuotationNotice(entry)) {
+                        <div class="chat-final-quotation-notice">
+                          <div class="chat-status-notice" [id]="'chat-msg-' + entry.id">
+                            <span class="chat-status-notice-label">{{ noticeDisplayLabel(entry) }}</span>
+                            @if (noticeDisplayDetail(entry); as detail) {
+                              <span class="chat-status-notice-detail">{{ detail }}</span>
+                            }
+                            <span class="chat-status-notice-time">{{ formatChatTime(entry.occurredAt) }}</span>
+                          </div>
+
+                          @if ((inquiry.items ?? []).length > 0) {
+                            <div class="chat-sent-pricing-table">
+                              <div class="chat-pricing-table-wrap">
+                                <table class="preview-table admin-pricing-table chat-pricing-table">
+                                  <thead>
+                                    <tr>
+                                      <th class="col-sno">S.No.</th>
+                                      <th class="col-designation">Designation</th>
+                                      <th class="col-brand">Brand</th>
+                                      <th class="col-hsn-code">HSN code</th>
+                                      <th class="col-description">Description</th>
+                                      <th class="col-qty">Qty</th>
+                                      <th class="col-mrp">MRP</th>
+                                      <th class="col-discount">Disc. %</th>
+                                      <th class="col-amount">Amount</th>
+                                      <th class="col-gst">GST %</th>
+                                      <th class="col-net-value">Net value</th>
+                                      <th class="col-expected-delivery">Expected delivery</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    @for (item of inquiry.items ?? []; track item.id ?? item.productId) {
+                                      @if (hasFinalPricingLine(item)) {
+                                        <tr>
+                                          <td class="col-sno">{{ $index + 1 }}</td>
+                                          <td class="col-designation consumer-cell">
+                                            {{ displayProductField(item.productName) }}
+                                          </td>
+                                          <td class="col-brand consumer-cell">
+                                            {{ displayProductField(item.productBrand) }}
+                                          </td>
+                                          <td class="col-hsn-code">
+                                            <span class="line-input line-input-readonly chat-readonly-value">
+                                              {{ displayProductField(item.adminHsnCode) }}
+                                            </span>
+                                          </td>
+                                          <td class="col-description consumer-cell preview-multiline">
+                                            {{ displayProductField(item.productDescription) }}
+                                          </td>
+                                          <td class="col-qty consumer-cell">{{ item.quantity }}</td>
+                                          <td class="col-mrp">
+                                            <span class="line-input line-input-number line-input-readonly chat-readonly-value">
+                                              {{ formatCurrency(item.adminMrp) }}
+                                            </span>
+                                          </td>
+                                          <td class="col-discount">
+                                            <span class="line-input line-input-number line-input-readonly chat-readonly-value">
+                                              {{ formatOptionalPercent(item.adminDiscountPercentage) }}
+                                            </span>
+                                          </td>
+                                          <td class="col-amount">
+                                            <span class="line-input line-input-number line-input-readonly chat-readonly-value">
+                                              {{ formatCurrency(finalLineAmount(item)) }}
+                                            </span>
+                                          </td>
+                                          <td class="col-gst">
+                                            <span class="line-input line-input-number line-input-readonly chat-readonly-value">
+                                              {{ formatOptionalPercent(item.adminGstPercentage) }}
+                                            </span>
+                                          </td>
+                                          <td class="col-net-value">
+                                            <span class="line-input line-input-number line-input-readonly chat-readonly-value">
+                                              {{ formatCurrency(finalLineNetValue(item)) }}
+                                            </span>
+                                          </td>
+                                          <td class="col-expected-delivery consumer-cell">
+                                            {{ formatExpectedDeliveryDate(item.expectedDeliveryDate) }}
+                                          </td>
+                                        </tr>
+                                      }
+                                    }
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          }
+
+                          @if (quotationPdfAttachments(entry).length > 0) {
+                            <div class="distributor-send-attachments">
+                              <span class="distributor-send-attachments-label">Quotation PDF</span>
+                              @for (attachment of quotationPdfAttachments(entry); track attachment.id) {
+                                <app-inquiry-chat-attachment [attachment]="attachment" />
+                              }
+                            </div>
+                          }
+                        </div>
+                      } @else {
                       <div class="chat-status-notice" [id]="'chat-msg-' + entry.id">
                         <span class="chat-status-notice-label">{{ noticeDisplayLabel(entry) }}</span>
                         @if (noticeDisplayDetail(entry); as detail) {
@@ -245,6 +342,7 @@
                         }
                         <span class="chat-status-notice-time">{{ formatChatTime(entry.occurredAt) }}</span>
                       </div>
+                      }
                     } @else {
                     <div
                       class="chat-row"

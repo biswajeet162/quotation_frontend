@@ -35,6 +35,17 @@ export function isDistributorQuotationNotice(entry: InquiryTimelineEntry): boole
   );
 }
 
+export function isFinalQuotationNotice(entry: InquiryTimelineEntry): boolean {
+  return entry.noticeCode === 'FINAL_QUOTATION_SENT' || entry.title === 'Final quotation sent';
+}
+
+export function isFinalQuotationForwardedNotice(entry: InquiryTimelineEntry): boolean {
+  return (
+    entry.noticeCode === 'FINAL_QUOTATION_FORWARDED' ||
+    entry.title === 'Quotation sent to consumer'
+  );
+}
+
 export function noticeDisplayLabel(
   entry: InquiryTimelineEntry,
   viewer: TimelineViewerRole,
@@ -50,6 +61,12 @@ export function noticeDisplayLabel(
   }
   if (entry.noticeCode === 'DISTRIBUTOR_QUOTATION_SUBMITTED' || entry.title === 'Quotation submitted') {
     return viewer === 'ADMIN' ? 'Quotation submitted' : entry.title;
+  }
+  if (isFinalQuotationNotice(entry)) {
+    return viewer === 'CONSUMER' ? 'Your final quotation is ready' : 'Final quotation sent';
+  }
+  if (isFinalQuotationForwardedNotice(entry)) {
+    return 'Quotation has been sent to consumer';
   }
   if (
     entry.noticeCode === 'SENT_TO_DISTRIBUTORS' ||
@@ -68,6 +85,9 @@ export function noticeDisplayDetail(
     return null;
   }
   if (entry.noticeCode === 'DISTRIBUTOR_QUOTATION_SUBMITTED' || entry.title === 'Quotation submitted') {
+    return entry.message?.trim() || entry.detail?.trim() || null;
+  }
+  if (isFinalQuotationNotice(entry) || isFinalQuotationForwardedNotice(entry)) {
     return entry.message?.trim() || entry.detail?.trim() || null;
   }
   if (

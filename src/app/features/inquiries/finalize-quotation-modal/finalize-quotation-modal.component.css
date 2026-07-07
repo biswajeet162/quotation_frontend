@@ -90,6 +90,64 @@
   padding: 2rem;
 }
 
+.comparison-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.65rem;
+  margin-bottom: 0.85rem;
+}
+
+.summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.summary-distributor {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.summary-consumer {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.summary-margin {
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+
+.summary-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.summary-value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.summary-positive {
+  color: #15803d;
+}
+
+.summary-negative {
+  color: #b91c1c;
+}
+
+.summary-hint {
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
 .finalize-table-wrap {
   overflow: auto;
   border: 1px solid #e2e8f0;
@@ -100,12 +158,12 @@
 .finalize-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
 }
 
 .finalize-table th,
 .finalize-table td {
-  padding: 0.55rem 0.65rem;
+  padding: 0.45rem 0.5rem;
   border-bottom: 1px solid #f1f5f9;
   text-align: left;
   vertical-align: middle;
@@ -113,7 +171,7 @@
 
 .finalize-table th {
   background: #f8fafc;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -121,59 +179,132 @@
   white-space: nowrap;
 }
 
+.group-header-row th {
+  padding-top: 0.55rem;
+  padding-bottom: 0.35rem;
+  border-bottom: none;
+}
+
+.group-header {
+  text-align: center;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+}
+
+.group-distributor {
+  background: #f1f5f9;
+  color: #475569;
+  border-left: 2px solid #94a3b8;
+  border-right: 2px solid #94a3b8;
+}
+
+.group-consumer {
+  background: #ecfdf5;
+  color: #047857;
+  border-right: 2px solid #6ee7b7;
+}
+
 .col-sno {
-  width: 2.5rem;
+  width: 2rem;
+  text-align: center;
 }
 
 .col-qty {
   text-align: center;
+  width: 2.5rem;
 }
 
-.col-mrp,
-.col-amount,
-.col-net {
+.col-designation {
+  min-width: 7rem;
+  max-width: 10rem;
+}
+
+.col-brand,
+.col-hsn {
+  max-width: 6rem;
+}
+
+.col-num {
+  text-align: right;
   white-space: nowrap;
+  min-width: 4.25rem;
 }
 
-.col-our-disc {
-  min-width: 5.5rem;
+.col-input {
+  width: 4.5rem;
+  max-width: 4.5rem;
+  padding-left: 0.3rem;
+  padding-right: 0.3rem;
 }
 
-.cell-readonly {
-  color: #334155;
+.col-margin {
+  text-align: right;
+  min-width: 4rem;
+  font-weight: 600;
 }
 
-.cell-highlight {
+.col-delivery {
+  white-space: nowrap;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.col-distributor {
+  background: #fafbfc;
+}
+
+.col-consumer {
+  background: #f6fef9;
+}
+
+.cell-dist-net {
+  font-weight: 600;
+  color: #475569;
+}
+
+.cell-consumer-net {
   font-weight: 700;
   color: #0f766e;
 }
 
-.line-input {
-  width: 100%;
-  min-width: 4.5rem;
-  padding: 0.35rem 0.45rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  font-size: 0.82rem;
+.cell-margin-positive {
+  color: #15803d;
 }
 
-.line-input-number {
+.cell-margin-negative {
+  color: #b91c1c;
+}
+
+.line-input-compact {
+  width: 100%;
+  min-width: 0;
+  max-width: 4.25rem;
+  padding: 0.25rem 0.3rem;
+  border: 1px solid #6ee7b7;
+  border-radius: 5px;
+  font-size: 0.78rem;
   text-align: right;
+  background: #fff;
+}
+
+.line-input-compact:focus {
+  outline: none;
+  border-color: #0f766e;
+  box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.15);
 }
 
 .finalize-table tfoot td {
   background: #f8fafc;
   font-weight: 600;
+  border-top: 2px solid #e2e8f0;
 }
 
 .totals-label {
   text-align: right;
   color: #475569;
-}
-
-.totals-row-final td {
-  background: #ecfdf5;
-  border-top: 2px solid #a7f3d0;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .finalize-message-field {
@@ -236,6 +367,12 @@
 .btn-secondary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+  .comparison-summary {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {

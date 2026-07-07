@@ -408,12 +408,25 @@
                                   } @else if (hasQuotationPdfFallback()) {
                                     <div class="distributor-send-attachments">
                                       <span class="distributor-send-attachments-label">Quotation PDF</span>
-                                      <button type="button" class="btn-attachment-link" (click)="openQuotationPdf()">
-                                        View quotation PDF
-                                      </button>
+                                      <div class="pdf-attachment-chip">
+                                        <span class="pdf-attachment-icon" aria-hidden="true">📄</span>
+                                        <span class="pdf-attachment-name">Quotation PDF</span>
+                                        <span class="pdf-attachment-meta">PDF attached</span>
+                                        <button type="button" class="btn-pdf-view" (click)="openQuotationPdf()">
+                                          View
+                                        </button>
+                                      </div>
                                     </div>
                                   }
                                 </div>
+                              </div>
+                            } @else if (isFinalQuotationForwardedNotice(entry)) {
+                              <div class="chat-status-notice" [id]="'chat-msg-' + entry.id">
+                                <span class="chat-status-notice-label">{{ noticeDisplayLabel(entry) }}</span>
+                                @if (noticeDisplayDetail(entry); as detail) {
+                                  <span class="chat-status-notice-detail">{{ detail }}</span>
+                                }
+                                <span class="chat-status-notice-time">{{ formatChatTime(entry.occurredAt) }}</span>
                               </div>
                             } @else {
                               <div class="chat-status-notice" [id]="'chat-msg-' + entry.id">

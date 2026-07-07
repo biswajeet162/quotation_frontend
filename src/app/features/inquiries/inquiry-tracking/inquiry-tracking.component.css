@@ -1490,3 +1490,62 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+.chat-final-quotation-notice {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0.35rem 0 0.85rem;
+}
+
+.distributor-send-attachments {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.distributor-send-attachments-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.chat-sent-pricing-table {
+  width: 100%;
+  padding: 0;
+  background: transparent;
+}
+
+.chat-pricing-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.chat-pricing-table {
+  min-width: 72rem;
+  background: #fff;
+  border-radius: 8px;
+}
+
+.chat-readonly-value {
+  min-height: 1.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  white-space: nowrap;
+}
+
+.chat-pricing-table .col-hsn-code .chat-readonly-value,
+.chat-pricing-table .col-description .chat-readonly-value {
+  justify-content: flex-start;
+}
