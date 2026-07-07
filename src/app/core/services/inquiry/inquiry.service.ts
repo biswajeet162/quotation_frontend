@@ -10,6 +10,7 @@ import {
   DistributorOption,
   Inquiry,
   InquiryDraftAttachment,
+  InquiryItem,
   InquiryStatus,
   SubmitToDistributorsRequest,
   AdminInquiryLinePricing,
@@ -210,6 +211,25 @@ export class InquiryService {
   ): Observable<InquiryTimeline> {
     return this.http.get<InquiryTimeline>(
       `${this.baseUrl}/${inquiryId}/distributors/${distributorCompanyId}/timeline`,
+    );
+  }
+
+  getDistributorQuotationItems(
+    inquiryId: string,
+    distributorCompanyId: string,
+  ): Observable<InquiryItem[]> {
+    return this.http.get<InquiryItem[]>(
+      `${this.baseUrl}/${inquiryId}/distributors/${distributorCompanyId}/quotation-items`,
+    );
+  }
+
+  downloadDistributorQuotationPdf(
+    inquiryId: string,
+    distributorCompanyId: string,
+  ): Observable<Blob> {
+    return this.http.get(
+      `${this.baseUrl}/${inquiryId}/distributors/${distributorCompanyId}/quotation-pdf`,
+      { responseType: 'blob' },
     );
   }
 

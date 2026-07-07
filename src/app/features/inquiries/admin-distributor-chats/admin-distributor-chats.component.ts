@@ -31,6 +31,7 @@ import {
 } from '../../../shared/utils/chat-reply.util';
 import {
   buildChatTimelineEntries,
+  isDistributorQuotationNotice,
   isTimelineNotice,
   noticeDisplayDetail,
   noticeDisplayLabel,
@@ -50,6 +51,7 @@ interface AdminInquiryLineDraft {
   mrp?: number;
   discountPercentage?: number;
   gstPercentage?: number;
+  ourDeliveryDate?: string;
 }
 
 @Component({
@@ -85,6 +87,8 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   readonly itemAttachmentViewerOpen = signal(false);
   readonly itemAttachmentViewerItem = signal<InquiryItem | null>(null);
   readonly lineDrafts = signal<Map<string, AdminInquiryLineDraft>>(new Map());
+  readonly quotationItems = signal<InquiryItem[]>([]);
+  readonly quotationItemsLoading = signal(false);
 
   private readonly detailScrollRef = viewChild<ElementRef<HTMLElement>>('detailScroll');
   private readonly messageInputRef = viewChild<ElementRef<HTMLTextAreaElement>>('messageInput');
@@ -141,6 +145,7 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   readonly replyTargetLabel = replyTargetLabel;
   readonly shouldShowBubbleReply = shouldShowBubbleReply;
   readonly isTimelineNotice = isTimelineNotice;
+  readonly isDistributorQuotationNotice = isDistributorQuotationNotice;
   readonly noticeDisplayLabel = (entry: InquiryTimelineEntry) =>
     noticeDisplayLabel(entry, 'ADMIN');
   readonly noticeDisplayDetail = (entry: InquiryTimelineEntry) =>
@@ -207,7 +212,9 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
     this.messageText.set('');
     this.clearReplyTarget();
     this.timelineEntries.set([]);
+    this.quotationItems.set([]);
     this.loadTimeline();
+    this.loadQuotationItems();
   }
 
   private syncDistributorSelection(): void {
@@ -221,9 +228,33 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
     this.selectedDistributorCompanyId.set(nextId);
     if (nextId) {
       this.loadTimeline();
+      this.loadQuotationItems();
     } else {
       this.timelineEntries.set([]);
+      this.quotationItems.set([]);
     }
+  }
+
+  private loadQuotationItems(): void {
+    const inquiry = this.inquiry();
+    const distributorCompanyId = this.selectedDistributorCompanyId();
+    const distributor = this.distributors().find((item) => item.companyId === distributorCompanyId);
+    if (!inquiry || !distributorCompanyId || !distributor?.responseReceived) {
+      this.quotationItems.set([]);
+      return;
+    }
+
+    this.quotationItemsLoading.set(true);
+    this.inquiryService.getDistributorQuotationItems(inquiry.id, distributorCompanyId).subscribe({
+      next: (items) => {
+        this.quotationItems.set(items);
+        this.quotationItemsLoading.set(false);
+      },
+      error: () => {
+        this.quotationItems.set([]);
+        this.quotationItemsLoading.set(false);
+      },
+    });
   }
 
   loadTimeline(options?: { silent?: boolean; scrollToBottom?: boolean; preserveScroll?: boolean }): void {
@@ -265,6 +296,7 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
         } else if (options?.preserveScroll && scrollEl) {
           scrollEl.scrollTop = previousScrollTop;
         }
+        this.loadQuotationItems();
       },
       error: () => {
         this.timelineLoading.set(false);
@@ -693,6 +725,75 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
 
   formatCurrency(value: number | null | undefined): string {
     return value == null ? '—' : value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  }
+
+  formatOptionalNumber(value: number | null | undefined): string {
+    return value == null ? '—' : value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  }
+
+  formatOptionalPercent(value: number | null | undefined): string {
+    return value == null ? '—' : `${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}%`;
+  }
+
+  getQuotationLineDraft(item: InquiryItem): AdminInquiryLineDraft {
+    return {
+      hsnCode: item.distributorHsnCode,
+      mrp: item.distributorMrp,
+      discountPercentage: item.distributorDiscountPercentage,
+      gstPercentage: item.distributorGstPercentage,
+      ourDeliveryDate: item.distributorOurDeliveryDate,
+    };
+  }
+
+  hasQuotationLine(item: InquiryItem): boolean {
+    return item.distributorMrp != null;
+  }
+
+  quotationLineAmount(item: InquiryItem, draft?: AdminInquiryLineDraft): number | null {
+    const lineDraft = draft ?? this.getQuotationLineDraft(item);
+    if (lineDraft.mrp == null) {
+      return null;
+    }
+    const discount = lineDraft.discountPercentage ?? 0;
+    const unitAfterDiscount = lineDraft.mrp * (1 - discount / 100);
+    return unitAfterDiscount * item.quantity;
+  }
+
+  quotationLineNetValue(item: InquiryItem, draft?: AdminInquiryLineDraft): number | null {
+    const amount = this.quotationLineAmount(item, draft);
+    if (amount == null) {
+      return null;
+    }
+    const lineDraft = draft ?? this.getQuotationLineDraft(item);
+    const gst = lineDraft.gstPercentage ?? 0;
+    return amount * (1 + gst / 100);
+  }
+
+  quotationPdfAttachments(entry: InquiryTimelineEntry): InquiryTimelineAttachment[] {
+    return (entry.attachments ?? []).filter((attachment) => attachment.mediaType === 'DOCUMENT');
+  }
+
+  hasQuotationPdfFallback(): boolean {
+    const distributor = this.distributors().find(
+      (item) => item.companyId === this.selectedDistributorCompanyId(),
+    );
+    return !!distributor?.responseReceived;
+  }
+
+  openQuotationPdf(): void {
+    const inquiry = this.inquiry();
+    const distributorCompanyId = this.selectedDistributorCompanyId();
+    if (!inquiry || !distributorCompanyId) {
+      return;
+    }
+
+    this.inquiryService.downloadDistributorQuotationPdf(inquiry.id, distributorCompanyId).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank', 'noopener');
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      },
+    });
   }
 
   itemAttachmentCount(item: InquiryItem): number {

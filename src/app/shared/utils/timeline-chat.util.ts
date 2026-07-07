@@ -28,6 +28,13 @@ export function isDistributorSendNotice(entry: InquiryTimelineEntry): boolean {
   return entry.noticeCode === 'SENT_TO_DISTRIBUTOR';
 }
 
+export function isDistributorQuotationNotice(entry: InquiryTimelineEntry): boolean {
+  return (
+    entry.noticeCode === 'DISTRIBUTOR_QUOTATION_SUBMITTED' ||
+    (entry.title === 'Quotation submitted' && entry.actorRole === 'DISTRIBUTOR')
+  );
+}
+
 export function noticeDisplayLabel(
   entry: InquiryTimelineEntry,
   viewer: TimelineViewerRole,
@@ -40,6 +47,9 @@ export function noticeDisplayLabel(
     return viewer === 'ADMIN' && distributorName
       ? `Sent to ${distributorName}`
       : 'Checking our inventory';
+  }
+  if (entry.noticeCode === 'DISTRIBUTOR_QUOTATION_SUBMITTED' || entry.title === 'Quotation submitted') {
+    return viewer === 'ADMIN' ? 'Quotation submitted' : entry.title;
   }
   if (
     entry.noticeCode === 'SENT_TO_DISTRIBUTORS' ||
@@ -56,6 +66,9 @@ export function noticeDisplayDetail(
 ): string | null {
   if (entry.noticeCode === 'SENT_TO_DISTRIBUTOR') {
     return null;
+  }
+  if (entry.noticeCode === 'DISTRIBUTOR_QUOTATION_SUBMITTED' || entry.title === 'Quotation submitted') {
+    return entry.message?.trim() || entry.detail?.trim() || null;
   }
   if (
     entry.noticeCode === 'SENT_TO_DISTRIBUTORS' ||
