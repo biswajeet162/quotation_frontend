@@ -89,11 +89,15 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   readonly deleteLoading = signal(false);
   readonly deleteError = signal<string | null>(null);
   readonly deleteConfirmOpen = signal(false);
-  readonly productsExpanded = signal(true);
+  readonly chatModalOpen = signal(false);
+  readonly quotationPdfViewerOpen = signal(false);
+  readonly quotationPdfViewerUrl = signal<string | null>(null);
+  readonly quotationPdfViewerFileName = signal('');
   readonly itemAttachmentViewerOpen = signal(false);
   readonly itemAttachmentViewerItem = signal<InquiryItem | null>(null);
 
   private readonly detailScrollRef = viewChild<ElementRef<HTMLElement>>('detailScroll');
+  private readonly chatScrollRef = viewChild<ElementRef<HTMLElement>>('chatScroll');
   private readonly messageInputRef = viewChild<ElementRef<HTMLTextAreaElement>>('messageInput');
 
   private mediaRecorder: MediaRecorder | null = null;
@@ -107,6 +111,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   private discardRecording = false;
   private recordingMimeType = 'audio/webm';
   private readonly recordingBarCount = 24;
+  private quotationPdfViewerObjectUrl: string | null = null;
 
   readonly statusOptions: { value: StatusFilter; label: string }[] = [
     { value: 'all', label: 'All statuses' },
@@ -192,6 +197,17 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     buildConsumerChatTimelineEntries(this.timelineEntries()),
   );
 
+  readonly finalQuotationPdfAttachments = computed(() => {
+    const attachments: InquiryTimelineAttachment[] = [];
+    for (const entry of this.timelineEntries()) {
+      if (!isFinalQuotationNotice(entry)) {
+        continue;
+      }
+      attachments.push(...this.quotationPdfAttachments(entry));
+    }
+    return attachments;
+  });
+
   readonly canSendMessage = computed(
     () => this.messageText().trim().length > 0 || this.pendingAttachments().length > 0,
   );
@@ -231,6 +247,14 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
+    if (this.quotationPdfViewerOpen()) {
+      this.closeQuotationPdfViewer();
+      return;
+    }
+    if (this.chatModalOpen()) {
+      this.closeChatModal();
+      return;
+    }
     if (this.deleteConfirmOpen()) {
       this.closeDeleteConfirm();
     }
@@ -244,6 +268,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.cleanupRecordingResources(false);
+    this.closeQuotationPdfViewer();
   }
 
   load(): void {
@@ -309,7 +334,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   selectInquiry(id: string): void {
     this.cancelVoiceRecording();
     this.clearPendingAttachments();
-    this.productsExpanded.set(true);
+    this.closeChatModal();
     this.closeItemAttachments();
     this.selectedId.set(id);
     this.deepLinkError.set(null);
@@ -757,7 +782,54 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   }
 
   goToDetailBottom(): void {
-    this.loadTimeline({ silent: true, scrollToBottom: true });
+    this.detailScrollRef()?.nativeElement?.scrollTo({
+      top: this.detailScrollRef()?.nativeElement.scrollHeight ?? 0,
+      behavior: 'smooth',
+    });
+  }
+
+  openChatModal(): void {
+    if (!this.selectedInquiry()) {
+      return;
+    }
+    this.chatModalOpen.set(true);
+    this.loadTimeline({
+      silent: this.timelineEntries().length > 0,
+      scrollToBottom: true,
+    });
+  }
+
+  closeChatModal(): void {
+    this.cancelVoiceRecording();
+    this.chatModalOpen.set(false);
+  }
+
+  openQuotationPdf(attachment: InquiryTimelineAttachment): void {
+    this.inquiryService.fetchAttachmentBlob(attachment.url).subscribe({
+      next: (blob) => {
+        this.closeQuotationPdfViewer();
+        const typedBlob = blob.type
+          ? blob
+          : new Blob([blob], { type: attachment.contentType || 'application/pdf' });
+        this.quotationPdfViewerObjectUrl = URL.createObjectURL(typedBlob);
+        this.quotationPdfViewerUrl.set(this.quotationPdfViewerObjectUrl);
+        this.quotationPdfViewerFileName.set(attachment.fileName);
+        this.quotationPdfViewerOpen.set(true);
+      },
+      error: () => {
+        this.messageError.set('Could not open the quotation PDF.');
+      },
+    });
+  }
+
+  closeQuotationPdfViewer(): void {
+    this.quotationPdfViewerOpen.set(false);
+    this.quotationPdfViewerUrl.set(null);
+    this.quotationPdfViewerFileName.set('');
+    if (this.quotationPdfViewerObjectUrl) {
+      URL.revokeObjectURL(this.quotationPdfViewerObjectUrl);
+      this.quotationPdfViewerObjectUrl = null;
+    }
   }
 
   refreshMessages(): void {
@@ -813,11 +885,6 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     });
   }
 
-  productCountLabel(items?: ConsumerInquiry['items']): string {
-    const count = items?.length ?? 0;
-    return count === 1 ? '1 product' : `${count} products`;
-  }
-
   private compareInquiryDate(a: ConsumerInquiry, b: ConsumerInquiry): number {
     const aTime = a.createdAt ? Date.parse(a.createdAt) : 0;
     const bTime = b.createdAt ? Date.parse(b.createdAt) : 0;
@@ -834,10 +901,6 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
       return -1;
     }
     return a.inquiryId.localeCompare(b.inquiryId, undefined, { numeric: true, sensitivity: 'base' });
-  }
-
-  toggleProductsExpanded(): void {
-    this.productsExpanded.update((expanded) => !expanded);
   }
 
   displayProductField(value?: string): string {
@@ -1033,12 +1096,12 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
 
   private scrollDetailToBottom(): void {
     requestAnimationFrame(() => {
-      const scrollEl = this.detailScrollRef()?.nativeElement;
+      const scrollEl = this.chatScrollRef()?.nativeElement;
       if (scrollEl) {
         scrollEl.scrollTop = scrollEl.scrollHeight;
       }
       requestAnimationFrame(() => {
-        const el = this.detailScrollRef()?.nativeElement;
+        const el = this.chatScrollRef()?.nativeElement;
         if (el) {
           el.scrollTop = el.scrollHeight;
         }
