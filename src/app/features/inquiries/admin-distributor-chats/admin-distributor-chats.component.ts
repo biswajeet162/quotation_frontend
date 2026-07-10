@@ -2,6 +2,7 @@ import {
   Component,
   computed,
   ElementRef,
+  HostListener,
   inject,
   OnDestroy,
   OnInit,
@@ -9,6 +10,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { Inquiry, InquiryDistributor, InquiryItem } from '../../../core/models/inquiry.model';
 import {
@@ -74,6 +76,7 @@ interface AdminInquiryLineDraft {
 export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly inquiryService = inject(InquiryService);
+  private readonly sanitizer = inject(DomSanitizer);
 
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
@@ -97,6 +100,9 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
 
   readonly itemAttachmentViewerOpen = signal(false);
   readonly itemAttachmentViewerItem = signal<InquiryItem | null>(null);
+  readonly quotationPdfViewerOpen = signal(false);
+  readonly quotationPdfSafeUrl = signal<SafeResourceUrl | null>(null);
+  readonly quotationPdfViewerFileName = signal('');
   readonly lineDrafts = signal<Map<string, AdminInquiryLineDraft>>(new Map());
   readonly quotationItems = signal<InquiryItem[]>([]);
   readonly quotationItemsLoading = signal(false);
@@ -106,6 +112,7 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   private readonly detailScrollRef = viewChild<ElementRef<HTMLElement>>('detailScroll');
   private readonly messageInputRef = viewChild<ElementRef<HTMLTextAreaElement>>('messageInput');
 
+  private quotationPdfViewerObjectUrl: string | null = null;
   private mediaRecorder: MediaRecorder | null = null;
   private recordingChunks: Blob[] = [];
   private recordingStream: MediaStream | null = null;
@@ -223,6 +230,14 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.cleanupRecordingResources(false);
     this.clearPendingAttachments();
+    this.closeQuotationPdfViewer();
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.quotationPdfViewerOpen()) {
+      this.closeQuotationPdfViewer();
+    }
   }
 
   loadInquiry(inquiryId: string): void {
@@ -913,9 +928,10 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
 
     this.inquiryService.downloadSubmissionPdf(inquiry.id).subscribe({
       next: (blob) => {
-        const url = URL.createObjectURL(blob);
-        window.open(url, '_blank', 'noopener');
-        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+        this.openPdfInViewer(blob, 'application/pdf', this.submissionPdfFileName(inquiry));
+      },
+      error: () => {
+        this.messageError.set('Could not open the request PDF.');
       },
     });
   }
@@ -928,9 +944,7 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
 
     this.inquiryService.downloadAdminRfqPdf(inquiry.id).subscribe({
       next: (blob) => {
-        const url = URL.createObjectURL(blob);
-        window.open(url, '_blank', 'noopener');
-        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+        this.openPdfInViewer(blob, 'application/pdf', this.adminRfqPdfFileName(inquiry));
       },
       error: () => {
         // Fallback for older inquiries before RFQ PDF was stored separately.
@@ -945,6 +959,27 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
 
   adminRfqPdfFileName(inquiry: Inquiry): string {
     return `${inquiry.inquiryId}-rfq.pdf`;
+  }
+
+  closeQuotationPdfViewer(): void {
+    this.quotationPdfViewerOpen.set(false);
+    this.quotationPdfSafeUrl.set(null);
+    this.quotationPdfViewerFileName.set('');
+    if (this.quotationPdfViewerObjectUrl) {
+      URL.revokeObjectURL(this.quotationPdfViewerObjectUrl);
+      this.quotationPdfViewerObjectUrl = null;
+    }
+  }
+
+  private openPdfInViewer(blob: Blob, contentType: string, fileName: string): void {
+    this.closeQuotationPdfViewer();
+    const typedBlob = blob.type ? blob : new Blob([blob], { type: contentType });
+    this.quotationPdfViewerObjectUrl = URL.createObjectURL(typedBlob);
+    this.quotationPdfSafeUrl.set(
+      this.sanitizer.bypassSecurityTrustResourceUrl(this.quotationPdfViewerObjectUrl),
+    );
+    this.quotationPdfViewerFileName.set(fileName);
+    this.quotationPdfViewerOpen.set(true);
   }
 
   itemAttachmentCount(item: InquiryItem): number {

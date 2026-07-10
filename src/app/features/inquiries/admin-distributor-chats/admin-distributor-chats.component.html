@@ -843,6 +843,37 @@
   }
 </section>
 
+@if (quotationPdfViewerOpen() && quotationPdfSafeUrl(); as pdfUrl) {
+  <div class="pdf-viewer-overlay" role="presentation">
+    <div
+      class="pdf-viewer-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="quotation-pdf-viewer-title"
+    >
+      <div class="pdf-viewer-header">
+        <div>
+          <h2 id="quotation-pdf-viewer-title">{{ quotationPdfViewerFileName() }}</h2>
+          <p class="pdf-viewer-subtitle">PDF preview</p>
+        </div>
+        <button
+          type="button"
+          class="pdf-viewer-close"
+          aria-label="Close PDF viewer"
+          (click)="closeQuotationPdfViewer()"
+        >
+          ×
+        </button>
+      </div>
+      <iframe
+        class="pdf-viewer-frame"
+        [src]="pdfUrl"
+        [title]="quotationPdfViewerFileName()"
+      ></iframe>
+    </div>
+  </div>
+}
+
 @if (itemAttachmentViewerOpen() && itemAttachmentViewerItem(); as attachmentItem) {
   <div class="confirm-overlay" (click)="closeItemAttachments()" role="presentation">
     <div
