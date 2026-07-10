@@ -64,10 +64,44 @@
                 [class.step-initiated]="getDistributorListStep(distributor) === 'initiated'"
                 [class.step-in-progress]="getDistributorListStep(distributor) === 'in-progress'"
                 [class.step-green]="getDistributorListStep(distributor) === 'green'"
-                [attr.aria-label]="distributorLabel(distributor) + ' — ' + distributorStatusLabel(distributor)"
+                [class.is-final-choice]="isFinalChoiceDistributor(distributor)"
+                [attr.aria-label]="
+                  distributorLabel(distributor) +
+                  ' — ' +
+                  distributorStatusLabel(distributor) +
+                  (isFinalChoiceDistributor(distributor) ? ' — chosen for consumer' : '')
+                "
                 (click)="selectDistributor(distributor.companyId)"
               >
-                <span class="query-title">{{ distributorLabel(distributor) }}</span>
+                <span class="query-item-heading">
+                  <span class="query-title">{{ distributorLabel(distributor) }}</span>
+                  @if (isFinalChoiceDistributor(distributor)) {
+                    <span
+                      class="final-choice-badge"
+                      title="Chosen and sent to consumer"
+                      aria-hidden="true"
+                    >
+                      <svg class="final-choice-ticks" viewBox="0 0 22 14" focusable="false">
+                        <path
+                          d="M1.2 7.4 4.6 11 11.4 2.6"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2.15"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                        <path
+                          d="M8.2 7.4 11.6 11 18.4 2.6"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2.15"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                      </svg>
+                    </span>
+                  }
+                </span>
                 <span class="query-meta">{{ distributorStatusLabel(distributor) }}</span>
                 <span class="query-posted">{{ distributorEmailLabel(distributor) }}</span>
               </button>

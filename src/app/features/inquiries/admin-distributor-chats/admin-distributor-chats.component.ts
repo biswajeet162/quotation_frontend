@@ -12,6 +12,8 @@ import {
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
+import { forkJoin, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import { Inquiry, InquiryDistributor, InquiryItem } from '../../../core/models/inquiry.model';
 import {
   InquiryTimelineEntry,
@@ -115,6 +117,8 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   readonly quotationItemsLoading = signal(false);
   readonly comparisonModalOpen = signal(false);
   readonly finalizeModalOpen = signal(false);
+  /** Frontend-only: distributor chosen when finalizing (drives green + double-tick). */
+  readonly finalChoiceCompanyId = signal<string | null>(null);
 
   private readonly detailScrollRef = viewChild<ElementRef<HTMLElement>>('detailScroll');
   private readonly chatScrollRef = viewChild<ElementRef<HTMLElement>>('chatScroll');
@@ -279,14 +283,53 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
 
     this.inquiryService.getById(inquiryId).subscribe({
       next: (inquiry) => {
+        if (this.inquiry()?.id !== inquiry.id) {
+          this.finalChoiceCompanyId.set(null);
+        }
         this.inquiry.set(inquiry);
         this.loading.set(false);
         this.syncDistributorSelection();
+        this.resolveFinalChoiceOnLoad(inquiry);
       },
       error: () => {
         this.loading.set(false);
         this.errorMessage.set('Could not load this quotation request.');
       },
+    });
+  }
+
+  /** Scan distributor timelines once so the chosen double-tick shows without selecting first. */
+  private resolveFinalChoiceOnLoad(inquiry: Inquiry): void {
+    if (this.finalChoiceCompanyId()) {
+      return;
+    }
+    if (inquiry.status !== 'FINAL_SENT' && inquiry.status !== 'CLOSED') {
+      return;
+    }
+
+    const distributors = inquiry.distributors ?? [];
+    if (distributors.length === 0) {
+      return;
+    }
+
+    forkJoin(
+      distributors.map((distributor) =>
+        this.inquiryService.getDistributorChannelTimeline(inquiry.id, distributor.companyId).pipe(
+          map((timeline) => ({
+            companyId: distributor.companyId,
+            chosen: (timeline.entries ?? []).some((entry) => isFinalQuotationForwardedNotice(entry)),
+          })),
+          catchError(() => of({ companyId: distributor.companyId, chosen: false })),
+        ),
+      ),
+    ).subscribe((results) => {
+      if (this.inquiry()?.id !== inquiry.id) {
+        return;
+      }
+      const chosen = results.find((result) => result.chosen);
+      if (chosen) {
+        this.finalChoiceCompanyId.set(chosen.companyId);
+      }
     });
   }
 
@@ -325,6 +368,10 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   }
 
   onQuotationFinalized(): void {
+    const companyId = this.selectedDistributorCompanyId();
+    if (companyId) {
+      this.finalChoiceCompanyId.set(companyId);
+    }
     const inquiry = this.inquiry();
     if (inquiry) {
       this.loadInquiry(inquiry.id);
@@ -420,9 +467,13 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
 
     this.inquiryService.getDistributorChannelTimeline(inquiry.id, distributorCompanyId).subscribe({
       next: (timeline) => {
-        this.timelineEntries.set(timeline.entries ?? []);
+        const entries = timeline.entries ?? [];
+        this.timelineEntries.set(entries);
         this.timelineLoading.set(false);
         this.timelineRefreshing.set(false);
+        if (entries.some((entry) => isFinalQuotationForwardedNotice(entry))) {
+          this.finalChoiceCompanyId.set(distributorCompanyId);
+        }
         this.inquiry.update((current) =>
           current
             ? {
@@ -965,11 +1016,21 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   }
 
   distributorStatusLabel(distributor: InquiryDistributor): string {
+    if (this.isFinalChoiceDistributor(distributor)) {
+      return 'Sent to consumer';
+    }
     return distributor.responseReceived ? 'Responded' : 'Pending response';
   }
 
+  isFinalChoiceDistributor(distributor: InquiryDistributor): boolean {
+    return this.finalChoiceCompanyId() === distributor.companyId;
+  }
+
   getDistributorListStep(distributor: InquiryDistributor): 'initiated' | 'in-progress' | 'green' {
-    if (this.inquiry()?.status === 'CLOSED' || this.inquiry()?.status === 'FINAL_SENT') {
+    if (this.isFinalChoiceDistributor(distributor)) {
+      return 'green';
+    }
+    if (this.inquiry()?.status === 'CLOSED') {
       return 'green';
     }
     return distributor.responseReceived ? 'in-progress' : 'initiated';
