@@ -235,6 +235,32 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     return latest?.occurredAt;
   });
 
+  isInReview(inquiry: ConsumerInquiry): boolean {
+    return (
+      inquiry.status === 'SENT_TO_DISTRIBUTORS' ||
+      inquiry.status === 'RESPONSES_RECEIVED' ||
+      inquiry.status === 'FINAL_SENT' ||
+      inquiry.status === 'CLOSED'
+    );
+  }
+
+  inReviewOccurredAt(inquiry: ConsumerInquiry): string | undefined {
+    const timelineTimes = this.timelineEntries()
+      .filter(
+        (entry) =>
+          entry.noticeCode === 'SENT_TO_DISTRIBUTORS' ||
+          (entry.kind === 'MILESTONE' && entry.title === 'Sent to distributors'),
+      )
+      .map((entry) => new Date(entry.occurredAt).getTime())
+      .filter((time) => !Number.isNaN(time));
+
+    if (timelineTimes.length > 0) {
+      return new Date(Math.min(...timelineTimes)).toISOString();
+    }
+
+    return inquiry.updatedAt ?? inquiry.createdAt;
+  }
+
   readonly canSendMessage = computed(
     () => this.messageText().trim().length > 0 || this.pendingAttachments().length > 0,
   );
