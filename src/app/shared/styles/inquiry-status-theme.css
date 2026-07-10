@@ -1,0 +1,186 @@
+/*
+ * Inquiry workflow status colors — project standard.
+ * See docs/INQUIRY_STATUS_COLORS.md
+ */
+
+:root {
+  --inquiry-status-initiated-bg: #eff6ff;
+  --inquiry-status-initiated-border: #3b82f6;
+  --inquiry-status-initiated-title: #1d4ed8;
+
+  --inquiry-status-in-progress-bg: #fffbeb;
+  --inquiry-status-in-progress-border: #f59e0b;
+  --inquiry-status-in-progress-title: #b45309;
+
+  --inquiry-status-action-required-bg: #fff7ed;
+  --inquiry-status-action-required-border: #ea580c;
+  --inquiry-status-action-required-title: #c2410c;
+
+  --inquiry-status-final-bg: #ecfdf5;
+  --inquiry-status-final-border: #10b981;
+  --inquiry-status-final-title: #047857;
+
+  --inquiry-status-closed-bg: #f8fafc;
+  --inquiry-status-closed-border: #94a3b8;
+  --inquiry-status-closed-title: #475569;
+}
+
+.inquiry-event-card {
+  margin: 0.75rem 0;
+  padding: 0.9rem 0.95rem 0.95rem;
+  border: 2px solid;
+  border-radius: 12px;
+}
+
+.inquiry-event-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.8rem;
+  min-height: 2.6rem;
+}
+
+.inquiry-event-status-block {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2rem;
+  max-width: 42%;
+}
+
+.inquiry-event-status {
+  padding: 0.22rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.inquiry-event-status-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.68rem;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.inquiry-event-status-time::before {
+  content: '•';
+  font-size: 0.85em;
+}
+
+.inquiry-event-status-time--initiated {
+  color: var(--inquiry-status-initiated-title);
+}
+
+.inquiry-event-status-time--final {
+  color: var(--inquiry-status-final-title);
+}
+
+.inquiry-event-status-time--in-progress {
+  color: var(--inquiry-status-in-progress-title);
+}
+
+.inquiry-event-status-time--action-required {
+  color: var(--inquiry-status-action-required-title);
+}
+
+.inquiry-event-status-time--closed {
+  color: var(--inquiry-status-closed-title);
+}
+
+.inquiry-event-title {
+  margin: 0;
+  width: 100%;
+  padding: 0 5.5rem;
+  text-align: center;
+  font-size: 0.96rem;
+  font-weight: 700;
+  line-height: 1.35;
+  box-sizing: border-box;
+}
+
+.inquiry-event-status--initiated {
+  color: var(--inquiry-status-initiated-title);
+  border-color: var(--inquiry-status-initiated-border);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.inquiry-event-status--in-progress {
+  color: var(--inquiry-status-in-progress-title);
+  border-color: var(--inquiry-status-in-progress-border);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.inquiry-event-status--action-required {
+  color: var(--inquiry-status-action-required-title);
+  border-color: var(--inquiry-status-action-required-border);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.inquiry-event-status--final {
+  color: var(--inquiry-status-final-title);
+  border-color: var(--inquiry-status-final-border);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.inquiry-event-status--closed {
+  color: var(--inquiry-status-closed-title);
+  border-color: var(--inquiry-status-closed-border);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.inquiry-event-card--initiated {
+  background: var(--inquiry-status-initiated-bg);
+  border-color: var(--inquiry-status-initiated-border);
+}
+
+.inquiry-event-card--initiated .inquiry-event-title {
+  color: var(--inquiry-status-initiated-title);
+}
+
+.inquiry-event-card--in-progress {
+  background: var(--inquiry-status-in-progress-bg);
+  border-color: var(--inquiry-status-in-progress-border);
+}
+
+.inquiry-event-card--in-progress .inquiry-event-title {
+  color: var(--inquiry-status-in-progress-title);
+}
+
+.inquiry-event-card--action-required {
+  background: var(--inquiry-status-action-required-bg);
+  border-color: var(--inquiry-status-action-required-border);
+}
+
+.inquiry-event-card--action-required .inquiry-event-title {
+  color: var(--inquiry-status-action-required-title);
+}
+
+.inquiry-event-card--final {
+  background: var(--inquiry-status-final-bg);
+  border-color: var(--inquiry-status-final-border);
+}
+
+.inquiry-event-card--final .inquiry-event-title {
+  color: var(--inquiry-status-final-title);
+}
+
+.inquiry-event-card--closed {
+  background: var(--inquiry-status-closed-bg);
+  border-color: var(--inquiry-status-closed-border);
+}
+
+.inquiry-event-card--closed .inquiry-event-title {
+  color: var(--inquiry-status-closed-title);
+}

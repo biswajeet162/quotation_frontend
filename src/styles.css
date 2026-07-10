@@ -1,4 +1,5 @@
 @import './app/features/inquiries/inquiry-chat-panel.css';
+@import './app/shared/styles/inquiry-status-theme.css';
 
 *,
 *::before,

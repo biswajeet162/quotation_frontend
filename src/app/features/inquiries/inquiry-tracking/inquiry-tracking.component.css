@@ -352,6 +352,18 @@
   margin: 0.75rem 0;
 }
 
+.inquiry-event-content {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(2px);
+}
+
+.inquiry-event-content .products-table-wrap + .quotation-pdf-section {
+  border-top: 1px solid #e2e8f0;
+}
+
 .products-panel-body {
   border: 1px solid #e2e8f0;
   border-radius: 10px;
@@ -495,6 +507,10 @@
 }
 
 .quotation-pdf-section {
+  background: transparent;
+}
+
+.inquiry-event-content .quotation-pdf-section {
   background: #f8fafc;
 }
 

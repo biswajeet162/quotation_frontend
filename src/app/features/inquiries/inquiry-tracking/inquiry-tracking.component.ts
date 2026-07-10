@@ -210,6 +210,12 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     return attachments;
   });
 
+  readonly finalQuotationOccurredAt = computed(() => {
+    const entries = this.timelineEntries().filter((entry) => isFinalQuotationNotice(entry));
+    const latest = entries.at(-1);
+    return latest?.occurredAt;
+  });
+
   readonly canSendMessage = computed(
     () => this.messageText().trim().length > 0 || this.pendingAttachments().length > 0,
   );
