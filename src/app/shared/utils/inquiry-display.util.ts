@@ -61,13 +61,12 @@ export function getRequestSourceLabel(source?: InquiryRequestSource): string {
 }
 
 export function getInquiryListStep(inquiry: Pick<Inquiry, 'status'>): InquiryListStep {
-  if (inquiry.status === 'CLOSED') {
+  if (inquiry.status === 'CLOSED' || inquiry.status === 'FINAL_SENT') {
     return 'green';
   }
   if (
     inquiry.status === 'SENT_TO_DISTRIBUTORS' ||
-    inquiry.status === 'RESPONSES_RECEIVED' ||
-    inquiry.status === 'FINAL_SENT'
+    inquiry.status === 'RESPONSES_RECEIVED'
   ) {
     return 'in-progress';
   }

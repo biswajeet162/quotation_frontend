@@ -364,6 +364,15 @@
   border-top: 1px solid #e2e8f0;
 }
 
+.inquiry-event-content .final-quotation-table-wrap {
+  margin-top: 0.15rem;
+}
+
+.inquiry-event-content .final-quotation-table-wrap + .quotation-pdf-section {
+  margin-top: 0.75rem;
+  border-top: none;
+}
+
 .products-panel-body {
   border: 1px solid #e2e8f0;
   border-radius: 10px;
@@ -1706,6 +1715,63 @@
   min-width: 72rem;
   background: #fff;
   border-radius: 8px;
+}
+
+.admin-pricing-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  table-layout: auto;
+}
+
+.admin-pricing-table th,
+.admin-pricing-table td {
+  padding: 0.45rem 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  vertical-align: middle;
+}
+
+.admin-pricing-table th {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  background: #f8fafc;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.admin-pricing-table .col-sno,
+.admin-pricing-table .col-qty,
+.admin-pricing-table .col-attachment {
+  text-align: center;
+}
+
+.line-input {
+  width: 100%;
+  min-width: 4.5rem;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font: inherit;
+  color: #0f172a;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.line-input-number {
+  text-align: right;
+}
+
+.line-input-readonly {
+  display: block;
+  border: 1px solid #0f172a;
+  background: #e2e8f0;
+  color: #64748b;
+  cursor: default;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
 }
 
 .chat-readonly-value {

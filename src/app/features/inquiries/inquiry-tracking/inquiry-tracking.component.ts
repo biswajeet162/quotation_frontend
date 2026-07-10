@@ -1012,6 +1012,31 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     return `${inquiry.inquiryId}.pdf`;
   }
 
+  finalQuotationPdfFileName(inquiry: ConsumerInquiry): string {
+    return `${inquiry.inquiryId}-final-quotation.pdf`;
+  }
+
+  openFinalQuotationPdfFallback(inquiry: ConsumerInquiry): void {
+    const attachment = this.finalQuotationPdfAttachments().at(-1);
+    if (attachment) {
+      this.openQuotationPdf(attachment);
+      return;
+    }
+
+    for (const entry of this.timelineEntries()) {
+      if (!isFinalQuotationNotice(entry)) {
+        continue;
+      }
+      const pdf = this.quotationPdfAttachments(entry).at(-1);
+      if (pdf) {
+        this.openQuotationPdf(pdf);
+        return;
+      }
+    }
+
+    this.messageError.set('Could not open the quotation PDF.');
+  }
+
   private openPdfInViewer(blob: Blob, contentType: string, fileName: string): void {
     this.closeQuotationPdfViewer();
     const typedBlob = this.toPdfBlob(blob, contentType);

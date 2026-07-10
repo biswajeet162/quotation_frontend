@@ -327,8 +327,8 @@
                 </section>
               }
 
-              @if (finalQuotationPdfAttachments().length > 0) {
-                <section class="inquiry-event-card inquiry-event-card--final" aria-label="Final quotation forwarded">
+              @if (inquiry.status === 'FINAL_SENT' || finalQuotationPdfAttachments().length > 0) {
+                <section class="inquiry-event-card inquiry-event-card--final" aria-label="Final quotation ready">
                   <div class="inquiry-event-header">
                     <h3 class="inquiry-event-title">
                       Your final quotation is ready.
@@ -336,23 +336,145 @@
                     <div class="inquiry-event-status-block">
                       <span class="inquiry-event-status inquiry-event-status--final">Final</span>
                       <span class="inquiry-event-status-time inquiry-event-status-time--final">
-                        {{ formatPostedDate(finalQuotationOccurredAt()) }}
+                        {{ formatPostedDate(finalQuotationOccurredAt() ?? inquiry.updatedAt) }}
                       </span>
                     </div>
                   </div>
 
                   <div class="inquiry-event-content">
+                    @if ((inquiry.items ?? []).some(hasFinalPricingLine)) {
+                      <div class="chat-pricing-table-wrap final-quotation-table-wrap">
+                        <table class="preview-table admin-pricing-table chat-pricing-table">
+                          <thead>
+                            <tr>
+                              <th class="col-sno">S.No.</th>
+                              <th class="col-designation">Designation</th>
+                              <th class="col-brand">Brand</th>
+                              <th class="col-hsn-code">HSN code</th>
+                              <th class="col-description">Description</th>
+                              <th class="col-qty">Qty</th>
+                              <th class="col-mrp">MRP</th>
+                              <th class="col-discount">Disc. %</th>
+                              <th class="col-amount">Amount</th>
+                              <th class="col-gst">GST %</th>
+                              <th class="col-net-value">Net value</th>
+                              <th class="col-expected-delivery">Expected delivery</th>
+                              <th class="col-attachment">Images</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @for (item of inquiry.items ?? []; track item.id ?? item.productId) {
+                              @if (hasFinalPricingLine(item)) {
+                                <tr>
+                                  <td class="col-sno">{{ $index + 1 }}</td>
+                                  <td
+                                    class="col-designation consumer-cell"
+                                    [title]="displayProductField(item.productName)"
+                                  >
+                                    {{ displayProductField(item.productName) }}
+                                  </td>
+                                  <td
+                                    class="col-brand consumer-cell"
+                                    [title]="displayProductField(item.productBrand)"
+                                  >
+                                    {{ displayProductField(item.productBrand) }}
+                                  </td>
+                                  <td class="col-hsn-code">
+                                    <span class="line-input line-input-readonly chat-readonly-value">
+                                      {{ displayProductField(item.adminHsnCode) }}
+                                    </span>
+                                  </td>
+                                  <td
+                                    class="col-description consumer-cell preview-multiline"
+                                    [title]="displayProductField(item.productDescription)"
+                                  >
+                                    {{ displayProductField(item.productDescription) }}
+                                  </td>
+                                  <td class="col-qty consumer-cell">{{ item.quantity }}</td>
+                                  <td class="col-mrp">
+                                    <span class="line-input line-input-number line-input-readonly chat-readonly-value">
+                                      {{ formatCurrency(item.adminMrp) }}
+                                    </span>
+                                  </td>
+                                  <td class="col-discount">
+                                    <span class="line-input line-input-number line-input-readonly chat-readonly-value">
+                                      {{ formatOptionalPercent(item.adminDiscountPercentage) }}
+                                    </span>
+                                  </td>
+                                  <td class="col-amount">
+                                    <span class="line-input line-input-number line-input-readonly chat-readonly-value">
+                                      {{ formatCurrency(finalLineAmount(item)) }}
+                                    </span>
+                                  </td>
+                                  <td class="col-gst">
+                                    <span class="line-input line-input-number line-input-readonly chat-readonly-value">
+                                      {{ formatOptionalPercent(item.adminGstPercentage) }}
+                                    </span>
+                                  </td>
+                                  <td class="col-net-value">
+                                    <span class="line-input line-input-number line-input-readonly chat-readonly-value">
+                                      {{ formatCurrency(finalLineNetValue(item)) }}
+                                    </span>
+                                  </td>
+                                  <td class="col-expected-delivery consumer-cell">
+                                    {{ formatExpectedDeliveryDate(item.expectedDeliveryDate) }}
+                                  </td>
+                                  <td class="col-attachment">
+                                    @if (itemAttachmentCount(item) > 0) {
+                                      <button
+                                        type="button"
+                                        class="btn-attachment-link"
+                                        (click)="openItemAttachments(item, $event)"
+                                        [attr.aria-label]="
+                                          'View attachments for ' +
+                                          displayProductField(item.productBrand) +
+                                          ' ' +
+                                          displayProductField(item.productName)
+                                        "
+                                      >
+                                        Click here
+                                      </button>
+                                    } @else {
+                                      —
+                                    }
+                                  </td>
+                                </tr>
+                              }
+                            }
+                          </tbody>
+                        </table>
+                      </div>
+                    } @else {
+                      <p class="products-empty">Quotation details will appear here once available.</p>
+                    }
+
                     <div class="quotation-pdf-section">
-                      @for (attachment of finalQuotationPdfAttachments(); track attachment.id) {
-                        <div class="quotation-pdf-row">
-                          <span class="quotation-pdf-label">Forwarded</span>
-                          <span class="quotation-pdf-filename" [title]="attachment.fileName">
-                            {{ attachment.fileName }}
+                      @if (finalQuotationPdfAttachments().length > 0) {
+                        @for (attachment of finalQuotationPdfAttachments(); track attachment.id) {
+                          <div class="quotation-pdf-row quotation-pdf-row--request">
+                            <span class="quotation-pdf-label">Quotation</span>
+                            <span class="quotation-pdf-filename" [title]="attachment.fileName">
+                              {{ attachment.fileName }}
+                            </span>
+                            <button
+                              type="button"
+                              class="btn-pdf-view"
+                              (click)="openQuotationPdf(attachment)"
+                            >
+                              View
+                            </button>
+                          </div>
+                        }
+                      } @else {
+                        <div class="quotation-pdf-row quotation-pdf-row--request">
+                          <span class="quotation-pdf-label">Quotation</span>
+                          <span class="quotation-pdf-filename" [title]="finalQuotationPdfFileName(inquiry)">
+                            {{ finalQuotationPdfFileName(inquiry) }}
                           </span>
                           <button
                             type="button"
                             class="btn-pdf-view"
-                            (click)="openQuotationPdf(attachment)"
+                            (click)="openFinalQuotationPdfFallback(inquiry)"
                           >
                             View
                           </button>

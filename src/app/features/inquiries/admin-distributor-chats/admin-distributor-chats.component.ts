@@ -1128,6 +1128,49 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
     return this.inquiry()?.status === 'FINAL_SENT';
   }
 
+  hasFinalQuotationSharedWithConsumer(): boolean {
+    return this.timelineEntries().some((entry) => isFinalQuotationForwardedNotice(entry));
+  }
+
+  finalQuotationSharedAt(): string | undefined {
+    const entries = this.timelineEntries().filter((entry) => isFinalQuotationForwardedNotice(entry));
+    return entries.at(-1)?.occurredAt;
+  }
+
+  finalSharedQuotationPdfFileName(inquiry: Inquiry): string {
+    return `${inquiry.inquiryId}-final-quotation.pdf`;
+  }
+
+  openFinalSharedQuotationPdf(): void {
+    const inquiry = this.inquiry();
+    if (!inquiry) {
+      return;
+    }
+
+    const attachment = this.timelineEntries()
+      .filter((entry) => isFinalQuotationForwardedNotice(entry))
+      .flatMap((entry) => this.quotationPdfAttachments(entry))
+      .at(-1);
+
+    if (attachment) {
+      this.inquiryService.fetchAttachmentBlob(attachment.url).subscribe({
+        next: (blob) => {
+          this.openPdfInViewer(
+            blob,
+            attachment.contentType || 'application/pdf',
+            attachment.fileName || this.finalSharedQuotationPdfFileName(inquiry),
+          );
+        },
+        error: () => {
+          this.openAdminRfqPdf();
+        },
+      });
+      return;
+    }
+
+    this.openAdminRfqPdf();
+  }
+
   openQuotationPdf(): void {
     const inquiry = this.inquiry();
     const distributor = this.distributors().find(
