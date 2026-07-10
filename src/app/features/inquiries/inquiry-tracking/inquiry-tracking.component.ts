@@ -92,6 +92,8 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   readonly deleteError = signal<string | null>(null);
   readonly deleteConfirmOpen = signal(false);
   readonly chatModalOpen = signal(false);
+  readonly chatModalPosition = signal<{ x: number; y: number } | null>(null);
+  readonly chatModalSize = signal<{ width: number; height: number } | null>(null);
   readonly quotationPdfViewerOpen = signal(false);
   readonly quotationPdfSafeUrl = signal<SafeResourceUrl | null>(null);
   readonly quotationPdfViewerFileName = signal('');
@@ -114,6 +116,23 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   private recordingMimeType = 'audio/webm';
   private readonly recordingBarCount = 24;
   private quotationPdfViewerObjectUrl: string | null = null;
+  private chatDragState: {
+    pointerId: number;
+    startX: number;
+    startY: number;
+    originX: number;
+    originY: number;
+  } | null = null;
+  private chatResizeState: {
+    pointerId: number;
+    startX: number;
+    startY: number;
+    originWidth: number;
+    originHeight: number;
+  } | null = null;
+  private readonly chatModalDefaultWidth = 720;
+  private readonly chatModalMinWidth = 420;
+  private readonly chatModalMinHeight = 420;
 
   readonly statusOptions: { value: StatusFilter; label: string }[] = [
     { value: 'all', label: 'All statuses' },
@@ -800,6 +819,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     if (!this.selectedInquiry()) {
       return;
     }
+    this.resetChatModalLayout();
     this.chatModalOpen.set(true);
     this.loadTimeline({
       silent: this.timelineEntries().length > 0,
@@ -809,7 +829,135 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
 
   closeChatModal(): void {
     this.cancelVoiceRecording();
+    this.endChatPointerInteraction();
     this.chatModalOpen.set(false);
+    this.resetChatModalLayout();
+  }
+
+  startChatDrag(event: PointerEvent): void {
+    if (event.button !== 0) {
+      return;
+    }
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('button, a, input, textarea, select')) {
+      return;
+    }
+
+    const dialog = (event.currentTarget as HTMLElement | null)?.closest(
+      '.chat-modal-dialog',
+    ) as HTMLElement | null;
+    if (!dialog) {
+      return;
+    }
+
+    const rect = dialog.getBoundingClientRect();
+    this.chatModalPosition.set({ x: rect.left, y: rect.top });
+    this.chatModalSize.set({
+      width: this.chatModalSize()?.width ?? Math.round(rect.width),
+      height: this.chatModalSize()?.height ?? Math.round(rect.height),
+    });
+    this.chatDragState = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      originX: rect.left,
+      originY: rect.top,
+    };
+    dialog.setPointerCapture(event.pointerId);
+    event.preventDefault();
+  }
+
+  startChatResize(event: PointerEvent): void {
+    if (event.button !== 0) {
+      return;
+    }
+    event.stopPropagation();
+
+    const dialog = (event.currentTarget as HTMLElement | null)?.closest(
+      '.chat-modal-dialog',
+    ) as HTMLElement | null;
+    if (!dialog) {
+      return;
+    }
+
+    const rect = dialog.getBoundingClientRect();
+    this.chatModalPosition.set({
+      x: this.chatModalPosition()?.x ?? rect.left,
+      y: this.chatModalPosition()?.y ?? rect.top,
+    });
+    this.chatModalSize.set({
+      width: Math.round(rect.width),
+      height: Math.round(rect.height),
+    });
+    this.chatResizeState = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      originWidth: Math.round(rect.width),
+      originHeight: Math.round(rect.height),
+    };
+    dialog.setPointerCapture(event.pointerId);
+    event.preventDefault();
+  }
+
+  @HostListener('document:pointermove', ['$event'])
+  onChatPointerMove(event: PointerEvent): void {
+    if (this.chatDragState && event.pointerId === this.chatDragState.pointerId) {
+      const deltaX = event.clientX - this.chatDragState.startX;
+      const deltaY = event.clientY - this.chatDragState.startY;
+      const size = this.chatModalSize();
+      const width = size?.width ?? this.chatModalDefaultWidth;
+      const height = size?.height ?? this.defaultChatModalHeight();
+      const maxX = Math.max(0, window.innerWidth - width);
+      const maxY = Math.max(0, window.innerHeight - height);
+      this.chatModalPosition.set({
+        x: Math.min(maxX, Math.max(0, this.chatDragState.originX + deltaX)),
+        y: Math.min(maxY, Math.max(0, this.chatDragState.originY + deltaY)),
+      });
+      return;
+    }
+
+    if (this.chatResizeState && event.pointerId === this.chatResizeState.pointerId) {
+      const deltaX = event.clientX - this.chatResizeState.startX;
+      const deltaY = event.clientY - this.chatResizeState.startY;
+      const maxWidth = Math.max(this.chatModalMinWidth, window.innerWidth - 24);
+      const maxHeight = Math.max(this.chatModalMinHeight, window.innerHeight - 24);
+      this.chatModalSize.set({
+        width: Math.min(
+          maxWidth,
+          Math.max(this.chatModalMinWidth, this.chatResizeState.originWidth + deltaX),
+        ),
+        height: Math.min(
+          maxHeight,
+          Math.max(this.chatModalMinHeight, this.chatResizeState.originHeight + deltaY),
+        ),
+      });
+    }
+  }
+
+  @HostListener('document:pointerup', ['$event'])
+  @HostListener('document:pointercancel', ['$event'])
+  onChatPointerUp(event: PointerEvent): void {
+    if (
+      (this.chatDragState && event.pointerId === this.chatDragState.pointerId) ||
+      (this.chatResizeState && event.pointerId === this.chatResizeState.pointerId)
+    ) {
+      this.endChatPointerInteraction();
+    }
+  }
+
+  private resetChatModalLayout(): void {
+    this.chatModalPosition.set(null);
+    this.chatModalSize.set(null);
+  }
+
+  private endChatPointerInteraction(): void {
+    this.chatDragState = null;
+    this.chatResizeState = null;
+  }
+
+  private defaultChatModalHeight(): number {
+    return Math.min(Math.round(window.innerHeight * 0.94), 940);
   }
 
   openQuotationPdf(attachment: InquiryTimelineAttachment): void {

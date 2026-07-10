@@ -348,26 +348,47 @@
   <div class="chat-modal-overlay" (click)="closeChatModal()" role="presentation">
     <div
       class="chat-modal-dialog"
+      [class.is-positioned]="chatModalPosition() != null"
+      [style.left.px]="chatModalPosition()?.x"
+      [style.top.px]="chatModalPosition()?.y"
+      [style.width.px]="chatModalSize()?.width"
+      [style.height.px]="chatModalSize()?.height"
       role="dialog"
       aria-modal="true"
       aria-labelledby="consumer-chat-title"
       (click)="$event.stopPropagation()"
     >
-      <header class="chat-modal-header">
+      <header
+        class="chat-modal-header"
+        (pointerdown)="startChatDrag($event)"
+      >
         <div class="chat-modal-header-text">
           <h2 id="consumer-chat-title">Messages</h2>
           <p class="chat-modal-subtitle">
             {{ inquiry.title }} · {{ formatPostedDate(inquiry.createdAt) }}
           </p>
         </div>
-        <button
-          type="button"
-          class="chat-modal-close"
-          (click)="closeChatModal()"
-          aria-label="Close chat"
-        >
-          ×
-        </button>
+        <div class="chat-modal-header-actions">
+          <button
+            type="button"
+            class="btn-secondary"
+            [class.is-refreshing]="timelineRefreshing()"
+            (click)="refreshMessages()"
+            [disabled]="timelineLoading() || timelineRefreshing() || messageLoading()"
+            aria-label="Refresh messages"
+            title="Refresh messages"
+          >
+            Refresh
+          </button>
+          <button
+            type="button"
+            class="chat-modal-close"
+            (click)="closeChatModal()"
+            aria-label="Close chat"
+          >
+            ×
+          </button>
+        </div>
       </header>
 
       <div #chatScroll class="chat-modal-body">
@@ -792,6 +813,12 @@
           <p class="closed-hint">This request is closed. New messages cannot be sent.</p>
         }
       </footer>
+      <div
+        class="chat-modal-resize-handle"
+        aria-hidden="true"
+        title="Resize"
+        (pointerdown)="startChatResize($event)"
+      ></div>
     </div>
   </div>
 }
