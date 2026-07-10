@@ -920,6 +920,33 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
     });
   }
 
+  openAdminRfqPdf(): void {
+    const inquiry = this.inquiry();
+    if (!inquiry) {
+      return;
+    }
+
+    this.inquiryService.downloadAdminRfqPdf(inquiry.id).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank', 'noopener');
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      },
+      error: () => {
+        // Fallback for older inquiries before RFQ PDF was stored separately.
+        this.openSubmissionPdf();
+      },
+    });
+  }
+
+  submissionPdfFileName(inquiry: Inquiry): string {
+    return `${inquiry.inquiryId}.pdf`;
+  }
+
+  adminRfqPdfFileName(inquiry: Inquiry): string {
+    return `${inquiry.inquiryId}-rfq.pdf`;
+  }
+
   itemAttachmentCount(item: InquiryItem): number {
     return item.attachments?.length ?? 0;
   }

@@ -561,6 +561,159 @@
   padding-top: 0.85rem;
 }
 
+.inquiry-event-content {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(2px);
+}
+
+.inquiry-event-content .preview-table-wrap {
+  margin-top: 0;
+  border: none;
+  border-radius: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.inquiry-event-content .preview-table-wrap + .quotation-pdf-section,
+.inquiry-event-content .products-empty + .quotation-pdf-section {
+  border-top: 1px solid #e2e8f0;
+}
+
+.inquiry-event-content .products-empty {
+  margin: 0;
+  padding: 0.85rem;
+}
+
+.products-table-wrap {
+  overflow: auto;
+}
+
+.products-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.products-table th,
+.products-table td {
+  padding: 0.55rem 0.65rem;
+  text-align: left;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.products-table th {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  background: #f8fafc;
+}
+
+.products-table .serial-cell,
+.products-table .col-serial {
+  width: 3.25rem;
+  text-align: center;
+  color: #64748b;
+}
+
+.products-table .col-qty,
+.products-table .qty-cell {
+  width: 3.5rem;
+  text-align: center;
+}
+
+.products-table .col-attachment,
+.products-table .attachment-cell {
+  width: 6.5rem;
+  text-align: center;
+}
+
+.products-table .designation-cell,
+.products-table .brand-cell,
+.products-table .description-cell,
+.products-table .expected-delivery-cell {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.82rem;
+}
+
+.products-table .description-cell {
+  color: #475569;
+}
+
+.quotation-pdf-section {
+  background: transparent;
+}
+
+.inquiry-event-content .quotation-pdf-section {
+  background: #f8fafc;
+}
+
+.quotation-pdf-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.85rem;
+}
+
+.quotation-pdf-label {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.quotation-pdf-filename {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.quotation-pdf-row--request {
+  background: #fff7ed;
+}
+
+.quotation-pdf-row--request .quotation-pdf-label {
+  color: #c2410c;
+  background: #ffedd5;
+  padding: 0.2rem 0.45rem;
+  border-radius: 6px;
+}
+
+.quotation-pdf-row--request .quotation-pdf-filename {
+  color: #9a3412;
+  font-weight: 600;
+  background: #ffedd5;
+  padding: 0.25rem 0.55rem;
+  border-radius: 6px;
+}
+
+.quotation-pdf-row--request .btn-pdf-view {
+  border-color: #ea580c;
+  color: #c2410c;
+}
+
+.quotation-pdf-row--request .btn-pdf-view:hover {
+  background: #ea580c;
+  border-color: #ea580c;
+  color: #fff;
+}
+
 .detail-note {
   margin: 0.35rem 0;
   font-size: 0.85rem;
