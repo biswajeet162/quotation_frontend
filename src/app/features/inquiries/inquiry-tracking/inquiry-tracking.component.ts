@@ -1,5 +1,6 @@
 import { Component, computed, ElementRef, HostListener, inject, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ConsumerInquiry, InquiryItem, InquiryStatus } from '../../../core/models/inquiry.model';
 import {
@@ -60,6 +61,7 @@ interface PendingAttachment {
 })
 export class InquiryTrackingComponent implements OnInit, OnDestroy {
   private readonly inquiryService = inject(InquiryService);
+  private readonly sanitizer = inject(DomSanitizer);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
@@ -91,7 +93,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   readonly deleteConfirmOpen = signal(false);
   readonly chatModalOpen = signal(false);
   readonly quotationPdfViewerOpen = signal(false);
-  readonly quotationPdfViewerUrl = signal<string | null>(null);
+  readonly quotationPdfSafeUrl = signal<SafeResourceUrl | null>(null);
   readonly quotationPdfViewerFileName = signal('');
   readonly itemAttachmentViewerOpen = signal(false);
   readonly itemAttachmentViewerItem = signal<InquiryItem | null>(null);
@@ -807,14 +809,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   openQuotationPdf(attachment: InquiryTimelineAttachment): void {
     this.inquiryService.fetchAttachmentBlob(attachment.url).subscribe({
       next: (blob) => {
-        this.closeQuotationPdfViewer();
-        const typedBlob = blob.type
-          ? blob
-          : new Blob([blob], { type: attachment.contentType || 'application/pdf' });
-        this.quotationPdfViewerObjectUrl = URL.createObjectURL(typedBlob);
-        this.quotationPdfViewerUrl.set(this.quotationPdfViewerObjectUrl);
-        this.quotationPdfViewerFileName.set(attachment.fileName);
-        this.quotationPdfViewerOpen.set(true);
+        this.openPdfInViewer(blob, attachment.contentType || 'application/pdf', attachment.fileName);
       },
       error: () => {
         this.messageError.set('Could not open the quotation PDF.');
@@ -822,9 +817,43 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     });
   }
 
+  openSubmissionPdf(inquiry: ConsumerInquiry): void {
+    this.inquiryService.downloadSubmissionPdf(inquiry.id).subscribe({
+      next: (blob) => {
+        this.openPdfInViewer(blob, 'application/pdf', this.submissionPdfFileName(inquiry));
+      },
+      error: () => {
+        this.messageError.set('Could not open the request PDF.');
+      },
+    });
+  }
+
+  submissionPdfFileName(inquiry: ConsumerInquiry): string {
+    return `${inquiry.inquiryId}.pdf`;
+  }
+
+  private openPdfInViewer(blob: Blob, contentType: string, fileName: string): void {
+    this.closeQuotationPdfViewer();
+    const typedBlob = this.toPdfBlob(blob, contentType);
+    this.quotationPdfViewerObjectUrl = URL.createObjectURL(typedBlob);
+    this.quotationPdfSafeUrl.set(
+      this.sanitizer.bypassSecurityTrustResourceUrl(this.quotationPdfViewerObjectUrl),
+    );
+    this.quotationPdfViewerFileName.set(fileName);
+    this.quotationPdfViewerOpen.set(true);
+  }
+
+  private toPdfBlob(blob: Blob, contentType: string): Blob {
+    if (blob.type === 'application/pdf') {
+      return blob;
+    }
+    const pdfType = contentType.includes('pdf') ? contentType : 'application/pdf';
+    return new Blob([blob], { type: pdfType });
+  }
+
   closeQuotationPdfViewer(): void {
     this.quotationPdfViewerOpen.set(false);
-    this.quotationPdfViewerUrl.set(null);
+    this.quotationPdfSafeUrl.set(null);
     this.quotationPdfViewerFileName.set('');
     if (this.quotationPdfViewerObjectUrl) {
       URL.revokeObjectURL(this.quotationPdfViewerObjectUrl);

@@ -133,94 +133,102 @@
               }
 
               <div class="products-panel">
-                @if ((inquiry.items ?? []).length > 0 || finalQuotationPdfAttachments().length > 0) {
-                  <div class="products-panel-body">
-                    @if ((inquiry.items ?? []).length > 0) {
-                      <div class="products-table-wrap" [id]="'inquiry-products-' + inquiry.id">
-                        <table class="products-table">
-                          <thead>
+                <div class="products-panel-body">
+                  @if ((inquiry.items ?? []).length > 0) {
+                    <div class="products-table-wrap" [id]="'inquiry-products-' + inquiry.id">
+                      <table class="products-table">
+                        <thead>
+                          <tr>
+                            <th class="col-serial">S.No</th>
+                            <th class="col-designation">Designation</th>
+                            <th class="col-brand">Brand</th>
+                            <th class="col-qty">Qty</th>
+                            <th class="col-description">Description</th>
+                            <th class="col-expected-delivery">Expected delivery</th>
+                            <th class="col-attachment">Attachments</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (item of inquiry.items ?? []; track item.id ?? item.productId) {
                             <tr>
-                              <th class="col-serial">S.No</th>
-                              <th class="col-designation">Designation</th>
-                              <th class="col-brand">Brand</th>
-                              <th class="col-qty">Qty</th>
-                              <th class="col-description">Description</th>
-                              <th class="col-expected-delivery">Expected delivery</th>
-                              <th class="col-attachment">Attachments</th>
+                              <td class="serial-cell">{{ $index + 1 }}</td>
+                              <td
+                                class="designation-cell"
+                                [title]="displayProductField(item.productName)"
+                              >
+                                {{ displayProductField(item.productName) }}
+                              </td>
+                              <td class="brand-cell" [title]="displayProductField(item.productBrand)">
+                                {{ displayProductField(item.productBrand) }}
+                              </td>
+                              <td class="qty-cell">{{ item.quantity }}</td>
+                              <td
+                                class="description-cell"
+                                [title]="displayProductField(item.productDescription)"
+                              >
+                                {{ displayProductField(item.productDescription) }}
+                              </td>
+                              <td class="expected-delivery-cell">
+                                {{ formatExpectedDeliveryDate(item.expectedDeliveryDate) }}
+                              </td>
+                              <td class="attachment-cell">
+                                @if (itemAttachmentCount(item) > 0) {
+                                  <button
+                                    type="button"
+                                    class="btn-attachment-link"
+                                    (click)="openItemAttachments(item, $event)"
+                                    [attr.aria-label]="
+                                      'View attachments for ' +
+                                      displayProductField(item.productBrand) +
+                                      ' ' +
+                                      displayProductField(item.productName)
+                                    "
+                                  >
+                                    Click here
+                                  </button>
+                                } @else {
+                                  —
+                                }
+                              </td>
                             </tr>
-                          </thead>
-                          <tbody>
-                            @for (item of inquiry.items ?? []; track item.id ?? item.productId) {
-                              <tr>
-                                <td class="serial-cell">{{ $index + 1 }}</td>
-                                <td
-                                  class="designation-cell"
-                                  [title]="displayProductField(item.productName)"
-                                >
-                                  {{ displayProductField(item.productName) }}
-                                </td>
-                                <td class="brand-cell" [title]="displayProductField(item.productBrand)">
-                                  {{ displayProductField(item.productBrand) }}
-                                </td>
-                                <td class="qty-cell">{{ item.quantity }}</td>
-                                <td
-                                  class="description-cell"
-                                  [title]="displayProductField(item.productDescription)"
-                                >
-                                  {{ displayProductField(item.productDescription) }}
-                                </td>
-                                <td class="expected-delivery-cell">
-                                  {{ formatExpectedDeliveryDate(item.expectedDeliveryDate) }}
-                                </td>
-                                <td class="attachment-cell">
-                                  @if (itemAttachmentCount(item) > 0) {
-                                    <button
-                                      type="button"
-                                      class="btn-attachment-link"
-                                      (click)="openItemAttachments(item, $event)"
-                                      [attr.aria-label]="
-                                        'View attachments for ' +
-                                        displayProductField(item.productBrand) +
-                                        ' ' +
-                                        displayProductField(item.productName)
-                                      "
-                                    >
-                                      Click here
-                                    </button>
-                                  } @else {
-                                    —
-                                  }
-                                </td>
-                              </tr>
-                            }
-                          </tbody>
-                        </table>
-                      </div>
-                    }
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  }
 
-                    @if (finalQuotationPdfAttachments().length > 0) {
-                      <div class="quotation-pdf-section">
-                        @for (attachment of finalQuotationPdfAttachments(); track attachment.id) {
-                          <div class="quotation-pdf-row">
-                            <span class="quotation-pdf-label">Forwarded</span>
-                            <span class="quotation-pdf-filename" [title]="attachment.fileName">
-                              {{ attachment.fileName }}
-                            </span>
-                            <button
-                              type="button"
-                              class="btn-pdf-view"
-                              (click)="openQuotationPdf(attachment)"
-                            >
-                              View
-                            </button>
-                          </div>
-                        }
+                  <div class="quotation-pdf-section">
+                    <div class="quotation-pdf-row quotation-pdf-row--request">
+                      <span class="quotation-pdf-label">Request</span>
+                      <span class="quotation-pdf-filename" [title]="submissionPdfFileName(inquiry)">
+                        {{ submissionPdfFileName(inquiry) }}
+                      </span>
+                      <button
+                        type="button"
+                        class="btn-pdf-view"
+                        (click)="openSubmissionPdf(inquiry)"
+                      >
+                        View
+                      </button>
+                    </div>
+
+                    @for (attachment of finalQuotationPdfAttachments(); track attachment.id) {
+                      <div class="quotation-pdf-row">
+                        <span class="quotation-pdf-label">Forwarded</span>
+                        <span class="quotation-pdf-filename" [title]="attachment.fileName">
+                          {{ attachment.fileName }}
+                        </span>
+                        <button
+                          type="button"
+                          class="btn-pdf-view"
+                          (click)="openQuotationPdf(attachment)"
+                        >
+                          View
+                        </button>
                       </div>
                     }
                   </div>
-                } @else if ((inquiry.items ?? []).length === 0) {
-                  <p class="products-empty">No products in this request.</p>
-                }
+                </div>
               </div>
             </div>
 
@@ -273,14 +281,13 @@
   </div>
 }
 
-@if (quotationPdfViewerOpen() && quotationPdfViewerUrl(); as pdfUrl) {
+@if (quotationPdfViewerOpen() && quotationPdfSafeUrl(); as pdfUrl) {
   <div class="pdf-viewer-overlay" role="presentation">
     <div
       class="pdf-viewer-dialog"
       role="dialog"
       aria-modal="true"
       aria-labelledby="quotation-pdf-viewer-title"
-      (click)="$event.stopPropagation()"
     >
       <div class="pdf-viewer-header">
         <div>

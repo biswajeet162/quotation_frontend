@@ -513,6 +513,36 @@
   border-top: 1px solid #e2e8f0;
 }
 
+.quotation-pdf-row--request {
+  background: #fff7ed;
+}
+
+.quotation-pdf-row--request .quotation-pdf-label {
+  color: #c2410c;
+  background: #ffedd5;
+  padding: 0.2rem 0.45rem;
+  border-radius: 6px;
+}
+
+.quotation-pdf-row--request .quotation-pdf-filename {
+  color: #9a3412;
+  font-weight: 600;
+  background: #ffedd5;
+  padding: 0.25rem 0.55rem;
+  border-radius: 6px;
+}
+
+.quotation-pdf-row--request .btn-pdf-view {
+  border-color: #dc2626;
+  color: #dc2626;
+}
+
+.quotation-pdf-row--request .btn-pdf-view:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #fff;
+}
+
 .quotation-pdf-label {
   flex-shrink: 0;
   font-size: 0.72rem;
@@ -605,12 +635,13 @@
 }
 
 .pdf-viewer-frame {
+  display: block;
   flex: 1;
   width: 100%;
   min-height: 0;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background: #f8fafc;
+  border: 0;
+  border-radius: 0;
+  background: #fff;
 }
 
 .status-row {
