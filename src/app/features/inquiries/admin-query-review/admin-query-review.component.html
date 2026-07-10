@@ -151,7 +151,10 @@
                 aria-label="Quotation request received"
               >
                 <div class="inquiry-event-header">
-                  <h3 class="inquiry-event-title">A new quotation request has been received.</h3>
+                  <h3 class="inquiry-event-title">
+                    A new quotation request received from customer
+                    {{ inquiry.companyName?.trim() || '—' }}.
+                  </h3>
                   <div class="inquiry-event-status-block">
                     <span class="inquiry-event-status inquiry-event-status--initiated">Initiated</span>
                     <span class="inquiry-event-status-time inquiry-event-status-time--initiated">
@@ -266,15 +269,13 @@
                                     class="btn-attachment-link"
                                     (click)="openItemAttachments(item, $event)"
                                     [attr.aria-label]="
-                                      'View ' +
-                                      itemAttachmentLabel(item) +
-                                      ' for ' +
+                                      'View attachments for ' +
                                       displayProductField(item.productBrand) +
                                       ' ' +
                                       displayProductField(item.productName)
                                     "
                                   >
-                                    {{ itemAttachmentLabel(item) }}
+                                    Click here
                                   </button>
                                 } @else {
                                   —

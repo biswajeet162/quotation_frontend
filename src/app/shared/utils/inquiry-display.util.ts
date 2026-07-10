@@ -10,13 +10,31 @@ export type ConsumerInquiryPhase =
 
 export type InquiryListStep = 'grey' | 'yellow' | 'green';
 
-export function formatExpectedDeliveryDate(iso?: string): string {
-  if (!iso?.trim()) {
+export function formatExpectedDeliveryDate(iso?: string | number[] | Date | null): string {
+  if (iso == null) {
     return '—';
   }
-  const [year, month, day] = iso.split('-');
+
+  if (Array.isArray(iso) && iso.length >= 3) {
+    const [year, month, day] = iso;
+    return `${String(day).padStart(2, '0')}-${String(month).padStart(2, '0')}-${year}`;
+  }
+
+  if (iso instanceof Date && !Number.isNaN(iso.getTime())) {
+    const day = String(iso.getDate()).padStart(2, '0');
+    const month = String(iso.getMonth() + 1).padStart(2, '0');
+    return `${day}-${month}-${iso.getFullYear()}`;
+  }
+
+  const value = String(iso).trim();
+  if (!value) {
+    return '—';
+  }
+
+  const datePart = value.includes('T') ? value.slice(0, 10) : value;
+  const [year, month, day] = datePart.split('-');
   if (!year || !month || !day) {
-    return iso;
+    return value;
   }
   return `${day}-${month}-${year}`;
 }

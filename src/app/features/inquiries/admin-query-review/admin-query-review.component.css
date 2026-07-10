@@ -182,6 +182,7 @@
   border: 1px solid #e2e8f0;
   border-radius: 10px;
   padding: 0;
+  min-width: 0;
   min-height: 0;
   height: 100%;
   overflow: hidden;
@@ -244,6 +245,7 @@
 .detail-scroll-wrap {
   position: relative;
   flex: 1;
+  min-width: 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -251,6 +253,7 @@
 
 .detail-scroll {
   flex: 1;
+  min-width: 0;
   min-height: 0;
   overflow-y: auto;
   padding: 0 1rem 0.75rem;
@@ -1012,6 +1015,7 @@
 .inquiry-event-content {
   border: 1px solid rgba(15, 23, 42, 0.08);
   border-radius: 10px;
+  min-width: 0;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.82);
   backdrop-filter: blur(2px);
@@ -1021,6 +1025,10 @@
   margin-top: 0;
   border: none;
   border-radius: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .inquiry-event-content .preview-table-wrap + .quotation-pdf-section,
