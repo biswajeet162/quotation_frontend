@@ -970,3 +970,421 @@
   display: flex;
   gap: 0.5rem;
 }
+
+.detail-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.btn-chat-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #0f766e;
+  font: 600 0.82rem inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.btn-chat-open svg {
+  width: 1rem;
+  height: 1rem;
+  fill: currentColor;
+}
+
+.btn-chat-open:hover,
+.btn-chat-open[aria-expanded='true'] {
+  background: #0f766e;
+  border-color: #0f766e;
+  color: #fff;
+}
+
+.inquiry-event-content {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(2px);
+}
+
+.inquiry-event-content .preview-table-wrap {
+  margin-top: 0;
+  border: none;
+  border-radius: 0;
+}
+
+.inquiry-event-content .preview-table-wrap + .quotation-pdf-section,
+.inquiry-event-content .products-empty + .quotation-pdf-section {
+  border-top: 1px solid #e2e8f0;
+}
+
+.inquiry-event-content .products-empty {
+  margin: 0;
+  padding: 0.85rem;
+}
+
+.quotation-pdf-section {
+  background: transparent;
+}
+
+.inquiry-event-content .quotation-pdf-section {
+  background: #f8fafc;
+}
+
+.quotation-pdf-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.85rem;
+}
+
+.quotation-pdf-row + .quotation-pdf-row {
+  border-top: 1px solid #e2e8f0;
+}
+
+.quotation-pdf-row--request {
+  background: #fff7ed;
+}
+
+.quotation-pdf-row--request .quotation-pdf-label {
+  color: #c2410c;
+  background: #ffedd5;
+  padding: 0.2rem 0.45rem;
+  border-radius: 6px;
+}
+
+.quotation-pdf-row--request .quotation-pdf-filename {
+  color: #9a3412;
+  font-weight: 600;
+  background: #ffedd5;
+  padding: 0.25rem 0.55rem;
+  border-radius: 6px;
+}
+
+.quotation-pdf-row--request .btn-pdf-view {
+  border-color: #dc2626;
+  color: #dc2626;
+}
+
+.quotation-pdf-row--request .btn-pdf-view:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #fff;
+}
+
+.quotation-pdf-label {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.quotation-pdf-filename {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-pdf-view {
+  flex-shrink: 0;
+  padding: 0.35rem 0.85rem;
+  border: 1px solid #0f766e;
+  border-radius: 8px;
+  background: #fff;
+  color: #0f766e;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-pdf-view:hover {
+  background: #0f766e;
+  color: #fff;
+}
+
+.pdf-viewer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2400;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+}
+
+.pdf-viewer-dialog {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 0.75rem 1rem 1rem;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.pdf-viewer-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.65rem;
+  flex-shrink: 0;
+}
+
+.pdf-viewer-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.pdf-viewer-subtitle {
+  margin: 0.2rem 0 0;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.pdf-viewer-close {
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  font-size: 1.75rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.15rem 0.4rem;
+}
+
+.pdf-viewer-close:hover {
+  color: #0f172a;
+}
+
+.pdf-viewer-frame {
+  display: block;
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  background: #fff;
+}
+
+.btn-secondary {
+  padding: 0.55rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+}
+
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.alert-error {
+  padding: 0.65rem;
+  background: #fef2f2;
+  color: #b91c1c;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  margin-top: 0.75rem;
+}
+
+.chat-row-admin .chat-bubble {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-bottom-right-radius: 4px;
+  color: #0f172a;
+}
+
+.chat-row-admin .chat-bubble:has(app-chat-audio-player) .chat-bubble-footer .chat-time {
+  color: #64748b;
+}
+
+.chat-row-admin .chat-quote {
+  border-left-color: #d97706;
+  background: rgba(245, 158, 11, 0.14);
+}
+
+.chat-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2100;
+  background: rgba(15, 23, 42, 0.35);
+  backdrop-filter: blur(1px);
+}
+
+.chat-modal-dialog {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  width: 720px;
+  max-width: calc(100vw - 1.5rem);
+  height: min(94vh, 940px);
+  max-height: calc(100vh - 1rem);
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.22);
+  overflow: hidden;
+}
+
+.chat-modal-dialog.is-positioned {
+  transform: none;
+}
+
+.chat-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.1rem 0.85rem;
+  border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.chat-modal-header:active {
+  cursor: grabbing;
+}
+
+.chat-modal-header-text {
+  min-width: 0;
+}
+
+.chat-modal-header-text h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #0f172a;
+}
+
+.chat-modal-subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.chat-modal-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-shrink: 0;
+}
+
+.chat-modal-header-actions .btn-secondary {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.82rem;
+}
+
+.chat-modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.chat-modal-close:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.chat-modal-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0.85rem 1rem;
+}
+
+.chat-modal-body .chat-thread {
+  min-height: 100%;
+}
+
+.chat-modal-footer {
+  flex-shrink: 0;
+  padding: 0.65rem 1rem 0.85rem;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.chat-modal-footer .consumer-actions {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.chat-modal-footer .closed-hint {
+  margin: 0;
+  text-align: center;
+}
+
+.chat-modal-resize-handle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 1.15rem;
+  height: 1.15rem;
+  cursor: nwse-resize;
+  touch-action: none;
+  background:
+    linear-gradient(135deg, transparent 55%, #94a3b8 55%, #94a3b8 62%, transparent 62%),
+    linear-gradient(135deg, transparent 70%, #94a3b8 70%, #94a3b8 77%, transparent 77%);
+}
+
+@media (max-width: 640px) {
+  .chat-modal-dialog {
+    left: 0;
+    top: 0;
+    transform: none;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    border-radius: 0;
+  }
+
+  .chat-modal-dialog.is-positioned {
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .chat-modal-resize-handle {
+    display: none;
+  }
+
+  .chat-modal-header {
+    cursor: default;
+  }
+}

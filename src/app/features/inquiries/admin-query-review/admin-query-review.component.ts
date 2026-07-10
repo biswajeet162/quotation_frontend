@@ -2,6 +2,7 @@ import {
   Component,
   computed,
   ElementRef,
+  HostListener,
   inject,
   OnDestroy,
   OnInit,
@@ -9,6 +10,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import {
   DistributorOption,
@@ -76,6 +78,7 @@ interface DistributorSendPricingSnapshot {
 })
 export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   private readonly inquiryService = inject(InquiryService);
+  private readonly sanitizer = inject(DomSanitizer);
   private readonly router = inject(Router);
 
   readonly loading = signal(true);
@@ -110,10 +113,17 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
 
   readonly itemAttachmentViewerOpen = signal(false);
   readonly itemAttachmentViewerItem = signal<InquiryItem | null>(null);
+  readonly chatModalOpen = signal(false);
+  readonly chatModalPosition = signal<{ x: number; y: number } | null>(null);
+  readonly chatModalSize = signal<{ width: number; height: number } | null>(null);
+  readonly quotationPdfViewerOpen = signal(false);
+  readonly quotationPdfSafeUrl = signal<SafeResourceUrl | null>(null);
+  readonly quotationPdfViewerFileName = signal('');
   readonly lineDrafts = signal<Map<string, AdminInquiryLineDraft>>(new Map());
   readonly distributorSendSnapshots = signal<Map<string, DistributorSendPricingSnapshot>>(new Map());
 
   private readonly detailScrollRef = viewChild<ElementRef<HTMLElement>>('detailScroll');
+  private readonly chatScrollRef = viewChild<ElementRef<HTMLElement>>('chatScroll');
   private readonly messageInputRef = viewChild<ElementRef<HTMLTextAreaElement>>('messageInput');
 
   private mediaRecorder: MediaRecorder | null = null;
@@ -127,6 +137,24 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   private discardRecording = false;
   private recordingMimeType = 'audio/webm';
   private readonly recordingBarCount = 24;
+  private quotationPdfViewerObjectUrl: string | null = null;
+  private chatDragState: {
+    pointerId: number;
+    startX: number;
+    startY: number;
+    originX: number;
+    originY: number;
+  } | null = null;
+  private chatResizeState: {
+    pointerId: number;
+    startX: number;
+    startY: number;
+    originWidth: number;
+    originHeight: number;
+  } | null = null;
+  private readonly chatModalDefaultWidth = 720;
+  private readonly chatModalMinWidth = 420;
+  private readonly chatModalMinHeight = 420;
 
   readonly statusOptions: { value: StatusFilter; label: string }[] = [
     { value: 'all', label: 'All statuses' },
@@ -226,12 +254,24 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   readonly replyTargetAuthorLabel = (target: ChatReplyTarget) =>
     buildReplyTargetAuthorLabel(target, 'ADMIN');
 
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.quotationPdfViewerOpen()) {
+      this.closeQuotationPdfViewer();
+      return;
+    }
+    if (this.chatModalOpen()) {
+      this.closeChatModal();
+    }
+  }
+
   ngOnInit(): void {
     this.load();
   }
 
   ngOnDestroy(): void {
     this.cleanupRecordingResources(false);
+    this.closeQuotationPdfViewer();
   }
 
   load(): void {
@@ -288,6 +328,8 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   selectInquiry(id: string): void {
     this.cancelVoiceRecording();
     this.clearPendingAttachments();
+    this.closeChatModal();
+    this.closeItemAttachments();
     this.selectedId.set(id);
     this.actionError.set(null);
     this.messageError.set(null);
@@ -309,7 +351,9 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const scrollEl = this.detailScrollRef()?.nativeElement;
+    const scrollEl = this.chatModalOpen()
+      ? this.chatScrollRef()?.nativeElement
+      : this.detailScrollRef()?.nativeElement;
     const previousScrollTop = scrollEl?.scrollTop ?? 0;
     const silent = options?.silent ?? false;
 
@@ -338,7 +382,7 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
         );
 
         if (options?.scrollToBottom) {
-          this.scrollDetailToBottom();
+          this.scrollChatToBottom();
           this.focusComposeInput();
         } else if (options?.preserveScroll && scrollEl) {
           scrollEl.scrollTop = previousScrollTop;
@@ -736,11 +780,203 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   }
 
   goToDetailBottom(): void {
-    this.loadTimeline({ silent: true, scrollToBottom: true });
+    this.detailScrollRef()?.nativeElement?.scrollTo({
+      top: this.detailScrollRef()?.nativeElement.scrollHeight ?? 0,
+      behavior: 'smooth',
+    });
+  }
+
+  openChatModal(): void {
+    if (!this.selectedInquiry()) {
+      return;
+    }
+    this.resetChatModalLayout();
+    this.chatModalOpen.set(true);
+    this.loadTimeline({
+      silent: this.timelineEntries().length > 0,
+      scrollToBottom: true,
+    });
+  }
+
+  closeChatModal(): void {
+    this.cancelVoiceRecording();
+    this.endChatPointerInteraction();
+    this.chatModalOpen.set(false);
+    this.resetChatModalLayout();
+  }
+
+  startChatDrag(event: PointerEvent): void {
+    if (event.button !== 0) {
+      return;
+    }
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('button, a, input, textarea, select')) {
+      return;
+    }
+
+    const dialog = (event.currentTarget as HTMLElement | null)?.closest(
+      '.chat-modal-dialog',
+    ) as HTMLElement | null;
+    if (!dialog) {
+      return;
+    }
+
+    const rect = dialog.getBoundingClientRect();
+    this.chatModalPosition.set({ x: rect.left, y: rect.top });
+    this.chatModalSize.set({
+      width: this.chatModalSize()?.width ?? Math.round(rect.width),
+      height: this.chatModalSize()?.height ?? Math.round(rect.height),
+    });
+    this.chatDragState = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      originX: rect.left,
+      originY: rect.top,
+    };
+    dialog.setPointerCapture(event.pointerId);
+    event.preventDefault();
+  }
+
+  startChatResize(event: PointerEvent): void {
+    if (event.button !== 0) {
+      return;
+    }
+    event.stopPropagation();
+
+    const dialog = (event.currentTarget as HTMLElement | null)?.closest(
+      '.chat-modal-dialog',
+    ) as HTMLElement | null;
+    if (!dialog) {
+      return;
+    }
+
+    const rect = dialog.getBoundingClientRect();
+    this.chatModalPosition.set({
+      x: this.chatModalPosition()?.x ?? rect.left,
+      y: this.chatModalPosition()?.y ?? rect.top,
+    });
+    this.chatModalSize.set({
+      width: Math.round(rect.width),
+      height: Math.round(rect.height),
+    });
+    this.chatResizeState = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      originWidth: Math.round(rect.width),
+      originHeight: Math.round(rect.height),
+    };
+    dialog.setPointerCapture(event.pointerId);
+    event.preventDefault();
+  }
+
+  @HostListener('document:pointermove', ['$event'])
+  onChatPointerMove(event: PointerEvent): void {
+    if (this.chatDragState && event.pointerId === this.chatDragState.pointerId) {
+      const deltaX = event.clientX - this.chatDragState.startX;
+      const deltaY = event.clientY - this.chatDragState.startY;
+      const size = this.chatModalSize();
+      const width = size?.width ?? this.chatModalDefaultWidth;
+      const height = size?.height ?? this.defaultChatModalHeight();
+      const maxX = Math.max(0, window.innerWidth - width);
+      const maxY = Math.max(0, window.innerHeight - height);
+      this.chatModalPosition.set({
+        x: Math.min(maxX, Math.max(0, this.chatDragState.originX + deltaX)),
+        y: Math.min(maxY, Math.max(0, this.chatDragState.originY + deltaY)),
+      });
+      return;
+    }
+
+    if (this.chatResizeState && event.pointerId === this.chatResizeState.pointerId) {
+      const deltaX = event.clientX - this.chatResizeState.startX;
+      const deltaY = event.clientY - this.chatResizeState.startY;
+      const maxWidth = Math.max(this.chatModalMinWidth, window.innerWidth - 24);
+      const maxHeight = Math.max(this.chatModalMinHeight, window.innerHeight - 24);
+      this.chatModalSize.set({
+        width: Math.min(
+          maxWidth,
+          Math.max(this.chatModalMinWidth, this.chatResizeState.originWidth + deltaX),
+        ),
+        height: Math.min(
+          maxHeight,
+          Math.max(this.chatModalMinHeight, this.chatResizeState.originHeight + deltaY),
+        ),
+      });
+    }
+  }
+
+  @HostListener('document:pointerup', ['$event'])
+  @HostListener('document:pointercancel', ['$event'])
+  onChatPointerUp(event: PointerEvent): void {
+    if (
+      (this.chatDragState && event.pointerId === this.chatDragState.pointerId) ||
+      (this.chatResizeState && event.pointerId === this.chatResizeState.pointerId)
+    ) {
+      this.endChatPointerInteraction();
+    }
+  }
+
+  openSubmissionPdf(inquiry: Inquiry): void {
+    this.inquiryService.downloadSubmissionPdf(inquiry.id).subscribe({
+      next: (blob) => {
+        this.openPdfInViewer(blob, 'application/pdf', this.submissionPdfFileName(inquiry));
+      },
+      error: () => {
+        this.messageError.set('Could not open the request PDF.');
+      },
+    });
+  }
+
+  submissionPdfFileName(inquiry: Inquiry): string {
+    return `${inquiry.inquiryId}.pdf`;
+  }
+
+  closeQuotationPdfViewer(): void {
+    this.quotationPdfViewerOpen.set(false);
+    this.quotationPdfSafeUrl.set(null);
+    this.quotationPdfViewerFileName.set('');
+    if (this.quotationPdfViewerObjectUrl) {
+      URL.revokeObjectURL(this.quotationPdfViewerObjectUrl);
+      this.quotationPdfViewerObjectUrl = null;
+    }
   }
 
   refreshMessages(): void {
     this.loadTimeline({ silent: true, preserveScroll: true });
+  }
+
+  private resetChatModalLayout(): void {
+    this.chatModalPosition.set(null);
+    this.chatModalSize.set(null);
+  }
+
+  private endChatPointerInteraction(): void {
+    this.chatDragState = null;
+    this.chatResizeState = null;
+  }
+
+  private defaultChatModalHeight(): number {
+    return Math.min(Math.round(window.innerHeight * 0.94), 940);
+  }
+
+  private openPdfInViewer(blob: Blob, contentType: string, fileName: string): void {
+    this.closeQuotationPdfViewer();
+    const typedBlob = this.toPdfBlob(blob, contentType);
+    this.quotationPdfViewerObjectUrl = URL.createObjectURL(typedBlob);
+    this.quotationPdfSafeUrl.set(
+      this.sanitizer.bypassSecurityTrustResourceUrl(this.quotationPdfViewerObjectUrl),
+    );
+    this.quotationPdfViewerFileName.set(fileName);
+    this.quotationPdfViewerOpen.set(true);
+  }
+
+  private toPdfBlob(blob: Blob, contentType: string): Blob {
+    if (blob.type === 'application/pdf') {
+      return blob;
+    }
+    const pdfType = contentType.includes('pdf') ? contentType : 'application/pdf';
+    return new Blob([blob], { type: pdfType });
   }
 
   productCountLabel(items?: Inquiry['items']): string {
@@ -1195,14 +1431,14 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
     this.pendingAttachments.set([]);
   }
 
-  private scrollDetailToBottom(): void {
+  private scrollChatToBottom(): void {
     requestAnimationFrame(() => {
-      const scrollEl = this.detailScrollRef()?.nativeElement;
+      const scrollEl = this.chatScrollRef()?.nativeElement;
       if (scrollEl) {
         scrollEl.scrollTop = scrollEl.scrollHeight;
       }
       requestAnimationFrame(() => {
-        const el = this.detailScrollRef()?.nativeElement;
+        const el = this.chatScrollRef()?.nativeElement;
         if (el) {
           el.scrollTop = el.scrollHeight;
         }
