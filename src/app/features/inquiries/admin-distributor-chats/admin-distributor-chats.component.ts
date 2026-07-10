@@ -968,8 +968,11 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
     return distributor.responseReceived ? 'Responded' : 'Pending response';
   }
 
-  getDistributorListStep(distributor: InquiryDistributor): 'initiated' | 'green' {
-    return distributor.responseReceived ? 'green' : 'initiated';
+  getDistributorListStep(distributor: InquiryDistributor): 'initiated' | 'in-progress' | 'green' {
+    if (this.inquiry()?.status === 'CLOSED' || this.inquiry()?.status === 'FINAL_SENT') {
+      return 'green';
+    }
+    return distributor.responseReceived ? 'in-progress' : 'initiated';
   }
 
   distributorEmailLabel(distributor: InquiryDistributor): string {
@@ -1127,16 +1130,24 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
 
   openQuotationPdf(): void {
     const inquiry = this.inquiry();
+    const distributor = this.distributors().find(
+      (item) => item.companyId === this.selectedDistributorCompanyId(),
+    );
     const distributorCompanyId = this.selectedDistributorCompanyId();
-    if (!inquiry || !distributorCompanyId) {
+    if (!inquiry || !distributorCompanyId || !distributor) {
       return;
     }
 
     this.inquiryService.downloadDistributorQuotationPdf(inquiry.id, distributorCompanyId).subscribe({
       next: (blob) => {
-        const url = URL.createObjectURL(blob);
-        window.open(url, '_blank', 'noopener');
-        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+        this.openPdfInViewer(
+          blob,
+          'application/pdf',
+          this.distributorQuotationPdfFileName(inquiry, distributor),
+        );
+      },
+      error: () => {
+        this.messageError.set('Could not open the distributor quotation PDF.');
       },
     });
   }
@@ -1180,6 +1191,17 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
 
   adminRfqPdfFileName(inquiry: Inquiry): string {
     return `${inquiry.inquiryId}-rfq.pdf`;
+  }
+
+  distributorQuotationPdfFileName(inquiry: Inquiry, distributor: InquiryDistributor): string {
+    const companySlug = this.distributorLabel(distributor)
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    return companySlug
+      ? `${inquiry.inquiryId}-${companySlug}-quotation.pdf`
+      : `${inquiry.inquiryId}-quotation.pdf`;
   }
 
   closeQuotationPdfViewer(): void {

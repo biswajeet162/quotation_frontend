@@ -157,6 +157,10 @@
   background: var(--inquiry-status-initiated-bg, #eff6ff);
 }
 
+.query-item.step-in-progress {
+  background: var(--inquiry-status-in-progress-bg, #fffbeb);
+}
+
 .query-item.step-green {
   background: var(--inquiry-status-final-bg, #ecfdf5);
 }
@@ -164,6 +168,11 @@
 .query-item.step-initiated:hover,
 .query-item.step-initiated.selected {
   background: #dbeafe;
+}
+
+.query-item.step-in-progress:hover,
+.query-item.step-in-progress.selected {
+  background: #fef3c7;
 }
 
 .query-item.step-green:hover,
@@ -312,7 +321,8 @@
   min-width: 5.5rem;
 }
 
-.admin-pricing-table .col-expected-delivery {
+.admin-pricing-table .col-expected-delivery,
+.admin-pricing-table .col-our-delivery {
   min-width: 7.5rem;
   white-space: nowrap;
 }
