@@ -61,8 +61,7 @@
                 type="button"
                 class="query-item"
                 [class.selected]="selectedDistributorCompanyId() === distributor.companyId"
-                [class.step-grey]="getDistributorListStep(distributor) === 'grey'"
-                [class.step-yellow]="getDistributorListStep(distributor) === 'yellow'"
+                [class.step-initiated]="getDistributorListStep(distributor) === 'initiated'"
                 [class.step-green]="getDistributorListStep(distributor) === 'green'"
                 [attr.aria-label]="distributorLabel(distributor) + ' — ' + distributorStatusLabel(distributor)"
                 (click)="selectDistributor(distributor.companyId)"
@@ -91,8 +90,25 @@
                     <span>{{ formatPostedDate(inquiry.createdAt) }}</span>
                   </p>
                 </div>
-                @if (distributor.responseReceived) {
-                  <div class="detail-header-actions">
+                <div class="detail-header-actions">
+                  <button
+                    type="button"
+                    class="btn-chat-open"
+                    (click)="openChatModal()"
+                    aria-haspopup="dialog"
+                    [attr.aria-expanded]="chatModalOpen()"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Zm0 14H5.17L4 17.17V4h16v12Z"
+                      />
+                    </svg>
+                    Chat with distributor
+                  </button>
+                  <button type="button" class="btn-delete" (click)="openDeleteConfirm()">
+                    Delete request
+                  </button>
+                  @if (distributor.responseReceived) {
                     <button
                       type="button"
                       class="btn-secondary btn-requote"
@@ -111,8 +127,8 @@
                     >
                       Finalize
                     </button>
-                  </div>
-                }
+                  }
+                </div>
               </div>
 
               <div class="detail-scroll-wrap">
@@ -268,11 +284,79 @@
                     </section>
                   </div>
 
-                  <section class="messages-section">
-                    <div class="messages-divider">
-                      <span class="messages-divider-label">Messages</span>
-                    </div>
+                </div>
 
+                <button
+                  type="button"
+                  class="scroll-nav-btn scroll-nav-bottom"
+                  aria-label="Go to bottom"
+                  title="Bottom"
+                  (click)="goToDetailBottom()"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M7.41 9.41 12 13.83l4.59-4.42L18 11l-6 6-6-6 1.41-1.59Z" />
+                  </svg>
+                </button>
+              </div>
+
+            </div>
+          }
+        }
+      </div>
+    }
+  }
+  }
+</section>
+
+@if (chatModalOpen() && inquiry(); as inquiry) {
+  @if (selectedDistributor(); as distributor) {
+  <div class="chat-modal-overlay" (click)="closeChatModal()" role="presentation">
+    <div
+      class="chat-modal-dialog"
+      [class.is-positioned]="chatModalPosition() != null"
+      [style.left.px]="chatModalPosition()?.x"
+      [style.top.px]="chatModalPosition()?.y"
+      [style.width.px]="chatModalSize()?.width"
+      [style.height.px]="chatModalSize()?.height"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="distributor-chat-title"
+      (click)="$event.stopPropagation()"
+    >
+      <header
+        class="chat-modal-header"
+        (pointerdown)="startChatDrag($event)"
+      >
+        <div class="chat-modal-header-text">
+          <h2 id="distributor-chat-title">Chat with distributor</h2>
+          <p class="chat-modal-subtitle">
+            {{ distributorLabel(distributor) }} · {{ inquiry.title }} · {{ formatPostedDate(inquiry.createdAt) }}
+          </p>
+        </div>
+        <div class="chat-modal-header-actions">
+          <button
+            type="button"
+            class="btn-secondary"
+            [class.is-refreshing]="timelineRefreshing()"
+            (click)="refreshMessages()"
+            [disabled]="timelineLoading() || timelineRefreshing() || messageLoading()"
+            aria-label="Refresh messages"
+            title="Refresh messages"
+          >
+            Refresh
+          </button>
+          <button
+            type="button"
+            class="chat-modal-close"
+            (click)="closeChatModal()"
+            aria-label="Close chat"
+          >
+            ×
+          </button>
+        </div>
+      </header>
+
+      <div #chatScroll class="chat-modal-body">
                     @if (timelineLoading() && chatTimelineEntries().length === 0) {
                       <p class="activity-empty">Loading messages…</p>
                     } @else if (timelineError() && chatTimelineEntries().length === 0) {
@@ -597,22 +681,9 @@
                         }
                       </div>
                     }
-                  </section>
-                </div>
+      </div>
 
-                <button
-                  type="button"
-                  class="scroll-nav-btn scroll-nav-bottom"
-                  aria-label="Go to bottom"
-                  title="Bottom"
-                  (click)="goToDetailBottom()"
-                >
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M7.41 9.41 12 13.83l4.59-4.42L18 11l-6 6-6-6 1.41-1.59Z" />
-                  </svg>
-                </button>
-              </div>
-
+      <footer class="chat-modal-footer">
               @if (canMessage(inquiry)) {
                 <div class="consumer-actions">
                   @if (pendingAttachments().length > 0) {
@@ -834,15 +905,59 @@
               } @else {
                 <p class="closed-hint">This request is closed. New distributor messages cannot be sent.</p>
               }
-            </div>
-          }
-        }
-      </div>
-    }
+      </footer>
+      <div
+        class="chat-modal-resize-handle"
+        aria-hidden="true"
+        title="Resize"
+        (pointerdown)="startChatResize($event)"
+      ></div>
+    </div>
+  </div>
   }
-  }
-</section>
+}
 
+@if (deleteConfirmOpen() && inquiry(); as toDelete) {
+  <div class="confirm-overlay" (click)="closeDeleteConfirm()" role="presentation">
+    <div
+      class="confirm-dialog"
+      role="alertdialog"
+      aria-labelledby="delete-confirm-title"
+      aria-modal="true"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="confirm-icon" aria-hidden="true">!</div>
+      <h2 id="delete-confirm-title">Delete this quotation request?</h2>
+      <p class="confirm-lead">
+        This will permanently remove the request and all product lines. You cannot undo this.
+      </p>
+      <div class="confirm-summary">
+        <div class="confirm-summary-row">
+          <span class="confirm-label">Reference</span>
+          <span class="confirm-value">{{ toDelete.inquiryId }}</span>
+        </div>
+        <div class="confirm-summary-row">
+          <span class="confirm-label">Title</span>
+          <span class="confirm-value">{{ toDelete.title }}</span>
+        </div>
+      </div>
+      @if (deleteError()) {
+        <div class="alert alert-error confirm-alert" role="alert">{{ deleteError() }}</div>
+      }
+      <div class="confirm-actions">
+        <button type="button" class="btn-secondary" (click)="closeDeleteConfirm()">Keep request</button>
+        <button
+          type="button"
+          class="btn-danger-solid"
+          [disabled]="deleteLoading()"
+          (click)="confirmDelete()"
+        >
+          {{ deleteLoading() ? 'Deleting…' : 'Yes, delete' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
 @if (quotationPdfViewerOpen() && quotationPdfSafeUrl(); as pdfUrl) {
   <div class="pdf-viewer-overlay" role="presentation">
     <div
