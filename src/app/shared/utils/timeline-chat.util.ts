@@ -14,6 +14,13 @@ export function buildConsumerChatTimelineEntries(entries: InquiryTimelineEntry[]
   return buildChatTimelineEntries(entries).filter(isConsumerChannelEntry);
 }
 
+/** Admin ↔ consumer chat only — never includes distributor messages or distributor workflow notices. */
+export function buildAdminCustomerChatTimelineEntries(
+  entries: InquiryTimelineEntry[],
+): InquiryTimelineEntry[] {
+  return buildChatTimelineEntries(entries).filter(isAdminCustomerChannelEntry);
+}
+
 export function isConsumerChannelEntry(entry: InquiryTimelineEntry): boolean {
   if (entry.actorRole === 'DISTRIBUTOR') {
     return false;
@@ -28,6 +35,29 @@ export function isConsumerChannelEntry(entry: InquiryTimelineEntry): boolean {
     return false;
   }
   return true;
+}
+
+/** Same channel as consumer chat: only ADMIN/CONSUMER messages and non-distributor notices. */
+export function isAdminCustomerChannelEntry(entry: InquiryTimelineEntry): boolean {
+  if (entry.actorRole === 'DISTRIBUTOR') {
+    return false;
+  }
+  if (entry.kind === 'MESSAGE') {
+    return entry.actorRole === 'ADMIN' || entry.actorRole === 'CONSUMER';
+  }
+  if (isDistributorSendNotice(entry) || isDistributorQuotationNotice(entry)) {
+    return false;
+  }
+  if (isSentToDistributorsNotice(entry)) {
+    return false;
+  }
+  if (isFinalQuotationForwardedNotice(entry)) {
+    return false;
+  }
+  if (entry.noticeCode === 'SENT_TO_DISTRIBUTOR') {
+    return false;
+  }
+  return isTimelineNotice(entry);
 }
 
 export function isTimelineNotice(entry: InquiryTimelineEntry): boolean {

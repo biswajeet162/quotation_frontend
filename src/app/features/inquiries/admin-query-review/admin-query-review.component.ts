@@ -41,8 +41,7 @@ import {
   shouldShowBubbleReply,
 } from '../../../shared/utils/chat-reply.util';
 import {
-  buildChatTimelineEntries,
-  isDistributorSendNotice,
+  buildAdminCustomerChatTimelineEntries,
   isTimelineNotice,
   noticeDisplayDetail,
   noticeDisplayLabel,
@@ -215,7 +214,7 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   readonly selectedDistributorCount = computed(() => this.selectedDistributorIds().size);
 
   readonly chatTimelineEntries = computed(() =>
-    buildChatTimelineEntries(this.timelineEntries()),
+    buildAdminCustomerChatTimelineEntries(this.timelineEntries()),
   );
 
   readonly canSendMessage = computed(
@@ -226,7 +225,6 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   readonly replyTargetLabel = replyTargetLabel;
   readonly shouldShowBubbleReply = shouldShowBubbleReply;
   readonly isTimelineNotice = isTimelineNotice;
-  readonly isDistributorSendNotice = isDistributorSendNotice;
   readonly noticeDisplayLabel = (entry: InquiryTimelineEntry) =>
     noticeDisplayLabel(entry, 'ADMIN');
   readonly noticeDisplayDetail = (entry: InquiryTimelineEntry) =>
@@ -1004,54 +1002,6 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
       return draft;
     }
     return this.lineDraftFromPersistedItem(item);
-  }
-
-  getChatLineDraft(inquiryId: string, item: InquiryItem): AdminInquiryLineDraft {
-    const snapshot = this.distributorSendSnapshots().get(inquiryId);
-    const key = this.lineDraftKey(inquiryId, item);
-    if (snapshot?.lineDrafts[key] && this.hasLineDraftValues(snapshot.lineDrafts[key])) {
-      return snapshot.lineDrafts[key];
-    }
-    return this.getLineDraft(inquiryId, item);
-  }
-
-  distributorSendContactName(entry: InquiryTimelineEntry): string {
-    return entry.toCompanyName?.trim() || entry.detail?.trim() || 'Distributor';
-  }
-
-  distributorSendContactEmail(entry: InquiryTimelineEntry): string {
-    return entry.recipientEmail?.trim() || '—';
-  }
-
-  isLastDistributorSendInBatch(entries: InquiryTimelineEntry[], index: number): boolean {
-    const entry = entries[index];
-    if (!isDistributorSendNotice(entry)) {
-      return false;
-    }
-    const next = entries[index + 1];
-    return !next || !isDistributorSendNotice(next);
-  }
-
-  distributorSendBatchAttachments(entries: InquiryTimelineEntry[], endIndex: number) {
-    let start = endIndex;
-    while (start > 0 && isDistributorSendNotice(entries[start - 1])) {
-      start--;
-    }
-    for (let index = start; index <= endIndex; index++) {
-      const attachments = entries[index].attachments;
-      if (attachments?.length) {
-        return attachments;
-      }
-    }
-    return [];
-  }
-
-  formatOptionalNumber(value?: number): string {
-    return value == null ? '—' : value.toLocaleString(undefined, { maximumFractionDigits: 2 });
-  }
-
-  formatOptionalPercent(value?: number): string {
-    return value == null ? '—' : `${value}%`;
   }
 
   updateLineTextField(
