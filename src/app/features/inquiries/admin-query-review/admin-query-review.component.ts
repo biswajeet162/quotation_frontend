@@ -31,6 +31,7 @@ import {
   formatExpectedDeliveryDate,
   getInquiryListStep,
 } from '../../../shared/utils/inquiry-display.util';
+import { quotationLinePricingFromAdmin } from '../../../shared/utils/inquiry-pricing.util';
 import {
   canReplyToTimelineEntry,
   ChatReplyTarget,
@@ -234,6 +235,74 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
 
   assignedDistributorCount(inquiry: Inquiry): number {
     return inquiry.distributors?.length ?? 0;
+  }
+
+  hasSentToDistributors(inquiry: Inquiry): boolean {
+    return this.assignedDistributorCount(inquiry) > 0;
+  }
+
+  sentToDistributorsTitle(inquiry: Inquiry): string {
+    const count = this.assignedDistributorCount(inquiry);
+    const countLabel = count === 1 ? '1 distributor' : `${count} distributors`;
+    return `The quotation request has been sent to ${countLabel}:`;
+  }
+
+  sentDistributorLines(
+    inquiry: Inquiry,
+  ): { id: string; label: string }[] {
+    return (inquiry.distributors ?? []).map((distributor, index) => {
+      const name = distributor.companyName?.trim() || 'Distributor';
+      const email = distributor.email?.trim() || '—';
+      return {
+        id: distributor.id ?? distributor.companyId ?? `${index}`,
+        label: `${index + 1}-${name} (${email})`,
+      };
+    });
+  }
+
+  sentToDistributorsAt(inquiry: Inquiry): string | undefined {
+    const sentTimes = (inquiry.distributors ?? [])
+      .map((d) => d.emailSentAt)
+      .filter((value): value is string => !!value)
+      .map((value) => new Date(value).getTime())
+      .filter((time) => !Number.isNaN(time));
+
+    const timelineTimes = this.timelineEntries()
+      .filter(
+        (entry) =>
+          entry.noticeCode === 'SENT_TO_DISTRIBUTOR' ||
+          entry.noticeCode === 'SENT_TO_DISTRIBUTORS' ||
+          (entry.kind === 'MILESTONE' && entry.title === 'Sent to distributors'),
+      )
+      .map((entry) => new Date(entry.occurredAt).getTime())
+      .filter((time) => !Number.isNaN(time));
+
+    const allTimes = [...sentTimes, ...timelineTimes];
+    if (allTimes.length > 0) {
+      return new Date(Math.min(...allTimes)).toISOString();
+    }
+
+    return inquiry.updatedAt ?? inquiry.createdAt;
+  }
+
+  canEditLinePricing(inquiry: Inquiry): boolean {
+    return inquiry.status === 'NEW';
+  }
+
+  formatOptionalNumber(value: number | null | undefined): string {
+    return value == null ? '—' : value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  }
+
+  formatOptionalPercent(value: number | null | undefined): string {
+    return value == null ? '—' : `${value}`;
+  }
+
+  sentLineAmount(item: InquiryItem): number | null {
+    return quotationLinePricingFromAdmin(item).amount;
+  }
+
+  sentLineNetValue(item: InquiryItem): number | null {
+    return quotationLinePricingFromAdmin(item).netValue;
   }
 
   openDistributorChats(inquiryId: string): void {

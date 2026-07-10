@@ -528,6 +528,12 @@
   box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.15);
 }
 
+.line-input:disabled {
+  background: #f8fafc;
+  color: #475569;
+  cursor: not-allowed;
+}
+
 .line-input-number {
   text-align: right;
 }
@@ -1029,6 +1035,39 @@
   max-width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
+}
+
+.inquiry-event-header--sent {
+  align-items: flex-start;
+  min-height: auto;
+}
+
+.inquiry-event-header--sent .inquiry-event-title-block {
+  width: 100%;
+  padding: 0 7rem;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.inquiry-event-header--sent .inquiry-event-title {
+  padding-left: 0;
+  padding-right: 0;
+  text-align: center;
+}
+
+.sent-distributor-list {
+  margin: 0.45rem 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--inquiry-status-in-progress-title);
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.sent-distributor-list li + li {
+  margin-top: 0.15rem;
 }
 
 .inquiry-event-content .preview-table-wrap + .quotation-pdf-section,

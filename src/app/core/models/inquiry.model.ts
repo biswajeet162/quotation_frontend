@@ -70,6 +70,7 @@ export interface InquiryDistributor {
   id?: string;
   companyId: string;
   companyName?: string;
+  email?: string;
   emailSent?: boolean;
   emailSentAt?: string;
   responseReceived?: boolean;
