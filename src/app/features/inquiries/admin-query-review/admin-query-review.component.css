@@ -1056,18 +1056,34 @@
 }
 
 .sent-distributor-list {
-  margin: 0.45rem 0 0;
+  display: inline-grid;
+  grid-template-columns: max-content minmax(0, max-content);
+  column-gap: 0.2rem;
+  row-gap: 0.15rem;
+  margin: 0.45rem auto 0;
   padding: 0;
   list-style: none;
   color: var(--inquiry-status-in-progress-title);
   font-size: 0.88rem;
   font-weight: 600;
   line-height: 1.45;
-  text-align: center;
+  text-align: left;
+  max-width: 100%;
 }
 
-.sent-distributor-list li + li {
-  margin-top: 0.15rem;
+.sent-distributor-list li {
+  display: contents;
+}
+
+.sent-distributor-index {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.sent-distributor-label {
+  min-width: 0;
+  word-break: break-word;
 }
 
 .inquiry-event-content .preview-table-wrap + .quotation-pdf-section,

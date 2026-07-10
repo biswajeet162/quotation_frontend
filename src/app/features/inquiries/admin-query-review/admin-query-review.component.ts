@@ -249,13 +249,14 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
 
   sentDistributorLines(
     inquiry: Inquiry,
-  ): { id: string; label: string }[] {
+  ): { id: string; index: number; label: string }[] {
     return (inquiry.distributors ?? []).map((distributor, index) => {
       const name = distributor.companyName?.trim() || 'Distributor';
       const email = distributor.email?.trim() || '—';
       return {
         id: distributor.id ?? distributor.companyId ?? `${index}`,
-        label: `${index + 1}-${name} (${email})`,
+        index: index + 1,
+        label: `${name} (${email})`,
       };
     });
   }
@@ -995,8 +996,23 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
     });
   }
 
+  openAdminRfqPdf(inquiry: Inquiry): void {
+    this.inquiryService.downloadAdminRfqPdf(inquiry.id).subscribe({
+      next: (blob) => {
+        this.openPdfInViewer(blob, 'application/pdf', this.adminRfqPdfFileName(inquiry));
+      },
+      error: () => {
+        this.messageError.set('Could not open the RFQ PDF.');
+      },
+    });
+  }
+
   submissionPdfFileName(inquiry: Inquiry): string {
     return `${inquiry.inquiryId}.pdf`;
+  }
+
+  adminRfqPdfFileName(inquiry: Inquiry): string {
+    return `${inquiry.inquiryId}-rfq.pdf`;
   }
 
   closeQuotationPdfViewer(): void {

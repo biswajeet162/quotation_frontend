@@ -49,6 +49,10 @@ export class InquiryService {
     return this.http.get(`${this.baseUrl}/${inquiryId}/pdf`, { responseType: 'blob' });
   }
 
+  downloadAdminRfqPdf(inquiryId: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/${inquiryId}/rfq-pdf`, { responseType: 'blob' });
+  }
+
   getMyInquiries(): Observable<ConsumerInquiry[]> {
     return this.http.get<ConsumerInquiry[]>(`${this.baseUrl}/my`);
   }

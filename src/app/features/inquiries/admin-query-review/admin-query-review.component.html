@@ -325,7 +325,10 @@
                       @if (sentDistributorLines(inquiry).length > 0) {
                         <ol class="sent-distributor-list">
                           @for (line of sentDistributorLines(inquiry); track line.id) {
-                            <li>{{ line.label }}</li>
+                            <li>
+                              <span class="sent-distributor-index">{{ line.index }}-</span>
+                              <span class="sent-distributor-label">{{ line.label }}</span>
+                            </li>
                           }
                         </ol>
                       }
@@ -440,13 +443,13 @@
                     <div class="quotation-pdf-section">
                       <div class="quotation-pdf-row quotation-pdf-row--request">
                         <span class="quotation-pdf-label">Request</span>
-                        <span class="quotation-pdf-filename" [title]="submissionPdfFileName(inquiry)">
-                          {{ submissionPdfFileName(inquiry) }}
+                        <span class="quotation-pdf-filename" [title]="adminRfqPdfFileName(inquiry)">
+                          {{ adminRfqPdfFileName(inquiry) }}
                         </span>
                         <button
                           type="button"
                           class="btn-pdf-view"
-                          (click)="openSubmissionPdf(inquiry)"
+                          (click)="openAdminRfqPdf(inquiry)"
                         >
                           View
                         </button>
