@@ -62,8 +62,8 @@
         <ul class="recent-list">
           @for (inquiry of recent(); track inquiry.id) {
             <li
-              [class.step-grey]="getInquiryListStep(inquiry) === 'grey'"
-              [class.step-yellow]="getInquiryListStep(inquiry) === 'yellow'"
+              [class.step-initiated]="getInquiryListStep(inquiry) === 'initiated'"
+              [class.step-in-progress]="getInquiryListStep(inquiry) === 'in-progress'"
               [class.step-green]="getInquiryListStep(inquiry) === 'green'"
               [attr.aria-label]="inquiry.title + ' — ' + getConsumerInquiryDisplay(inquiry).label"
             >

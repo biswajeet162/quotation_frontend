@@ -8,7 +8,7 @@ export type ConsumerInquiryPhase =
   | 'final_sent'
   | 'closed';
 
-export type InquiryListStep = 'grey' | 'yellow' | 'green';
+export type InquiryListStep = 'initiated' | 'in-progress' | 'green';
 
 export function formatExpectedDeliveryDate(iso?: string | number[] | Date | null): string {
   if (iso == null) {
@@ -69,9 +69,9 @@ export function getInquiryListStep(inquiry: Pick<Inquiry, 'status'>): InquiryLis
     inquiry.status === 'RESPONSES_RECEIVED' ||
     inquiry.status === 'FINAL_SENT'
   ) {
-    return 'yellow';
+    return 'in-progress';
   }
-  return 'grey';
+  return 'initiated';
 }
 
 export function getAdminInquiryListLabel(

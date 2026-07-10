@@ -158,7 +158,7 @@
 }
 
 .query-item.step-green {
-  background: #d1fae5;
+  background: var(--inquiry-status-final-bg, #ecfdf5);
 }
 
 .query-item.step-initiated:hover,
@@ -168,7 +168,7 @@
 
 .query-item.step-green:hover,
 .query-item.step-green.selected {
-  background: #a7f3d0;
+  background: #d1fae5;
 }
 
 .query-item.selected {

@@ -814,11 +814,11 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     return inquiry.status !== 'CLOSED';
   }
 
-  getDistributorListStep(summary: DistributorInquirySummary): 'grey' | 'yellow' | 'green' {
+  getDistributorListStep(summary: DistributorInquirySummary): 'initiated' | 'green' {
     if (summary.status === 'CLOSED' || summary.responseReceived) {
       return 'green';
     }
-    return 'yellow';
+    return 'initiated';
   }
 
   summaryStatusLabel(summary: DistributorInquirySummary): string {

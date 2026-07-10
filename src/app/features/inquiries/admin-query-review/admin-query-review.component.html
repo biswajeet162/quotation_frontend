@@ -49,8 +49,8 @@
               type="button"
               class="query-item"
               [class.selected]="selectedId() === inquiry.id"
-              [class.step-grey]="getInquiryListStep(inquiry) === 'grey'"
-              [class.step-yellow]="getInquiryListStep(inquiry) === 'yellow'"
+              [class.step-initiated]="getInquiryListStep(inquiry) === 'initiated'"
+              [class.step-in-progress]="getInquiryListStep(inquiry) === 'in-progress'"
               [class.step-green]="getInquiryListStep(inquiry) === 'green'"
               [attr.aria-label]="
                 inquiry.inquiryId +

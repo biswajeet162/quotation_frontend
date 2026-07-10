@@ -114,31 +114,22 @@
   cursor: pointer;
 }
 
-.query-item.step-grey {
-  background: #f1f5f9;
-}
-
-.query-item.step-yellow {
-  background: #fef3c7;
+.query-item.step-initiated {
+  background: var(--inquiry-status-initiated-bg, #eff6ff);
 }
 
 .query-item.step-green {
-  background: #d1fae5;
+  background: var(--inquiry-status-final-bg, #ecfdf5);
 }
 
-.query-item.step-grey:hover,
-.query-item.step-grey.selected {
-  background: #e2e8f0;
-}
-
-.query-item.step-yellow:hover,
-.query-item.step-yellow.selected {
-  background: #fde68a;
+.query-item.step-initiated:hover,
+.query-item.step-initiated.selected {
+  background: #dbeafe;
 }
 
 .query-item.step-green:hover,
 .query-item.step-green.selected {
-  background: #a7f3d0;
+  background: #d1fae5;
 }
 
 .query-item.selected {

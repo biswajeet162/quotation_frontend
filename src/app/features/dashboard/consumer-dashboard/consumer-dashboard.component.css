@@ -150,16 +150,16 @@
   border-radius: 8px;
 }
 
-.recent-list li.step-grey {
-  background: #f1f5f9;
+.recent-list li.step-initiated {
+  background: var(--inquiry-status-initiated-bg, #eff6ff);
 }
 
-.recent-list li.step-yellow {
-  background: #fef3c7;
+.recent-list li.step-in-progress {
+  background: var(--inquiry-status-in-progress-bg, #fffbeb);
 }
 
 .recent-list li.step-green {
-  background: #d1fae5;
+  background: var(--inquiry-status-final-bg, #ecfdf5);
 }
 
 .recent-main {
