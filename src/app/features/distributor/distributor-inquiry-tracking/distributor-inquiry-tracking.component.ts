@@ -129,7 +129,7 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   readonly statusOptions: { value: StatusFilter; label: string }[] = [
     { value: 'all', label: 'All requests' },
     { value: 'pending', label: 'Awaiting your response' },
-    { value: 'responded', label: 'Responded' },
+    { value: 'responded', label: 'In progress' },
     { value: 'CLOSED', label: 'Closed' },
   ];
 
@@ -814,9 +814,12 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     return inquiry.status !== 'CLOSED';
   }
 
-  getDistributorListStep(summary: DistributorInquirySummary): 'initiated' | 'green' {
-    if (summary.status === 'CLOSED' || summary.responseReceived) {
+  getDistributorListStep(summary: DistributorInquirySummary): 'initiated' | 'in-progress' | 'green' {
+    if (summary.status === 'CLOSED') {
       return 'green';
+    }
+    if (summary.responseReceived) {
+      return 'in-progress';
     }
     return 'initiated';
   }
@@ -825,7 +828,24 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     if (summary.status === 'CLOSED') {
       return 'Closed';
     }
-    return summary.responseReceived ? 'Responded' : 'Awaiting response';
+    return summary.responseReceived ? 'In progress' : 'Awaiting response';
+  }
+
+  formatPostedDate(iso?: string): string {
+    if (!iso) {
+      return '—';
+    }
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) {
+      return iso;
+    }
+    return date.toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
   }
 
   startReply(entry: InquiryTimelineEntry, event: Event): void {
