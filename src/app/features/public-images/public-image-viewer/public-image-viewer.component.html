@@ -1,0 +1,133 @@
+<div class="public-images-page">
+  <app-loading-overlay [loading]="loading()" message="Loading images…" />
+
+  <header class="page-header">
+    <div class="header-text">
+      <p class="brand">Quotation</p>
+      <h1>Images</h1>
+      @if (imageCount() > 0) {
+        <p class="subtitle">
+          {{ imageCount() }} {{ imageCount() === 1 ? 'image' : 'images' }}
+        </p>
+      }
+    </div>
+
+    @if (!loading() && imageCount() > 0) {
+      <div class="view-toggle" role="group" aria-label="View mode">
+        <button
+          type="button"
+          class="view-toggle-btn"
+          [class.is-active]="viewMode() === 'gallery'"
+          (click)="setViewMode('gallery')"
+        >
+          Gallery
+        </button>
+        <button
+          type="button"
+          class="view-toggle-btn"
+          [class.is-active]="viewMode() === 'slider'"
+          (click)="setViewMode('slider')"
+        >
+          Sliding
+        </button>
+      </div>
+    }
+  </header>
+
+  @if (!loading() && errorMessage()) {
+    <div class="error-panel" role="alert">
+      <p>{{ errorMessage() }}</p>
+    </div>
+  }
+
+  @if (!loading() && imageSet(); as set) {
+    @if (viewMode() === 'gallery') {
+      <ul class="gallery-grid">
+        @for (image of set.images; track image.id; let i = $index) {
+          <li
+            class="gallery-item"
+            [class.is-requested]="isRequested(image)"
+            [id]="'public-image-' + image.id"
+          >
+            <button
+              type="button"
+              class="gallery-thumb-btn"
+              (click)="openInSlider(i)"
+              [attr.aria-label]="'Open image ' + (i + 1) + ' in sliding view'"
+            >
+              <img
+                [src]="imageSrc(image)"
+                [alt]="image.fileName"
+                class="gallery-thumb"
+                loading="lazy"
+              />
+            </button>
+            <div class="gallery-meta">
+              <span class="image-index">{{ i + 1 }}</span>
+              <span class="image-name" [title]="image.fileName">{{ image.fileName }}</span>
+            </div>
+          </li>
+        }
+      </ul>
+    }
+
+    @if (viewMode() === 'slider' && currentSlide(); as slide) {
+      <section class="slider" aria-roledescription="carousel" aria-label="Image slider">
+        <div class="slider-toolbar">
+          <button type="button" class="back-to-gallery" (click)="backToGallery()">
+            ← Back to gallery
+          </button>
+        </div>
+
+        <div class="slider-stage">
+          <button
+            type="button"
+            class="slider-nav slider-nav-prev"
+            (click)="goPrev()"
+            [disabled]="!canGoPrev()"
+            aria-label="Previous image"
+          >
+            ‹
+          </button>
+
+          <figure class="slider-figure">
+            <img
+              [src]="imageSrc(slide)"
+              [alt]="slide.fileName"
+              class="slider-image"
+            />
+            <figcaption class="slider-caption">
+              <span>{{ sliderIndex() + 1 }} / {{ imageCount() }}</span>
+              <span class="slider-file">{{ slide.fileName }}</span>
+            </figcaption>
+          </figure>
+
+          <button
+            type="button"
+            class="slider-nav slider-nav-next"
+            (click)="goNext()"
+            [disabled]="!canGoNext()"
+            aria-label="Next image"
+          >
+            ›
+          </button>
+        </div>
+
+        @if (imageCount() > 1) {
+          <div class="slider-dots" role="tablist" aria-label="Choose image">
+            @for (image of set.images; track image.id; let i = $index) {
+              <button
+                type="button"
+                class="slider-dot"
+                [class.is-active]="i === sliderIndex()"
+                (click)="goToSlide(i)"
+                [attr.aria-label]="'Go to image ' + (i + 1)"
+                [attr.aria-selected]="i === sliderIndex()"
+              ></button>
+            }
+          </div>
+        }
+      </section>
+    }
+  }
+</div>

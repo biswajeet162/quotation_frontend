@@ -39,7 +39,7 @@ import {
   noticeDisplayLabel,
 } from '../../../shared/utils/timeline-chat.util';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
-import { toItemTimelineAttachment } from '../../../shared/utils/attachment-media-type.util';
+import { openPublicImages } from '../../../shared/utils/public-image.util';
 
 type StatusFilter = 'all' | 'pending' | 'responded' | 'CLOSED';
 
@@ -93,8 +93,6 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   readonly recordingSeconds = signal(0);
   readonly recordingLevels = signal<number[]>(Array.from({ length: 24 }, () => 0.15));
 
-  readonly itemAttachmentViewerOpen = signal(false);
-  readonly itemAttachmentViewerItem = signal<InquiryItem | null>(null);
   readonly lineDrafts = signal<Map<string, DistributorInquiryLineDraft>>(new Map());
   readonly chatModalOpen = signal(false);
   readonly chatModalPosition = signal<{ x: number; y: number } | null>(null);
@@ -237,10 +235,6 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   onEscape(): void {
     if (this.pdfViewerOpen()) {
       this.closePdfViewer();
-      return;
-    }
-    if (this.itemAttachmentViewerOpen()) {
-      this.closeItemAttachments();
       return;
     }
     if (this.chatModalOpen()) {
@@ -1212,28 +1206,10 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
 
   openItemAttachments(item: InquiryItem, event: Event): void {
     event.stopPropagation();
-    this.itemAttachmentViewerItem.set(item);
-    this.itemAttachmentViewerOpen.set(true);
-  }
-
-  closeItemAttachments(): void {
-    this.itemAttachmentViewerOpen.set(false);
-    this.itemAttachmentViewerItem.set(null);
-  }
-
-  toItemTimelineAttachment(
-    attachment: NonNullable<InquiryItem['attachments']>[number],
-  ): InquiryTimelineAttachment {
-    return toItemTimelineAttachment(attachment);
-  }
-
-  itemAttachmentViewerLabel(item: InquiryItem): string {
-    const brand = item.productBrand?.trim();
-    const designation = item.productName?.trim();
-    if (brand && designation) {
-      return `${brand} · ${designation}`;
+    const firstId = item.attachments?.[0]?.id;
+    if (firstId) {
+      openPublicImages(firstId);
     }
-    return brand || designation || 'Product images';
   }
 
   formatDate(iso?: string): string {

@@ -20,6 +20,7 @@ import {
 import { ChatAudioPlayerComponent } from '../chat-audio-player/chat-audio-player.component';
 import { ChatDocumentReaderComponent } from '../chat-document-reader/chat-document-reader.component';
 import { MediaLightboxComponent } from '../media-lightbox/media-lightbox.component';
+import { openPublicImages } from '../../utils/public-image.util';
 
 @Component({
   selector: 'app-inquiry-chat-attachment',
@@ -133,6 +134,10 @@ export class InquiryChatAttachmentComponent implements OnInit {
 
   openViewer(event: Event): void {
     event.stopPropagation();
+    if (this.attachment().mediaType === 'IMAGE' && this.attachmentSource() === 'inquiry') {
+      openPublicImages(this.attachment().id);
+      return;
+    }
     this.viewerOpen.set(true);
   }
 

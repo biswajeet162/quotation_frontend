@@ -43,7 +43,7 @@ import {
   noticeDisplayLabel,
 } from '../../../shared/utils/timeline-chat.util';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
-import { toItemTimelineAttachment } from '../../../shared/utils/attachment-media-type.util';
+import { openPublicImages } from '../../../shared/utils/public-image.util';
 import { QuotationComparisonModalComponent } from '../quotation-comparison-modal/quotation-comparison-modal.component';
 import { FinalizeQuotationModalComponent } from '../finalize-quotation-modal/finalize-quotation-modal.component';
 
@@ -101,8 +101,6 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   readonly recordingSeconds = signal(0);
   readonly recordingLevels = signal<number[]>(Array.from({ length: 24 }, () => 0.15));
 
-  readonly itemAttachmentViewerOpen = signal(false);
-  readonly itemAttachmentViewerItem = signal<InquiryItem | null>(null);
   readonly chatModalOpen = signal(false);
   readonly chatModalPosition = signal<{ x: number; y: number } | null>(null);
   readonly chatModalSize = signal<{ width: number; height: number } | null>(null);
@@ -1342,28 +1340,10 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
 
   openItemAttachments(item: InquiryItem, event: Event): void {
     event.stopPropagation();
-    this.itemAttachmentViewerItem.set(item);
-    this.itemAttachmentViewerOpen.set(true);
-  }
-
-  closeItemAttachments(): void {
-    this.itemAttachmentViewerOpen.set(false);
-    this.itemAttachmentViewerItem.set(null);
-  }
-
-  toItemTimelineAttachment(
-    attachment: NonNullable<InquiryItem['attachments']>[number],
-  ): InquiryTimelineAttachment {
-    return toItemTimelineAttachment(attachment);
-  }
-
-  itemAttachmentViewerLabel(item: InquiryItem): string {
-    const brand = item.productBrand?.trim();
-    const designation = item.productName?.trim();
-    if (brand && designation) {
-      return `${brand} · ${designation}`;
+    const firstId = item.attachments?.[0]?.id;
+    if (firstId) {
+      openPublicImages(firstId);
     }
-    return brand || designation || 'Product images';
   }
 
   formatPostedDate(iso?: string): string {

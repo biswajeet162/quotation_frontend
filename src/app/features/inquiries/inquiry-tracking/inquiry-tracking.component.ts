@@ -36,7 +36,7 @@ import {
 import { quotationLinePricingFromAdmin } from '../../../shared/utils/inquiry-pricing.util';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 import { formatSpecificationsInline } from '../../../shared/utils/specifications-display.util';
-import { toItemTimelineAttachment } from '../../../shared/utils/attachment-media-type.util';
+import { openPublicImages } from '../../../shared/utils/public-image.util';
 
 type StatusFilter = 'all' | InquiryStatus | 'ACTION_REQUIRED';
 type SortBy = 'date' | 'inquiryNumber' | 'productCount';
@@ -97,9 +97,6 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   readonly quotationPdfViewerOpen = signal(false);
   readonly quotationPdfSafeUrl = signal<SafeResourceUrl | null>(null);
   readonly quotationPdfViewerFileName = signal('');
-  readonly itemAttachmentViewerOpen = signal(false);
-  readonly itemAttachmentViewerItem = signal<InquiryItem | null>(null);
-
   private readonly detailScrollRef = viewChild<ElementRef<HTMLElement>>('detailScroll');
   private readonly chatScrollRef = viewChild<ElementRef<HTMLElement>>('chatScroll');
   private readonly messageInputRef = viewChild<ElementRef<HTMLTextAreaElement>>('messageInput');
@@ -387,7 +384,6 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     this.cancelVoiceRecording();
     this.clearPendingAttachments();
     this.closeChatModal();
-    this.closeItemAttachments();
     this.selectedId.set(id);
     this.deepLinkError.set(null);
     this.deleteError.set(null);
@@ -1176,28 +1172,10 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
 
   openItemAttachments(item: InquiryItem, event: Event): void {
     event.stopPropagation();
-    this.itemAttachmentViewerItem.set(item);
-    this.itemAttachmentViewerOpen.set(true);
-  }
-
-  closeItemAttachments(): void {
-    this.itemAttachmentViewerOpen.set(false);
-    this.itemAttachmentViewerItem.set(null);
-  }
-
-  toItemTimelineAttachment(
-    attachment: NonNullable<InquiryItem['attachments']>[number],
-  ): InquiryTimelineAttachment {
-    return toItemTimelineAttachment(attachment);
-  }
-
-  itemAttachmentViewerLabel(item: InquiryItem): string {
-    const brand = item.productBrand?.trim();
-    const designation = item.productName?.trim();
-    if (brand && designation) {
-      return `${brand} · ${designation}`;
+    const firstId = item.attachments?.[0]?.id;
+    if (firstId) {
+      openPublicImages(firstId);
     }
-    return brand || designation || 'Product attachments';
   }
 
   formatPostedDate(iso?: string): string {

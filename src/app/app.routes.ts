@@ -33,6 +33,13 @@ export const routes: Routes = [
       import('./features/auth/reset-password/reset-password.component').then((m) => m.ResetPasswordComponent),
   },
   {
+    path: 'images/:imageId',
+    loadComponent: () =>
+      import('./features/public-images/public-image-viewer/public-image-viewer.component').then(
+        (m) => m.PublicImageViewerComponent,
+      ),
+  },
+  {
     path: '',
     loadComponent: () =>
       import('./layout/main-layout/main-layout.component').then((m) => m.MainLayoutComponent),
