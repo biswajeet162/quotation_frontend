@@ -74,17 +74,17 @@
               </p>
             </div>
             <div class="detail-header-actions">
-              <span class="btn-chat-toggle-wrap" [class.is-open]="chatPanelOpen()">
+              <span class="btn-chat-toggle-wrap" [class.is-open]="chatModalOpen()">
                 <span class="btn-chat-toggle-ring" aria-hidden="true"></span>
                 <span class="btn-chat-toggle-ring btn-chat-toggle-ring--delayed" aria-hidden="true"></span>
                 <span class="btn-chat-toggle-ring btn-chat-toggle-ring--delayed-2" aria-hidden="true"></span>
                 <button
                   type="button"
                   class="btn-chat-toggle"
-                  [class.is-open]="chatPanelOpen()"
-                  (click)="toggleChatPanel()"
-                  [attr.aria-expanded]="chatPanelOpen()"
-                  aria-controls="distributor-chat-panel"
+                  [class.is-open]="chatModalOpen()"
+                  (click)="openChatModal()"
+                  aria-haspopup="dialog"
+                  [attr.aria-expanded]="chatModalOpen()"
                 >
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path
@@ -432,98 +432,6 @@
               }
             </div>
 
-            @if (chatPanelOpen()) {
-            <section class="messages-section" id="distributor-chat-panel">
-              <div class="messages-divider">
-                <span class="messages-divider-label">Chat</span>
-              </div>
-
-              @if (timelineLoading() && distributorMessageEntries().length === 0) {
-                <p class="activity-empty">Loading chat…</p>
-              } @else if (timelineError() && distributorMessageEntries().length === 0) {
-                <div class="alert alert-error" role="alert">{{ timelineError() }}</div>
-              } @else if (distributorMessageEntries().length === 0) {
-                <p class="activity-empty">No chat yet. Send a message below to contact admin.</p>
-              } @else {
-                <div class="chat-thread">
-                  @for (entry of distributorMessageEntries(); track entry.id) {
-                    <div
-                      class="chat-row"
-                      [id]="'chat-msg-' + entry.id"
-                      [class.chat-row-admin]="isDistributorMessage(entry)"
-                      [class.chat-row-consumer]="isAdminMessage(entry)"
-                    >
-                      <div class="chat-message-item">
-                        <div
-                          class="chat-bubble"
-                          [class.chat-bubble-audio-only]="isAudioOnlyMessage(entry)"
-                          [class.chat-bubble-media-only]="isMediaOnlyMessage(entry)"
-                        >
-                          @if (entry.replyTo) {
-                            <button
-                              type="button"
-                              class="chat-quote"
-                              (click)="scrollToQuotedMessage(entry.replyTo, $event)"
-                            >
-                              <span class="chat-quote-author">{{
-                                replyAuthorLabel(entry.replyTo!)
-                              }}</span>
-                              <span class="chat-quote-text">{{ entry.replyTo!.preview }}</span>
-                            </button>
-                          }
-                          @if (entry.message) {
-                            <p class="chat-text">{{ entry.message }}</p>
-                          }
-                          @if (entry.attachments?.length) {
-                            <div class="chat-attachments">
-                              @for (attachment of entry.attachments; track attachment.id) {
-                                <div class="chat-attachment-item" [id]="'chat-att-' + attachment.id">
-                                  <app-inquiry-chat-attachment [attachment]="attachment" />
-                                  @if (canMessage(inquiry) && canReplyTo(entry)) {
-                                    <button
-                                      type="button"
-                                      class="chat-attachment-reply-btn"
-                                      aria-label="Reply to this attachment"
-                                      title="Reply"
-                                      (click)="startReplyToAttachment(entry, attachment, $event)"
-                                    >
-                                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                                        <path
-                                          d="M9 17H5l-1 4 4-1v-4Zm8-2.5a4.5 4.5 0 0 0-6.36-6.36L7 7.5V4.5L3 8.5l4 4V9.5l3.14-3.14A2.5 2.5 0 0 1 17 14.5Z"
-                                        />
-                                      </svg>
-                                    </button>
-                                  }
-                                </div>
-                              }
-                            </div>
-                          }
-                          <div class="chat-bubble-footer">
-                            <span class="chat-time">{{ formatChatTime(entry.occurredAt) }}</span>
-                          </div>
-                        </div>
-                        @if (canMessage(inquiry) && canReplyTo(entry) && shouldShowBubbleReply(entry)) {
-                          <button
-                            type="button"
-                            class="chat-message-reply-btn"
-                            aria-label="Reply to this message"
-                            title="Reply"
-                            (click)="startReply(entry, $event)"
-                          >
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                              <path
-                                d="M9 17H5l-1 4 4-1v-4Zm8-2.5a4.5 4.5 0 0 0-6.36-6.36L7 7.5V4.5L3 8.5l4 4V9.5l3.14-3.14A2.5 2.5 0 0 1 17 14.5Z"
-                              />
-                            </svg>
-                          </button>
-                        }
-                      </div>
-                    </div>
-                  }
-                </div>
-              }
-            </section>
-            }
           </div>
 
             <button
@@ -539,235 +447,380 @@
             </button>
           </div>
 
-          @if (chatPanelOpen()) {
-          @if (canMessage(inquiry)) {
-              <div class="consumer-actions">
-                @if (pendingAttachments().length > 0) {
-                  <ul class="pending-attachments">
-                    @for (item of pendingAttachments(); track item.id) {
-                      <li [class.pending-audio-item]="item.mediaType === 'AUDIO'">
-                        @if (item.previewUrl && item.mediaType === 'IMAGE') {
-                          <img [src]="item.previewUrl" alt="" class="pending-thumb" />
-                        } @else if (item.previewUrl && item.mediaType === 'AUDIO') {
-                          <app-chat-audio-player
-                            [src]="item.previewUrl"
-                            label="Voice message"
-                            [compact]="true"
-                          />
-                        } @else {
-                          <span class="pending-icon">{{ pendingIcon(item.mediaType) }}</span>
-                          <span class="pending-name">{{ item.file.name }}</span>
-                        }
-                        <button
-                          type="button"
-                          class="pending-remove"
-                          (click)="removePendingAttachment(item.id)"
-                          [disabled]="messageLoading() || recording()"
-                          aria-label="Remove attachment"
-                        >
-                          ×
-                        </button>
-                      </li>
-                    }
-                  </ul>
-                }
-
-                @if (recording()) {
-                  <div class="voice-recording-panel" role="status" aria-live="polite">
-                    <span class="rec-dot" aria-hidden="true"></span>
-                    <span class="rec-time">{{ formatRecordingTime(recordingSeconds()) }}</span>
-                    <div class="rec-wave" aria-hidden="true">
-                      @for (level of recordingLevels(); track $index) {
-                        <span class="rec-bar" [style.height.%]="level * 100"></span>
-                      }
-                    </div>
-                    <button
-                      type="button"
-                      class="btn-rec-cancel"
-                      (click)="cancelVoiceRecording()"
-                      [disabled]="messageLoading()"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      class="btn-rec-done"
-                      (click)="stopVoiceRecording()"
-                      [disabled]="messageLoading()"
-                    >
-                      Done
-                    </button>
-                  </div>
-                }
-
-                @if (messageError()) {
-                  <div class="alert alert-error compose-error" role="alert">{{ messageError() }}</div>
-                }
-
-                @if (replyTarget()) {
-                  <div class="compose-reply-preview">
-                    <div class="compose-reply-content">
-                      <span class="compose-reply-label"
-                        >Replying to {{ replyTargetAuthorLabel(replyTarget()!) }}</span
-                      >
-                      <span class="compose-reply-text">{{ replyTargetLabel(replyTarget()!) }}</span>
-                    </div>
-                    <button
-                      type="button"
-                      class="compose-reply-clear"
-                      aria-label="Cancel reply"
-                      (click)="clearReplyTarget()"
-                    >
-                      ×
-                    </button>
-                  </div>
-                }
-
-                @if (!recording()) {
-                <div class="chat-compose-bar">
-                  <input
-                    #imageInput
-                    type="file"
-                    class="visually-hidden"
-                    accept="image/*"
-                    multiple
-                    (change)="onImageSelected($event)"
-                  />
-                  <input
-                    #videoInput
-                    type="file"
-                    class="visually-hidden"
-                    accept="video/*"
-                    multiple
-                    (change)="onVideoSelected($event)"
-                  />
-                  <input
-                    #documentInput
-                    type="file"
-                    class="visually-hidden"
-                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.pps,.ppsx,.txt,.csv,.rtf,.odt,.ods"
-                    multiple
-                    (change)="onDocumentSelected($event)"
-                  />
-
-                  <button
-                    type="button"
-                    class="btn-icon btn-icon-refresh"
-                    [class.is-refreshing]="timelineRefreshing()"
-                    (click)="refreshMessages()"
-                    [disabled]="timelineLoading() || timelineRefreshing() || messageLoading()"
-                    aria-label="Refresh chat"
-                    title="Refresh chat"
-                  >
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path
-                        d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 8 8h-2a6 6 0 1 1-1.76-4.24l-2.35 2.35H16V4h-4.41l2.35 2.35A7.96 7.96 0 0 1 17.65 6.35Z"
-                      />
-                    </svg>
-                  </button>
-
-                  <textarea
-                    #messageInput
-                    id="distributor-message"
-                    class="chat-input"
-                    rows="1"
-                    [placeholder]="messagePlaceholder()"
-                    [attr.aria-label]="messageFieldLabel()"
-                    [ngModel]="messageText()"
-                    (ngModelChange)="messageText.set($event)"
-                    [disabled]="messageLoading()"
-                    (keydown.enter)="onComposeEnter($event)"
-                  ></textarea>
-
-                  <button
-                    type="button"
-                    class="btn-icon"
-                    (click)="imageInput.click()"
-                    [disabled]="messageLoading()"
-                    aria-label="Attach image"
-                    title="Image"
-                  >
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path
-                        d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2ZM8.5 13.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5Z"
-                      />
-                    </svg>
-                  </button>
-
-                  <button
-                    type="button"
-                    class="btn-icon"
-                    (click)="videoInput.click()"
-                    [disabled]="messageLoading()"
-                    aria-label="Attach video"
-                    title="Video"
-                  >
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path
-                        d="M17 10.5V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3.5l4 2.5v-7l-4 2.5ZM15 17H5V7h10v10Z"
-                      />
-                    </svg>
-                  </button>
-
-                  <button
-                    type="button"
-                    class="btn-icon"
-                    (click)="documentInput.click()"
-                    [disabled]="messageLoading()"
-                    aria-label="Attach document"
-                    title="Document"
-                  >
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path
-                        d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Zm-1 2.5L18.5 9H13V4.5ZM7 13h10v2H7v-2Zm0 4h7v2H7v-2Z"
-                      />
-                    </svg>
-                  </button>
-
-                  <button
-                    type="button"
-                    class="btn-icon"
-                    (click)="startVoiceRecording()"
-                    [disabled]="messageLoading()"
-                    aria-label="Record voice"
-                    title="Voice"
-                  >
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path
-                        d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z"
-                      />
-                    </svg>
-                  </button>
-
-                  <button
-                    type="button"
-                    class="btn-send"
-                    [disabled]="messageLoading() || !canSendMessage()"
-                    (click)="sendMessage()"
-                    aria-label="Send to admin"
-                    title="Send"
-                  >
-                    @if (messageLoading()) {
-                      <span class="send-spinner" aria-hidden="true"></span>
-                    } @else {
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2 .01 7Z" />
-                      </svg>
-                    }
-                  </button>
-                </div>
-                }
-              </div>
-            } @else {
-              <p class="closed-hint">This request is closed. New chat messages cannot be sent.</p>
-            }
-          }
         </div>
       }
     </div>
   }
   }
 </section>
+
+
+@if (chatModalOpen() && selectedInquiry(); as inquiry) {
+  <div class="chat-modal-overlay" (click)="closeChatModal()" role="presentation">
+    <div
+      class="chat-modal-dialog"
+      [class.is-positioned]="chatModalPosition() != null"
+      [style.left.px]="chatModalPosition()?.x"
+      [style.top.px]="chatModalPosition()?.y"
+      [style.width.px]="chatModalSize()?.width"
+      [style.height.px]="chatModalSize()?.height"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="distributor-chat-title"
+      (click)="$event.stopPropagation()"
+    >
+      <header
+        class="chat-modal-header"
+        (pointerdown)="startChatDrag($event)"
+      >
+        <div class="chat-modal-header-text">
+          <h2 id="distributor-chat-title">Messages</h2>
+          <p class="chat-modal-subtitle">
+            {{ inquiry.title }} · {{ formatPostedDate(inquiry.receivedAt ?? inquiry.createdAt) }}
+          </p>
+        </div>
+        <div class="chat-modal-header-actions">
+          <button
+            type="button"
+            class="btn-secondary"
+            [class.is-refreshing]="timelineRefreshing()"
+            (click)="refreshMessages()"
+            [disabled]="timelineLoading() || timelineRefreshing() || messageLoading()"
+            aria-label="Refresh messages"
+            title="Refresh messages"
+          >
+            Refresh
+          </button>
+          <button
+            type="button"
+            class="chat-modal-close"
+            (click)="closeChatModal()"
+            aria-label="Close chat"
+          >
+            ×
+          </button>
+        </div>
+      </header>
+
+      <div #chatScroll class="chat-modal-body">
+        @if (timelineLoading() && distributorMessageEntries().length === 0) {
+          <p class="activity-empty">Loading messages…</p>
+        } @else if (timelineError() && distributorMessageEntries().length === 0) {
+          <div class="alert alert-error" role="alert">{{ timelineError() }}</div>
+        } @else if (distributorMessageEntries().length === 0) {
+          <p class="activity-empty">No messages yet. Send a message below to contact admin.</p>
+        } @else {
+          <div class="chat-thread">
+            @for (entry of distributorMessageEntries(); track entry.id) {
+              <div
+                class="chat-row"
+                [id]="'chat-msg-' + entry.id"
+                [class.chat-row-admin]="isDistributorMessage(entry)"
+                [class.chat-row-consumer]="isAdminMessage(entry)"
+              >
+                <div class="chat-message-item">
+                  <div
+                    class="chat-bubble"
+                    [class.chat-bubble-audio-only]="isAudioOnlyMessage(entry)"
+                    [class.chat-bubble-media-only]="isMediaOnlyMessage(entry)"
+                  >
+                    @if (entry.replyTo) {
+                      <button
+                        type="button"
+                        class="chat-quote"
+                        (click)="scrollToQuotedMessage(entry.replyTo, $event)"
+                      >
+                        <span class="chat-quote-author">{{
+                          replyAuthorLabel(entry.replyTo!)
+                        }}</span>
+                        <span class="chat-quote-text">{{ entry.replyTo!.preview }}</span>
+                      </button>
+                    }
+                    @if (entry.message) {
+                      <p class="chat-text">{{ entry.message }}</p>
+                    }
+                    @if (entry.attachments?.length) {
+                      <div class="chat-attachments">
+                        @for (attachment of entry.attachments; track attachment.id) {
+                          <div class="chat-attachment-item" [id]="'chat-att-' + attachment.id">
+                            <app-inquiry-chat-attachment [attachment]="attachment" />
+                            @if (canMessage(inquiry) && canReplyTo(entry)) {
+                              <button
+                                type="button"
+                                class="chat-attachment-reply-btn"
+                                aria-label="Reply to this attachment"
+                                title="Reply"
+                                (click)="startReplyToAttachment(entry, attachment, $event)"
+                              >
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                  <path
+                                    d="M9 17H5l-1 4 4-1v-4Zm8-2.5a4.5 4.5 0 0 0-6.36-6.36L7 7.5V4.5L3 8.5l4 4V9.5l3.14-3.14A2.5 2.5 0 0 1 17 14.5Z"
+                                  />
+                                </svg>
+                              </button>
+                            }
+                          </div>
+                        }
+                      </div>
+                    }
+                    <div class="chat-bubble-footer">
+                      <span class="chat-time">{{ formatChatTime(entry.occurredAt) }}</span>
+                    </div>
+                  </div>
+                  @if (canMessage(inquiry) && canReplyTo(entry) && shouldShowBubbleReply(entry)) {
+                    <button
+                      type="button"
+                      class="chat-message-reply-btn"
+                      aria-label="Reply to this message"
+                      title="Reply"
+                      (click)="startReply(entry, $event)"
+                    >
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path
+                          d="M9 17H5l-1 4 4-1v-4Zm8-2.5a4.5 4.5 0 0 0-6.36-6.36L7 7.5V4.5L3 8.5l4 4V9.5l3.14-3.14A2.5 2.5 0 0 1 17 14.5Z"
+                        />
+                      </svg>
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <footer class="chat-modal-footer">
+        @if (canMessage(inquiry)) {
+          <div class="consumer-actions">
+            @if (pendingAttachments().length > 0) {
+              <ul class="pending-attachments">
+                @for (item of pendingAttachments(); track item.id) {
+                  <li [class.pending-audio-item]="item.mediaType === 'AUDIO'">
+                    @if (item.previewUrl && item.mediaType === 'IMAGE') {
+                      <img [src]="item.previewUrl" alt="" class="pending-thumb" />
+                    } @else if (item.previewUrl && item.mediaType === 'AUDIO') {
+                      <app-chat-audio-player
+                        [src]="item.previewUrl"
+                        label="Voice message"
+                        [compact]="true"
+                      />
+                    } @else {
+                      <span class="pending-icon">{{ pendingIcon(item.mediaType) }}</span>
+                      <span class="pending-name">{{ item.file.name }}</span>
+                    }
+                    <button
+                      type="button"
+                      class="pending-remove"
+                      (click)="removePendingAttachment(item.id)"
+                      [disabled]="messageLoading() || recording()"
+                      aria-label="Remove attachment"
+                    >
+                      ×
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
+
+            @if (recording()) {
+              <div class="voice-recording-panel" role="status" aria-live="polite">
+                <span class="rec-dot" aria-hidden="true"></span>
+                <span class="rec-time">{{ formatRecordingTime(recordingSeconds()) }}</span>
+                <div class="rec-wave" aria-hidden="true">
+                  @for (level of recordingLevels(); track $index) {
+                    <span class="rec-bar" [style.height.%]="level * 100"></span>
+                  }
+                </div>
+                <button
+                  type="button"
+                  class="btn-rec-cancel"
+                  (click)="cancelVoiceRecording()"
+                  [disabled]="messageLoading()"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  class="btn-rec-done"
+                  (click)="stopVoiceRecording()"
+                  [disabled]="messageLoading()"
+                >
+                  Done
+                </button>
+              </div>
+            }
+
+            @if (messageError()) {
+              <div class="alert alert-error compose-error" role="alert">{{ messageError() }}</div>
+            }
+
+            @if (replyTarget()) {
+              <div class="compose-reply-preview">
+                <div class="compose-reply-content">
+                  <span class="compose-reply-label"
+                    >Replying to {{ replyTargetAuthorLabel(replyTarget()!) }}</span
+                  >
+                  <span class="compose-reply-text">{{ replyTargetLabel(replyTarget()!) }}</span>
+                </div>
+                <button
+                  type="button"
+                  class="compose-reply-clear"
+                  aria-label="Cancel reply"
+                  (click)="clearReplyTarget()"
+                >
+                  ×
+                </button>
+              </div>
+            }
+
+            @if (!recording()) {
+              <div class="chat-compose-bar">
+                <input
+                  #imageInput
+                  type="file"
+                  class="visually-hidden"
+                  accept="image/*"
+                  multiple
+                  (change)="onImageSelected($event)"
+                />
+                <input
+                  #videoInput
+                  type="file"
+                  class="visually-hidden"
+                  accept="video/*"
+                  multiple
+                  (change)="onVideoSelected($event)"
+                />
+                <input
+                  #documentInput
+                  type="file"
+                  class="visually-hidden"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.pps,.ppsx,.txt,.csv,.rtf,.odt,.ods"
+                  multiple
+                  (change)="onDocumentSelected($event)"
+                />
+
+                <button
+                  type="button"
+                  class="btn-icon btn-icon-refresh"
+                  [class.is-refreshing]="timelineRefreshing()"
+                  (click)="refreshMessages()"
+                  [disabled]="timelineLoading() || timelineRefreshing() || messageLoading()"
+                  aria-label="Refresh chat"
+                  title="Refresh chat"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 8 8h-2a6 6 0 1 1-1.76-4.24l-2.35 2.35H16V4h-4.41l2.35 2.35A7.96 7.96 0 0 1 17.65 6.35Z"
+                    />
+                  </svg>
+                </button>
+
+                <textarea
+                  #messageInput
+                  id="distributor-message"
+                  class="chat-input"
+                  rows="1"
+                  [placeholder]="messagePlaceholder()"
+                  [attr.aria-label]="messageFieldLabel()"
+                  [ngModel]="messageText()"
+                  (ngModelChange)="messageText.set($event)"
+                  [disabled]="messageLoading()"
+                  (keydown.enter)="onComposeEnter($event)"
+                ></textarea>
+
+                <button
+                  type="button"
+                  class="btn-icon"
+                  (click)="imageInput.click()"
+                  [disabled]="messageLoading()"
+                  aria-label="Attach image"
+                  title="Image"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2ZM8.5 13.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5Z"
+                    />
+                  </svg>
+                </button>
+
+                <button
+                  type="button"
+                  class="btn-icon"
+                  (click)="videoInput.click()"
+                  [disabled]="messageLoading()"
+                  aria-label="Attach video"
+                  title="Video"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M17 10.5V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3.5l4 2.5v-7l-4 2.5ZM15 17H5V7h10v10Z"
+                    />
+                  </svg>
+                </button>
+
+                <button
+                  type="button"
+                  class="btn-icon"
+                  (click)="documentInput.click()"
+                  [disabled]="messageLoading()"
+                  aria-label="Attach document"
+                  title="Document"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Zm-1 2.5L18.5 9H13V4.5ZM7 13h10v2H7v-2Zm0 4h7v2H7v-2Z"
+                    />
+                  </svg>
+                </button>
+
+                <button
+                  type="button"
+                  class="btn-icon"
+                  (click)="startVoiceRecording()"
+                  [disabled]="messageLoading()"
+                  aria-label="Record voice"
+                  title="Voice"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z"
+                    />
+                  </svg>
+                </button>
+
+                <button
+                  type="button"
+                  class="btn-send"
+                  [disabled]="messageLoading() || !canSendMessage()"
+                  (click)="sendMessage()"
+                  aria-label="Send to admin"
+                  title="Send"
+                >
+                  @if (messageLoading()) {
+                    <span class="send-spinner" aria-hidden="true"></span>
+                  } @else {
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2 .01 7Z" />
+                    </svg>
+                  }
+                </button>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="closed-hint">This request is closed. New chat messages cannot be sent.</p>
+        }
+      </footer>
+      <div
+        class="chat-modal-resize-handle"
+        aria-hidden="true"
+        title="Resize"
+        (pointerdown)="startChatResize($event)"
+      ></div>
+    </div>
+  </div>
+}
 
 @if (itemAttachmentViewerOpen() && itemAttachmentViewerItem(); as attachmentItem) {
   <div class="confirm-overlay" (click)="closeItemAttachments()" role="presentation">
