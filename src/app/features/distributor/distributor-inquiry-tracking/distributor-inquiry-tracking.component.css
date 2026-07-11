@@ -449,47 +449,11 @@
   flex-wrap: wrap;
 }
 
-.btn-chat-toggle-wrap {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0.35rem 0.25rem 0.35rem 0.15rem;
-}
-
-.btn-chat-toggle-ring {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 100%;
-  height: 100%;
-  border: 2px solid rgba(45, 212, 191, 0.9);
-  border-radius: 8px;
-  pointer-events: none;
-  transform: translate(-50%, -50%) scale(1);
-  animation: chat-rect-pulse 2.8s ease-out infinite;
-  box-shadow: 0 0 10px rgba(45, 212, 191, 0.35);
-}
-
-.btn-chat-toggle-ring--delayed {
-  animation-delay: 0.9s;
-}
-
-.btn-chat-toggle-ring--delayed-2 {
-  animation-delay: 1.8s;
-}
-
-.btn-chat-toggle-wrap.is-open .btn-chat-toggle-ring {
-  animation: none;
-  opacity: 0;
-}
-
 .btn-chat-toggle {
-  position: relative;
-  z-index: 1;
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
+  flex-shrink: 0;
   padding: 0.45rem 0.85rem;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
@@ -497,6 +461,7 @@
   color: #0f766e;
   font: 600 0.82rem inherit;
   cursor: pointer;
+  white-space: nowrap;
   transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
@@ -507,33 +472,11 @@
 }
 
 .btn-chat-toggle:hover,
-.btn-chat-toggle.is-open {
+.btn-chat-toggle.is-open,
+.btn-chat-toggle[aria-expanded='true'] {
   background: #0f766e;
   border-color: #0f766e;
   color: #fff;
-}
-
-@keyframes chat-rect-pulse {
-  0% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 0.9;
-  }
-
-  70% {
-    opacity: 0.4;
-  }
-
-  100% {
-    transform: translate(-50%, -50%) scale(1.7);
-    opacity: 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .btn-chat-toggle-ring {
-    animation: none;
-    opacity: 0;
-  }
 }
 
 .required-mark {
@@ -705,12 +648,12 @@
 }
 
 .line-input-required {
-  border-color: #e57373;
+  border-color: #0f766e;
 }
 
 .line-input-required:focus {
-  border-color: #dc2626;
-  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.12);
+  border-color: #0f766e;
+  box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.18);
 }
 
 .submission-pdf-attachment {
@@ -970,12 +913,12 @@
 
 .quotation-overlay .line-input-required {
   border-width: 2px;
-  border-color: #e57373;
+  border-color: #0f766e;
 }
 
 .quotation-overlay .line-input-required:focus {
-  border-color: #dc2626;
-  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.12);
+  border-color: #0f766e;
+  box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.18);
 }
 
 .quotation-overlay .line-input-date {
@@ -1010,6 +953,20 @@
 .quotation-overlay .quotation-dialog-actions .btn-secondary {
   font-size: clamp(0.82rem, 1.05vw, 0.93rem);
   padding: clamp(0.48rem, 0.9vw, 0.62rem) clamp(0.9rem, 1.6vw, 1.1rem);
+}
+
+.quotation-overlay .quotation-dialog-actions .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-width: 9.5rem;
+}
+
+.quotation-overlay .quotation-dialog-actions .btn-primary .send-spinner {
+  width: 0.95rem;
+  height: 0.95rem;
+  flex-shrink: 0;
 }
 
 .pdf-state-message {

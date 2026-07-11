@@ -74,26 +74,21 @@
               </p>
             </div>
             <div class="detail-header-actions">
-              <span class="btn-chat-toggle-wrap" [class.is-open]="chatModalOpen()">
-                <span class="btn-chat-toggle-ring" aria-hidden="true"></span>
-                <span class="btn-chat-toggle-ring btn-chat-toggle-ring--delayed" aria-hidden="true"></span>
-                <span class="btn-chat-toggle-ring btn-chat-toggle-ring--delayed-2" aria-hidden="true"></span>
-                <button
-                  type="button"
-                  class="btn-chat-toggle"
-                  [class.is-open]="chatModalOpen()"
-                  (click)="openChatModal()"
-                  aria-haspopup="dialog"
-                  [attr.aria-expanded]="chatModalOpen()"
-                >
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path
-                      d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Zm0 14H5.17L4 17.17V4h16v12Z"
-                    />
-                  </svg>
-                  Chat
-                </button>
-              </span>
+              <button
+                type="button"
+                class="btn-chat-toggle"
+                [class.is-open]="chatModalOpen()"
+                (click)="openChatModal()"
+                aria-haspopup="dialog"
+                [attr.aria-expanded]="chatModalOpen()"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Zm0 14H5.17L4 17.17V4h16v12Z"
+                  />
+                </svg>
+                Chat
+              </button>
               @if (canMessage(inquiry) && !hasSubmittedQuotation(inquiry)) {
                 <button type="button" class="btn-primary" (click)="openQuotationPanel()">
                   Create your quotation
@@ -1026,14 +1021,26 @@
       }
 
       <div class="quotation-dialog-actions">
-        <button type="button" class="btn-secondary" (click)="closeQuotationPanel()">Cancel</button>
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="closeQuotationPanel()"
+          [disabled]="quotationSending()"
+        >
+          Cancel
+        </button>
         <button
           type="button"
           class="btn-primary"
           [disabled]="quotationSending() || !canSubmitQuotation(inquiry)"
           (click)="sendQuotation()"
         >
-          {{ quotationSending() ? 'Sending…' : 'Send quotation' }}
+          @if (quotationSending()) {
+            <span class="send-spinner" aria-hidden="true"></span>
+            Sending…
+          } @else {
+            Send quotation
+          }
         </button>
       </div>
     </div>
