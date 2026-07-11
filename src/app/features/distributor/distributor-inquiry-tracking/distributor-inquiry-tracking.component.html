@@ -311,6 +311,7 @@
                               <th class="col-net-value">Net value</th>
                               <th class="col-expected-delivery">Expected delivery</th>
                               <th class="col-our-delivery">Our delivery date</th>
+                              <th class="col-attachment">Images</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -373,6 +374,27 @@
                                     </td>
                                     <td class="col-our-delivery consumer-cell">
                                       {{ formatExpectedDeliveryDate(quoted.ourDeliveryDate) }}
+                                    </td>
+                                    <td class="col-attachment">
+                                      @if (itemAttachmentCount(item) > 0) {
+                                        <button
+                                          type="button"
+                                          class="btn-attachment-link"
+                                          (click)="openItemAttachments(item, $event)"
+                                          [attr.aria-label]="
+                                            'View ' +
+                                            itemAttachmentLabel(item) +
+                                            ' for ' +
+                                            displayProductField(item.productBrand) +
+                                            ' ' +
+                                            displayProductField(item.productName)
+                                          "
+                                        >
+                                          {{ itemAttachmentLabel(item) }}
+                                        </button>
+                                      } @else {
+                                        —
+                                      }
                                     </td>
                                   </tr>
                                 }
