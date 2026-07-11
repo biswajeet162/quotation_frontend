@@ -11,6 +11,7 @@
 }
 
 .finalize-dialog {
+  position: relative;
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -60,6 +61,11 @@
 
 .finalize-close:hover {
   background: rgba(255, 255, 255, 0.25);
+}
+
+.finalize-close:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .finalize-body {

@@ -2,6 +2,7 @@ import { Component, computed, effect, inject, input, output, signal } from '@ang
 import { FormsModule } from '@angular/forms';
 import { Inquiry, InquiryDistributor, InquiryItem } from '../../../core/models/inquiry.model';
 import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
+import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 import { formatExpectedDeliveryDate } from '../../../shared/utils/inquiry-display.util';
 
 export interface FinalizeLineDraft {
@@ -16,7 +17,7 @@ export interface FinalizeLineDraft {
 
 @Component({
   selector: 'app-finalize-quotation-modal',
-  imports: [FormsModule],
+  imports: [FormsModule, LoadingOverlayComponent],
   templateUrl: './finalize-quotation-modal.component.html',
   styleUrl: './finalize-quotation-modal.component.css',
 })
@@ -79,6 +80,9 @@ export class FinalizeQuotationModalComponent {
   }
 
   close(): void {
+    if (this.loading()) {
+      return;
+    }
     this.closed.emit();
   }
 

@@ -7,6 +7,11 @@
       aria-labelledby="finalize-title"
       (click)="$event.stopPropagation()"
     >
+      <app-loading-overlay
+        [loading]="loading()"
+        message="Sending quotation to the customer…"
+      />
+
       <header class="finalize-header">
         <div>
           <h2 id="finalize-title">Finalize quotation</h2>
@@ -17,7 +22,13 @@
             }
           </p>
         </div>
-        <button type="button" class="finalize-close" (click)="close()" aria-label="Close finalize dialog">
+        <button
+          type="button"
+          class="finalize-close"
+          (click)="close()"
+          [disabled]="loading()"
+          aria-label="Close finalize dialog"
+        >
           ×
         </button>
       </header>
@@ -78,7 +89,7 @@
               <thead>
                 <tr class="group-header-row">
                   <th colspan="5" class="group-spacer"></th>
-                  <th colspan="4" class="group-header group-distributor">Distributor quoted</th>
+                  <th colspan="5" class="group-header group-distributor">Distributor quoted</th>
                   <th colspan="5" class="group-header group-consumer">Consumer price (editable)</th>
                   <th class="group-spacer"></th>
                 </tr>
@@ -91,6 +102,7 @@
                   <th class="col-num col-distributor">MRP</th>
                   <th class="col-num col-distributor">Disc.</th>
                   <th class="col-num col-distributor">Amount</th>
+                  <th class="col-num col-distributor">GST %</th>
                   <th class="col-num col-distributor">Net</th>
                   <th class="col-input col-consumer">Our MRP</th>
                   <th class="col-input col-consumer">Our disc.</th>
@@ -116,6 +128,9 @@
                     </td>
                     <td class="col-num col-distributor">
                       {{ formatCurrency(distributorLineAmount(inquiry.id, item)) }}
+                    </td>
+                    <td class="col-num col-distributor">
+                      {{ formatPercent(getLineDraft(inquiry.id, item).gstPercentage) }}
                     </td>
                     <td class="col-num col-distributor cell-dist-net">
                       {{ formatCurrency(distributorLineNetValue(inquiry.id, item)) }}
@@ -166,7 +181,7 @@
               <tfoot>
                 <tr class="totals-row">
                   <td colspan="5" class="totals-label">Grand total (incl. GST)</td>
-                  <td colspan="3" class="col-distributor"></td>
+                  <td colspan="4" class="col-distributor"></td>
                   <td class="col-num col-distributor cell-dist-net">
                     <strong>{{ formatCurrency(distributorGrandTotal()) }}</strong>
                   </td>
