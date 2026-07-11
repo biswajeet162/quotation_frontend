@@ -75,6 +75,8 @@ export interface InquiryDistributor {
   emailSentAt?: string;
   responseReceived?: boolean;
   responseReceivedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Inquiry {

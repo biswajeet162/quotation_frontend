@@ -601,6 +601,7 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
         this.actionLoading.set(false);
         this.distributorPickerOpen.set(false);
         this.loadTimeline({ silent: true, scrollToBottom: true });
+        this.openDistributorChats(updated.id);
       },
       error: (err) => {
         this.actionLoading.set(false);

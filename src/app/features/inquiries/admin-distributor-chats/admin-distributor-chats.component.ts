@@ -1043,6 +1043,21 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
     return distributor.emailSentAt ? `Sent ${this.formatShortDate(distributor.emailSentAt)}` : 'Sent';
   }
 
+  /** Date shown under each distributor name in the left list. */
+  distributorListDateLabel(distributor: InquiryDistributor): string {
+    if (distributor.responseReceived && distributor.responseReceivedAt) {
+      return this.formatShortDate(distributor.responseReceivedAt);
+    }
+    if (distributor.emailSent && distributor.emailSentAt) {
+      return this.formatShortDate(distributor.emailSentAt);
+    }
+    if (distributor.createdAt) {
+      return this.formatShortDate(distributor.createdAt);
+    }
+    const inquiryCreatedAt = this.inquiry()?.createdAt;
+    return inquiryCreatedAt ? this.formatPostedDate(inquiryCreatedAt) : '—';
+  }
+
   distributorResponseLabel(distributor: InquiryDistributor): string {
     if (!distributor.responseReceived) {
       return '—';
@@ -1411,6 +1426,7 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
     return date.toLocaleString(undefined, {
       month: 'short',
       day: 'numeric',
+      year: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
     });
