@@ -4,7 +4,7 @@
   <header class="page-header">
     <div class="header-text">
       <p class="brand">Quotation</p>
-      <h1>Images</h1>
+      <h1>{{ quotationNumber() || 'Images' }}</h1>
       @if (imageCount() > 0) {
         <p class="subtitle">
           {{ imageCount() }} {{ imageCount() === 1 ? 'image' : 'images' }}
@@ -53,18 +53,17 @@
               type="button"
               class="gallery-thumb-btn"
               (click)="openInSlider(i)"
-              [attr.aria-label]="'Open image ' + (i + 1) + ' in sliding view'"
+              [attr.aria-label]="'Open ' + imageLabel(image, i) + ' in sliding view'"
             >
               <img
                 [src]="imageSrc(image)"
-                [alt]="image.fileName"
+                [alt]="imageLabel(image, i)"
                 class="gallery-thumb"
                 loading="lazy"
               />
             </button>
             <div class="gallery-meta">
-              <span class="image-index">{{ i + 1 }}</span>
-              <span class="image-name" [title]="image.fileName">{{ image.fileName }}</span>
+              <span class="image-name" [title]="imageLabel(image, i)">{{ imageLabel(image, i) }}</span>
             </div>
           </li>
         }
@@ -93,12 +92,12 @@
           <figure class="slider-figure">
             <img
               [src]="imageSrc(slide)"
-              [alt]="slide.fileName"
+              [alt]="imageLabel(slide, sliderIndex())"
               class="slider-image"
             />
             <figcaption class="slider-caption">
               <span>{{ sliderIndex() + 1 }} / {{ imageCount() }}</span>
-              <span class="slider-file">{{ slide.fileName }}</span>
+              <span class="slider-file">{{ productLabel(slide) || slide.fileName }}</span>
             </figcaption>
           </figure>
 
@@ -121,7 +120,7 @@
                 class="slider-dot"
                 [class.is-active]="i === sliderIndex()"
                 (click)="goToSlide(i)"
-                [attr.aria-label]="'Go to image ' + (i + 1)"
+                [attr.aria-label]="'Go to ' + imageLabel(image, i)"
                 [attr.aria-selected]="i === sliderIndex()"
               ></button>
             }

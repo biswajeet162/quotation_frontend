@@ -148,16 +148,10 @@
   min-width: 0;
 }
 
-.image-index {
-  flex-shrink: 0;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #0f766e;
-}
-
 .image-name {
-  font-size: 0.78rem;
-  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #334155;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

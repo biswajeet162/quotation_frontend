@@ -4,9 +4,12 @@ export interface PublicImage {
   contentType: string;
   contentUrl: string;
   thumbnailUrl: string | null;
+  brand?: string | null;
+  designation?: string | null;
 }
 
 export interface PublicImageSet {
   requestedImageId: string;
+  quotationNumber?: string | null;
   images: PublicImage[];
 }

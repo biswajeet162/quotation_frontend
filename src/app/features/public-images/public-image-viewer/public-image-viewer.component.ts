@@ -25,6 +25,7 @@ export class PublicImageViewerComponent implements OnInit {
 
   readonly images = computed(() => this.imageSet()?.images ?? []);
   readonly imageCount = computed(() => this.images().length);
+  readonly quotationNumber = computed(() => this.imageSet()?.quotationNumber?.trim() || null);
   readonly currentSlide = computed(() => this.images()[this.sliderIndex()] ?? null);
   readonly canGoPrev = computed(() => this.sliderIndex() > 0);
   readonly canGoNext = computed(() => this.sliderIndex() < this.imageCount() - 1);
@@ -91,6 +92,21 @@ export class PublicImageViewerComponent implements OnInit {
 
   imageSrc(image: PublicImage): string {
     return this.publicImageService.contentAbsoluteUrl(image.contentUrl);
+  }
+
+  imageLabel(image: PublicImage, index: number): string {
+    const serial = String(index + 1);
+    const product = this.productLabel(image);
+    return product ? `${serial}. ${product}` : `${serial}. ${image.fileName || 'Image'}`;
+  }
+
+  productLabel(image: PublicImage): string {
+    const brand = image.brand?.trim() ?? '';
+    const designation = image.designation?.trim() ?? '';
+    if (brand && designation) {
+      return `${brand} · ${designation}`;
+    }
+    return brand || designation || '';
   }
 
   isRequested(image: PublicImage): boolean {
