@@ -1,5 +1,8 @@
 <section class="page-card">
-  <app-loading-overlay [loading]="loading()" message="Loading your requests…" />
+  <app-loading-overlay
+    [loading]="loading() || quotationSending()"
+    [message]="quotationSending() ? 'Sending quotation…' : 'Loading your requests…'"
+  />
 
   <header class="page-header">
     <h1>Tracking</h1>
