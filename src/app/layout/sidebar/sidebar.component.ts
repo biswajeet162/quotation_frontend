@@ -2,6 +2,8 @@ import { Component, computed, inject, input, output } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../core/services/auth/auth.service';
 
+// deploy probe 2026-07-11 — remove after confirming production picks this up
+
 interface NavChild {
   label: string;
   path: string;
