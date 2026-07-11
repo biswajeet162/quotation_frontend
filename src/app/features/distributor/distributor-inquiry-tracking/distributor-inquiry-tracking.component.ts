@@ -528,8 +528,25 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
 
     return items.every((item) => {
       const draft = this.getLineDraft(inquiry.id, item);
-      return draft.mrp != null && draft.gstPercentage != null;
+      if (draft.mrp == null || draft.gstPercentage == null) {
+        return false;
+      }
+      if (this.isPercentageOverLimit(draft.gstPercentage)) {
+        return false;
+      }
+      if (this.isPercentageOverLimit(draft.discountPercentage)) {
+        return false;
+      }
+      return true;
     });
+  }
+
+  isPercentageOverLimit(value?: number | null): boolean {
+    return value != null && value > 100;
+  }
+
+  isPercentageFieldValid(value?: number | null): boolean {
+    return value != null && value >= 0 && value <= 100;
   }
 
   sendQuotation(): void {
@@ -544,7 +561,18 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     }
 
     if (!this.canSubmitQuotation(inquiry)) {
-      this.quotationError.set('Fill MRP and GST % for every product before sending.');
+      const hasPercentOverLimit = (inquiry.items ?? []).some((item) => {
+        const draft = this.getLineDraft(inquiry.id, item);
+        return (
+          this.isPercentageOverLimit(draft.gstPercentage) ||
+          this.isPercentageOverLimit(draft.discountPercentage)
+        );
+      });
+      this.quotationError.set(
+        hasPercentOverLimit
+          ? 'Discount % and GST % cannot be greater than 100%.'
+          : 'Fill MRP and GST % for every product before sending.',
+      );
       return;
     }
 

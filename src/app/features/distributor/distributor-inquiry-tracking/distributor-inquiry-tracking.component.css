@@ -648,12 +648,13 @@
 }
 
 .line-input-required {
+  border-width: 3px;
   border-color: #0f766e;
 }
 
 .line-input-required:focus {
   border-color: #0f766e;
-  box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.18);
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.2);
 }
 
 .submission-pdf-attachment {
@@ -901,6 +902,12 @@
   min-width: 7.25rem;
 }
 
+.quotation-overlay .pricing-table .col-discount,
+.quotation-overlay .pricing-table .col-gst {
+  min-width: 9rem;
+  vertical-align: top;
+}
+
 .quotation-overlay .line-input {
   padding: clamp(0.38rem, 0.8vw, 0.52rem) clamp(0.45rem, 0.9vw, 0.58rem);
   font-size: clamp(0.82rem, 1.05vw, 0.93rem);
@@ -912,13 +919,88 @@
 }
 
 .quotation-overlay .line-input-required {
-  border-width: 2px;
+  border-width: 3px;
   border-color: #0f766e;
 }
 
 .quotation-overlay .line-input-required:focus {
   border-color: #0f766e;
-  box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.18);
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.2);
+}
+
+.quotation-overlay .line-field {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.28rem;
+  min-width: 7rem;
+}
+
+.quotation-overlay .line-field-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.quotation-overlay .line-field-input-row .line-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.quotation-overlay .line-input-valid {
+  border-width: 3px;
+  border-color: #0f766e;
+  background: #f0fdfa;
+}
+
+.quotation-overlay .line-input-valid:focus {
+  border-color: #0f766e;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.2);
+}
+
+.quotation-overlay .line-input-invalid {
+  border-width: 2px;
+  border-color: #dc2626;
+  background: #fef2f2;
+}
+
+.quotation-overlay .line-input-invalid:focus {
+  border-color: #b91c1c;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.16);
+}
+
+.quotation-overlay .line-field-ok {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: #0f766e;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.quotation-overlay .line-field-error {
+  display: block;
+  padding: 0.22rem 0.4rem;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: normal;
+  max-width: 8.5rem;
+}
+
+.quotation-overlay .line-field-valid .line-input-required {
+  border-width: 3px;
+  border-color: #0f766e;
 }
 
 .quotation-overlay .line-input-date {

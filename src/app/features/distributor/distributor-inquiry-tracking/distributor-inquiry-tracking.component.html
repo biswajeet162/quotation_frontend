@@ -937,17 +937,45 @@
                     />
                   </td>
                   <td class="col-discount">
-                    <input
-                      type="number"
-                      class="line-input line-input-number"
-                      min="0"
-                      max="100"
-                      step="0.01"
-                      [ngModel]="getLineDraft(inquiry.id, item).discountPercentage ?? ''"
-                      (ngModelChange)="updateLineNumberField(inquiry.id, item, 'discountPercentage', $event)"
-                      placeholder="—"
-                      aria-label="Discount percentage"
-                    />
+                    <div
+                      class="line-field"
+                      [class.line-field-invalid]="
+                        isPercentageOverLimit(getLineDraft(inquiry.id, item).discountPercentage)
+                      "
+                      [class.line-field-valid]="
+                        isPercentageFieldValid(getLineDraft(inquiry.id, item).discountPercentage)
+                      "
+                    >
+                      <div class="line-field-input-row">
+                        <input
+                          type="number"
+                          class="line-input line-input-number"
+                          [class.line-input-invalid]="
+                            isPercentageOverLimit(getLineDraft(inquiry.id, item).discountPercentage)
+                          "
+                          [class.line-input-valid]="
+                            isPercentageFieldValid(getLineDraft(inquiry.id, item).discountPercentage)
+                          "
+                          min="0"
+                          max="100"
+                          step="0.01"
+                          [ngModel]="getLineDraft(inquiry.id, item).discountPercentage ?? ''"
+                          (ngModelChange)="
+                            updateLineNumberField(inquiry.id, item, 'discountPercentage', $event)
+                          "
+                          placeholder="—"
+                          aria-label="Discount percentage"
+                        />
+                        @if (isPercentageFieldValid(getLineDraft(inquiry.id, item).discountPercentage)) {
+                          <span class="line-field-ok" aria-hidden="true" title="Valid">✓</span>
+                        }
+                      </div>
+                      @if (isPercentageOverLimit(getLineDraft(inquiry.id, item).discountPercentage)) {
+                        <span class="line-field-error" role="alert"
+                          >Cannot be greater than 100%</span
+                        >
+                      }
+                    </div>
                   </td>
                   <td class="col-amount">
                     <span class="line-input line-input-number line-input-readonly" aria-readonly="true">
@@ -955,18 +983,46 @@
                     </span>
                   </td>
                   <td class="col-gst">
-                    <input
-                      type="number"
-                      class="line-input line-input-number line-input-required"
-                      min="0"
-                      max="100"
-                      step="0.01"
-                      [ngModel]="getLineDraft(inquiry.id, item).gstPercentage ?? ''"
-                      (ngModelChange)="updateLineNumberField(inquiry.id, item, 'gstPercentage', $event)"
-                      placeholder="Required"
-                      aria-label="GST percentage (required)"
-                      required
-                    />
+                    <div
+                      class="line-field"
+                      [class.line-field-invalid]="
+                        isPercentageOverLimit(getLineDraft(inquiry.id, item).gstPercentage)
+                      "
+                      [class.line-field-valid]="
+                        isPercentageFieldValid(getLineDraft(inquiry.id, item).gstPercentage)
+                      "
+                    >
+                      <div class="line-field-input-row">
+                        <input
+                          type="number"
+                          class="line-input line-input-number line-input-required"
+                          [class.line-input-invalid]="
+                            isPercentageOverLimit(getLineDraft(inquiry.id, item).gstPercentage)
+                          "
+                          [class.line-input-valid]="
+                            isPercentageFieldValid(getLineDraft(inquiry.id, item).gstPercentage)
+                          "
+                          min="0"
+                          max="100"
+                          step="0.01"
+                          [ngModel]="getLineDraft(inquiry.id, item).gstPercentage ?? ''"
+                          (ngModelChange)="
+                            updateLineNumberField(inquiry.id, item, 'gstPercentage', $event)
+                          "
+                          placeholder="Required"
+                          aria-label="GST percentage (required)"
+                          required
+                        />
+                        @if (isPercentageFieldValid(getLineDraft(inquiry.id, item).gstPercentage)) {
+                          <span class="line-field-ok" aria-hidden="true" title="Valid">✓</span>
+                        }
+                      </div>
+                      @if (isPercentageOverLimit(getLineDraft(inquiry.id, item).gstPercentage)) {
+                        <span class="line-field-error" role="alert"
+                          >Cannot be greater than 100%</span
+                        >
+                      }
+                    </div>
                   </td>
                   <td class="col-net-value">
                     <span class="line-input line-input-number line-input-readonly" aria-readonly="true">
