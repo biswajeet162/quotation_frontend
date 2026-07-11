@@ -272,7 +272,6 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   readonly replyTargetLabel = replyTargetLabel;
   readonly shouldShowBubbleReply = shouldShowBubbleReply;
   readonly isTimelineNotice = isTimelineNotice;
-  readonly isFinalQuotationNotice = isFinalQuotationNotice;
   readonly noticeDisplayLabel = (entry: InquiryTimelineEntry) =>
     noticeDisplayLabel(entry, 'CONSUMER');
   readonly noticeDisplayDetail = (entry: InquiryTimelineEntry) =>

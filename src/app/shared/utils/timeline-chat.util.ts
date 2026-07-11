@@ -151,12 +151,13 @@ export function noticeDisplayDetail(
     entry.title === 'Quotation submitted'
   ) {
     if (viewer === 'ADMIN') {
-      return 'They have shared their pricing below. Review the quotation table and PDF.';
+      return 'Review their quotation in the request details.';
     }
     return entry.message?.trim() || entry.detail?.trim() || null;
   }
   if (isFinalQuotationNotice(entry) || isFinalQuotationForwardedNotice(entry)) {
-    return entry.message?.trim() || entry.detail?.trim() || null;
+    // Keep optional admin note text in chat; tables/PDFs stay in the main content area.
+    return entry.message?.trim() || null;
   }
   if (
     entry.noticeCode === 'SENT_TO_DISTRIBUTORS' ||

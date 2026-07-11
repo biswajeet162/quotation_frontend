@@ -223,8 +223,6 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   readonly replyTargetLabel = replyTargetLabel;
   readonly shouldShowBubbleReply = shouldShowBubbleReply;
   readonly isTimelineNotice = isTimelineNotice;
-  readonly isDistributorQuotationNotice = isDistributorQuotationNotice;
-  readonly isFinalQuotationForwardedNotice = isFinalQuotationForwardedNotice;
   readonly noticeDisplayLabel = (entry: InquiryTimelineEntry) =>
     noticeDisplayLabel(entry, 'ADMIN');
   readonly noticeDisplayDetail = (entry: InquiryTimelineEntry) =>
@@ -1191,17 +1189,6 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
 
   quotationPdfAttachments(entry: InquiryTimelineEntry): InquiryTimelineAttachment[] {
     return (entry.attachments ?? []).filter((attachment) => attachment.mediaType === 'DOCUMENT');
-  }
-
-  hasQuotationPdfFallback(): boolean {
-    const distributor = this.distributors().find(
-      (item) => item.companyId === this.selectedDistributorCompanyId(),
-    );
-    return !!distributor?.responseReceived;
-  }
-
-  hasFinalQuotationPdfFallback(): boolean {
-    return this.inquiry()?.status === 'FINAL_SENT';
   }
 
   hasFinalQuotationSharedWithConsumer(): boolean {
