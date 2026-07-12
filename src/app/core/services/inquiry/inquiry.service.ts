@@ -241,6 +241,16 @@ export class InquiryService {
     );
   }
 
+  downloadDistributorRfqPdf(
+    inquiryId: string,
+    distributorCompanyId: string,
+  ): Observable<Blob> {
+    return this.http.get(
+      `${this.baseUrl}/${inquiryId}/distributors/${distributorCompanyId}/rfq-pdf`,
+      { responseType: 'blob' },
+    );
+  }
+
   postDistributorMessage(
     inquiryId: string,
     distributorCompanyId: string,

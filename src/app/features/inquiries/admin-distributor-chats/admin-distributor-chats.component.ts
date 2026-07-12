@@ -422,8 +422,7 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   private loadQuotationItems(): void {
     const inquiry = this.inquiry();
     const distributorCompanyId = this.selectedDistributorCompanyId();
-    const distributor = this.distributors().find((item) => item.companyId === distributorCompanyId);
-    if (!inquiry || !distributorCompanyId || !distributor?.responseReceived) {
+    if (!inquiry || !distributorCompanyId) {
       this.quotationItems.set([]);
       return;
     }
@@ -1274,16 +1273,31 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
 
   openAdminRfqPdf(): void {
     const inquiry = this.inquiry();
+    const distributorCompanyId = this.selectedDistributorCompanyId();
     if (!inquiry) {
       return;
     }
 
-    this.inquiryService.downloadAdminRfqPdf(inquiry.id).subscribe({
+    const fileName = this.adminRfqPdfFileName(inquiry);
+    const request$ = distributorCompanyId
+      ? this.inquiryService.downloadDistributorRfqPdf(inquiry.id, distributorCompanyId)
+      : this.inquiryService.downloadAdminRfqPdf(inquiry.id);
+
+    request$.subscribe({
       next: (blob) => {
-        this.openPdfInViewer(blob, 'application/pdf', this.adminRfqPdfFileName(inquiry));
+        this.openPdfInViewer(blob, 'application/pdf', fileName);
       },
       error: () => {
-        // Fallback for older inquiries before RFQ PDF was stored separately.
+        // Fallback for older inquiries before scoped RFQ PDF was stored.
+        if (distributorCompanyId) {
+          this.inquiryService.downloadAdminRfqPdf(inquiry.id).subscribe({
+            next: (blob) => {
+              this.openPdfInViewer(blob, 'application/pdf', fileName);
+            },
+            error: () => this.openSubmissionPdf(),
+          });
+          return;
+        }
         this.openSubmissionPdf();
       },
     });

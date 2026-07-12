@@ -120,7 +120,7 @@
                     <span class="detail-meta-sep" aria-hidden="true">·</span>
                     <span class="detail-company">{{ inquiry.companyName || '—' }}</span>
                     <span class="detail-meta-sep" aria-hidden="true">·</span>
-                    <span>{{ productCountLabel(inquiry.items) }}</span>
+                    <span>{{ productCountLabel(quotationItems().length ? quotationItems() : inquiry.items) }}</span>
                     <span class="detail-meta-sep" aria-hidden="true">·</span>
                     <span>{{ formatPostedDate(inquiry.createdAt) }}</span>
                   </p>
@@ -202,7 +202,9 @@
                       </div>
 
                       <div class="inquiry-event-content">
-                        @if ((inquiry.items ?? []).length > 0) {
+                        @if (quotationItemsLoading()) {
+                          <p class="products-empty">Loading assigned products…</p>
+                        } @else if (quotationItems().length > 0) {
                           <div class="preview-table-wrap admin-pricing-table-wrap">
                             <table class="preview-table admin-pricing-table">
                               <thead>
@@ -223,7 +225,7 @@
                                 </tr>
                               </thead>
                               <tbody>
-                                @for (item of inquiry.items ?? []; track item.id ?? item.productId) {
+                                @for (item of quotationItems(); track item.id ?? item.productId) {
                                   <tr>
                                     <td class="col-sno">{{ $index + 1 }}</td>
                                     <td class="col-designation consumer-cell" [title]="displayProductField(item.productName)">
@@ -297,7 +299,7 @@
                             </table>
                           </div>
                         } @else {
-                          <p class="products-empty">No products in this request.</p>
+                          <p class="products-empty">No products assigned to this distributor.</p>
                         }
 
                         <div class="quotation-pdf-section">
