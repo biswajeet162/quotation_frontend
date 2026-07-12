@@ -14,7 +14,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { Inquiry, InquiryDistributor, InquiryItem } from '../../../core/models/inquiry.model';
+import { Inquiry, InquiryDistributor, InquiryItem, DistributorQuotationHistoryEntry } from '../../../core/models/inquiry.model';
 import {
   InquiryTimelineEntry,
   InquiryTimelineAttachment,
@@ -144,6 +144,8 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   readonly lineDrafts = signal<Map<string, AdminInquiryLineDraft>>(new Map());
   readonly quotationItems = signal<InquiryItem[]>([]);
   readonly quotationItemsLoading = signal(false);
+  readonly quotationHistory = signal<DistributorQuotationHistoryEntry[]>([]);
+  readonly quotationHistoryLoading = signal(false);
   readonly requoteLoading = signal(false);
   readonly comparisonModalOpen = signal(false);
   readonly finalizeModalOpen = signal(false);
@@ -231,8 +233,16 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   });
 
   readonly hasPreviousDistributorQuotation = computed(() =>
+    this.quotationHistory().some((entry) => entry.type === 'QUOTATION') ||
     this.quotationItems().some((item) => this.hasQuotationLine(item)),
   );
+
+  readonly latestQuotationHistoryRound = computed(() => {
+    const rounds = this.quotationHistory()
+      .filter((entry) => entry.type === 'QUOTATION')
+      .map((entry) => entry.round ?? 0);
+    return rounds.length ? Math.max(...rounds) : 0;
+  });
 
   readonly filteredDistributors = computed(() => {
     const query = this.searchQuery().trim().toLowerCase();
@@ -672,6 +682,7 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
         this.requoteLoading.set(false);
         this.loadTimeline({ silent: true, scrollToBottom: true });
         this.loadQuotationItems();
+        this.loadQuotationHistory();
         this.loadAllDistributorQuotes();
       },
       error: (err) => {
@@ -692,8 +703,10 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
     this.clearReplyTarget();
     this.timelineEntries.set([]);
     this.quotationItems.set([]);
+    this.quotationHistory.set([]);
     this.loadTimeline();
     this.loadQuotationItems();
+    this.loadQuotationHistory();
   }
 
   private syncDistributorSelection(): void {
@@ -708,9 +721,11 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
     if (nextId) {
       this.loadTimeline();
       this.loadQuotationItems();
+      this.loadQuotationHistory();
     } else {
       this.timelineEntries.set([]);
       this.quotationItems.set([]);
+      this.quotationHistory.set([]);
     }
   }
 
@@ -731,6 +746,27 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
       error: () => {
         this.quotationItems.set([]);
         this.quotationItemsLoading.set(false);
+      },
+    });
+  }
+
+  private loadQuotationHistory(): void {
+    const inquiry = this.inquiry();
+    const distributorCompanyId = this.selectedDistributorCompanyId();
+    if (!inquiry || !distributorCompanyId) {
+      this.quotationHistory.set([]);
+      return;
+    }
+
+    this.quotationHistoryLoading.set(true);
+    this.inquiryService.getDistributorQuotationHistory(inquiry.id, distributorCompanyId).subscribe({
+      next: (entries) => {
+        this.quotationHistory.set(entries);
+        this.quotationHistoryLoading.set(false);
+      },
+      error: () => {
+        this.quotationHistory.set([]);
+        this.quotationHistoryLoading.set(false);
       },
     });
   }
@@ -781,6 +817,7 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
           scrollEl.scrollTop = previousScrollTop;
         }
         this.loadQuotationItems();
+        this.loadQuotationHistory();
       },
       error: () => {
         this.timelineLoading.set(false);
@@ -1459,6 +1496,25 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
       gstPercentage: item.distributorGstPercentage,
       ourDeliveryDate: item.distributorOurDeliveryDate,
     };
+  }
+
+  isLatestQuotationHistoryEntry(entry: DistributorQuotationHistoryEntry): boolean {
+    return (
+      entry.type === 'QUOTATION' &&
+      (entry.round ?? 0) === this.latestQuotationHistoryRound() &&
+      this.latestQuotationHistoryRound() > 0
+    );
+  }
+
+  historyQuotationTitle(
+    entry: DistributorQuotationHistoryEntry,
+    distributor: InquiryDistributor,
+  ): string {
+    const name = this.distributorLabel(distributor);
+    if ((entry.round ?? 1) > 1) {
+      return `${name} shared a revised quotation.`;
+    }
+    return `${name} shared their quotation.`;
   }
 
   hasQuotationLine(item: InquiryItem): boolean {

@@ -13,7 +13,7 @@ import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { DistributorInquiry, DistributorInquirySummary } from '../../../core/models/distributor.model';
-import { InquiryItem } from '../../../core/models/inquiry.model';
+import { InquiryItem, DistributorQuotationHistoryEntry } from '../../../core/models/inquiry.model';
 import {
   InquiryTimelineEntry,
   InquiryTimelineAttachment,
@@ -104,6 +104,8 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   readonly pdfAvailable = signal(false);
   readonly responsePdfLoading = signal(false);
   readonly responsePdfAvailable = signal(false);
+  readonly quotationHistory = signal<DistributorQuotationHistoryEntry[]>([]);
+  readonly quotationHistoryLoading = signal(false);
   readonly pdfViewerOpen = signal(false);
   readonly pdfViewerSource = signal<PdfViewerSource>('request');
   readonly pdfSafeUrl = signal<SafeResourceUrl | null>(null);
@@ -449,7 +451,35 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   }
 
   hasSubmittedQuotation(inquiry: DistributorInquiry): boolean {
-    return (inquiry.items ?? []).some((item) => this.hasSubmittedLine(item));
+    return (
+      this.quotationHistory().some((entry) => entry.type === 'QUOTATION') ||
+      (inquiry.items ?? []).some((item) => this.hasSubmittedLine(item))
+    );
+  }
+
+  latestQuotationHistoryRound(): number {
+    const rounds = this.quotationHistory()
+      .filter((entry) => entry.type === 'QUOTATION')
+      .map((entry) => entry.round ?? 0);
+    return rounds.length ? Math.max(...rounds) : 0;
+  }
+
+  isLatestQuotationHistoryEntry(entry: DistributorQuotationHistoryEntry): boolean {
+    return (
+      entry.type === 'QUOTATION' &&
+      (entry.round ?? 0) === this.latestQuotationHistoryRound() &&
+      this.latestQuotationHistoryRound() > 0
+    );
+  }
+
+  historyQuotationTitle(entry: DistributorQuotationHistoryEntry, inquiry: DistributorInquiry): string {
+    if (inquiry.status === 'CLOSED') {
+      return 'This request is closed.';
+    }
+    if ((entry.round ?? 1) > 1) {
+      return 'You shared a revised quotation.';
+    }
+    return 'You shared your quotation.';
   }
 
   canCreateOrReviseQuotation(inquiry: DistributorInquiry): boolean {
@@ -600,6 +630,7 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
         this.quotationSending.set(false);
         this.closeQuotationPanel();
         this.selectedInquiry.set(updated);
+        this.loadQuotationHistory(updated.id);
         this.responsePdfAvailable.set(!!updated.responsePdfAvailable);
         if (updated.responsePdfAvailable) {
           this.loadResponsePdf(updated.id);
@@ -607,7 +638,12 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
         this.inquirySummaries.update((list) =>
           list.map((summary) =>
             summary.inquiryUuid === updated.id
-              ? { ...summary, responseReceived: updated.responseReceived, status: updated.status }
+              ? {
+                  ...summary,
+                  responseReceived: updated.responseReceived,
+                  requotationRequested: updated.requotationRequested,
+                  status: updated.status,
+                }
               : summary,
           ),
         );
@@ -644,11 +680,13 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     this.pdfAvailable.set(false);
     this.responsePdfBlob = null;
     this.responsePdfAvailable.set(false);
+    this.quotationHistory.set([]);
     this.distributorInquiryService.getById(id).subscribe({
       next: (inquiry) => {
         this.selectedInquiry.set(inquiry);
         this.hydrateLineDraftsFromInquiry(inquiry, true);
         this.loadSubmissionPdf(id);
+        this.loadQuotationHistory(id);
         this.responsePdfAvailable.set(!!inquiry.responsePdfAvailable);
         if (inquiry.responsePdfAvailable) {
           this.loadResponsePdf(id);
@@ -657,6 +695,20 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
       error: () => {
         this.selectedInquiry.set(null);
         this.timelineError.set('Could not load this quotation request.');
+      },
+    });
+  }
+
+  private loadQuotationHistory(inquiryId: string): void {
+    this.quotationHistoryLoading.set(true);
+    this.distributorInquiryService.getQuotationHistory(inquiryId).subscribe({
+      next: (entries) => {
+        this.quotationHistory.set(entries);
+        this.quotationHistoryLoading.set(false);
+      },
+      error: () => {
+        this.quotationHistory.set([]);
+        this.quotationHistoryLoading.set(false);
       },
     });
   }

@@ -84,6 +84,15 @@ export interface InquiryDistributor {
   updatedAt?: string;
 }
 
+/** Chronological quote / re-quote history for one distributor assignment. */
+export interface DistributorQuotationHistoryEntry {
+  type: 'QUOTATION' | 'REQUOTE_REQUEST' | string;
+  round?: number;
+  occurredAt?: string;
+  note?: string;
+  items?: InquiryItem[];
+}
+
 export interface Inquiry {
   id: string;
   inquiryId: string;

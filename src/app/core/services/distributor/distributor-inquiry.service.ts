@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { DistributorInquiry, DistributorInquirySummary } from '../../models/distributor.model';
+import { DistributorQuotationHistoryEntry } from '../../models/inquiry.model';
 import { InquiryTimeline } from '../../models/inquiry-timeline.model';
 
 @Injectable({ providedIn: 'root' })
@@ -28,6 +29,12 @@ export class DistributorInquiryService {
 
   downloadQuotationPdf(id: string): Observable<Blob> {
     return this.http.get(`${this.baseUrl}/${id}/quotation-pdf`, { responseType: 'blob' });
+  }
+
+  getQuotationHistory(id: string): Observable<DistributorQuotationHistoryEntry[]> {
+    return this.http.get<DistributorQuotationHistoryEntry[]>(
+      `${this.baseUrl}/${id}/quotation-history`,
+    );
   }
 
   submitQuotation(

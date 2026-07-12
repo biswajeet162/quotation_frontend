@@ -503,192 +503,197 @@
                       </div>
                     </section>
 
-                    @if (distributor.responseReceived || hasPreviousDistributorQuotation()) {
-                      <section
-                        class="inquiry-event-card inquiry-event-card--in-progress"
-                        aria-label="Distributor quotation received"
-                      >
-                        <div class="inquiry-event-header">
-                          <h3 class="inquiry-event-title">
-                            {{ distributorLabel(distributor) }} shared their quotation.
-                          </h3>
-                          <div class="inquiry-event-status-block">
-                            <span class="inquiry-event-status inquiry-event-status--in-progress">In progress</span>
-                            <span class="inquiry-event-status-time inquiry-event-status-time--in-progress">
-                              {{ formatPostedDate(distributor.responseReceivedAt) }}
-                            </span>
-                          </div>
-                        </div>
+                    @if (quotationHistoryLoading()) {
+                      <p class="products-empty">Loading quotation history…</p>
+                    } @else {
+                      @for (entry of quotationHistory(); track $index) {
+                        @if (entry.type === 'QUOTATION') {
+                          <section
+                            class="inquiry-event-card inquiry-event-card--in-progress"
+                            aria-label="Distributor quotation received"
+                          >
+                            <div class="inquiry-event-header">
+                              <h3 class="inquiry-event-title">
+                                {{ historyQuotationTitle(entry, distributor) }}
+                              </h3>
+                              <div class="inquiry-event-status-block">
+                                <span class="inquiry-event-status inquiry-event-status--in-progress">In progress</span>
+                                <span class="inquiry-event-status-time inquiry-event-status-time--in-progress">
+                                  {{ formatPostedDate(entry.occurredAt) }}
+                                </span>
+                              </div>
+                            </div>
 
-                        <div class="inquiry-event-content">
-                          @if (quotationItemsLoading()) {
-                            <p class="products-empty">Loading submitted quotation…</p>
-                          } @else if (quotationItems().some(hasQuotationLine)) {
-                            <div class="preview-table-wrap admin-pricing-table-wrap">
-                              <table class="preview-table admin-pricing-table">
-                                <thead>
-                                  <tr>
-                                    <th class="col-sno">S.No.</th>
-                                    <th class="col-designation">Designation</th>
-                                    <th class="col-brand">Brand</th>
-                                    <th class="col-hsn-code">HSN code</th>
-                                    <th class="col-description">Description</th>
-                                    <th class="col-qty">Qty</th>
-                                    <th class="col-mrp">MRP</th>
-                                    <th class="col-discount">Disc. %</th>
-                                    <th class="col-amount">Amount</th>
-                                    <th class="col-gst">GST %</th>
-                                    <th class="col-net-value">Net value</th>
-                                    <th class="col-expected-delivery">Expected delivery</th>
-                                    <th class="col-our-delivery">Our delivery date</th>
-                                    <th class="col-attachment">Images</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  @for (item of quotationItems(); track item.id ?? item.productId) {
-                                    @if (hasQuotationLine(item)) {
-                                      @if (getQuotationLineDraft(item); as quoted) {
-                                        <tr
-                                          [class.line-cancelled]="
-                                            isDistributorItemCancelled(item, distributor.companyId)
-                                          "
-                                        >
-                                          <td class="col-sno">{{ $index + 1 }}</td>
-                                          <td
-                                            class="col-designation consumer-cell"
-                                            [title]="displayProductField(item.productName)"
-                                          >
-                                            {{ displayProductField(item.productName) }}
-                                          </td>
-                                          <td
-                                            class="col-brand consumer-cell"
-                                            [title]="displayProductField(item.productBrand)"
-                                          >
-                                            {{ displayProductField(item.productBrand) }}
-                                          </td>
-                                          <td class="col-hsn-code">
-                                            <span class="line-input line-input-readonly chat-readonly-value">
-                                              {{ displayProductField(quoted.hsnCode) }}
-                                            </span>
-                                          </td>
-                                          <td
-                                            class="col-description consumer-cell preview-multiline"
-                                            [title]="displayProductField(item.productDescription)"
-                                          >
-                                            {{ displayProductField(item.productDescription) }}
-                                          </td>
-                                          <td class="col-qty consumer-cell">{{ item.quantity }}</td>
-                                          <td class="col-mrp">
-                                            <span class="line-input line-input-number line-input-readonly chat-readonly-value">
-                                              {{ formatOptionalNumber(quoted.mrp) }}
-                                            </span>
-                                          </td>
-                                          <td class="col-discount">
-                                            <span class="line-input line-input-number line-input-readonly chat-readonly-value">
-                                              {{ formatOptionalPercent(quoted.discountPercentage) }}
-                                            </span>
-                                          </td>
-                                          <td class="col-amount">
-                                            <span class="line-input line-input-number line-input-readonly chat-readonly-value">
-                                              {{ formatCurrency(quotationLineAmount(item, quoted)) }}
-                                            </span>
-                                          </td>
-                                          <td class="col-gst">
-                                            <span class="line-input line-input-number line-input-readonly chat-readonly-value">
-                                              {{ formatOptionalPercent(quoted.gstPercentage) }}
-                                            </span>
-                                          </td>
-                                          <td class="col-net-value">
-                                            <span class="line-input line-input-number line-input-readonly chat-readonly-value">
-                                              {{ formatCurrency(quotationLineNetValue(item, quoted)) }}
-                                            </span>
-                                          </td>
-                                          <td class="col-expected-delivery consumer-cell">
-                                            {{ formatExpectedDeliveryDate(item.expectedDeliveryDate) }}
-                                          </td>
-                                          <td class="col-our-delivery consumer-cell">
-                                            {{ formatExpectedDeliveryDate(quoted.ourDeliveryDate) }}
-                                          </td>
-                                          <td class="col-attachment">
-                                            @if (itemAttachmentCount(item) > 0) {
-                                              <button
-                                                type="button"
-                                                class="btn-attachment-link"
-                                                (click)="openItemAttachments(item, $event)"
-                                                [attr.aria-label]="
-                                                  'View attachments for ' +
-                                                  displayProductField(item.productBrand) +
-                                                  ' ' +
-                                                  displayProductField(item.productName)
-                                                "
+                            <div class="inquiry-event-content">
+                              @if ((entry.items ?? []).some(hasQuotationLine)) {
+                                <div class="preview-table-wrap admin-pricing-table-wrap">
+                                  <table class="preview-table admin-pricing-table">
+                                    <thead>
+                                      <tr>
+                                        <th class="col-sno">S.No.</th>
+                                        <th class="col-designation">Designation</th>
+                                        <th class="col-brand">Brand</th>
+                                        <th class="col-hsn-code">HSN code</th>
+                                        <th class="col-description">Description</th>
+                                        <th class="col-qty">Qty</th>
+                                        <th class="col-mrp">MRP</th>
+                                        <th class="col-discount">Disc. %</th>
+                                        <th class="col-amount">Amount</th>
+                                        <th class="col-gst">GST %</th>
+                                        <th class="col-net-value">Net value</th>
+                                        <th class="col-expected-delivery">Expected delivery</th>
+                                        <th class="col-our-delivery">Our delivery date</th>
+                                        <th class="col-attachment">Images</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      @for (item of entry.items ?? []; track item.id ?? item.productId) {
+                                        @if (hasQuotationLine(item)) {
+                                          @if (getQuotationLineDraft(item); as quoted) {
+                                            <tr
+                                              [class.line-cancelled]="
+                                                isLatestQuotationHistoryEntry(entry) &&
+                                                isDistributorItemCancelled(item, distributor.companyId)
+                                              "
+                                            >
+                                              <td class="col-sno">{{ $index + 1 }}</td>
+                                              <td
+                                                class="col-designation consumer-cell"
+                                                [title]="displayProductField(item.productName)"
                                               >
-                                                Click here
-                                              </button>
-                                            } @else {
-                                              —
-                                            }
-                                          </td>
-                                        </tr>
+                                                {{ displayProductField(item.productName) }}
+                                              </td>
+                                              <td
+                                                class="col-brand consumer-cell"
+                                                [title]="displayProductField(item.productBrand)"
+                                              >
+                                                {{ displayProductField(item.productBrand) }}
+                                              </td>
+                                              <td class="col-hsn-code">
+                                                <span class="line-input line-input-readonly chat-readonly-value">
+                                                  {{ displayProductField(quoted.hsnCode) }}
+                                                </span>
+                                              </td>
+                                              <td
+                                                class="col-description consumer-cell preview-multiline"
+                                                [title]="displayProductField(item.productDescription)"
+                                              >
+                                                {{ displayProductField(item.productDescription) }}
+                                              </td>
+                                              <td class="col-qty consumer-cell">{{ item.quantity }}</td>
+                                              <td class="col-mrp">
+                                                <span class="line-input line-input-number line-input-readonly chat-readonly-value">
+                                                  {{ formatOptionalNumber(quoted.mrp) }}
+                                                </span>
+                                              </td>
+                                              <td class="col-discount">
+                                                <span class="line-input line-input-number line-input-readonly chat-readonly-value">
+                                                  {{ formatOptionalPercent(quoted.discountPercentage) }}
+                                                </span>
+                                              </td>
+                                              <td class="col-amount">
+                                                <span class="line-input line-input-number line-input-readonly chat-readonly-value">
+                                                  {{ formatCurrency(quotationLineAmount(item, quoted)) }}
+                                                </span>
+                                              </td>
+                                              <td class="col-gst">
+                                                <span class="line-input line-input-number line-input-readonly chat-readonly-value">
+                                                  {{ formatOptionalPercent(quoted.gstPercentage) }}
+                                                </span>
+                                              </td>
+                                              <td class="col-net-value">
+                                                <span class="line-input line-input-number line-input-readonly chat-readonly-value">
+                                                  {{ formatCurrency(quotationLineNetValue(item, quoted)) }}
+                                                </span>
+                                              </td>
+                                              <td class="col-expected-delivery consumer-cell">
+                                                {{ formatExpectedDeliveryDate(item.expectedDeliveryDate) }}
+                                              </td>
+                                              <td class="col-our-delivery consumer-cell">
+                                                {{ formatExpectedDeliveryDate(quoted.ourDeliveryDate) }}
+                                              </td>
+                                              <td class="col-attachment">
+                                                @if (itemAttachmentCount(item) > 0) {
+                                                  <button
+                                                    type="button"
+                                                    class="btn-attachment-link"
+                                                    (click)="openItemAttachments(item, $event)"
+                                                    [attr.aria-label]="
+                                                      'View attachments for ' +
+                                                      displayProductField(item.productBrand) +
+                                                      ' ' +
+                                                      displayProductField(item.productName)
+                                                    "
+                                                  >
+                                                    Click here
+                                                  </button>
+                                                } @else {
+                                                  —
+                                                }
+                                              </td>
+                                            </tr>
+                                          }
+                                        }
                                       }
-                                    }
-                                  }
-                                </tbody>
-                              </table>
-                            </div>
-                          } @else {
-                            <p class="products-empty">No quotation lines received yet.</p>
-                          }
+                                    </tbody>
+                                  </table>
+                                </div>
+                              } @else {
+                                <p class="products-empty">No quotation lines received yet.</p>
+                              }
 
-                          <div class="quotation-pdf-section">
-                            <div class="quotation-pdf-row quotation-pdf-row--request">
-                              <span class="quotation-pdf-label">Quotation</span>
-                              <span
-                                class="quotation-pdf-filename"
-                                [title]="distributorQuotationPdfFileName(inquiry, distributor)"
-                              >
-                                {{ distributorQuotationPdfFileName(inquiry, distributor) }}
-                              </span>
-                              <button
-                                type="button"
-                                class="btn-pdf-view"
-                                (click)="openQuotationPdf()"
-                              >
-                                View
-                              </button>
+                              @if (isLatestQuotationHistoryEntry(entry)) {
+                                <div class="quotation-pdf-section">
+                                  <div class="quotation-pdf-row quotation-pdf-row--request">
+                                    <span class="quotation-pdf-label">Quotation</span>
+                                    <span
+                                      class="quotation-pdf-filename"
+                                      [title]="distributorQuotationPdfFileName(inquiry, distributor)"
+                                    >
+                                      {{ distributorQuotationPdfFileName(inquiry, distributor) }}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      class="btn-pdf-view"
+                                      (click)="openQuotationPdf()"
+                                    >
+                                      View
+                                    </button>
+                                  </div>
+                                </div>
+                              }
                             </div>
-                          </div>
-                        </div>
-                      </section>
-                    }
-
-                    @if (distributor.requotationRequested) {
-                      <section
-                        class="inquiry-event-card inquiry-event-card--in-progress"
-                        aria-label="Re-quotation requested"
-                      >
-                        <div class="inquiry-event-header">
-                          <h3 class="inquiry-event-title">
-                            Asked {{ distributorLabel(distributor) }} for a re-quotation.
-                          </h3>
-                          <div class="inquiry-event-status-block">
-                            <span class="inquiry-event-status inquiry-event-status--in-progress">In progress</span>
-                            <span class="inquiry-event-status-time inquiry-event-status-time--in-progress">
-                              {{ formatPostedDate(distributor.requotationRequestedAt) }}
-                            </span>
-                          </div>
-                        </div>
-                        <div class="inquiry-event-content">
-                          <div class="requote-note-panel" role="note">
-                            <p class="requote-note-label">Note</p>
-                            <p class="requote-note-text">
-                              {{
-                                distributor.requotationNote?.trim() ||
-                                  'Please submit a revised quotation with updated pricing and delivery dates.'
-                              }}
-                            </p>
-                          </div>
-                        </div>
-                      </section>
+                          </section>
+                        } @else if (entry.type === 'REQUOTE_REQUEST') {
+                          <section
+                            class="inquiry-event-card inquiry-event-card--in-progress"
+                            aria-label="Re-quotation requested"
+                          >
+                            <div class="inquiry-event-header">
+                              <h3 class="inquiry-event-title">
+                                Asked {{ distributorLabel(distributor) }} for a re-quotation.
+                              </h3>
+                              <div class="inquiry-event-status-block">
+                                <span class="inquiry-event-status inquiry-event-status--in-progress">In progress</span>
+                                <span class="inquiry-event-status-time inquiry-event-status-time--in-progress">
+                                  {{ formatPostedDate(entry.occurredAt) }}
+                                </span>
+                              </div>
+                            </div>
+                            <div class="inquiry-event-content">
+                              <div class="requote-note-panel" role="note">
+                                <p class="requote-note-label">Note</p>
+                                <p class="requote-note-text">
+                                  {{
+                                    entry.note?.trim() ||
+                                      'Please submit a revised quotation with updated pricing and delivery dates.'
+                                  }}
+                                </p>
+                              </div>
+                            </div>
+                          </section>
+                        }
+                      }
                     }
 
                     @if (hasFinalQuotationSharedWithConsumer()) {

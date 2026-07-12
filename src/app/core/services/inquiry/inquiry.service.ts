@@ -12,6 +12,7 @@ import {
   InquiryDraftAttachment,
   InquiryItem,
   InquiryStatus,
+  DistributorQuotationHistoryEntry,
   SubmitToDistributorsRequest,
   AdminInquiryLinePricing,
   FinalizeQuotationRequest,
@@ -228,6 +229,15 @@ export class InquiryService {
   ): Observable<InquiryItem[]> {
     return this.http.get<InquiryItem[]>(
       `${this.baseUrl}/${inquiryId}/distributors/${distributorCompanyId}/quotation-items`,
+    );
+  }
+
+  getDistributorQuotationHistory(
+    inquiryId: string,
+    distributorCompanyId: string,
+  ): Observable<DistributorQuotationHistoryEntry[]> {
+    return this.http.get<DistributorQuotationHistoryEntry[]>(
+      `${this.baseUrl}/${inquiryId}/distributors/${distributorCompanyId}/quotation-history`,
     );
   }
 
