@@ -15,8 +15,14 @@
 
   @if (auth.currentUser(); as user) {
     <div class="sidebar-welcome">
-      <p class="welcome-label">Welcome</p>
-      <p class="welcome-email">{{ user.email }}</p>
+      <p class="welcome-label">Welcome {{ welcomeRoleLabel(user.role) }}</p>
+      @if (welcomeDisplayName(user); as displayName) {
+        <p class="welcome-name">{{ displayName }}</p>
+      }
+      <p class="welcome-meta">{{ user.email }}</p>
+      @if (user.phone?.trim()) {
+        <p class="welcome-meta">{{ user.phone }}</p>
+      }
     </div>
   }
 

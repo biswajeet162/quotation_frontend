@@ -1,5 +1,6 @@
 import { Component, computed, inject, input, output } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { AuthUser } from '../../core/models/auth.model';
 import { AuthService } from '../../core/services/auth/auth.service';
 
 // deploy probe 2026-07-11 — remove after confirming production picks this up
@@ -74,6 +75,24 @@ export class SidebarComponent {
         ),
       }));
   });
+
+  welcomeRoleLabel(role?: string): string {
+    switch (role) {
+      case 'ADMIN':
+        return 'Admin';
+      case 'CONSUMER':
+        return 'Customer';
+      case 'DISTRIBUTOR':
+        return 'Distributor';
+      default:
+        return role?.trim() || '';
+    }
+  }
+
+  welcomeDisplayName(user: AuthUser): string | null {
+    const companyName = user.companyName?.trim();
+    return companyName || null;
+  }
 
   logout(): void {
     this.auth.logout();

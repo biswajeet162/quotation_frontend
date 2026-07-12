@@ -232,11 +232,25 @@ export class ProfileComponent implements OnInit {
 
   private onProfileSaved(updated: CompanyProfile): void {
     this.applyProfile(updated);
-    this.auth.updateStoredCompanyName(updated.companyName);
+    this.auth.updateStoredProfile({
+      companyName: updated.companyName,
+      phone: this.resolveStoredPhone(updated),
+    });
     this.loadLogoPreview();
     this.editDetailsMode.set(false);
     this.saving.set(false);
     this.successMessage.set('Profile saved successfully.');
+  }
+
+  private resolveStoredPhone(profile: CompanyProfile): string | null {
+    if (this.isConsumer()) {
+      const consumer = profile as ConsumerProfile;
+      return consumer.userPhone?.trim() || null;
+    }
+
+    const companyPhone =
+      'companyPhone' in profile ? String(profile.companyPhone ?? '').trim() : '';
+    return companyPhone || null;
   }
 
   private onProfileSaveError(error: unknown): void {

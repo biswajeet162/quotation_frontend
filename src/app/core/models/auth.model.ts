@@ -48,6 +48,7 @@ export interface AuthResponse {
   role: string;
   companyId?: string | null;
   companyName?: string | null;
+  phone?: string | null;
   needsCompanySetup?: boolean;
   message?: string;
 }
@@ -58,5 +59,6 @@ export interface AuthUser {
   role: string;
   companyId?: string | null;
   companyName?: string | null;
+  phone?: string | null;
   needsCompanySetup?: boolean;
 }

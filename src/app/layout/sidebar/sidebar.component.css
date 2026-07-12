@@ -72,7 +72,7 @@
 }
 
 .sidebar-welcome {
-  padding: 1rem 1rem 0.5rem;
+  padding: 1rem 1rem 0.75rem;
   border-bottom: 1px solid #1e293b;
 }
 
@@ -83,8 +83,16 @@
   color: #f8fafc;
 }
 
-.welcome-email {
-  margin: 0.25rem 0 0;
+.welcome-name {
+  margin: 0.35rem 0 0;
+  font-size: 0.84rem;
+  font-weight: 550;
+  color: #e2e8f0;
+  word-break: break-word;
+}
+
+.welcome-meta {
+  margin: 0.2rem 0 0;
   font-size: 0.78rem;
   color: #94a3b8;
   word-break: break-word;

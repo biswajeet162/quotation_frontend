@@ -83,12 +83,20 @@ export class AuthService {
   }
 
   updateStoredCompanyName(companyName: string): void {
+    this.updateStoredProfile({ companyName });
+  }
+
+  updateStoredProfile(patch: { companyName?: string | null; phone?: string | null }): void {
     const user = this.currentUserSignal();
     if (!user) {
       return;
     }
 
-    const updated: AuthUser = { ...user, companyName };
+    const updated: AuthUser = {
+      ...user,
+      ...(patch.companyName !== undefined ? { companyName: patch.companyName } : {}),
+      ...(patch.phone !== undefined ? { phone: patch.phone } : {}),
+    };
     localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(updated));
     this.currentUserSignal.set(updated);
   }
@@ -104,6 +112,7 @@ export class AuthService {
       role: response.role,
       companyId: response.companyId ?? null,
       companyName: response.companyName ?? null,
+      phone: response.phone ?? null,
       needsCompanySetup: response.needsCompanySetup === true,
     };
 
