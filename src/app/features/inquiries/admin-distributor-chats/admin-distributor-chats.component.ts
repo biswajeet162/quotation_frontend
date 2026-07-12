@@ -337,6 +337,36 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
       this.productCompareSections().filter((section) => section.selectedCompanyId != null).length,
   );
 
+  /**
+   * Per distributor: selected wins / products they quoted (or were assigned).
+   * Used in the By distributors list as e.g. 3/5 after mix cancellations.
+   */
+  readonly distributorPickRatios = computed(() => {
+    const quotes = this.quotesByDistributor();
+    const selections = this.productSelections();
+    const map = new Map<string, { selected: number; total: number }>();
+
+    for (const distributor of this.distributors()) {
+      const quoteItems = (quotes.get(distributor.companyId) ?? []).filter((item) =>
+        this.hasQuotationLine(item),
+      );
+      // Only show after this distributor has submitted quote lines.
+      if (quoteItems.length === 0) {
+        continue;
+      }
+
+      let selected = 0;
+      for (const item of quoteItems) {
+        const itemKey = item.id ?? item.productId;
+        if (itemKey && selections.get(itemKey) === distributor.companyId) {
+          selected += 1;
+        }
+      }
+      map.set(distributor.companyId, { selected, total: quoteItems.length });
+    }
+    return map;
+  });
+
   readonly productSelectionComplete = computed(() => {
     const sections = this.productCompareSections();
     if (sections.length === 0) {
@@ -546,6 +576,10 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
       return false;
     }
     return selectedCompanyId !== companyId;
+  }
+
+  distributorPickRatio(distributor: InquiryDistributor): { selected: number; total: number } | null {
+    return this.distributorPickRatios().get(distributor.companyId) ?? null;
   }
 
   private loadAllDistributorQuotes(): void {

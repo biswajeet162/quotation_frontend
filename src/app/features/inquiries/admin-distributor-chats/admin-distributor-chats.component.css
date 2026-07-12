@@ -471,12 +471,66 @@
   gap: 0.45rem;
 }
 
+.query-heading-end {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
 .query-title {
   display: block;
   min-width: 0;
   font-size: 0.9rem;
   font-weight: 600;
   color: #0f172a;
+}
+
+.distributor-pick-ratio {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.06rem;
+  padding: 0.12rem 0.42rem 0.14rem;
+  border-radius: 0.4rem;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #0f766e;
+  font-family: ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.distributor-pick-ratio .pick-num {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.distributor-pick-ratio .pick-sep {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #64748b;
+  margin: 0 0.02rem;
+}
+
+.distributor-pick-ratio .pick-den {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.query-item.selected .distributor-pick-ratio,
+.query-item.step-in-progress .distributor-pick-ratio {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #047857;
+}
+
+.query-item.step-green .distributor-pick-ratio,
+.query-item.is-final-choice .distributor-pick-ratio {
+  background: #d1fae5;
+  border-color: #6ee7b7;
+  color: #065f46;
 }
 
 .final-choice-badge {
