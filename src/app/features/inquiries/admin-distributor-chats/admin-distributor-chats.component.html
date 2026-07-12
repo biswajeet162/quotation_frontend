@@ -326,15 +326,15 @@
                   <button type="button" class="btn-delete" (click)="openDeleteConfirm()">
                     Delete request
                   </button>
-                  @if (distributor.responseReceived) {
+                  @if (distributor.responseReceived && !distributor.requotationRequested) {
                     <button
                       type="button"
                       class="btn-secondary btn-requote"
                       (click)="askForRequotation()"
-                      [disabled]="!canAskRequotation()"
+                      [disabled]="!canAskRequotation() || requoteLoading()"
                       title="Ask this distributor to submit a revised quotation"
                     >
-                      Ask for re-quotations
+                      {{ requoteLoading() ? 'Requesting…' : 'Ask for re-quotations' }}
                     </button>
                     <button
                       type="button"
@@ -503,7 +503,7 @@
                       </div>
                     </section>
 
-                    @if (distributor.responseReceived) {
+                    @if (distributor.responseReceived || hasPreviousDistributorQuotation()) {
                       <section
                         class="inquiry-event-card inquiry-event-card--in-progress"
                         aria-label="Distributor quotation received"
@@ -656,6 +656,36 @@
                                 View
                               </button>
                             </div>
+                          </div>
+                        </div>
+                      </section>
+                    }
+
+                    @if (distributor.requotationRequested) {
+                      <section
+                        class="inquiry-event-card inquiry-event-card--in-progress"
+                        aria-label="Re-quotation requested"
+                      >
+                        <div class="inquiry-event-header">
+                          <h3 class="inquiry-event-title">
+                            Asked {{ distributorLabel(distributor) }} for a re-quotation.
+                          </h3>
+                          <div class="inquiry-event-status-block">
+                            <span class="inquiry-event-status inquiry-event-status--in-progress">In progress</span>
+                            <span class="inquiry-event-status-time inquiry-event-status-time--in-progress">
+                              {{ formatPostedDate(distributor.requotationRequestedAt) }}
+                            </span>
+                          </div>
+                        </div>
+                        <div class="inquiry-event-content">
+                          <div class="requote-note-panel" role="note">
+                            <p class="requote-note-label">Note</p>
+                            <p class="requote-note-text">
+                              {{
+                                distributor.requotationNote?.trim() ||
+                                  'Please submit a revised quotation with updated pricing and delivery dates.'
+                              }}
+                            </p>
                           </div>
                         </div>
                       </section>

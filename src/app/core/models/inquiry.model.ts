@@ -77,6 +77,9 @@ export interface InquiryDistributor {
   responseReceivedAt?: string;
   matchedBrands?: string[];
   assignedItemCount?: number;
+  requotationRequested?: boolean;
+  requotationRequestedAt?: string;
+  requotationNote?: string;
   createdAt?: string;
   updatedAt?: string;
 }

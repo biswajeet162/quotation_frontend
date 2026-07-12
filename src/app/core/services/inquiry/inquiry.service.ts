@@ -251,6 +251,17 @@ export class InquiryService {
     );
   }
 
+  requestRequotation(
+    inquiryId: string,
+    distributorCompanyId: string,
+    message?: string,
+  ): Observable<Inquiry> {
+    return this.http.post<Inquiry>(
+      `${this.baseUrl}/${inquiryId}/distributors/${distributorCompanyId}/request-requotation`,
+      { message: message ?? null },
+    );
+  }
+
   postDistributorMessage(
     inquiryId: string,
     distributorCompanyId: string,

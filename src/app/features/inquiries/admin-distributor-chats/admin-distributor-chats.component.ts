@@ -144,6 +144,7 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   readonly lineDrafts = signal<Map<string, AdminInquiryLineDraft>>(new Map());
   readonly quotationItems = signal<InquiryItem[]>([]);
   readonly quotationItemsLoading = signal(false);
+  readonly requoteLoading = signal(false);
   readonly comparisonModalOpen = signal(false);
   readonly finalizeModalOpen = signal(false);
   /** Frontend-only: distributor chosen when finalizing (drives green + double-tick). */
@@ -222,10 +223,16 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
     return (
       !!inquiry &&
       inquiry.status !== 'CLOSED' &&
+      inquiry.status !== 'FINAL_SENT' &&
       !!distributor?.responseReceived &&
+      !distributor.requotationRequested &&
       this.canMessage(inquiry)
     );
   });
+
+  readonly hasPreviousDistributorQuotation = computed(() =>
+    this.quotationItems().some((item) => this.hasQuotationLine(item)),
+  );
 
   readonly filteredDistributors = computed(() => {
     const query = this.searchQuery().trim().toLowerCase();
@@ -649,16 +656,31 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   }
 
   askForRequotation(): void {
+    const inquiry = this.inquiry();
     const distributor = this.selectedDistributor();
-    if (!this.canAskRequotation() || !distributor) {
+    if (!this.canAskRequotation() || !inquiry || !distributor) {
       return;
     }
+
+    const note = `Hi ${this.distributorLabel(distributor)}, please review your quotation and submit a revised quote with updated pricing and delivery dates.`;
+    this.requoteLoading.set(true);
     this.messageError.set(null);
-    this.messageText.set(
-      `Hi ${this.distributorLabel(distributor)}, please review your quotation and submit a revised quote with updated pricing and delivery dates.`,
-    );
-    this.clearReplyTarget();
-    this.openChatModal();
+
+    this.inquiryService.requestRequotation(inquiry.id, distributor.companyId, note).subscribe({
+      next: (updated) => {
+        this.inquiry.set(updated);
+        this.requoteLoading.set(false);
+        this.loadTimeline({ silent: true, scrollToBottom: true });
+        this.loadQuotationItems();
+        this.loadAllDistributorQuotes();
+      },
+      error: (err) => {
+        this.requoteLoading.set(false);
+        this.messageError.set(
+          err?.error?.message ?? 'Could not request a re-quotation from this distributor.',
+        );
+      },
+    });
   }
 
   selectDistributor(companyId: string): void {
@@ -1287,6 +1309,9 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
     if (this.isFinalChoiceDistributor(distributor)) {
       return 'Sent to consumer';
     }
+    if (distributor.requotationRequested) {
+      return 'Re-quote requested';
+    }
     return distributor.responseReceived ? 'Responded' : 'Pending response';
   }
 
@@ -1301,7 +1326,10 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
     if (this.inquiry()?.status === 'CLOSED') {
       return 'green';
     }
-    return distributor.responseReceived ? 'in-progress' : 'initiated';
+    if (distributor.responseReceived || distributor.requotationRequested) {
+      return 'in-progress';
+    }
+    return 'initiated';
   }
 
   distributorEmailLabel(distributor: InquiryDistributor): string {

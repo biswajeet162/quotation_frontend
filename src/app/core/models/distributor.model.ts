@@ -17,6 +17,7 @@ export interface DistributorInquirySummary {
   itemCount: number;
   status: InquiryStatus;
   responseReceived: boolean;
+  requotationRequested?: boolean;
   receivedAt?: string;
 }
 
@@ -31,6 +32,9 @@ export interface DistributorInquiry {
   assignmentId: string;
   responseReceived: boolean;
   responseReceivedAt?: string;
+  requotationRequested?: boolean;
+  requotationRequestedAt?: string;
+  requotationNote?: string;
   responsePdfAvailable?: boolean;
   receivedAt?: string;
   createdAt?: string;

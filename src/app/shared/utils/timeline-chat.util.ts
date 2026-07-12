@@ -123,6 +123,11 @@ export function noticeDisplayLabel(
     }
     return entry.title === 'Quotation submitted' ? 'Quotation submitted' : 'Quotation shared';
   }
+  if (entry.noticeCode === 'REQUOTE_REQUESTED' || entry.title === 'Re-quotation requested') {
+    return viewer === 'DISTRIBUTOR'
+      ? 'Admin asked for a re-quotation'
+      : 'Asked for a re-quotation';
+  }
   if (isFinalQuotationNotice(entry)) {
     return viewer === 'CONSUMER' ? 'Your final quotation is ready' : 'Final quotation sent';
   }
@@ -153,6 +158,9 @@ export function noticeDisplayDetail(
     if (viewer === 'ADMIN') {
       return 'Review their quotation in the request details.';
     }
+    return entry.message?.trim() || entry.detail?.trim() || null;
+  }
+  if (entry.noticeCode === 'REQUOTE_REQUESTED' || entry.title === 'Re-quotation requested') {
     return entry.message?.trim() || entry.detail?.trim() || null;
   }
   if (isFinalQuotationNotice(entry) || isFinalQuotationForwardedNotice(entry)) {

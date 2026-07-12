@@ -92,9 +92,13 @@
                 </svg>
                 Chat
               </button>
-              @if (canMessage(inquiry) && !hasSubmittedQuotation(inquiry)) {
+              @if (canMessage(inquiry) && canCreateOrReviseQuotation(inquiry)) {
                 <button type="button" class="btn-primary" (click)="openQuotationPanel()">
-                  Create your quotation
+                  {{
+                    inquiry.requotationRequested
+                      ? 'Revise your quotation'
+                      : 'Create your quotation'
+                  }}
                 </button>
               }
             </div>
@@ -424,6 +428,36 @@
                           </button>
                         </div>
                       }
+                    </div>
+                  </div>
+                </section>
+              }
+
+              @if (inquiry.requotationRequested) {
+                <section
+                  class="inquiry-event-card inquiry-event-card--in-progress"
+                  aria-label="Re-quotation requested"
+                >
+                  <div class="inquiry-event-header">
+                    <h3 class="inquiry-event-title">
+                      Admin asked for a re-quotation.
+                    </h3>
+                    <div class="inquiry-event-status-block">
+                      <span class="inquiry-event-status inquiry-event-status--in-progress">In progress</span>
+                      <span class="inquiry-event-status-time inquiry-event-status-time--in-progress">
+                        {{ formatPostedDate(inquiry.requotationRequestedAt) }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="inquiry-event-content">
+                    <div class="requote-note-panel" role="note">
+                      <p class="requote-note-label">Note</p>
+                      <p class="requote-note-text">
+                        {{
+                          inquiry.requotationNote?.trim() ||
+                            'Please submit a revised quotation with updated pricing and delivery dates.'
+                        }}
+                      </p>
                     </div>
                   </div>
                 </section>

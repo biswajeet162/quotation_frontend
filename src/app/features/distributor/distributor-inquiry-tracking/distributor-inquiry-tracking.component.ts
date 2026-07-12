@@ -159,11 +159,11 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
 
     return this.inquirySummaries().filter((summary) => {
       if (status === 'pending') {
-        if (summary.responseReceived || summary.status === 'CLOSED') {
+        if ((summary.responseReceived && !summary.requotationRequested) || summary.status === 'CLOSED') {
           return false;
         }
       } else if (status === 'responded') {
-        if (!summary.responseReceived) {
+        if (!summary.responseReceived || summary.requotationRequested) {
           return false;
         }
       } else if (status === 'CLOSED') {
@@ -450,6 +450,16 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
 
   hasSubmittedQuotation(inquiry: DistributorInquiry): boolean {
     return (inquiry.items ?? []).some((item) => this.hasSubmittedLine(item));
+  }
+
+  canCreateOrReviseQuotation(inquiry: DistributorInquiry): boolean {
+    if (inquiry.status === 'CLOSED') {
+      return false;
+    }
+    if (inquiry.requotationRequested) {
+      return true;
+    }
+    return !this.hasSubmittedQuotation(inquiry);
   }
 
   submittedQuotationDateLabel(inquiry: DistributorInquiry): string {
@@ -1005,7 +1015,7 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     if (summary.status === 'CLOSED') {
       return 'green';
     }
-    if (summary.responseReceived) {
+    if (summary.responseReceived || summary.requotationRequested) {
       return 'in-progress';
     }
     return 'initiated';
@@ -1014,6 +1024,9 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   summaryStatusLabel(summary: DistributorInquirySummary): string {
     if (summary.status === 'CLOSED') {
       return 'Closed';
+    }
+    if (summary.requotationRequested) {
+      return 'Awaiting revised quote';
     }
     return summary.responseReceived ? 'In progress' : 'Awaiting response';
   }
