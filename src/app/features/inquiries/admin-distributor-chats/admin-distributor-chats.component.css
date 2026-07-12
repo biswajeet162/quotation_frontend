@@ -31,6 +31,246 @@
   flex-shrink: 0;
 }
 
+.page-header-title-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.view-mode-toggle {
+  display: inline-flex;
+  padding: 0.18rem;
+  border-radius: 999px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  gap: 0.15rem;
+}
+
+.view-mode-btn {
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.view-mode-btn.active {
+  background: #0f172a;
+  color: #fff;
+}
+
+.view-mode-btn:hover:not(.active) {
+  color: #0f172a;
+}
+
+.products-compare-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow: hidden;
+}
+
+.products-compare-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.products-compare-hint {
+  margin: 0;
+  font-size: 0.86rem;
+  color: #64748b;
+  max-width: 42rem;
+}
+
+.products-compare-summary {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+}
+
+.products-compare-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding-right: 0.15rem;
+}
+
+.product-compare-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  padding: 0.85rem 1rem;
+}
+
+.product-compare-card.has-selection {
+  border-color: #86efac;
+  background: linear-gradient(180deg, #f0fdf4 0%, #fff 42%);
+}
+
+.product-compare-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.product-compare-title-block {
+  display: flex;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.product-compare-index {
+  font-weight: 700;
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+}
+
+.product-compare-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.35;
+}
+
+.product-compare-meta {
+  margin: 0.2rem 0 0;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.product-compare-picked {
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #166534;
+  background: #dcfce7;
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+}
+
+.product-compare-picked--empty {
+  color: #92400e;
+  background: #ffedd5;
+}
+
+.product-offers-wrap {
+  overflow-x: auto;
+}
+
+.product-offers-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+}
+
+.product-offers-table th,
+.product-offers-table td {
+  padding: 0.55rem 0.6rem;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.product-offers-table th {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #64748b;
+  background: #f8fafc;
+}
+
+.product-offers-table .col-pick {
+  width: 3rem;
+  text-align: center;
+}
+
+.product-offers-table .col-net {
+  font-weight: 700;
+}
+
+.product-offers-table tr.offer-best {
+  background: #eff6ff;
+}
+
+.product-offers-table tr.offer-selected {
+  background: #ecfdf5;
+}
+
+.product-offers-table tr.offer-awaiting {
+  opacity: 0.72;
+}
+
+.offer-distributor-link {
+  border: none;
+  background: none;
+  padding: 0;
+  color: #1d4ed8;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+
+.offer-distributor-link:hover {
+  text-decoration: underline;
+}
+
+.offer-badge {
+  display: inline-block;
+  margin-left: 0.45rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #1d4ed8;
+  background: #dbeafe;
+  border-radius: 999px;
+  padding: 0.12rem 0.45rem;
+  vertical-align: middle;
+}
+
+.btn-clear-pick {
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.2rem 0.35rem;
+}
+
+.btn-clear-pick:hover {
+  color: #b91c1c;
+}
+
+.products-compare-footer {
+  flex-shrink: 0;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 0.65rem;
+}
+
+.products-compare-footer p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: #475569;
+}
+
 .page-header-actions {
   display: flex;
   align-items: center;

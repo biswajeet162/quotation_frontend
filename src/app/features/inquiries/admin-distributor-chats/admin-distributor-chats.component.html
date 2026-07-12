@@ -2,8 +2,43 @@
   <app-loading-overlay [loading]="loading()" message="Loading distributors list…" />
 
   <header class="page-header">
-    <h1>Distributors list</h1>
+    <div class="page-header-title-block">
+      <h1>Distributors list</h1>
+      <div class="view-mode-toggle" role="tablist" aria-label="List view mode">
+        <button
+          type="button"
+          role="tab"
+          class="view-mode-btn"
+          [class.active]="listViewMode() === 'distributors'"
+          [attr.aria-selected]="listViewMode() === 'distributors'"
+          (click)="setListViewMode('distributors')"
+        >
+          By distributors
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="view-mode-btn"
+          [class.active]="listViewMode() === 'products'"
+          [attr.aria-selected]="listViewMode() === 'products'"
+          (click)="setListViewMode('products')"
+        >
+          By products
+        </button>
+      </div>
+    </div>
     <div class="page-header-actions">
+      @if (listViewMode() === 'products') {
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="selectBestOffersForAll()"
+          [disabled]="loading() || productQuotesLoading() || productCompareSections().length === 0"
+          title="Pick the lowest net value offer for each product"
+        >
+          Select best prices
+        </button>
+      }
       <button
         type="button"
         class="btn-comparison"
@@ -36,6 +71,150 @@
     <div class="alert alert-error" role="alert">{{ errorMessage() }}</div>
   } @else if (distributors().length === 0) {
     <p class="state-message">This request has not been sent to any distributors yet.</p>
+  } @else if (listViewMode() === 'products') {
+    <div class="products-compare-panel">
+      <div class="products-compare-toolbar">
+        <p class="products-compare-hint">
+          Each product shows only distributors who received that brand. Pick one offer per product for the final mix.
+        </p>
+        <p class="products-compare-summary">
+          Selected {{ selectedProductCount() }} of {{ productCompareSections().length }}
+          @if (productSelectionTotalNet() != null) {
+            · Mix total {{ formatCurrency(productSelectionTotalNet()) }}
+          }
+        </p>
+      </div>
+
+      @if (productQuotesError()) {
+        <div class="alert alert-error" role="alert">{{ productQuotesError() }}</div>
+      }
+
+      @if (productQuotesLoading()) {
+        <p class="state-message">Loading distributor quotations by product…</p>
+      } @else if (productCompareSections().length === 0) {
+        <p class="state-message">No products in this request.</p>
+      } @else {
+        <div class="products-compare-list">
+          @for (section of productCompareSections(); track section.itemKey; let idx = $index) {
+            <article class="product-compare-card" [class.has-selection]="!!section.selectedCompanyId">
+              <header class="product-compare-header">
+                <div class="product-compare-title-block">
+                  <span class="product-compare-index">{{ idx + 1 }}.</span>
+                  <div>
+                    <h2 class="product-compare-title">
+                      {{ displayProductField(section.item.productBrand) }}
+                      ·
+                      {{ displayProductField(section.item.productName) }}
+                    </h2>
+                    <p class="product-compare-meta">
+                      Qty {{ section.item.quantity }}
+                      · {{ section.quotedCount }} quote{{ section.quotedCount === 1 ? '' : 's' }}
+                      @if (section.awaitingCount > 0) {
+                        · {{ section.awaitingCount }} awaiting
+                      }
+                    </p>
+                  </div>
+                </div>
+                @if (section.selectedCompanyId) {
+                  <span class="product-compare-picked">
+                    Picked: {{ selectedOfferLabel(section) }}
+                  </span>
+                } @else {
+                  <span class="product-compare-picked product-compare-picked--empty">Not selected</span>
+                }
+              </header>
+
+              @if (section.offers.length === 0) {
+                <p class="products-empty">No distributors were assigned this product yet.</p>
+              } @else {
+                <div class="product-offers-wrap">
+                  <table class="product-offers-table">
+                    <thead>
+                      <tr>
+                        <th class="col-pick">Pick</th>
+                        <th>Distributor</th>
+                        <th>Status</th>
+                        <th>MRP</th>
+                        <th>Disc. %</th>
+                        <th>Amount</th>
+                        <th>GST %</th>
+                        <th>Net value</th>
+                        <th>Delivery</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (offer of section.offers; track offer.companyId) {
+                        <tr
+                          [class.offer-best]="offer.isBestPrice"
+                          [class.offer-selected]="isProductOfferSelected(section.itemKey, offer.companyId)"
+                          [class.offer-awaiting]="!offer.responseReceived"
+                        >
+                          <td class="col-pick">
+                            <input
+                              type="radio"
+                              [name]="'product-offer-' + section.itemKey"
+                              [checked]="isProductOfferSelected(section.itemKey, offer.companyId)"
+                              [disabled]="!offer.responseReceived"
+                              (change)="selectProductOffer(section.itemKey, offer.companyId)"
+                              [attr.aria-label]="
+                                'Select ' + offer.companyName + ' for ' + displayProductField(section.item.productBrand)
+                              "
+                            />
+                          </td>
+                          <td>
+                            <button
+                              type="button"
+                              class="offer-distributor-link"
+                              (click)="jumpToDistributorFromOffer(offer.companyId)"
+                            >
+                              {{ offer.companyName }}
+                            </button>
+                            @if (offer.isBestPrice) {
+                              <span class="offer-badge">Best price</span>
+                            }
+                          </td>
+                          <td>
+                            {{ offer.responseReceived ? 'Quoted' : 'Awaiting' }}
+                          </td>
+                          <td>{{ formatOptionalNumber(offer.mrp) }}</td>
+                          <td>{{ offer.responseReceived ? formatOptionalPercent(offer.discountPercentage) : '—' }}</td>
+                          <td>{{ formatCurrency(offer.amount) }}</td>
+                          <td>{{ offer.responseReceived ? formatOptionalPercent(offer.gstPercentage) : '—' }}</td>
+                          <td class="col-net">{{ formatCurrency(offer.netValue) }}</td>
+                          <td>{{ formatExpectedDeliveryDate(offer.deliveryDate) }}</td>
+                          <td>
+                            @if (isProductOfferSelected(section.itemKey, offer.companyId)) {
+                              <button
+                                type="button"
+                                class="btn-clear-pick"
+                                (click)="clearProductOffer(section.itemKey)"
+                              >
+                                Clear
+                              </button>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            </article>
+          }
+        </div>
+
+        <footer class="products-compare-footer">
+          <p>
+            @if (productSelectionComplete()) {
+              All products have a selected distributor offer. Final multi-distributor send can use this mix next.
+            } @else {
+              Select one offer for each product to build the final mix.
+            }
+          </p>
+        </footer>
+      }
+    </div>
   } @else {
     <div class="toolbar">
       <div class="search-field">

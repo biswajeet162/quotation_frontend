@@ -24,7 +24,7 @@ import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
 import { InquiryChatAttachmentComponent } from '../../../shared/components/inquiry-chat-attachment/inquiry-chat-attachment.component';
 import { ChatAudioPlayerComponent } from '../../../shared/components/chat-audio-player/chat-audio-player.component';
 import { formatExpectedDeliveryDate, getRequestSourceLabel } from '../../../shared/utils/inquiry-display.util';
-import { quotationLinePricingFromAdmin } from '../../../shared/utils/inquiry-pricing.util';
+import { quotationLinePricingFromAdmin, quotationLinePricingFromDistributor } from '../../../shared/utils/inquiry-pricing.util';
 import {
   canReplyToTimelineEntry,
   ChatReplyTarget,
@@ -47,6 +47,8 @@ import { openPublicImages } from '../../../shared/utils/public-image.util';
 import { QuotationComparisonModalComponent } from '../quotation-comparison-modal/quotation-comparison-modal.component';
 import { FinalizeQuotationModalComponent } from '../finalize-quotation-modal/finalize-quotation-modal.component';
 
+type ListViewMode = 'distributors' | 'products';
+
 interface PendingAttachment {
   id: string;
   file: File;
@@ -60,6 +62,28 @@ interface AdminInquiryLineDraft {
   discountPercentage?: number;
   gstPercentage?: number;
   ourDeliveryDate?: string;
+}
+
+interface ProductOfferQuote {
+  companyId: string;
+  companyName: string;
+  responseReceived: boolean;
+  mrp: number | null;
+  discountPercentage: number;
+  gstPercentage: number;
+  amount: number | null;
+  netValue: number | null;
+  deliveryDate?: string;
+  isBestPrice: boolean;
+}
+
+interface ProductCompareSection {
+  itemKey: string;
+  item: InquiryItem;
+  offers: ProductOfferQuote[];
+  selectedCompanyId: string | null;
+  quotedCount: number;
+  awaitingCount: number;
 }
 
 @Component({
@@ -117,6 +141,14 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   readonly finalizeModalOpen = signal(false);
   /** Frontend-only: distributor chosen when finalizing (drives green + double-tick). */
   readonly finalChoiceCompanyId = signal<string | null>(null);
+
+  /** Toggle between per-distributor chats and per-product quote picking. */
+  readonly listViewMode = signal<ListViewMode>('distributors');
+  readonly quotesByDistributor = signal<Map<string, InquiryItem[]>>(new Map());
+  readonly productQuotesLoading = signal(false);
+  readonly productQuotesError = signal<string | null>(null);
+  /** itemKey → selected distributor companyId */
+  readonly productSelections = signal<Map<string, string>>(new Map());
 
   private readonly detailScrollRef = viewChild<ElementRef<HTMLElement>>('detailScroll');
   private readonly chatScrollRef = viewChild<ElementRef<HTMLElement>>('chatScroll');
@@ -197,6 +229,115 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
       const haystack = (distributor.companyName ?? '').toLowerCase();
       return haystack.includes(query);
     });
+  });
+
+  readonly productCompareSections = computed((): ProductCompareSection[] => {
+    const inquiry = this.inquiry();
+    const items = inquiry?.items ?? [];
+    const quotes = this.quotesByDistributor();
+    const distributors = this.distributors();
+    const selections = this.productSelections();
+    if (!inquiry || items.length === 0) {
+      return [];
+    }
+
+    return items.map((item) => {
+      const itemKey = item.id ?? item.productId;
+      const offers: ProductOfferQuote[] = [];
+
+      for (const distributor of distributors) {
+        const distributorItems = quotes.get(distributor.companyId);
+        if (!distributorItems) {
+          continue;
+        }
+        const quoteItem = distributorItems.find(
+          (line) => (line.id ?? line.productId) === itemKey,
+        );
+        if (!quoteItem) {
+          continue;
+        }
+
+        const pricing = quotationLinePricingFromDistributor(quoteItem);
+        offers.push({
+          companyId: distributor.companyId,
+          companyName: distributor.companyName?.trim() || 'Distributor',
+          responseReceived: !!distributor.responseReceived && pricing.mrp != null,
+          mrp: pricing.mrp,
+          discountPercentage: pricing.discountPercentage,
+          gstPercentage: pricing.gstPercentage,
+          amount: pricing.amount,
+          netValue: pricing.netValue,
+          deliveryDate: pricing.ourDeliveryDate,
+          isBestPrice: false,
+        });
+      }
+
+      const quotedNets = offers
+        .map((offer) => offer.netValue)
+        .filter((value): value is number => value != null);
+      const minNet = quotedNets.length > 0 ? Math.min(...quotedNets) : null;
+      const markedOffers = offers.map((offer) => ({
+        ...offer,
+        isBestPrice: minNet != null && offer.netValue === minNet,
+      }));
+
+      markedOffers.sort((a, b) => {
+        if (a.responseReceived !== b.responseReceived) {
+          return a.responseReceived ? -1 : 1;
+        }
+        if (a.netValue != null && b.netValue != null) {
+          return a.netValue - b.netValue;
+        }
+        if (a.netValue != null) {
+          return -1;
+        }
+        if (b.netValue != null) {
+          return 1;
+        }
+        return a.companyName.localeCompare(b.companyName, undefined, { sensitivity: 'base' });
+      });
+
+      return {
+        itemKey,
+        item,
+        offers: markedOffers,
+        selectedCompanyId: selections.get(itemKey) ?? null,
+        quotedCount: markedOffers.filter((offer) => offer.responseReceived).length,
+        awaitingCount: markedOffers.filter((offer) => !offer.responseReceived).length,
+      };
+    });
+  });
+
+  readonly selectedProductCount = computed(
+    () =>
+      this.productCompareSections().filter((section) => section.selectedCompanyId != null).length,
+  );
+
+  readonly productSelectionComplete = computed(() => {
+    const sections = this.productCompareSections();
+    if (sections.length === 0) {
+      return false;
+    }
+    return sections.every((section) => section.selectedCompanyId != null);
+  });
+
+  readonly productSelectionTotalNet = computed(() => {
+    let total = 0;
+    let hasValue = false;
+    for (const section of this.productCompareSections()) {
+      if (!section.selectedCompanyId) {
+        continue;
+      }
+      const offer = section.offers.find(
+        (row) => row.companyId === section.selectedCompanyId,
+      );
+      if (offer?.netValue == null) {
+        continue;
+      }
+      total += offer.netValue;
+      hasValue = true;
+    }
+    return hasValue ? total : null;
   });
 
   readonly selectedDistributor = computed(() => {
@@ -281,17 +422,124 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
       next: (inquiry) => {
         if (this.inquiry()?.id !== inquiry.id) {
           this.finalChoiceCompanyId.set(null);
+          this.productSelections.set(new Map());
+          this.quotesByDistributor.set(new Map());
         }
         this.inquiry.set(inquiry);
         this.loading.set(false);
         this.syncDistributorSelection();
         this.resolveFinalChoiceOnLoad(inquiry);
+        this.loadAllDistributorQuotes();
       },
       error: () => {
         this.loading.set(false);
         this.errorMessage.set('Could not load this quotation request.');
       },
     });
+  }
+
+  setListViewMode(mode: ListViewMode): void {
+    this.listViewMode.set(mode);
+    if (mode === 'products' && this.quotesByDistributor().size === 0) {
+      this.loadAllDistributorQuotes();
+    }
+  }
+
+  selectProductOffer(itemKey: string, companyId: string): void {
+    this.productSelections.update((current) => {
+      const next = new Map(current);
+      next.set(itemKey, companyId);
+      return next;
+    });
+  }
+
+  clearProductOffer(itemKey: string): void {
+    this.productSelections.update((current) => {
+      const next = new Map(current);
+      next.delete(itemKey);
+      return next;
+    });
+  }
+
+  isProductOfferSelected(itemKey: string, companyId: string): boolean {
+    return this.productSelections().get(itemKey) === companyId;
+  }
+
+  selectedOfferLabel(section: ProductCompareSection): string {
+    if (!section.selectedCompanyId) {
+      return '—';
+    }
+    return (
+      section.offers.find((offer) => offer.companyId === section.selectedCompanyId)?.companyName ??
+      '—'
+    );
+  }
+
+  selectBestOffersForAll(): void {
+    const next = new Map(this.productSelections());
+    for (const section of this.productCompareSections()) {
+      const best = section.offers.find((offer) => offer.isBestPrice && offer.responseReceived);
+      if (best) {
+        next.set(section.itemKey, best.companyId);
+      }
+    }
+    this.productSelections.set(next);
+  }
+
+  jumpToDistributorFromOffer(companyId: string): void {
+    this.listViewMode.set('distributors');
+    this.selectDistributor(companyId);
+  }
+
+  private loadAllDistributorQuotes(): void {
+    const inquiry = this.inquiry();
+    const distributors = this.distributors();
+    if (!inquiry || distributors.length === 0) {
+      this.quotesByDistributor.set(new Map());
+      return;
+    }
+
+    this.productQuotesLoading.set(true);
+    this.productQuotesError.set(null);
+
+    const requests = distributors.map((distributor) =>
+      this.inquiryService.getDistributorQuotationItems(inquiry.id, distributor.companyId).pipe(
+        catchError(() => of([] as InquiryItem[])),
+      ),
+    );
+
+    forkJoin(requests).subscribe({
+      next: (results) => {
+        const map = new Map<string, InquiryItem[]>();
+        distributors.forEach((distributor, index) => {
+          map.set(distributor.companyId, results[index] ?? []);
+        });
+        this.quotesByDistributor.set(map);
+        this.productQuotesLoading.set(false);
+        this.autoSelectBestOffersIfEmpty();
+      },
+      error: () => {
+        this.quotesByDistributor.set(new Map());
+        this.productQuotesLoading.set(false);
+        this.productQuotesError.set('Could not load distributor quotations by product.');
+      },
+    });
+  }
+
+  private autoSelectBestOffersIfEmpty(): void {
+    if (this.productSelections().size > 0) {
+      return;
+    }
+    const next = new Map<string, string>();
+    for (const section of this.productCompareSections()) {
+      const best = section.offers.find((offer) => offer.isBestPrice && offer.responseReceived);
+      if (best) {
+        next.set(section.itemKey, best.companyId);
+      }
+    }
+    if (next.size > 0) {
+      this.productSelections.set(next);
+    }
   }
 
   /** Scan distributor timelines once so the chosen double-tick shows without selecting first. */
