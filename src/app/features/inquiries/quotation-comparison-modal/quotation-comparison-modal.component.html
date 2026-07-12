@@ -9,6 +9,7 @@
     >
       <header class="comparison-header">
         <div class="comparison-title-block">
+          <p class="comparison-eyebrow">Amount · excl. GST</p>
           <h2 id="comparison-title">Quotation comparison</h2>
           @if (inquiry(); as inquiry) {
             <p class="comparison-subtitle">
@@ -41,180 +42,79 @@
         </div>
       } @else {
         <div class="comparison-body">
-          <section class="comparison-summary-section">
-            <h3>Overview</h3>
-            <p class="comparison-section-hint">
-              Compare total pricing, savings, and delivery commitments across all responded distributors.
-            </p>
-            <div class="comparison-cards">
-              @for (summary of distributorSummaries(); track summary.distributor.companyId) {
-                <article
-                  class="comparison-card"
-                  [class.is-best-price]="summary.isBestPrice"
-                  [class.is-fastest]="summary.isFastestDelivery"
-                  [class.is-highlighted]="highlightedCompanyId() === summary.distributor.companyId"
-                >
-                  <div class="comparison-card-header">
-                    <h4>{{ distributorLabel(summary.distributor) }}</h4>
-                    <div class="comparison-badges">
-                      @if (summary.isBestPrice) {
-                        <span class="badge badge-best-price">Best price</span>
-                      }
-                      @if (summary.isFastestDelivery) {
-                        <span class="badge badge-fastest">Fastest delivery</span>
-                      }
-                    </div>
-                  </div>
+          <p class="matrix-hint">
+            Green cells are the lowest amount for each product (MRP after discount, excl. GST).
+            The Pick column always takes that lowest amount; Total sums every pick.
+          </p>
 
-                  <dl class="comparison-metrics">
-                    <div class="metric metric-primary">
-                      <dt>Total (incl. GST)</dt>
-                      <dd>{{ formatCurrency(summary.totalNetValue) }}</dd>
-                    </div>
-                    <div class="metric">
-                      <dt>Subtotal (excl. GST)</dt>
-                      <dd>{{ formatCurrency(summary.totalAmount) }}</dd>
-                    </div>
-                    <div class="metric">
-                      <dt>Avg. discount</dt>
-                      <dd>{{ formatPercent(summary.avgDiscount) }}</dd>
-                    </div>
-                    <div class="metric">
-                      <dt>Savings vs MRP</dt>
-                      <dd [class.savings-positive]="(summary.savingsVsMrp ?? 0) > 0">
-                        {{ formatSavings(summary.savingsVsMrp) }}
-                      </dd>
-                    </div>
-                    @if (summary.savingsVsAdmin != null) {
-                      <div class="metric">
-                        <dt>vs admin baseline</dt>
-                        <dd [class.savings-positive]="summary.savingsVsAdmin > 0">
-                          {{ formatSavings(summary.savingsVsAdmin) }}
-                        </dd>
-                      </div>
-                    }
-                    <div class="metric">
-                      <dt>Delivery window</dt>
-                      <dd>
-                        @if (summary.earliestDelivery && summary.latestDelivery) {
-                          @if (summary.earliestDelivery === summary.latestDelivery) {
-                            {{ formatExpectedDeliveryDate(summary.earliestDelivery) }}
-                          } @else {
-                            {{ formatExpectedDeliveryDate(summary.earliestDelivery) }}
-                            –
-                            {{ formatExpectedDeliveryDate(summary.latestDelivery) }}
-                          }
-                        } @else {
-                          —
-                        }
-                      </dd>
-                    </div>
-                    <div class="metric">
-                      <dt>Responded on</dt>
-                      <dd>{{ formatResponseDate(summary.distributor.responseReceivedAt) }}</dd>
-                    </div>
-                  </dl>
-
-                  <button
-                    type="button"
-                    class="btn-select-distributor"
-                    (click)="selectDistributor(summary.distributor.companyId)"
-                  >
-                    Select this distributor
-                  </button>
-                </article>
-              }
-            </div>
-          </section>
-
-          <section class="comparison-detail-section">
-            <h3>Line-by-line comparison</h3>
-            <p class="comparison-section-hint">
-              Green highlights show the lowest net value per product. Admin baseline is your reference pricing.
-            </p>
-
-            <div class="comparison-table-wrap">
-              <table class="comparison-table">
-                <thead>
+          <div class="matrix-wrap">
+            <table class="matrix-table">
+              <thead>
+                <tr>
+                  <th class="sticky-col">Product</th>
+                  <th class="col-qty">Qty</th>
+                  @for (dist of respondedDistributors(); track dist.companyId) {
+                    <th>{{ distributorLabel(dist) }}</th>
+                  }
+                  <th class="col-pick">Pick</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of productMatrix(); track row.itemKey) {
                   <tr>
-                    <th class="col-product sticky-col">Product</th>
-                    <th class="col-qty">Qty</th>
-                    <th class="col-admin">Admin baseline</th>
-                    @for (summary of distributorSummaries(); track summary.distributor.companyId) {
-                      <th class="col-distributor">
-                        {{ distributorLabel(summary.distributor) }}
-                      </th>
-                    }
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (row of productRows(); track row.itemKey) {
-                    <tr>
-                      <td class="col-product sticky-col">
-                        <div class="product-cell">
-                          <span class="product-name">{{ row.productName }}</span>
-                          @if (row.productBrand) {
-                            <span class="product-brand">{{ row.productBrand }}</span>
-                          }
-                          @if (row.expectedDeliveryDate) {
-                            <span class="product-expected">
-                              Expected: {{ formatExpectedDeliveryDate(row.expectedDeliveryDate) }}
+                    <td class="sticky-col">
+                      <div class="product-cell">
+                        <span class="product-name">{{ row.productName }}</span>
+                        @if (row.productBrand) {
+                          <span class="product-brand">{{ row.productBrand }}</span>
+                        }
+                      </div>
+                    </td>
+                    <td class="col-qty">{{ row.quantity }}</td>
+                    @for (dist of respondedDistributors(); track dist.companyId) {
+                      @if (getMatrixOffer(row, dist.companyId); as offer) {
+                        <td class="offer-cell" [class.is-best]="offer.isBestAmount">
+                          <span class="cell-amount">{{ formatCurrency(offer.amount) }}</span>
+                          @if (offer.discountPercentage > 0) {
+                            <span class="cell-meta">
+                              {{ formatPercent(offer.discountPercentage) }} off
                             </span>
                           }
-                        </div>
-                      </td>
-                      <td class="col-qty">{{ row.quantity }}</td>
-                      <td class="col-admin">
-                        <span class="cell-value">{{ formatCurrency(row.adminNetValue) }}</span>
-                      </td>
-                      @for (summary of distributorSummaries(); track summary.distributor.companyId) {
-                        @if (getQuoteForRow(row, summary.distributor.companyId); as quote) {
-                          <td
-                            class="col-distributor"
-                            [class.cell-best]="quote.isBestPrice"
-                          >
-                            <div class="quote-cell">
-                              <span class="cell-value cell-net">{{ formatCurrency(quote.netValue) }}</span>
-                              @if (quote.mrp != null) {
-                                <span class="cell-meta">
-                                  MRP {{ formatCurrency(quote.mrp) }}
-                                  @if (quote.discountPercentage > 0) {
-                                    · {{ formatPercent(quote.discountPercentage) }} off
-                                  }
-                                </span>
-                              }
-                              @if (quote.deliveryDate) {
-                                <span class="cell-meta cell-delivery">
-                                  Delivers {{ formatExpectedDeliveryDate(quote.deliveryDate) }}
-                                </span>
-                              }
-                            </div>
-                          </td>
-                        }
+                          @if (offer.deliveryDate) {
+                            <span class="cell-meta">
+                              {{ formatExpectedDeliveryDate(offer.deliveryDate) }}
+                            </span>
+                          }
+                        </td>
+                      } @else {
+                        <td class="offer-cell is-empty">—</td>
                       }
-                    </tr>
-                  }
-                </tbody>
-                <tfoot>
-                  <tr class="totals-row">
-                    <td class="col-product sticky-col"><strong>Grand total (incl. GST)</strong></td>
-                    <td class="col-qty"></td>
-                    <td class="col-admin">
-                      <strong>{{ formatCurrency(adminTotalNetValue()) }}</strong>
-                    </td>
-                    @for (summary of distributorSummaries(); track summary.distributor.companyId) {
-                      <td
-                        class="col-distributor"
-                        [class.cell-best]="summary.isBestPrice"
-                      >
-                        <strong>{{ formatCurrency(summary.totalNetValue) }}</strong>
-                      </td>
                     }
+                    <td class="pick-cell">
+                      @if (row.pick; as pick) {
+                        <span class="cell-amount">{{ formatCurrency(pick.amount) }}</span>
+                        <span class="pick-from">{{ pick.companyName }}</span>
+                      } @else {
+                        <span class="is-empty">—</span>
+                      }
+                    </td>
                   </tr>
-                </tfoot>
-              </table>
-            </div>
-          </section>
+                }
+              </tbody>
+              <tfoot>
+                <tr class="totals-row">
+                  <td class="sticky-col"><strong>Total</strong></td>
+                  <td class="col-qty"></td>
+                  @for (dist of respondedDistributors(); track dist.companyId) {
+                    <td></td>
+                  }
+                  <td class="pick-cell pick-total">
+                    <strong>{{ formatCurrency(pickTotal()) }}</strong>
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
         </div>
       }
     </div>

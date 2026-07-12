@@ -2,15 +2,15 @@ import { InquiryItem } from '../../core/models/inquiry.model';
 import { quotationLinePricingFromDistributor } from './inquiry-pricing.util';
 
 /**
- * Product-offer ranking policy (admin "By products" mix).
+ * Product-offer ranking policy (admin "By products" mix + comparison dashboard).
  *
- * Keep selection rules here so UI stays dumb and future policies
- * (delivery date, hybrid price+delivery, margin, etc.) can land in one place.
+ * Primary metric: amount (excl. GST). Ties break on earliest delivery, then companyId.
  */
 
 export interface RankableProductOffer {
   companyId: string;
-  netValue: number | null;
+  /** Line amount excluding GST — primary ranking metric. */
+  amount: number | null;
   deliveryDate?: string | null;
   responseReceived: boolean;
 }
@@ -23,12 +23,12 @@ export interface ProductOfferRankResult {
 }
 
 /**
- * Current default policy: lowest net value wins among responded quotes.
+ * Lowest amount (excl. GST) wins among responded quotes.
  * Ties: earliest delivery date, then stable companyId order.
  */
 export function rankProductOffers(offers: RankableProductOffer[]): ProductOfferRankResult {
   const quoted = offers.filter(
-    (offer) => offer.responseReceived && offer.netValue != null,
+    (offer) => offer.responseReceived && offer.amount != null,
   );
 
   if (quoted.length === 0) {
@@ -36,9 +36,9 @@ export function rankProductOffers(offers: RankableProductOffer[]): ProductOfferR
   }
 
   const ranked = [...quoted].sort((left, right) => {
-    const netDiff = (left.netValue as number) - (right.netValue as number);
-    if (netDiff !== 0) {
-      return netDiff;
+    const amountDiff = (left.amount as number) - (right.amount as number);
+    if (amountDiff !== 0) {
+      return amountDiff;
     }
 
     const leftDate = normalizeDateKey(left.deliveryDate);
@@ -78,7 +78,7 @@ export function toRankableOfferFromQuoteItem(
   const pricing = quotationLinePricingFromDistributor(quoteItem);
   return {
     companyId,
-    netValue: pricing.netValue,
+    amount: pricing.amount,
     deliveryDate: pricing.ourDeliveryDate ?? null,
     responseReceived: responseReceived && pricing.mrp != null,
   };

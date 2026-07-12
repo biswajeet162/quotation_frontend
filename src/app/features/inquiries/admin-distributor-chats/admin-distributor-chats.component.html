@@ -34,9 +34,9 @@
           class="btn-secondary"
           (click)="selectBestOffersForAll()"
           [disabled]="loading() || productQuotesLoading() || productCompareSections().length === 0"
-          title="Pick the lowest net value offer for each product"
+          title="Pick the lowest amount (excl. GST) offer for each product"
         >
-          Select best prices
+          Select best amounts
         </button>
       }
       <button
@@ -46,7 +46,7 @@
         [disabled]="loading() || !canOpenComparison()"
         [title]="
           canOpenComparison()
-            ? 'Compare quotations from all responded distributors'
+            ? 'Open amount-based quotation comparison dashboard'
             : 'Available once at least one distributor responds'
         "
       >
@@ -79,8 +79,9 @@
         </p>
         <p class="products-compare-summary">
           Selected {{ selectedProductCount() }} of {{ productCompareSections().length }}
-          @if (productSelectionTotalNet() != null) {
-            · Mix total {{ formatCurrency(productSelectionTotalNet()) }}
+          @if (productSelectionTotalAmount() != null) {
+            · Mix total {{ formatCurrency(productSelectionTotalAmount()) }}
+            <span class="mix-total-hint">(excl. GST)</span>
           }
         </p>
       </div>
@@ -172,7 +173,7 @@
                               {{ offer.companyName }}
                             </button>
                             @if (offer.isBestPrice) {
-                              <span class="offer-badge">Best price</span>
+                              <span class="offer-badge">Best amount</span>
                             }
                             @if (isOfferCancelled(section, offer)) {
                               <span class="offer-badge offer-badge--cancelled">Cancelled</span>
@@ -1346,6 +1347,8 @@
 <app-quotation-comparison-modal
   [open]="comparisonModalOpen()"
   [inquiry]="inquiry()"
+  [productSelections]="productSelections()"
+  [quotesByDistributor]="quotesByDistributor()"
   (closed)="closeComparisonModal()"
   (distributorSelected)="onComparisonDistributorSelected($event)"
 />

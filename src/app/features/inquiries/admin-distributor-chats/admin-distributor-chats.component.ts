@@ -375,7 +375,7 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
     return sections.every((section) => section.selectedCompanyId != null);
   });
 
-  readonly productSelectionTotalNet = computed(() => {
+  readonly productSelectionTotalAmount = computed(() => {
     let total = 0;
     let hasValue = false;
     for (const section of this.productCompareSections()) {
@@ -385,10 +385,10 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
       const offer = section.offers.find(
         (row) => row.companyId === section.selectedCompanyId,
       );
-      if (offer?.netValue == null) {
+      if (offer?.amount == null) {
         continue;
       }
-      total += offer.netValue;
+      total += offer.amount;
       hasValue = true;
     }
     return hasValue ? total : null;

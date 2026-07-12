@@ -4,48 +4,31 @@ import { catchError } from 'rxjs/operators';
 import { Inquiry, InquiryDistributor, InquiryItem } from '../../../core/models/inquiry.model';
 import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
 import { formatExpectedDeliveryDate } from '../../../shared/utils/inquiry-display.util';
+import { quotationLinePricingFromDistributor } from '../../../shared/utils/inquiry-pricing.util';
 import {
-  averageDiscountPercentage,
-  earliestDeliveryDate,
-  latestDeliveryDate,
-  quotationLinePricingFromAdmin,
-  quotationLinePricingFromDistributor,
-  sumAmounts,
-  sumMrpBeforeDiscount,
-  sumNetValues,
-} from '../../../shared/utils/inquiry-pricing.util';
+  isBestRankedOffer,
+  rankProductOffers,
+  RankableProductOffer,
+} from '../../../shared/utils/product-offer-ranking.util';
 
-export interface DistributorComparisonSummary {
-  distributor: InquiryDistributor;
-  items: InquiryItem[];
-  totalNetValue: number | null;
-  totalAmount: number | null;
-  totalMrp: number | null;
-  savingsVsMrp: number | null;
-  savingsVsAdmin: number | null;
-  avgDiscount: number | null;
-  earliestDelivery: string | null;
-  latestDelivery: string | null;
-  isBestPrice: boolean;
-  isFastestDelivery: boolean;
+export interface ProductMatrixOffer {
+  companyId: string;
+  companyName: string;
+  amount: number | null;
+  mrp: number | null;
+  discountPercentage: number;
+  deliveryDate?: string;
+  isBestAmount: boolean;
 }
 
-export interface ProductComparisonRow {
+export interface ProductMatrixRow {
   itemKey: string;
   productName: string;
   productBrand?: string;
   quantity: number;
-  expectedDeliveryDate?: string;
-  adminNetValue: number | null;
-  quotes: {
-    companyId: string;
-    netValue: number | null;
-    amount: number | null;
-    mrp: number | null;
-    discountPercentage: number;
-    deliveryDate?: string;
-    isBestPrice: boolean;
-  }[];
+  offers: ProductMatrixOffer[];
+  /** Always the lowest amount offer for this product. */
+  pick: ProductMatrixOffer | null;
 }
 
 @Component({
@@ -58,6 +41,11 @@ export class QuotationComparisonModalComponent {
 
   readonly open = input(false);
   readonly inquiry = input<Inquiry | null>(null);
+  /** Kept for parent wiring; pick column always uses lowest amount. */
+  readonly productSelections = input<Map<string, string>>(new Map());
+  readonly quotesByDistributorInput = input<Map<string, InquiryItem[]>>(new Map(), {
+    alias: 'quotesByDistributor',
+  });
 
   readonly closed = output<void>();
   readonly distributorSelected = output<string>();
@@ -65,121 +53,119 @@ export class QuotationComparisonModalComponent {
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly quotesByDistributor = signal<Map<string, InquiryItem[]>>(new Map());
-  readonly highlightedCompanyId = signal<string | null>(null);
+
+  readonly quotes = computed(() => {
+    const fromParent = this.quotesByDistributorInput();
+    if (fromParent.size > 0) {
+      return fromParent;
+    }
+    return this.quotesByDistributor();
+  });
 
   readonly respondedDistributors = computed(() => {
     const distributors = this.inquiry()?.distributors ?? [];
+    const quotes = this.quotes();
     return [...distributors]
-      .filter((distributor) => distributor.responseReceived)
+      .filter((distributor) => {
+        if (distributor.responseReceived) {
+          return true;
+        }
+        const items = quotes.get(distributor.companyId) ?? [];
+        return items.some((item) => quotationLinePricingFromDistributor(item).amount != null);
+      })
       .sort((a, b) =>
         (a.companyName ?? '').localeCompare(b.companyName ?? '', undefined, { sensitivity: 'base' }),
       );
   });
 
-  readonly adminBaselineItems = computed(() => this.inquiry()?.items ?? []);
-
-  readonly adminTotalNetValue = computed(() => sumNetValues(this.adminBaselineItems(), false));
-
-  readonly distributorSummaries = computed((): DistributorComparisonSummary[] => {
-    const quotes = this.quotesByDistributor();
-    const adminTotal = this.adminTotalNetValue();
-
-    const summaries = this.respondedDistributors().map((distributor) => {
-      const items = quotes.get(distributor.companyId) ?? [];
-      const totalNetValue = sumNetValues(items, true);
-      const totalAmount = sumAmounts(items, true);
-      const totalMrp = sumMrpBeforeDiscount(items, true);
-      const savingsVsMrp =
-        totalMrp != null && totalAmount != null ? totalMrp - totalAmount : null;
-      const savingsVsAdmin =
-        adminTotal != null && totalNetValue != null ? adminTotal - totalNetValue : null;
-
-      return {
-        distributor,
-        items,
-        totalNetValue,
-        totalAmount,
-        totalMrp,
-        savingsVsMrp,
-        savingsVsAdmin,
-        avgDiscount: averageDiscountPercentage(items, true),
-        earliestDelivery: earliestDeliveryDate(items, true),
-        latestDelivery: latestDeliveryDate(items, true),
-        isBestPrice: false,
-        isFastestDelivery: false,
-      };
-    });
-
-    const priceValues = summaries
-      .map((summary) => summary.totalNetValue)
-      .filter((value): value is number => value != null);
-    const minPrice = priceValues.length > 0 ? Math.min(...priceValues) : null;
-
-    const deliveryValues = summaries
-      .map((summary) => summary.latestDelivery)
-      .filter((value): value is string => !!value);
-    const fastestDelivery = deliveryValues.length > 0 ? deliveryValues.sort()[0] : null;
-
-    return summaries.map((summary) => ({
-      ...summary,
-      isBestPrice: minPrice != null && summary.totalNetValue === minPrice,
-      isFastestDelivery:
-        fastestDelivery != null && summary.latestDelivery === fastestDelivery,
-    }));
-  });
-
-  readonly productRows = computed((): ProductComparisonRow[] => {
-    const baselineItems = this.adminBaselineItems();
-    const summaries = this.distributorSummaries();
-    if (baselineItems.length === 0 || summaries.length === 0) {
+  readonly productMatrix = computed((): ProductMatrixRow[] => {
+    const items = this.inquiry()?.items ?? [];
+    const distributors = this.respondedDistributors();
+    const quotes = this.quotes();
+    if (items.length === 0 || distributors.length === 0) {
       return [];
     }
 
-    return baselineItems.map((item) => {
+    return items.map((item) => {
       const itemKey = item.id ?? item.productId;
-      const adminPricing = quotationLinePricingFromAdmin(item);
-      const quotes = summaries.map((summary) => {
-        const quoteItem =
-          summary.items.find((line) => (line.id ?? line.productId) === itemKey) ?? item;
+      const offers: ProductMatrixOffer[] = [];
+
+      for (const distributor of distributors) {
+        const quoteItem = (quotes.get(distributor.companyId) ?? []).find(
+          (line) => (line.id ?? line.productId) === itemKey,
+        );
+        if (!quoteItem) {
+          continue;
+        }
         const pricing = quotationLinePricingFromDistributor(quoteItem);
-        return {
-          companyId: summary.distributor.companyId,
-          netValue: pricing.netValue,
+        if (pricing.amount == null) {
+          continue;
+        }
+        offers.push({
+          companyId: distributor.companyId,
+          companyName: distributor.companyName?.trim() || 'Distributor',
           amount: pricing.amount,
           mrp: pricing.mrp,
           discountPercentage: pricing.discountPercentage,
           deliveryDate: pricing.ourDeliveryDate,
-          isBestPrice: false,
-        };
-      });
+          isBestAmount: false,
+        });
+      }
 
-      const netValues = quotes
-        .map((quote) => quote.netValue)
-        .filter((value): value is number => value != null);
-      const minNet = netValues.length > 0 ? Math.min(...netValues) : null;
+      const rank = rankProductOffers(
+        offers.map(
+          (offer): RankableProductOffer => ({
+            companyId: offer.companyId,
+            amount: offer.amount,
+            deliveryDate: offer.deliveryDate,
+            responseReceived: true,
+          }),
+        ),
+      );
+
+      const marked = offers.map((offer) => ({
+        ...offer,
+        isBestAmount: isBestRankedOffer(offer.companyId, rank),
+      }));
+
+      const pick = marked.find((offer) => offer.isBestAmount) ?? null;
 
       return {
         itemKey,
         productName: item.productName?.trim() || '—',
         productBrand: item.productBrand?.trim(),
         quantity: item.quantity,
-        expectedDeliveryDate: item.expectedDeliveryDate,
-        adminNetValue: adminPricing.netValue,
-        quotes: quotes.map((quote) => ({
-          ...quote,
-          isBestPrice: minNet != null && quote.netValue === minNet,
-        })),
+        offers: marked,
+        pick,
       };
     });
+  });
+
+  readonly pickTotal = computed(() => {
+    let total = 0;
+    let hasValue = false;
+    for (const row of this.productMatrix()) {
+      if (row.pick?.amount != null) {
+        total += row.pick.amount;
+        hasValue = true;
+      }
+    }
+    return hasValue ? total : null;
   });
 
   readonly formatExpectedDeliveryDate = formatExpectedDeliveryDate;
 
   constructor() {
     effect(() => {
-      if (this.open() && this.inquiry()) {
-        this.loadComparisonData();
+      if (!this.open() || !this.inquiry()) {
+        return;
       }
+      if (this.quotesByDistributorInput().size > 0) {
+        this.loading.set(false);
+        this.errorMessage.set(null);
+        return;
+      }
+      this.loadComparisonData();
     });
   }
 
@@ -187,18 +173,18 @@ export class QuotationComparisonModalComponent {
     this.closed.emit();
   }
 
-  selectDistributor(companyId: string): void {
-    this.highlightedCompanyId.set(companyId);
-    this.distributorSelected.emit(companyId);
-    this.close();
-  }
-
   distributorLabel(distributor: InquiryDistributor): string {
     return distributor.companyName ?? 'Distributor';
   }
 
+  getMatrixOffer(row: ProductMatrixRow, companyId: string): ProductMatrixOffer | null {
+    return row.offers.find((offer) => offer.companyId === companyId) ?? null;
+  }
+
   formatCurrency(value: number | null | undefined): string {
-    return value == null ? '—' : `₹${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+    return value == null
+      ? '—'
+      : `₹${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
   }
 
   formatPercent(value: number | null | undefined): string {
@@ -207,39 +193,10 @@ export class QuotationComparisonModalComponent {
       : `${value.toLocaleString(undefined, { maximumFractionDigits: 1 })}%`;
   }
 
-  formatSavings(value: number | null | undefined): string {
-    if (value == null) {
-      return '—';
-    }
-    const prefix = value > 0 ? 'Save ' : value < 0 ? 'Extra ' : '';
-    return `${prefix}${this.formatCurrency(Math.abs(value))}`;
-  }
-
-  formatResponseDate(iso?: string): string {
-    if (!iso) {
-      return '—';
-    }
-    const date = new Date(iso);
-    if (Number.isNaN(date.getTime())) {
-      return iso;
-    }
-    return date.toLocaleString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-    });
-  }
-
-  getQuoteForRow(row: ProductComparisonRow, companyId: string) {
-    return row.quotes.find((quote) => quote.companyId === companyId);
-  }
-
   private loadComparisonData(): void {
     const inquiry = this.inquiry();
-    const responded = this.respondedDistributors();
-    if (!inquiry || responded.length === 0) {
+    const distributors = inquiry?.distributors ?? [];
+    if (!inquiry || distributors.length === 0) {
       this.quotesByDistributor.set(new Map());
       return;
     }
@@ -247,7 +204,7 @@ export class QuotationComparisonModalComponent {
     this.loading.set(true);
     this.errorMessage.set(null);
 
-    const requests = responded.map((distributor) =>
+    const requests = distributors.map((distributor) =>
       this.inquiryService.getDistributorQuotationItems(inquiry.id, distributor.companyId).pipe(
         catchError(() => of([] as InquiryItem[])),
       ),
@@ -256,7 +213,7 @@ export class QuotationComparisonModalComponent {
     forkJoin(requests).subscribe({
       next: (results) => {
         const map = new Map<string, InquiryItem[]>();
-        responded.forEach((distributor, index) => {
+        distributors.forEach((distributor, index) => {
           map.set(distributor.companyId, results[index] ?? []);
         });
         this.quotesByDistributor.set(map);
