@@ -148,6 +148,7 @@
                         <tr
                           [class.offer-best]="offer.isBestPrice"
                           [class.offer-selected]="isProductOfferSelected(section.itemKey, offer.companyId)"
+                          [class.offer-cancelled]="isOfferCancelled(section, offer)"
                           [class.offer-awaiting]="!offer.responseReceived"
                         >
                           <td class="col-pick">
@@ -172,6 +173,9 @@
                             </button>
                             @if (offer.isBestPrice) {
                               <span class="offer-badge">Best price</span>
+                            }
+                            @if (isOfferCancelled(section, offer)) {
+                              <span class="offer-badge offer-badge--cancelled">Cancelled</span>
                             }
                           </td>
                           <td>
@@ -405,7 +409,9 @@
                               </thead>
                               <tbody>
                                 @for (item of quotationItems(); track item.id ?? item.productId) {
-                                  <tr>
+                                  <tr
+                                    [class.line-cancelled]="isDistributorItemCancelled(item, distributor.companyId)"
+                                  >
                                     <td class="col-sno">{{ $index + 1 }}</td>
                                     <td class="col-designation consumer-cell" [title]="displayProductField(item.productName)">
                                       {{ displayProductField(item.productName) }}
@@ -544,7 +550,11 @@
                                   @for (item of quotationItems(); track item.id ?? item.productId) {
                                     @if (hasQuotationLine(item)) {
                                       @if (getQuotationLineDraft(item); as quoted) {
-                                        <tr>
+                                        <tr
+                                          [class.line-cancelled]="
+                                            isDistributorItemCancelled(item, distributor.companyId)
+                                          "
+                                        >
                                           <td class="col-sno">{{ $index + 1 }}</td>
                                           <td
                                             class="col-designation consumer-cell"

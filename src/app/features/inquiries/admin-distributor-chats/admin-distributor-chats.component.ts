@@ -24,7 +24,14 @@ import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
 import { InquiryChatAttachmentComponent } from '../../../shared/components/inquiry-chat-attachment/inquiry-chat-attachment.component';
 import { ChatAudioPlayerComponent } from '../../../shared/components/chat-audio-player/chat-audio-player.component';
 import { formatExpectedDeliveryDate, getRequestSourceLabel } from '../../../shared/utils/inquiry-display.util';
-import { quotationLinePricingFromAdmin, quotationLinePricingFromDistributor } from '../../../shared/utils/inquiry-pricing.util';
+import {
+  quotationLinePricingFromAdmin,
+  quotationLinePricingFromDistributor,
+} from '../../../shared/utils/inquiry-pricing.util';
+import {
+  isBestRankedOffer,
+  rankProductOffers,
+} from '../../../shared/utils/product-offer-ranking.util';
 import {
   canReplyToTimelineEntry,
   ChatReplyTarget,
@@ -272,26 +279,26 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
         });
       }
 
-      const quotedNets = offers
-        .map((offer) => offer.netValue)
-        .filter((value): value is number => value != null);
-      const minNet = quotedNets.length > 0 ? Math.min(...quotedNets) : null;
+      // Ranking policy lives in product-offer-ranking.util.ts (swap rules there later).
+      const rank = rankProductOffers(offers);
       const markedOffers = offers.map((offer) => ({
         ...offer,
-        isBestPrice: minNet != null && offer.netValue === minNet,
+        isBestPrice: isBestRankedOffer(offer.companyId, rank),
       }));
 
       markedOffers.sort((a, b) => {
         if (a.responseReceived !== b.responseReceived) {
           return a.responseReceived ? -1 : 1;
         }
-        if (a.netValue != null && b.netValue != null) {
-          return a.netValue - b.netValue;
+        const aRank = rank.rankedCompanyIds.indexOf(a.companyId);
+        const bRank = rank.rankedCompanyIds.indexOf(b.companyId);
+        if (aRank >= 0 && bRank >= 0 && aRank !== bRank) {
+          return aRank - bRank;
         }
-        if (a.netValue != null) {
+        if (aRank >= 0) {
           return -1;
         }
-        if (b.netValue != null) {
+        if (bRank >= 0) {
           return 1;
         }
         return a.companyName.localeCompare(b.companyName, undefined, { sensitivity: 'base' });
@@ -476,11 +483,13 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   }
 
   selectBestOffersForAll(): void {
-    const next = new Map(this.productSelections());
+    const next = new Map<string, string>();
     for (const section of this.productCompareSections()) {
-      const best = section.offers.find((offer) => offer.isBestPrice && offer.responseReceived);
-      if (best) {
-        next.set(section.itemKey, best.companyId);
+      const bestCompanyId =
+        section.offers.find((offer) => offer.isBestPrice && offer.responseReceived)?.companyId ??
+        null;
+      if (bestCompanyId) {
+        next.set(section.itemKey, bestCompanyId);
       }
     }
     this.productSelections.set(next);
@@ -489,6 +498,37 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   jumpToDistributorFromOffer(companyId: string): void {
     this.listViewMode.set('distributors');
     this.selectDistributor(companyId);
+  }
+
+  /** Quoted rows that are not the current pick — kept visible with a cancel strike. */
+  isOfferCancelled(section: ProductCompareSection, offer: ProductOfferQuote): boolean {
+    if (!offer.responseReceived) {
+      return false;
+    }
+    if (!section.selectedCompanyId) {
+      return !offer.isBestPrice;
+    }
+    return section.selectedCompanyId !== offer.companyId;
+  }
+
+  /**
+   * On By distributors tables: strike a line when another distributor won this product
+   * in the by-products mix selection.
+   */
+  isDistributorItemCancelled(item: InquiryItem, distributorCompanyId?: string | null): boolean {
+    const companyId = distributorCompanyId ?? this.selectedDistributorCompanyId();
+    if (!companyId) {
+      return false;
+    }
+    const itemKey = item.id ?? item.productId;
+    if (!itemKey) {
+      return false;
+    }
+    const selectedCompanyId = this.productSelections().get(itemKey);
+    if (!selectedCompanyId) {
+      return false;
+    }
+    return selectedCompanyId !== companyId;
   }
 
   private loadAllDistributorQuotes(): void {
@@ -516,7 +556,8 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
         });
         this.quotesByDistributor.set(map);
         this.productQuotesLoading.set(false);
-        this.autoSelectBestOffersIfEmpty();
+        // Default policy: auto-pick the ranked winner for every product.
+        this.selectBestOffersForAll();
       },
       error: () => {
         this.quotesByDistributor.set(new Map());
@@ -524,22 +565,6 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
         this.productQuotesError.set('Could not load distributor quotations by product.');
       },
     });
-  }
-
-  private autoSelectBestOffersIfEmpty(): void {
-    if (this.productSelections().size > 0) {
-      return;
-    }
-    const next = new Map<string, string>();
-    for (const section of this.productCompareSections()) {
-      const best = section.offers.find((offer) => offer.isBestPrice && offer.responseReceived);
-      if (best) {
-        next.set(section.itemKey, best.companyId);
-      }
-    }
-    if (next.size > 0) {
-      this.productSelections.set(next);
-    }
   }
 
   /** Scan distributor timelines once so the chosen double-tick shows without selecting first. */

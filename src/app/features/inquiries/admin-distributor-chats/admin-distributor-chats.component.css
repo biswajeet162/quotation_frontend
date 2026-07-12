@@ -206,7 +206,7 @@
   font-weight: 700;
 }
 
-.product-offers-table tr.offer-best {
+.product-offers-table tr.offer-best:not(.offer-cancelled) {
   background: #eff6ff;
 }
 
@@ -216,6 +216,33 @@
 
 .product-offers-table tr.offer-awaiting {
   opacity: 0.72;
+}
+
+.product-offers-table tr.offer-cancelled {
+  position: relative;
+  background: #f8fafc;
+  color: #94a3b8;
+}
+
+.product-offers-table tr.offer-cancelled td {
+  position: relative;
+  color: #94a3b8;
+  /* Continuous cancel line across the full row (cell-by-cell so table layout stays intact). */
+  background-image: linear-gradient(
+    to bottom,
+    transparent calc(50% - 1px),
+    #64748b calc(50% - 1px),
+    #64748b calc(50% + 1px),
+    transparent calc(50% + 1px)
+  );
+}
+
+.product-offers-table tr.offer-cancelled .offer-distributor-link {
+  color: #94a3b8;
+}
+
+.product-offers-table tr.offer-cancelled .col-net {
+  font-weight: 600;
 }
 
 .offer-distributor-link {
@@ -243,6 +270,11 @@
   border-radius: 999px;
   padding: 0.12rem 0.45rem;
   vertical-align: middle;
+}
+
+.offer-badge--cancelled {
+  color: #7f1d1d;
+  background: #fee2e2;
 }
 
 .btn-clear-pick {
@@ -693,6 +725,25 @@
 
 .preview-table tbody tr:last-child td {
   border-bottom: 0;
+}
+
+.preview-table tbody tr.line-cancelled td {
+  position: relative;
+  color: #94a3b8;
+  background-image: linear-gradient(
+    to bottom,
+    transparent calc(50% - 1px),
+    #64748b calc(50% - 1px),
+    #64748b calc(50% + 1px),
+    transparent calc(50% + 1px)
+  );
+}
+
+.preview-table tbody tr.line-cancelled .line-input,
+.preview-table tbody tr.line-cancelled .chat-readonly-value,
+.preview-table tbody tr.line-cancelled .consumer-cell,
+.preview-table tbody tr.line-cancelled .btn-attachment-link {
+  color: #94a3b8;
 }
 
 .btn-attachment-link {
