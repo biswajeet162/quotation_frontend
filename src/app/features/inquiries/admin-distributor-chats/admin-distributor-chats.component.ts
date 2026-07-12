@@ -149,6 +149,8 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   readonly requoteLoading = signal(false);
   readonly comparisonModalOpen = signal(false);
   readonly finalizeModalOpen = signal(false);
+  readonly mixFinalizeItems = signal<InquiryItem[]>([]);
+  readonly mixDistributorByItemId = signal<Record<string, string>>({});
   /** Frontend-only: distributor chosen when finalizing (drives green + double-tick). */
   readonly finalChoiceCompanyId = signal<string | null>(null);
 
@@ -206,18 +208,6 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   );
 
   readonly canOpenComparison = computed(() => this.respondedDistributorCount() > 0);
-
-  readonly canFinalizeDistributor = computed(() => {
-    const inquiry = this.inquiry();
-    const distributor = this.selectedDistributor();
-    return (
-      !!inquiry &&
-      inquiry.status !== 'CLOSED' &&
-      inquiry.status !== 'FINAL_SENT' &&
-      !!distributor?.responseReceived &&
-      this.quotationItems().some((item) => item.distributorMrp != null)
-    );
-  });
 
   readonly canAskRequotation = computed(() => {
     const inquiry = this.inquiry();
@@ -669,17 +659,19 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
     this.comparisonModalOpen.set(false);
   }
 
-  onComparisonDistributorSelected(companyId: string): void {
-    this.selectDistributor(companyId);
+  onComparisonSelectionsChange(selections: Map<string, string>): void {
+    this.productSelections.set(new Map(selections));
   }
 
-  openFinalizeModal(): void {
-    if (!this.canFinalizeDistributor()) {
+  onComparisonFinalizeRequested(selections: Map<string, string>): void {
+    this.productSelections.set(new Map(selections));
+    const mix = this.buildMixFinalizePayload(selections);
+    if (mix.items.length === 0) {
       return;
     }
-    if (this.quotationItems().length === 0) {
-      this.loadQuotationItems();
-    }
+    this.mixFinalizeItems.set(mix.items);
+    this.mixDistributorByItemId.set(mix.mixDistributorByItemId);
+    this.comparisonModalOpen.set(false);
     this.finalizeModalOpen.set(true);
   }
 
@@ -688,15 +680,50 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   }
 
   onQuotationFinalized(): void {
-    const companyId = this.selectedDistributorCompanyId();
-    if (companyId) {
-      this.finalChoiceCompanyId.set(companyId);
-    }
+    this.finalizeModalOpen.set(false);
+    void this.router.navigate(['/admin/queries'], {
+      queryParams: { finalized: '1' },
+    });
+  }
+
+  private buildMixFinalizePayload(selections: Map<string, string>): {
+    items: InquiryItem[];
+    mixDistributorByItemId: Record<string, string>;
+  } {
     const inquiry = this.inquiry();
-    if (inquiry) {
-      this.loadInquiry(inquiry.id);
-      this.loadTimeline({ silent: true, preserveScroll: false });
+    const quotes = this.quotesByDistributor();
+    const items: InquiryItem[] = [];
+    const mixDistributorByItemId: Record<string, string> = {};
+    if (!inquiry) {
+      return { items, mixDistributorByItemId };
     }
+
+    for (const item of inquiry.items ?? []) {
+      const itemKey = item.id ?? item.productId;
+      if (!itemKey || !item.id) {
+        continue;
+      }
+      const companyId = selections.get(itemKey);
+      if (!companyId) {
+        continue;
+      }
+      const quoteItem = (quotes.get(companyId) ?? []).find(
+        (line) => (line.id ?? line.productId) === itemKey,
+      );
+      if (!quoteItem || quoteItem.distributorMrp == null) {
+        continue;
+      }
+      items.push({
+        ...item,
+        distributorHsnCode: quoteItem.distributorHsnCode,
+        distributorMrp: quoteItem.distributorMrp,
+        distributorDiscountPercentage: quoteItem.distributorDiscountPercentage,
+        distributorGstPercentage: quoteItem.distributorGstPercentage,
+        distributorOurDeliveryDate: quoteItem.distributorOurDeliveryDate,
+      });
+      mixDistributorByItemId[item.id] = companyId;
+    }
+    return { items, mixDistributorByItemId };
   }
 
   askForRequotation(): void {
@@ -1577,49 +1604,6 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
 
   quotationPdfAttachments(entry: InquiryTimelineEntry): InquiryTimelineAttachment[] {
     return (entry.attachments ?? []).filter((attachment) => attachment.mediaType === 'DOCUMENT');
-  }
-
-  hasFinalQuotationSharedWithConsumer(): boolean {
-    return this.timelineEntries().some((entry) => isFinalQuotationForwardedNotice(entry));
-  }
-
-  finalQuotationSharedAt(): string | undefined {
-    const entries = this.timelineEntries().filter((entry) => isFinalQuotationForwardedNotice(entry));
-    return entries.at(-1)?.occurredAt;
-  }
-
-  finalSharedQuotationPdfFileName(inquiry: Inquiry): string {
-    return `${inquiry.inquiryId}-final-quotation.pdf`;
-  }
-
-  openFinalSharedQuotationPdf(): void {
-    const inquiry = this.inquiry();
-    if (!inquiry) {
-      return;
-    }
-
-    const attachment = this.timelineEntries()
-      .filter((entry) => isFinalQuotationForwardedNotice(entry))
-      .flatMap((entry) => this.quotationPdfAttachments(entry))
-      .at(-1);
-
-    if (attachment) {
-      this.inquiryService.fetchAttachmentBlob(attachment.url).subscribe({
-        next: (blob) => {
-          this.openPdfInViewer(
-            blob,
-            attachment.contentType || 'application/pdf',
-            attachment.fileName || this.finalSharedQuotationPdfFileName(inquiry),
-          );
-        },
-        error: () => {
-          this.openAdminRfqPdf();
-        },
-      });
-      return;
-    }
-
-    this.openAdminRfqPdf();
   }
 
   openQuotationPdf(): void {

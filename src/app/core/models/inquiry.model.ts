@@ -30,6 +30,7 @@ export interface InquiryItem {
   lineSource?: InquiryLineSource;
   attachments?: InquiryItemAttachment[];
   adminHsnCode?: string;
+  adminDescription?: string;
   adminMrp?: number;
   adminDiscountPercentage?: number;
   adminGstPercentage?: number;
@@ -200,7 +201,10 @@ export interface SubmitToDistributorsRequest {
 }
 
 export interface FinalizeQuotationRequest {
-  distributorCompanyId: string;
+  /** Optional when mixDistributorByItemId is provided. */
+  distributorCompanyId?: string;
+  /** Inquiry item id → source distributor company id for mix cost basis. */
+  mixDistributorByItemId?: Record<string, string>;
   linePricing: AdminInquiryLinePricing[];
   message?: string;
 }

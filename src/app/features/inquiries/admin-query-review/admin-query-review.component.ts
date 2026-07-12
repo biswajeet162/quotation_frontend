@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import {
   BrandRoutingPreview,
   DistributorOption,
@@ -44,6 +44,7 @@ import {
 } from '../../../shared/utils/chat-reply.util';
 import {
   buildAdminCustomerChatTimelineEntries,
+  isFinalQuotationNotice,
   isTimelineNotice,
   noticeDisplayDetail,
   noticeDisplayLabel,
@@ -83,9 +84,11 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   private readonly inquiryService = inject(InquiryService);
   private readonly sanitizer = inject(DomSanitizer);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
+  readonly successMessage = signal<string | null>(null);
   readonly inquiries = signal<Inquiry[]>([]);
   readonly searchQuery = signal('');
   readonly statusFilter = signal<StatusFilter>('all');
@@ -311,6 +314,61 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
     return inquiry.updatedAt ?? inquiry.createdAt;
   }
 
+  hasFinalPricingLine(item: InquiryItem): boolean {
+    return item.adminMrp != null;
+  }
+
+  finalLineAmount(item: InquiryItem): number | null {
+    return quotationLinePricingFromAdmin(item).amount;
+  }
+
+  finalLineNetValue(item: InquiryItem): number | null {
+    return quotationLinePricingFromAdmin(item).netValue;
+  }
+
+  hasFinalQuotationSharedWithConsumer(inquiry: Inquiry): boolean {
+    return (
+      inquiry.status === 'FINAL_SENT' ||
+      this.timelineEntries().some((entry) => isFinalQuotationNotice(entry))
+    );
+  }
+
+  finalQuotationSharedAt(inquiry: Inquiry): string | undefined {
+    const entries = this.timelineEntries().filter((entry) => isFinalQuotationNotice(entry));
+    return entries.at(-1)?.occurredAt ?? inquiry.updatedAt;
+  }
+
+  finalSharedQuotationPdfFileName(inquiry: Inquiry): string {
+    return `${inquiry.inquiryId}-final-quotation.pdf`;
+  }
+
+  openFinalSharedQuotationPdf(inquiry: Inquiry): void {
+    const attachment = this.timelineEntries()
+      .filter((entry) => isFinalQuotationNotice(entry))
+      .flatMap((entry) =>
+        (entry.attachments ?? []).filter((item) => item.mediaType === 'DOCUMENT'),
+      )
+      .at(-1);
+
+    if (attachment) {
+      this.inquiryService.fetchAttachmentBlob(attachment.url).subscribe({
+        next: (blob) => {
+          this.openPdfInViewer(
+            blob,
+            attachment.contentType || 'application/pdf',
+            attachment.fileName || this.finalSharedQuotationPdfFileName(inquiry),
+          );
+        },
+        error: () => {
+          this.openAdminRfqPdf(inquiry);
+        },
+      });
+      return;
+    }
+
+    this.openAdminRfqPdf(inquiry);
+  }
+
   formatOptionalNumber(value: number | null | undefined): string {
     return value == null ? '—' : value.toLocaleString(undefined, { maximumFractionDigits: 2 });
   }
@@ -359,6 +417,17 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.route.queryParamMap.subscribe((params) => {
+      if (params.get('finalized') === '1') {
+        this.successMessage.set('Quotation request has been sent to the customer.');
+        void this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: { finalized: null },
+          queryParamsHandling: 'merge',
+          replaceUrl: true,
+        });
+      }
+    });
     this.load();
   }
 

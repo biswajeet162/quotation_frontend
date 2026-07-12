@@ -324,15 +324,15 @@
   font-weight: 600;
   cursor: pointer;
   border: none;
-  background: #2563eb;
-  color: #fff;
+  background: #0f766e;
+  color: #ecfdf5;
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
 }
 
 .btn-comparison:hover:not(:disabled) {
-  background: #1d4ed8;
+  background: #0d9488;
 }
 
 .btn-comparison:disabled {
@@ -341,7 +341,7 @@
 }
 
 .btn-comparison-count {
-  font-weight: 500;
+  font-weight: 700;
   opacity: 0.9;
 }
 

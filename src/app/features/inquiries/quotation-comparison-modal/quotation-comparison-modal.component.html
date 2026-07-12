@@ -42,10 +42,25 @@
         </div>
       } @else {
         <div class="comparison-body">
-          <p class="matrix-hint">
-            Green cells are the lowest amount for each product (MRP after discount, excl. GST).
-            The Pick column always takes that lowest amount; Total sums every pick.
-          </p>
+          <div class="matrix-toolbar">
+            <p class="matrix-hint">
+              Green marks the lowest amount. Click any offer to pick it for the mix.
+              Finalize opens pricing so you can set your margin, then send to the customer.
+            </p>
+            <button
+              type="button"
+              class="btn-finalize"
+              (click)="requestFinalize()"
+              [disabled]="!allProductsPicked()"
+              title="Set margin and send the mixed quotation to the customer"
+            >
+              Finalize
+            </button>
+          </div>
+
+          @if (finalizeError()) {
+            <div class="comparison-alert" role="alert">{{ finalizeError() }}</div>
+          }
 
           <div class="matrix-wrap">
             <table class="matrix-table">
@@ -73,27 +88,55 @@
                     <td class="col-qty">{{ row.quantity }}</td>
                     @for (dist of respondedDistributors(); track dist.companyId) {
                       @if (getMatrixOffer(row, dist.companyId); as offer) {
-                        <td class="offer-cell" [class.is-best]="offer.isBestAmount">
-                          <span class="cell-amount">{{ formatCurrency(offer.amount) }}</span>
-                          @if (offer.discountPercentage > 0) {
-                            <span class="cell-meta">
-                              {{ formatPercent(offer.discountPercentage) }} off
-                            </span>
-                          }
-                          @if (offer.deliveryDate) {
-                            <span class="cell-meta">
-                              {{ formatExpectedDeliveryDate(offer.deliveryDate) }}
-                            </span>
-                          }
+                        <td
+                          class="offer-cell"
+                          [class.is-best]="offer.isBestAmount"
+                          [class.is-selected]="isSelected(row, offer.companyId)"
+                        >
+                          <button
+                            type="button"
+                            class="offer-pick-btn"
+                            (click)="selectOffer(row, offer.companyId)"
+                            [attr.aria-pressed]="isSelected(row, offer.companyId)"
+                            [attr.aria-label]="
+                              'Pick ' +
+                              offer.companyName +
+                              ' for ' +
+                              row.productName +
+                              ' at ' +
+                              formatCurrency(offer.amount)
+                            "
+                          >
+                            <span class="cell-amount">{{ formatCurrency(offer.amount) }}</span>
+                            @if (offer.discountPercentage > 0) {
+                              <span class="cell-meta">
+                                {{ formatPercent(offer.discountPercentage) }} off
+                              </span>
+                            }
+                            @if (offer.deliveryDate) {
+                              <span class="cell-meta">
+                                {{ formatExpectedDeliveryDate(offer.deliveryDate) }}
+                              </span>
+                            }
+                            @if (offer.isBestAmount) {
+                              <span class="chip chip-best">Lowest</span>
+                            }
+                            @if (isSelected(row, offer.companyId)) {
+                              <span class="chip chip-picked">Picked</span>
+                            }
+                          </button>
                         </td>
                       } @else {
                         <td class="offer-cell is-empty">—</td>
                       }
                     }
                     <td class="pick-cell">
-                      @if (row.pick; as pick) {
+                      @if (selectedOfferForRow(row); as pick) {
                         <span class="cell-amount">{{ formatCurrency(pick.amount) }}</span>
                         <span class="pick-from">{{ pick.companyName }}</span>
+                        @if (!pick.isBestAmount) {
+                          <span class="pick-note">Not lowest</span>
+                        }
                       } @else {
                         <span class="is-empty">—</span>
                       }

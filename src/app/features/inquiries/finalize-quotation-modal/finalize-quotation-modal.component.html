@@ -19,6 +19,8 @@
             {{ inquiry.title }} · {{ inquiry.inquiryId }}
             @if (distributor(); as distributor) {
               · {{ distributor.companyName || 'Distributor' }}
+            } @else if (isMixFinalize()) {
+              · Selected distributor mix
             }
           </p>
         </div>
@@ -44,7 +46,7 @@
         }
 
         @if (items().length === 0) {
-          <p class="finalize-empty">No quotation lines are available from this distributor.</p>
+          <p class="finalize-empty">No quotation lines are available for this mix.</p>
         } @else {
           <div class="comparison-summary">
             <article class="summary-card summary-distributor">

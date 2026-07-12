@@ -46,7 +46,7 @@
         [disabled]="loading() || !canOpenComparison()"
         [title]="
           canOpenComparison()
-            ? 'Open amount-based quotation comparison dashboard'
+            ? 'Compare amounts and finalize the product mix'
             : 'Available once at least one distributor responds'
         "
       >
@@ -359,15 +359,6 @@
                       title="Ask this distributor to submit a revised quotation"
                     >
                       {{ requoteLoading() ? 'Requesting…' : 'Ask for re-quotations' }}
-                    </button>
-                    <button
-                      type="button"
-                      class="btn-primary"
-                      (click)="openFinalizeModal()"
-                      [disabled]="!canFinalizeDistributor() || quotationItemsLoading()"
-                      title="Review pricing and send the final quotation to the consumer"
-                    >
-                      Finalize
                     </button>
                   }
                 </div>
@@ -720,151 +711,6 @@
                       }
                     }
 
-                    @if (hasFinalQuotationSharedWithConsumer()) {
-                      <section
-                        class="inquiry-event-card inquiry-event-card--final"
-                        aria-label="Quotation shared with consumer"
-                      >
-                        <div class="inquiry-event-header">
-                          <h3 class="inquiry-event-title">
-                            Quotation shared with consumer for confirmation.
-                          </h3>
-                          <div class="inquiry-event-status-block">
-                            <span class="inquiry-event-status inquiry-event-status--final">Final</span>
-                            <span class="inquiry-event-status-time inquiry-event-status-time--final">
-                              {{ formatPostedDate(finalQuotationSharedAt()) }}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div class="inquiry-event-content">
-                          @if ((inquiry.items ?? []).some(hasFinalPricingLine)) {
-                            <div class="preview-table-wrap admin-pricing-table-wrap">
-                              <table class="preview-table admin-pricing-table">
-                                <thead>
-                                  <tr>
-                                    <th class="col-sno">S.No.</th>
-                                    <th class="col-designation">Designation</th>
-                                    <th class="col-brand">Brand</th>
-                                    <th class="col-hsn-code">HSN code</th>
-                                    <th class="col-description">Description</th>
-                                    <th class="col-qty">Qty</th>
-                                    <th class="col-mrp">MRP</th>
-                                    <th class="col-discount">Disc. %</th>
-                                    <th class="col-amount">Amount</th>
-                                    <th class="col-gst">GST %</th>
-                                    <th class="col-net-value">Net value</th>
-                                    <th class="col-expected-delivery">Expected delivery</th>
-                                    <th class="col-attachment">Images</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  @for (item of inquiry.items ?? []; track item.id ?? item.productId) {
-                                    @if (hasFinalPricingLine(item)) {
-                                      <tr>
-                                        <td class="col-sno">{{ $index + 1 }}</td>
-                                        <td
-                                          class="col-designation consumer-cell"
-                                          [title]="displayProductField(item.productName)"
-                                        >
-                                          {{ displayProductField(item.productName) }}
-                                        </td>
-                                        <td
-                                          class="col-brand consumer-cell"
-                                          [title]="displayProductField(item.productBrand)"
-                                        >
-                                          {{ displayProductField(item.productBrand) }}
-                                        </td>
-                                        <td class="col-hsn-code">
-                                          <span class="line-input line-input-readonly chat-readonly-value">
-                                            {{ displayProductField(item.adminHsnCode) }}
-                                          </span>
-                                        </td>
-                                        <td
-                                          class="col-description consumer-cell preview-multiline"
-                                          [title]="displayProductField(item.productDescription)"
-                                        >
-                                          {{ displayProductField(item.productDescription) }}
-                                        </td>
-                                        <td class="col-qty consumer-cell">{{ item.quantity }}</td>
-                                        <td class="col-mrp">
-                                          <span class="line-input line-input-number line-input-readonly chat-readonly-value">
-                                            {{ formatOptionalNumber(item.adminMrp) }}
-                                          </span>
-                                        </td>
-                                        <td class="col-discount">
-                                          <span class="line-input line-input-number line-input-readonly chat-readonly-value">
-                                            {{ formatOptionalPercent(item.adminDiscountPercentage) }}
-                                          </span>
-                                        </td>
-                                        <td class="col-amount">
-                                          <span class="line-input line-input-number line-input-readonly chat-readonly-value">
-                                            {{ formatCurrency(finalLineAmount(item)) }}
-                                          </span>
-                                        </td>
-                                        <td class="col-gst">
-                                          <span class="line-input line-input-number line-input-readonly chat-readonly-value">
-                                            {{ formatOptionalPercent(item.adminGstPercentage) }}
-                                          </span>
-                                        </td>
-                                        <td class="col-net-value">
-                                          <span class="line-input line-input-number line-input-readonly chat-readonly-value">
-                                            {{ formatCurrency(finalLineNetValue(item)) }}
-                                          </span>
-                                        </td>
-                                        <td class="col-expected-delivery consumer-cell">
-                                          {{ formatExpectedDeliveryDate(item.expectedDeliveryDate) }}
-                                        </td>
-                                        <td class="col-attachment">
-                                          @if (itemAttachmentCount(item) > 0) {
-                                            <button
-                                              type="button"
-                                              class="btn-attachment-link"
-                                              (click)="openItemAttachments(item, $event)"
-                                              [attr.aria-label]="
-                                                'View attachments for ' +
-                                                displayProductField(item.productBrand) +
-                                                ' ' +
-                                                displayProductField(item.productName)
-                                              "
-                                            >
-                                              Click here
-                                            </button>
-                                          } @else {
-                                            —
-                                          }
-                                        </td>
-                                      </tr>
-                                    }
-                                  }
-                                </tbody>
-                              </table>
-                            </div>
-                          } @else {
-                            <p class="products-empty">No final quotation lines available.</p>
-                          }
-
-                          <div class="quotation-pdf-section">
-                            <div class="quotation-pdf-row quotation-pdf-row--request">
-                              <span class="quotation-pdf-label">Quotation</span>
-                              <span
-                                class="quotation-pdf-filename"
-                                [title]="finalSharedQuotationPdfFileName(inquiry)"
-                              >
-                                {{ finalSharedQuotationPdfFileName(inquiry) }}
-                              </span>
-                              <button
-                                type="button"
-                                class="btn-pdf-view"
-                                (click)="openFinalSharedQuotationPdf()"
-                              >
-                                View
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </section>
-                    }
                   </div>
 
                 </div>
@@ -1350,14 +1196,15 @@
   [productSelections]="productSelections()"
   [quotesByDistributor]="quotesByDistributor()"
   (closed)="closeComparisonModal()"
-  (distributorSelected)="onComparisonDistributorSelected($event)"
+  (selectionsChange)="onComparisonSelectionsChange($event)"
+  (finalizeRequested)="onComparisonFinalizeRequested($event)"
 />
 
 <app-finalize-quotation-modal
   [open]="finalizeModalOpen()"
   [inquiry]="inquiry()"
-  [distributor]="selectedDistributor()"
-  [quotationItems]="quotationItems()"
+  [quotationItems]="mixFinalizeItems()"
+  [mixDistributorByItemId]="mixDistributorByItemId()"
   (closed)="closeFinalizeModal()"
   (finalized)="onQuotationFinalized()"
 />

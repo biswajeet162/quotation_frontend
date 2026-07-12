@@ -26,8 +26,11 @@ export class FinalizeQuotationModalComponent {
 
   readonly open = input(false);
   readonly inquiry = input<Inquiry | null>(null);
+  /** Optional single-distributor mode; omit for mix. */
   readonly distributor = input<InquiryDistributor | null>(null);
   readonly quotationItems = input<InquiryItem[]>([]);
+  /** itemId → distributor companyId for mix finalize. */
+  readonly mixDistributorByItemId = input<Record<string, string>>({});
 
   readonly closed = output<void>();
   readonly finalized = output<void>();
@@ -40,6 +43,8 @@ export class FinalizeQuotationModalComponent {
   readonly formatExpectedDeliveryDate = formatExpectedDeliveryDate;
 
   readonly items = computed(() => this.quotationItems().filter((item) => item.distributorMrp != null));
+
+  readonly isMixFinalize = computed(() => Object.keys(this.mixDistributorByItemId()).length > 0);
 
   readonly distributorGrandTotal = computed(() => {
     const inquiry = this.inquiry();
@@ -185,8 +190,15 @@ export class FinalizeQuotationModalComponent {
 
   sendToConsumer(): void {
     const inquiry = this.inquiry();
+    if (!inquiry) {
+      return;
+    }
+
+    const mixMap = this.mixDistributorByItemId();
+    const hasMix = Object.keys(mixMap).length > 0;
     const distributor = this.distributor();
-    if (!inquiry || !distributor) {
+    if (!hasMix && !distributor) {
+      this.errorMessage.set('No distributor mix is available to finalize.');
       return;
     }
 
@@ -217,7 +229,9 @@ export class FinalizeQuotationModalComponent {
 
     this.inquiryService
       .finalizeQuotation(inquiry.id, {
-        distributorCompanyId: distributor.companyId,
+        ...(hasMix
+          ? { mixDistributorByItemId: mixMap }
+          : { distributorCompanyId: distributor!.companyId }),
         linePricing,
         message: this.consumerMessage().trim() || undefined,
       })
