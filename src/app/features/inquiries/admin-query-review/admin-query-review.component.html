@@ -894,7 +894,7 @@
         </div>
         <div class="quotation-dialog-header-end">
           <p class="quotation-chat-note" role="note">
-            Review line details, then select distributors below to send this request.
+            Review and edit line details, then send. Matching distributors are chosen automatically by brand.
           </p>
           <button
             type="button"
@@ -1102,72 +1102,72 @@
           }
         </section>
 
-        <section class="send-panel-section send-panel-distributors" aria-label="Select distributors">
-          <h3 class="send-panel-section-title">Select distributors</h3>
-          <p class="send-panel-section-hint">
-            Choose one or more distributors to receive this quotation request.
-          </p>
+        <section class="send-panel-section send-panel-distributors" aria-label="Matched distributors preview">
+          <div class="send-panel-section-header">
+            <div>
+              <h3 class="send-panel-section-title">Brand routing</h3>
+              <p class="send-panel-section-hint">
+                Distributors are auto-matched by brand. Toggle below only to preview who will receive which lines.
+              </p>
+            </div>
+            <button
+              type="button"
+              class="btn-secondary btn-toggle-distributors"
+              (click)="toggleMatchedDistributorsPreview()"
+              [disabled]="distributorOptionsLoading()"
+              [attr.aria-expanded]="showMatchedDistributors()"
+            >
+              {{ showMatchedDistributors() ? 'Hide distributors' : 'Show distributors' }}
+            </button>
+          </div>
 
           @if (distributorOptionsLoading()) {
-            <p class="state-message">Loading distributors…</p>
-          } @else if (distributorOptions().length === 0 && !distributorOptionsError()) {
-            <p class="state-message">No active distributors found.</p>
-          } @else {
-            <ul class="distributor-option-list">
-              @for (option of distributorOptions(); track option.companyId) {
-                <li class="distributor-option-card">
-                  <label class="distributor-option-head">
-                    <input
-                      type="checkbox"
-                      [checked]="isDistributorSelected(option.companyId)"
-                      (change)="toggleDistributorSelection(option.companyId, $any($event.target).checked)"
-                    />
-                    <div class="distributor-option-meta">
-                      <span class="distributor-name">{{ option.companyName }}</span>
-                      <span class="distributor-contact">
-                        {{ option.email || '—' }}
-                        @if (option.phone) {
-                          · {{ option.phone }}
-                        }
-                        @if (option.city) {
-                          · {{ option.city }}
-                        }
-                      </span>
-                      <span class="distributor-product-count">
-                        {{ option.productCount }} product{{ option.productCount === 1 ? '' : 's' }} in catalog
-                      </span>
-                    </div>
-                  </label>
-
-                  @if (option.products.length > 0) {
-                    <div class="distributor-products-wrap">
-                      <table class="distributor-products-table">
-                        <thead>
-                          <tr>
-                            <th>Brand</th>
-                            <th>Designation</th>
-                            <th>RSP</th>
-                            <th>Stock</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          @for (product of option.products; track product.productId) {
-                            <tr>
-                              <td>{{ product.brand }}</td>
-                              <td>{{ product.designation }}</td>
-                              <td>{{ product.rsp ?? '—' }}</td>
-                              <td>{{ product.stockQuantity ?? 0 }}</td>
-                            </tr>
-                          }
-                        </tbody>
-                      </table>
-                    </div>
-                  } @else {
-                    <p class="distributor-no-products">No active products listed yet.</p>
-                  }
-                </li>
+            <p class="state-message">Matching distributors by brand…</p>
+          } @else if (selectedDistributorCount() > 0) {
+            <p class="routing-summary">
+              Will send to {{ selectedDistributorCount() }} distributor{{
+                selectedDistributorCount() === 1 ? '' : 's'
+              }}
+              automatically.
+              @if (uncoveredBrands().length > 0) {
+                <span class="routing-warning">
+                  Uncovered brands: {{ uncoveredBrands().join(', ') }}
+                </span>
               }
-            </ul>
+            </p>
+          }
+
+          @if (showMatchedDistributors()) {
+            @if (matchedDistributorOptions().length === 0 && !distributorOptionsError()) {
+              <p class="state-message">No brand-matched distributors found.</p>
+            } @else {
+              <ul class="distributor-option-list">
+                @for (option of matchedDistributorOptions(); track option.companyId) {
+                  <li class="distributor-option-card">
+                    <div class="distributor-option-head distributor-option-head--readonly">
+                      <div class="distributor-option-meta">
+                        <span class="distributor-name">{{ option.companyName }}</span>
+                        <span class="distributor-contact">
+                          {{ option.email || '—' }}
+                          @if (option.phone) {
+                            · {{ option.phone }}
+                          }
+                          @if (option.city) {
+                            · {{ option.city }}
+                          }
+                        </span>
+                        <span class="distributor-product-count">
+                          Receives {{ option.matchedItemCount ?? 0 }} line{{
+                            (option.matchedItemCount ?? 0) === 1 ? '' : 's'
+                          }}
+                          · Brands: {{ matchedBrandsLabel(option) }}
+                        </span>
+                      </div>
+                    </div>
+                  </li>
+                }
+              </ul>
+            }
           }
         </section>
       </div>
@@ -1179,7 +1179,7 @@
       <div class="quotation-dialog-actions">
         <span class="selection-summary">
           {{ selectedDistributorCount() }} distributor{{ selectedDistributorCount() === 1 ? '' : 's' }}
-          selected
+          matched by brand
         </span>
         <div class="quotation-dialog-actions-buttons">
           <button

@@ -75,6 +75,8 @@ export interface InquiryDistributor {
   emailSentAt?: string;
   responseReceived?: boolean;
   responseReceivedAt?: string;
+  matchedBrands?: string[];
+  assignedItemCount?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -158,6 +160,15 @@ export interface DistributorOption {
   country?: string;
   productCount: number;
   products: DistributorProductOption[];
+  matchedBrands?: string[];
+  matchedItemCount?: number;
+}
+
+export interface BrandRoutingPreview {
+  inquiryBrands: string[];
+  uncoveredBrands: string[];
+  distributors: DistributorOption[];
+  matchedDistributorCount: number;
 }
 
 export interface AdminInquiryLinePricing {
@@ -171,7 +182,8 @@ export interface AdminInquiryLinePricing {
 }
 
 export interface SubmitToDistributorsRequest {
-  distributorCompanyIds: string[];
+  /** Optional; when omitted, backend auto-routes by brand. */
+  distributorCompanyIds?: string[];
   linePricing?: AdminInquiryLinePricing[];
 }
 

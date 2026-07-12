@@ -13,6 +13,7 @@ import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import {
+  BrandRoutingPreview,
   DistributorOption,
   Inquiry,
   InquiryItem,
@@ -96,8 +97,8 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   readonly distributorPickerOpen = signal(false);
   readonly distributorOptionsLoading = signal(false);
   readonly distributorOptionsError = signal<string | null>(null);
-  readonly distributorOptions = signal<DistributorOption[]>([]);
-  readonly selectedDistributorIds = signal<Set<string>>(new Set());
+  readonly brandRoutingPreview = signal<BrandRoutingPreview | null>(null);
+  readonly showMatchedDistributors = signal(false);
 
   readonly timelineLoading = signal(false);
   readonly timelineRefreshing = signal(false);
@@ -212,7 +213,15 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
     return this.inquiries().find((q) => q.id === id) ?? null;
   });
 
-  readonly selectedDistributorCount = computed(() => this.selectedDistributorIds().size);
+  readonly selectedDistributorCount = computed(
+    () => this.brandRoutingPreview()?.matchedDistributorCount ?? 0,
+  );
+
+  readonly matchedDistributorOptions = computed(
+    () => this.brandRoutingPreview()?.distributors ?? [],
+  );
+
+  readonly uncoveredBrands = computed(() => this.brandRoutingPreview()?.uncoveredBrands ?? []);
 
   readonly chatTimelineEntries = computed(() =>
     buildAdminCustomerChatTimelineEntries(this.timelineEntries()),
@@ -253,10 +262,26 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
     return (inquiry.distributors ?? []).map((distributor, index) => {
       const name = distributor.companyName?.trim() || 'Distributor';
       const email = distributor.email?.trim() || '—';
+      const brands =
+        (distributor.matchedBrands ?? []).length > 0
+          ? (distributor.matchedBrands ?? []).join(', ')
+          : null;
+      const status = distributor.responseReceived
+        ? 'Responded'
+        : distributor.emailSent
+          ? 'Awaiting response'
+          : 'Queued';
+      const itemNote =
+        distributor.assignedItemCount != null && distributor.assignedItemCount > 0
+          ? `${distributor.assignedItemCount} line${distributor.assignedItemCount === 1 ? '' : 's'}`
+          : null;
+      const details = [brands ? `brands: ${brands}` : null, itemNote, status]
+        .filter(Boolean)
+        .join(' · ');
       return {
         id: distributor.id ?? distributor.companyId ?? `${index}`,
         index: index + 1,
-        label: `${name} (${email})`,
+        label: `${name} (${email})${details ? ` — ${details}` : ''}`,
       };
     });
   }
@@ -525,7 +550,8 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
 
     this.distributorPickerOpen.set(true);
     this.distributorOptionsError.set(null);
-    this.selectedDistributorIds.set(new Set());
+    this.showMatchedDistributors.set(false);
+    this.brandRoutingPreview.set(null);
     this.loadDistributorOptions(inquiry.id);
   }
 
@@ -542,33 +568,31 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
     this.distributorOptionsError.set(null);
 
     this.inquiryService.getDistributorOptions(inquiryId).subscribe({
-      next: (options) => {
-        this.distributorOptions.set(options);
+      next: (preview) => {
+        this.brandRoutingPreview.set(preview);
         this.distributorOptionsLoading.set(false);
+        if (preview.matchedDistributorCount === 0) {
+          this.distributorOptionsError.set(
+            'No distributors carry the brands in this request. Update distributor catalogs before sending.',
+          );
+        }
       },
       error: (err) => {
         this.distributorOptionsLoading.set(false);
         this.distributorOptionsError.set(
-          err?.error?.message ?? 'Could not load distributors.',
+          err?.error?.message ?? 'Could not load brand routing preview.',
         );
       },
     });
   }
 
-  toggleDistributorSelection(companyId: string, checked: boolean): void {
-    this.selectedDistributorIds.update((current) => {
-      const next = new Set(current);
-      if (checked) {
-        next.add(companyId);
-      } else {
-        next.delete(companyId);
-      }
-      return next;
-    });
+  toggleMatchedDistributorsPreview(): void {
+    this.showMatchedDistributors.update((open) => !open);
   }
 
-  isDistributorSelected(companyId: string): boolean {
-    return this.selectedDistributorIds().has(companyId);
+  matchedBrandsLabel(option: DistributorOption): string {
+    const brands = option.matchedBrands ?? [];
+    return brands.length > 0 ? brands.join(', ') : '—';
   }
 
   isPercentageOverLimit(value?: number | null): boolean {
@@ -580,7 +604,10 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   }
 
   canConfirmSendToDistributors(inquiry: Inquiry): boolean {
-    if (this.selectedDistributorCount() === 0) {
+    if (this.distributorOptionsLoading()) {
+      return false;
+    }
+    if ((this.brandRoutingPreview()?.matchedDistributorCount ?? 0) === 0) {
       return false;
     }
     return this.validateLinePricing(inquiry) == null;
@@ -592,9 +619,10 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const selected = Array.from(this.selectedDistributorIds());
-    if (selected.length === 0) {
-      this.distributorOptionsError.set('Select at least one distributor.');
+    if ((this.brandRoutingPreview()?.matchedDistributorCount ?? 0) === 0) {
+      this.distributorOptionsError.set(
+        'No distributors carry the brands in this request.',
+      );
       return;
     }
 
@@ -608,7 +636,9 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
     this.actionError.set(null);
     this.distributorOptionsError.set(null);
 
-    this.inquiryService.submitToDistributors(inquiry.id, selected, this.buildLinePricingPayload(inquiry)).subscribe({
+    this.inquiryService
+      .submitToDistributors(inquiry.id, this.buildLinePricingPayload(inquiry))
+      .subscribe({
       next: (updated) => {
         this.captureDistributorSendSnapshot(inquiry);
         this.replaceInquiry(updated);

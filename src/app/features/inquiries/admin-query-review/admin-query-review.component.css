@@ -939,6 +939,45 @@
   color: #64748b;
 }
 
+.send-panel-section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.send-panel-section-header .send-panel-section-title {
+  margin-bottom: 0.35rem;
+}
+
+.send-panel-section-header .send-panel-section-hint {
+  margin-bottom: 0;
+}
+
+.btn-toggle-distributors {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.routing-summary {
+  margin: 0 0 0.75rem;
+  font-size: 0.88rem;
+  color: #334155;
+  font-weight: 600;
+}
+
+.routing-warning {
+  display: block;
+  margin-top: 0.35rem;
+  color: #b45309;
+  font-weight: 600;
+}
+
+.distributor-option-head--readonly {
+  cursor: default;
+}
+
 .quotation-overlay .quotation-table-wrap {
   margin-top: 0;
   min-height: 8rem;

@@ -7,7 +7,7 @@ import {
   ConsumerInquiry,
   ConsumerInquiryCreated,
   CreateInquiryRequest,
-  DistributorOption,
+  BrandRoutingPreview,
   Inquiry,
   InquiryDraftAttachment,
   InquiryItem,
@@ -143,10 +143,9 @@ export class InquiryService {
 
   submitToDistributors(
     id: string,
-    distributorCompanyIds: string[],
     linePricing?: AdminInquiryLinePricing[],
   ): Observable<Inquiry> {
-    const body: SubmitToDistributorsRequest = { distributorCompanyIds, linePricing };
+    const body: SubmitToDistributorsRequest = { linePricing };
     return this.http.post<Inquiry>(`${this.baseUrl}/${id}/submit-to-distributors`, body);
   }
 
@@ -154,8 +153,8 @@ export class InquiryService {
     return this.http.post<Inquiry>(`${this.baseUrl}/${id}/finalize-quotation`, request);
   }
 
-  getDistributorOptions(id: string): Observable<DistributorOption[]> {
-    return this.http.get<DistributorOption[]>(`${this.baseUrl}/${id}/distributor-options`);
+  getDistributorOptions(id: string): Observable<BrandRoutingPreview> {
+    return this.http.get<BrandRoutingPreview>(`${this.baseUrl}/${id}/distributor-options`);
   }
 
   requestClarification(id: string, message: string): Observable<Inquiry> {
