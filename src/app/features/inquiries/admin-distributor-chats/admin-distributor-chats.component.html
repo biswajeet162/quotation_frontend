@@ -409,9 +409,7 @@
                               </thead>
                               <tbody>
                                 @for (item of quotationItems(); track item.id ?? item.productId) {
-                                  <tr
-                                    [class.line-cancelled]="isDistributorItemCancelled(item, distributor.companyId)"
-                                  >
+                                  <tr>
                                     <td class="col-sno">{{ $index + 1 }}</td>
                                     <td class="col-designation consumer-cell" [title]="displayProductField(item.productName)">
                                       {{ displayProductField(item.productName) }}
