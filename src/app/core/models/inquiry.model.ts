@@ -163,9 +163,11 @@ export interface DistributorOption {
 export interface AdminInquiryLinePricing {
   inquiryItemId: string;
   hsnCode?: string;
+  description?: string;
   mrp?: number;
   discountPercentage?: number;
   gstPercentage?: number;
+  expectedDeliveryDate?: string;
 }
 
 export interface SubmitToDistributorsRequest {

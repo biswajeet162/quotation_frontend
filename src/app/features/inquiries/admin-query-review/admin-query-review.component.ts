@@ -61,9 +61,11 @@ interface PendingAttachment {
 
 interface AdminInquiryLineDraft {
   hsnCode?: string;
+  description?: string;
   mrp?: number;
   discountPercentage?: number;
   gstPercentage?: number;
+  expectedDeliveryDate?: string;
 }
 
 interface DistributorSendPricingSnapshot {
@@ -284,10 +286,6 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
     return inquiry.updatedAt ?? inquiry.createdAt;
   }
 
-  canEditLinePricing(inquiry: Inquiry): boolean {
-    return inquiry.status === 'NEW';
-  }
-
   formatOptionalNumber(value: number | null | undefined): string {
     return value == null ? '—' : value.toLocaleString(undefined, { maximumFractionDigits: 2 });
   }
@@ -328,6 +326,10 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
     }
     if (this.chatModalOpen()) {
       this.closeChatModal();
+      return;
+    }
+    if (this.distributorPickerOpen()) {
+      this.closeDistributorPicker();
     }
   }
 
@@ -567,6 +569,21 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
 
   isDistributorSelected(companyId: string): boolean {
     return this.selectedDistributorIds().has(companyId);
+  }
+
+  isPercentageOverLimit(value?: number | null): boolean {
+    return value != null && value > 100;
+  }
+
+  isPercentageFieldValid(value?: number | null): boolean {
+    return value != null && value >= 0 && value <= 100;
+  }
+
+  canConfirmSendToDistributors(inquiry: Inquiry): boolean {
+    if (this.selectedDistributorCount() === 0) {
+      return false;
+    }
+    return this.validateLinePricing(inquiry) == null;
   }
 
   confirmSendToDistributors(): void {
@@ -1081,20 +1098,30 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   getLineDraft(inquiryId: string, item: InquiryItem): AdminInquiryLineDraft {
     const key = this.lineDraftKey(inquiryId, item);
     const draft = this.lineDrafts().get(key);
-    if (draft && this.hasLineDraftValues(draft)) {
-      return draft;
+    const persisted = this.lineDraftFromPersistedItem(item);
+    if (!draft) {
+      return persisted;
     }
-    return this.lineDraftFromPersistedItem(item);
+    return { ...persisted, ...draft };
   }
 
   updateLineTextField(
     inquiryId: string,
     item: InquiryItem,
-    field: 'hsnCode',
+    field: 'hsnCode' | 'description',
     value: string,
   ): void {
+    if (field === 'description') {
+      this.patchLineDraft(inquiryId, item, { description: value });
+      return;
+    }
     const trimmed = value.trim();
     this.patchLineDraft(inquiryId, item, { [field]: trimmed || undefined });
+  }
+
+  updateLineDateField(inquiryId: string, item: InquiryItem, value: string): void {
+    const trimmed = value.trim();
+    this.patchLineDraft(inquiryId, item, { expectedDeliveryDate: trimmed || undefined });
   }
 
   updateLineNumberField(
@@ -1104,12 +1131,8 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
     value: string | number | null,
   ): void {
     let parsed = this.parseOptionalNumber(value);
-    if (parsed != null) {
-      if (field === 'mrp' && parsed < 0) {
-        parsed = 0;
-      } else if ((field === 'discountPercentage' || field === 'gstPercentage') && (parsed < 0 || parsed > 100)) {
-        return;
-      }
+    if (parsed != null && field === 'mrp' && parsed < 0) {
+      parsed = 0;
     }
     this.patchLineDraft(inquiryId, item, { [field]: parsed ?? undefined });
   }
@@ -1217,9 +1240,11 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
         return {
           inquiryItemId: item.id!,
           hsnCode: draft.hsnCode,
+          description: draft.description?.trim() ?? '',
           mrp: draft.mrp,
           discountPercentage: draft.discountPercentage,
           gstPercentage: draft.gstPercentage,
+          expectedDeliveryDate: draft.expectedDeliveryDate,
         };
       })
       .filter((line): line is NonNullable<typeof line> => line != null);
@@ -1228,18 +1253,22 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   private lineDraftFromPersistedItem(item: InquiryItem): AdminInquiryLineDraft {
     return {
       hsnCode: item.adminHsnCode,
+      description: item.productDescription,
       mrp: item.adminMrp,
       discountPercentage: item.adminDiscountPercentage,
       gstPercentage: item.adminGstPercentage,
+      expectedDeliveryDate: this.toDateInputValue(item.expectedDeliveryDate),
     };
   }
 
   private hasLineDraftValues(draft: AdminInquiryLineDraft): boolean {
     return (
       !!draft.hsnCode?.trim() ||
+      !!draft.description?.trim() ||
       draft.mrp != null ||
       draft.discountPercentage != null ||
-      draft.gstPercentage != null
+      draft.gstPercentage != null ||
+      !!draft.expectedDeliveryDate?.trim()
     );
   }
 
@@ -1251,6 +1280,14 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
       }
       this.patchLineDraft(inquiry.id, item, persisted);
     }
+  }
+
+  private toDateInputValue(value?: string): string | undefined {
+    if (!value?.trim()) {
+      return undefined;
+    }
+    // Accept ISO timestamps or yyyy-MM-dd from API.
+    return value.trim().slice(0, 10);
   }
 
   private parseOptionalNumber(value: string | number | null | undefined): number | null {

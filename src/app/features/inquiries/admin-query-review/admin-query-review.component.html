@@ -195,76 +195,48 @@
                                 {{ displayProductField(item.productBrand) }}
                               </td>
                               <td class="col-hsn-code">
-                                <input
-                                  type="text"
-                                  class="line-input"
-                                  [ngModel]="getLineDraft(inquiry.id, item).hsnCode ?? ''"
-                                  (ngModelChange)="updateLineTextField(inquiry.id, item, 'hsnCode', $event)"
-                                  [disabled]="!canEditLinePricing(inquiry)"
-                                  placeholder="—"
-                                  aria-label="HSN code"
-                                />
+                                <span class="line-input line-input-readonly chat-readonly-value">
+                                  {{ displayProductField(getLineDraft(inquiry.id, item).hsnCode) }}
+                                </span>
                               </td>
                               <td
                                 class="col-description consumer-cell preview-multiline"
-                                [title]="displayProductField(item.productDescription)"
+                                [title]="displayProductField(getLineDraft(inquiry.id, item).description)"
                               >
-                                {{ displayProductField(item.productDescription) }}
+                                {{ displayProductField(getLineDraft(inquiry.id, item).description) }}
                               </td>
                               <td class="col-qty consumer-cell">{{ item.quantity }}</td>
                               <td class="col-mrp">
-                                <input
-                                  type="number"
-                                  class="line-input line-input-number"
-                                  min="0"
-                                  step="0.01"
-                                  [ngModel]="getLineDraft(inquiry.id, item).mrp ?? ''"
-                                  (ngModelChange)="updateLineNumberField(inquiry.id, item, 'mrp', $event)"
-                                  [disabled]="!canEditLinePricing(inquiry)"
-                                  placeholder="—"
-                                  aria-label="MRP"
-                                />
+                                <span class="line-input line-input-number line-input-readonly chat-readonly-value">
+                                  {{ formatOptionalNumber(getLineDraft(inquiry.id, item).mrp) }}
+                                </span>
                               </td>
                               <td class="col-discount">
-                                <input
-                                  type="number"
-                                  class="line-input line-input-number"
-                                  min="0"
-                                  max="100"
-                                  step="0.01"
-                                  [ngModel]="getLineDraft(inquiry.id, item).discountPercentage ?? ''"
-                                  (ngModelChange)="updateLineNumberField(inquiry.id, item, 'discountPercentage', $event)"
-                                  [disabled]="!canEditLinePricing(inquiry)"
-                                  placeholder="—"
-                                  aria-label="Discount percentage"
-                                />
+                                <span class="line-input line-input-number line-input-readonly chat-readonly-value">
+                                  {{ formatOptionalPercent(getLineDraft(inquiry.id, item).discountPercentage) }}
+                                </span>
                               </td>
                               <td class="col-amount">
-                                <span class="line-input line-input-number line-input-readonly" aria-readonly="true">
+                                <span class="line-input line-input-number line-input-readonly chat-readonly-value">
                                   {{ formatCurrency(lineAmount(inquiry.id, item)) }}
                                 </span>
                               </td>
                               <td class="col-gst">
-                                <input
-                                  type="number"
-                                  class="line-input line-input-number"
-                                  min="0"
-                                  max="100"
-                                  step="0.01"
-                                  [ngModel]="getLineDraft(inquiry.id, item).gstPercentage ?? ''"
-                                  (ngModelChange)="updateLineNumberField(inquiry.id, item, 'gstPercentage', $event)"
-                                  [disabled]="!canEditLinePricing(inquiry)"
-                                  placeholder="—"
-                                  aria-label="GST percentage"
-                                />
+                                <span class="line-input line-input-number line-input-readonly chat-readonly-value">
+                                  {{ formatOptionalPercent(getLineDraft(inquiry.id, item).gstPercentage) }}
+                                </span>
                               </td>
                               <td class="col-net-value">
-                                <span class="line-input line-input-number line-input-readonly" aria-readonly="true">
+                                <span class="line-input line-input-number line-input-readonly chat-readonly-value">
                                   {{ formatCurrency(lineNetValue(inquiry.id, item)) }}
                                 </span>
                               </td>
                               <td class="col-expected-delivery consumer-cell">
-                                {{ formatExpectedDeliveryDate(item.expectedDeliveryDate) }}
+                                {{
+                                  formatExpectedDeliveryDate(
+                                    getLineDraft(inquiry.id, item).expectedDeliveryDate
+                                  )
+                                }}
                               </td>
                               <td class="col-attachment">
                                 @if (itemAttachmentCount(item) > 0) {
@@ -906,127 +878,333 @@
   </div>
 }
 
-@if (distributorPickerOpen()) {
-  <div
-    class="modal-backdrop"
-    role="presentation"
-    (click)="closeDistributorPicker()"
-  ></div>
-  <div
-    class="distributor-picker-modal"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="distributor-picker-title"
-  >
-    <header class="modal-header">
-      <div>
-        <h2 id="distributor-picker-title">Select distributors</h2>
-        <p class="modal-subtitle">
-          Choose one or more distributors to receive this quotation request. Matching logic will be
-          added later — all distributors are listed for now.
-        </p>
+@if (distributorPickerOpen() && selectedInquiry(); as inquiry) {
+  <div class="quotation-overlay" (click)="closeDistributorPicker()" role="presentation">
+    <div
+      class="quotation-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="send-distributors-dialog-title"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="quotation-dialog-header">
+        <div class="quotation-dialog-title-block">
+          <h2 id="send-distributors-dialog-title">Send to distributors</h2>
+          <p class="quotation-dialog-subtitle">{{ inquiry.title }} · {{ inquiry.inquiryId }}</p>
+        </div>
+        <div class="quotation-dialog-header-end">
+          <p class="quotation-chat-note" role="note">
+            Review line details, then select distributors below to send this request.
+          </p>
+          <button
+            type="button"
+            class="quotation-dialog-close"
+            aria-label="Close send to distributors form"
+            (click)="closeDistributorPicker()"
+            [disabled]="actionLoading()"
+          >
+            ×
+          </button>
+        </div>
       </div>
-      <button
-        type="button"
-        class="btn-icon-close"
-        (click)="closeDistributorPicker()"
-        aria-label="Close"
-      >
-        ×
-      </button>
-    </header>
 
-    <div class="modal-body">
-      @if (distributorOptionsError()) {
-        <div class="alert alert-error" role="alert">{{ distributorOptionsError() }}</div>
-      }
-
-      @if (distributorOptionsLoading()) {
-        <p class="state-message">Loading distributors…</p>
-      } @else if (distributorOptions().length === 0) {
-        <p class="state-message">No active distributors found.</p>
-      } @else {
-        <ul class="distributor-option-list">
-          @for (option of distributorOptions(); track option.companyId) {
-            <li class="distributor-option-card">
-              <label class="distributor-option-head">
-                <input
-                  type="checkbox"
-                  [checked]="isDistributorSelected(option.companyId)"
-                  (change)="toggleDistributorSelection(option.companyId, $any($event.target).checked)"
-                />
-                <div class="distributor-option-meta">
-                  <span class="distributor-name">{{ option.companyName }}</span>
-                  <span class="distributor-contact">
-                    {{ option.email || '—' }}
-                    @if (option.phone) {
-                      · {{ option.phone }}
-                    }
-                    @if (option.city) {
-                      · {{ option.city }}
-                    }
-                  </span>
-                  <span class="distributor-product-count">
-                    {{ option.productCount }} product{{ option.productCount === 1 ? '' : 's' }} in catalog
-                  </span>
-                </div>
-              </label>
-
-              @if (option.products.length > 0) {
-                <div class="distributor-products-wrap">
-                  <table class="distributor-products-table">
-                    <thead>
-                      <tr>
-                        <th>Brand</th>
-                        <th>Designation</th>
-                        <th>RSP</th>
-                        <th>Stock</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (product of option.products; track product.productId) {
-                        <tr>
-                          <td>{{ product.brand }}</td>
-                          <td>{{ product.designation }}</td>
-                          <td>{{ product.rsp ?? '—' }}</td>
-                          <td>{{ product.stockQuantity ?? 0 }}</td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
-                </div>
-              } @else {
-                <p class="distributor-no-products">No active products listed yet.</p>
-              }
-            </li>
+      <div class="quotation-dialog-body">
+        <section class="send-panel-section" aria-label="Quotation line details">
+          <h3 class="send-panel-section-title">Quotation details</h3>
+          @if ((inquiry.items ?? []).length > 0) {
+            <div class="preview-table-wrap admin-pricing-table-wrap quotation-table-wrap">
+              <table class="preview-table admin-pricing-table pricing-table">
+                <thead>
+                  <tr>
+                    <th class="col-sno">S.No.</th>
+                    <th class="col-designation">Designation</th>
+                    <th class="col-brand">Brand</th>
+                    <th class="col-hsn-code">HSN code</th>
+                    <th class="col-description">Description</th>
+                    <th class="col-qty">Qty</th>
+                    <th class="col-mrp">MRP</th>
+                    <th class="col-discount">Disc. %</th>
+                    <th class="col-amount">Amount</th>
+                    <th class="col-gst">GST %</th>
+                    <th class="col-net-value">Net value</th>
+                    <th class="col-expected-delivery">Expected delivery</th>
+                    <th class="col-attachment">Images</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of inquiry.items ?? []; track item.id ?? item.productId) {
+                    <tr>
+                      <td class="col-sno">{{ $index + 1 }}</td>
+                      <td class="col-designation consumer-cell" [title]="displayProductField(item.productName)">
+                        {{ displayProductField(item.productName) }}
+                      </td>
+                      <td class="col-brand consumer-cell" [title]="displayProductField(item.productBrand)">
+                        {{ displayProductField(item.productBrand) }}
+                      </td>
+                      <td class="col-hsn-code">
+                        <input
+                          type="text"
+                          class="line-input"
+                          [ngModel]="getLineDraft(inquiry.id, item).hsnCode ?? ''"
+                          (ngModelChange)="updateLineTextField(inquiry.id, item, 'hsnCode', $event)"
+                          placeholder="—"
+                          aria-label="HSN code"
+                        />
+                      </td>
+                      <td class="col-description">
+                        <textarea
+                          class="line-input line-input-textarea"
+                          rows="2"
+                          [ngModel]="getLineDraft(inquiry.id, item).description ?? ''"
+                          (ngModelChange)="updateLineTextField(inquiry.id, item, 'description', $event)"
+                          placeholder="—"
+                          aria-label="Description"
+                        ></textarea>
+                      </td>
+                      <td class="col-qty consumer-cell">{{ item.quantity }}</td>
+                      <td class="col-mrp">
+                        <input
+                          type="number"
+                          class="line-input line-input-number"
+                          min="0"
+                          step="0.01"
+                          [ngModel]="getLineDraft(inquiry.id, item).mrp ?? ''"
+                          (ngModelChange)="updateLineNumberField(inquiry.id, item, 'mrp', $event)"
+                          placeholder="—"
+                          aria-label="MRP"
+                        />
+                      </td>
+                      <td class="col-discount">
+                        <div
+                          class="line-field"
+                          [class.line-field-invalid]="
+                            isPercentageOverLimit(getLineDraft(inquiry.id, item).discountPercentage)
+                          "
+                          [class.line-field-valid]="
+                            isPercentageFieldValid(getLineDraft(inquiry.id, item).discountPercentage)
+                          "
+                        >
+                          <div class="line-field-input-row">
+                            <input
+                              type="number"
+                              class="line-input line-input-number"
+                              [class.line-input-invalid]="
+                                isPercentageOverLimit(getLineDraft(inquiry.id, item).discountPercentage)
+                              "
+                              [class.line-input-valid]="
+                                isPercentageFieldValid(getLineDraft(inquiry.id, item).discountPercentage)
+                              "
+                              min="0"
+                              max="100"
+                              step="0.01"
+                              [ngModel]="getLineDraft(inquiry.id, item).discountPercentage ?? ''"
+                              (ngModelChange)="
+                                updateLineNumberField(inquiry.id, item, 'discountPercentage', $event)
+                              "
+                              placeholder="—"
+                              aria-label="Discount percentage"
+                            />
+                            @if (isPercentageFieldValid(getLineDraft(inquiry.id, item).discountPercentage)) {
+                              <span class="line-field-ok" aria-hidden="true" title="Valid">✓</span>
+                            }
+                          </div>
+                          @if (isPercentageOverLimit(getLineDraft(inquiry.id, item).discountPercentage)) {
+                            <span class="line-field-error" role="alert">Cannot be greater than 100%</span>
+                          }
+                        </div>
+                      </td>
+                      <td class="col-amount">
+                        <span class="line-input line-input-number line-input-readonly" aria-readonly="true">
+                          {{ formatCurrency(lineAmount(inquiry.id, item)) }}
+                        </span>
+                      </td>
+                      <td class="col-gst">
+                        <div
+                          class="line-field"
+                          [class.line-field-invalid]="
+                            isPercentageOverLimit(getLineDraft(inquiry.id, item).gstPercentage)
+                          "
+                          [class.line-field-valid]="
+                            isPercentageFieldValid(getLineDraft(inquiry.id, item).gstPercentage)
+                          "
+                        >
+                          <div class="line-field-input-row">
+                            <input
+                              type="number"
+                              class="line-input line-input-number"
+                              [class.line-input-invalid]="
+                                isPercentageOverLimit(getLineDraft(inquiry.id, item).gstPercentage)
+                              "
+                              [class.line-input-valid]="
+                                isPercentageFieldValid(getLineDraft(inquiry.id, item).gstPercentage)
+                              "
+                              min="0"
+                              max="100"
+                              step="0.01"
+                              [ngModel]="getLineDraft(inquiry.id, item).gstPercentage ?? ''"
+                              (ngModelChange)="
+                                updateLineNumberField(inquiry.id, item, 'gstPercentage', $event)
+                              "
+                              placeholder="—"
+                              aria-label="GST percentage"
+                            />
+                            @if (isPercentageFieldValid(getLineDraft(inquiry.id, item).gstPercentage)) {
+                              <span class="line-field-ok" aria-hidden="true" title="Valid">✓</span>
+                            }
+                          </div>
+                          @if (isPercentageOverLimit(getLineDraft(inquiry.id, item).gstPercentage)) {
+                            <span class="line-field-error" role="alert">Cannot be greater than 100%</span>
+                          }
+                        </div>
+                      </td>
+                      <td class="col-net-value">
+                        <span class="line-input line-input-number line-input-readonly" aria-readonly="true">
+                          {{ formatCurrency(lineNetValue(inquiry.id, item)) }}
+                        </span>
+                      </td>
+                      <td class="col-expected-delivery">
+                        <input
+                          type="date"
+                          class="line-input line-input-date"
+                          [ngModel]="getLineDraft(inquiry.id, item).expectedDeliveryDate ?? ''"
+                          (ngModelChange)="updateLineDateField(inquiry.id, item, $event)"
+                          aria-label="Expected delivery date"
+                        />
+                      </td>
+                      <td class="col-attachment">
+                        @if (itemAttachmentCount(item) > 0) {
+                          <button
+                            type="button"
+                            class="btn-attachment-link"
+                            (click)="openItemAttachments(item, $event)"
+                            [attr.aria-label]="
+                              'View ' +
+                              itemAttachmentLabel(item) +
+                              ' for ' +
+                              displayProductField(item.productBrand) +
+                              ' ' +
+                              displayProductField(item.productName)
+                            "
+                          >
+                            {{ itemAttachmentLabel(item) }}
+                          </button>
+                        } @else {
+                          —
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <p class="products-empty">No products in this request.</p>
           }
-        </ul>
-      }
-    </div>
+        </section>
 
-    <footer class="modal-footer">
-      <span class="selection-summary">
-        {{ selectedDistributorCount() }} distributor{{ selectedDistributorCount() === 1 ? '' : 's' }}
-        selected
-      </span>
-      <div class="modal-footer-actions">
-        <button
-          type="button"
-          class="btn-secondary"
-          (click)="closeDistributorPicker()"
-          [disabled]="actionLoading()"
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          class="btn-primary"
-          (click)="confirmSendToDistributors()"
-          [disabled]="actionLoading() || selectedDistributorCount() === 0"
-        >
-          {{ actionLoading() ? 'Sending…' : 'Send to distributors' }}
-        </button>
+        <section class="send-panel-section send-panel-distributors" aria-label="Select distributors">
+          <h3 class="send-panel-section-title">Select distributors</h3>
+          <p class="send-panel-section-hint">
+            Choose one or more distributors to receive this quotation request.
+          </p>
+
+          @if (distributorOptionsLoading()) {
+            <p class="state-message">Loading distributors…</p>
+          } @else if (distributorOptions().length === 0 && !distributorOptionsError()) {
+            <p class="state-message">No active distributors found.</p>
+          } @else {
+            <ul class="distributor-option-list">
+              @for (option of distributorOptions(); track option.companyId) {
+                <li class="distributor-option-card">
+                  <label class="distributor-option-head">
+                    <input
+                      type="checkbox"
+                      [checked]="isDistributorSelected(option.companyId)"
+                      (change)="toggleDistributorSelection(option.companyId, $any($event.target).checked)"
+                    />
+                    <div class="distributor-option-meta">
+                      <span class="distributor-name">{{ option.companyName }}</span>
+                      <span class="distributor-contact">
+                        {{ option.email || '—' }}
+                        @if (option.phone) {
+                          · {{ option.phone }}
+                        }
+                        @if (option.city) {
+                          · {{ option.city }}
+                        }
+                      </span>
+                      <span class="distributor-product-count">
+                        {{ option.productCount }} product{{ option.productCount === 1 ? '' : 's' }} in catalog
+                      </span>
+                    </div>
+                  </label>
+
+                  @if (option.products.length > 0) {
+                    <div class="distributor-products-wrap">
+                      <table class="distributor-products-table">
+                        <thead>
+                          <tr>
+                            <th>Brand</th>
+                            <th>Designation</th>
+                            <th>RSP</th>
+                            <th>Stock</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (product of option.products; track product.productId) {
+                            <tr>
+                              <td>{{ product.brand }}</td>
+                              <td>{{ product.designation }}</td>
+                              <td>{{ product.rsp ?? '—' }}</td>
+                              <td>{{ product.stockQuantity ?? 0 }}</td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  } @else {
+                    <p class="distributor-no-products">No active products listed yet.</p>
+                  }
+                </li>
+              }
+            </ul>
+          }
+        </section>
       </div>
-    </footer>
+
+      @if (distributorOptionsError()) {
+        <div class="alert alert-error quotation-error" role="alert">{{ distributorOptionsError() }}</div>
+      }
+
+      <div class="quotation-dialog-actions">
+        <span class="selection-summary">
+          {{ selectedDistributorCount() }} distributor{{ selectedDistributorCount() === 1 ? '' : 's' }}
+          selected
+        </span>
+        <div class="quotation-dialog-actions-buttons">
+          <button
+            type="button"
+            class="btn-secondary"
+            (click)="closeDistributorPicker()"
+            [disabled]="actionLoading()"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="btn-primary"
+            (click)="confirmSendToDistributors()"
+            [disabled]="actionLoading() || !canConfirmSendToDistributors(inquiry)"
+          >
+            @if (actionLoading()) {
+              <span class="send-spinner" aria-hidden="true"></span>
+              Sending…
+            } @else {
+              Send to distributors
+            }
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 }
