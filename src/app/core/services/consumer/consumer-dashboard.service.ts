@@ -17,6 +17,18 @@ export class ConsumerDashboardService {
     return this.http.put<ConsumerProfile>(`${this.baseUrl}/profile`, request);
   }
 
+  resendEmailVerification(): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.baseUrl}/profile/resend-email-verification`, {});
+  }
+
+  sendPhoneOtp(phone: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.baseUrl}/profile/phone/send-otp`, { phone });
+  }
+
+  verifyPhoneOtp(phone: string, otp: string): Observable<ConsumerProfile> {
+    return this.http.post<ConsumerProfile>(`${this.baseUrl}/profile/phone/verify-otp`, { phone, otp });
+  }
+
   uploadLogo(file: File): Observable<ConsumerProfile> {
     const formData = new FormData();
     formData.append('logo', file);

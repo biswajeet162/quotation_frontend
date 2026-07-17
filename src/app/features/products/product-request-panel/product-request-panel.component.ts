@@ -14,6 +14,8 @@ import { InquiryTimelineAttachment, TimelineAttachmentMediaType } from '../../..
 import { formatSpecificationsInline } from '../../../shared/utils/specifications-display.util';
 import { formatExpectedDeliveryDate } from '../../../shared/utils/inquiry-display.util';
 import { resolveAttachmentMediaType } from '../../../shared/utils/attachment-media-type.util';
+import { isValidEmployeePhone } from '../../../shared/utils/employee-contact.util';
+import { EmployeeContactVerifyModalComponent } from '../../consumer/employee-contact-verify-modal/employee-contact-verify-modal.component';
 import { ProductFieldAutocompleteComponent } from '../product-field-autocomplete/product-field-autocomplete.component';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 import { InquiryChatAttachmentComponent } from '../../../shared/components/inquiry-chat-attachment/inquiry-chat-attachment.component';
@@ -32,6 +34,7 @@ interface QueryAttachmentItem {
     ProductFieldAutocompleteComponent,
     LoadingOverlayComponent,
     InquiryChatAttachmentComponent,
+    EmployeeContactVerifyModalComponent,
   ],
   templateUrl: './product-request-panel.component.html',
   styleUrl: './product-request-panel.component.css',
@@ -54,6 +57,7 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
   readonly companyProfile = signal<ConsumerProfile | null>(null);
   readonly companyLogoUrl = signal<string | null>(null);
   readonly profileLoading = signal(false);
+  readonly verifyModalOpen = signal(false);
 
   readonly attachmentPanelOpen = signal(false);
   readonly attachmentRow = signal<ProductFormRow | null>(null);
@@ -147,6 +151,7 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.catalog.ensureLoaded();
     this.catalog.ensureConsumerBrandsLoaded();
+    this.loadCompanyProfile(true);
   }
 
   ngOnDestroy(): void {
@@ -156,6 +161,10 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
+    if (this.verifyModalOpen()) {
+      this.closeVerifyModal();
+      return;
+    }
     if (this.attachmentPanelOpen()) {
       this.closeAttachments();
       return;
@@ -455,6 +464,41 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
       return;
     }
 
+    this.submitError.set(null);
+    this.profileLoading.set(true);
+    this.consumerDashboard.getProfile().subscribe({
+      next: (profile) => {
+        this.companyProfile.set(profile);
+        this.profileLoading.set(false);
+
+        const emailOk = profile.emailVerified === true;
+        const phoneOk =
+          isValidEmployeePhone(profile.userPhone) && profile.phoneVerified === true;
+
+        if (!emailOk || !phoneOk) {
+          this.verifyModalOpen.set(true);
+          return;
+        }
+
+        this.performSubmit();
+      },
+      error: () => {
+        this.profileLoading.set(false);
+        this.submitError.set('Could not verify your contact details. Please try again.');
+      },
+    });
+  }
+
+  onContactProfileUpdated(profile: ConsumerProfile): void {
+    this.companyProfile.set(profile);
+  }
+
+  closeVerifyModal(): void {
+    this.verifyModalOpen.set(false);
+    this.loadCompanyProfile(true);
+  }
+
+  private performSubmit(): void {
     const valid = this.previewRows();
     if (valid.length === 0) {
       this.submitError.set('Add at least one product row with some details.');
@@ -534,9 +578,13 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
             this.downloadSubmissionPdf(inquiry.id, inquiry.inquiryId);
           }
         },
-        error: () => {
+        error: (error: unknown) => {
           this.submitting.set(false);
-          this.submitError.set('Could not submit your quotation request. Please try again.');
+          this.submitError.set(this.extractSubmitErrorMessage(error));
+          if (this.isEmployeeContactIncompleteError(error)) {
+            this.loadCompanyProfile(true);
+            this.verifyModalOpen.set(true);
+          }
         },
       });
   }
@@ -680,8 +728,8 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
     tick();
   }
 
-  private loadCompanyProfile(): void {
-    if (this.companyProfile() || this.profileLoading()) {
+  private loadCompanyProfile(force = false): void {
+    if (!force && (this.companyProfile() || this.profileLoading())) {
       return;
     }
 
@@ -703,6 +751,33 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
       },
       error: () => this.profileLoading.set(false),
     });
+  }
+
+  private isEmployeeContactIncompleteError(error: unknown): boolean {
+    if (!error || typeof error !== 'object' || !('error' in error)) {
+      return false;
+    }
+    const payload = (error as { error?: unknown }).error;
+    if (!payload || typeof payload !== 'object') {
+      return false;
+    }
+    return (payload as { code?: unknown }).code === 'EMPLOYEE_CONTACT_INCOMPLETE';
+  }
+
+  private extractSubmitErrorMessage(error: unknown): string {
+    if (error && typeof error === 'object' && 'error' in error) {
+      const payload = (error as { error?: unknown }).error;
+      if (typeof payload === 'string' && payload.trim()) {
+        return payload;
+      }
+      if (payload && typeof payload === 'object' && 'message' in payload) {
+        const message = (payload as { message?: unknown }).message;
+        if (typeof message === 'string' && message.trim()) {
+          return message;
+        }
+      }
+    }
+    return 'Could not submit your quotation request. Please try again.';
   }
 
   private formatAddress(profile: ConsumerProfile | null): string {

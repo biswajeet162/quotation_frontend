@@ -1,0 +1,105 @@
+<div class="verify-backdrop" role="dialog" aria-modal="true" aria-labelledby="verify-contact-title">
+  <div class="verify-card">
+    <header class="verify-header">
+      <h2 id="verify-contact-title">Verify your contact details</h2>
+      <p>
+        Before submitting a quotation request, confirm your email and mobile number so we can reach
+        you about this inquiry.
+      </p>
+      <button type="button" class="icon-close" aria-label="Close" (click)="close()" [disabled]="busy()">
+        ×
+      </button>
+    </header>
+
+    @if (errorMessage()) {
+      <div class="alert alert-error" role="alert">{{ errorMessage() }}</div>
+    }
+    @if (infoMessage()) {
+      <div class="alert alert-info" role="status">{{ infoMessage() }}</div>
+    }
+
+    <section class="verify-row" aria-labelledby="verify-email-label">
+      <div class="verify-row-head">
+        <h3 id="verify-email-label">Email</h3>
+        @if (emailVerified()) {
+          <span class="status-pill status-ok">Verified</span>
+        } @else {
+          <span class="status-pill status-pending">Not verified</span>
+        }
+      </div>
+      <p class="verify-value">{{ profile().email }}</p>
+      @if (emailVerified()) {
+        <p class="verify-note">Your email is verified and ready to use.</p>
+      } @else {
+        <p class="verify-note">We’ll send a verification link to this address.</p>
+        <button type="button" class="btn-secondary" (click)="resendEmailLink()" [disabled]="busy()">
+          Send verification link
+        </button>
+      }
+    </section>
+
+    <section class="verify-row" aria-labelledby="verify-phone-label">
+      <div class="verify-row-head">
+        <h3 id="verify-phone-label">Mobile number</h3>
+        @if (phoneVerified()) {
+          <span class="status-pill status-ok">Verified</span>
+        } @else {
+          <span class="status-pill status-pending">Not verified</span>
+        }
+      </div>
+
+      @if (phoneVerified()) {
+        <p class="verify-value">{{ localPhone() }}</p>
+        <p class="verify-note">Your mobile number is verified.</p>
+      } @else {
+        <label class="field-label" for="verify-phone-input">Mobile number</label>
+        <input
+          id="verify-phone-input"
+          class="field-input"
+          type="tel"
+          [ngModel]="phone()"
+          (ngModelChange)="phone.set($event)"
+          placeholder="10-digit mobile"
+          [disabled]="busy() || otpSent()"
+        />
+
+        @if (!otpSent()) {
+          <button type="button" class="btn-primary" (click)="sendOtp()" [disabled]="busy()">
+            {{ busy() ? 'Sending…' : 'Send OTP' }}
+          </button>
+        } @else {
+          <label class="field-label" for="verify-otp-input">Enter OTP</label>
+          <input
+            id="verify-otp-input"
+            class="field-input"
+            type="text"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            [ngModel]="otp()"
+            (ngModelChange)="otp.set($event)"
+            placeholder="Enter any OTP"
+            [disabled]="busy()"
+          />
+          <div class="row-actions">
+            <button type="button" class="btn-secondary" (click)="sendOtp()" [disabled]="busy()">
+              Resend OTP
+            </button>
+            <button
+              type="button"
+              class="btn-primary"
+              (click)="verifyOtp()"
+              [disabled]="busy() || !otp().trim()"
+            >
+              {{ busy() ? 'Verifying…' : 'Verify' }}
+            </button>
+          </div>
+          <p class="verify-note">Test mode: any OTP code is accepted.</p>
+        }
+      }
+    </section>
+
+    <footer class="verify-footer">
+      <button type="button" class="btn-secondary" (click)="close()" [disabled]="busy()">Cancel</button>
+    </footer>
+  </div>
+</div>

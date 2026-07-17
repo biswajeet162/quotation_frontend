@@ -1,6 +1,14 @@
 <div class="request-panel" [class.panel-highlight]="highlight()">
   <app-loading-overlay [loading]="submitting()" message="Submitting quotation…" />
 
+  @if (verifyModalOpen() && companyProfile(); as profile) {
+    <app-employee-contact-verify-modal
+      [profile]="profile"
+      (closed)="closeVerifyModal()"
+      (profileUpdated)="onContactProfileUpdated($event)"
+    />
+  }
+
   @if (lastSubmitted(); as inquiry) {
     <div class="success-card" role="status">
       <p>

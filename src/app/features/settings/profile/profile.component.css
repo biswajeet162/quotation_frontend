@@ -345,6 +345,21 @@
   color: #0f172a;
 }
 
+.field-hint {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.field-hint-warning {
+  color: #b45309;
+}
+
+.field-hint-ok {
+  color: #047857;
+}
+
 .address-value {
   white-space: pre-line;
 }

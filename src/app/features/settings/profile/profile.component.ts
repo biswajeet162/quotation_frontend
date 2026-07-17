@@ -13,6 +13,7 @@ import { AuthService } from '../../../core/services/auth/auth.service';
 import { ConsumerDashboardService } from '../../../core/services/consumer/consumer-dashboard.service';
 import { DistributorDashboardService } from '../../../core/services/distributor/distributor-dashboard.service';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
+import { hasEmployeeName, isValidEmployeePhone } from '../../../shared/utils/employee-contact.util';
 
 const ROLE_LABELS: Record<string, string> = {
   ADMIN: 'Administrator',
@@ -195,8 +196,24 @@ export class ProfileComponent implements OnInit {
 
     const form = this.form();
     if (this.isConsumer()) {
-      if (!form.userName.trim() || !form.userPhone.trim() || !form.companyName.trim()) {
-        this.errorMessage.set('Your name, phone number, and company name are required.');
+      if (
+        !form.userName.trim() ||
+        !form.userPhone.trim() ||
+        !form.companyName.trim() ||
+        !form.companyEmail.trim() ||
+        !form.companyPhone.trim()
+      ) {
+        this.errorMessage.set(
+          'Your name, phone number, company name, company email, and company phone are required.'
+        );
+        return;
+      }
+      if (!hasEmployeeName(form.userName)) {
+        this.errorMessage.set('Please enter your full name.');
+        return;
+      }
+      if (!isValidEmployeePhone(form.userPhone)) {
+        this.errorMessage.set('Please enter a valid 10-digit mobile number (optionally with +91).');
         return;
       }
     } else if (!form.companyName.trim() || !form.companyEmail.trim() || !form.companyPhone.trim()) {
@@ -331,6 +348,8 @@ export class ProfileComponent implements OnInit {
       userName: form.userName.trim(),
       userPhone: form.userPhone.trim(),
       companyName: form.companyName.trim(),
+      companyEmail: form.companyEmail.trim(),
+      companyPhone: form.companyPhone.trim(),
       gstNumber: form.gstNumber.trim() || undefined,
       panNumber: form.panNumber.trim() || undefined,
       address: form.address.trim() || undefined,
@@ -409,11 +428,19 @@ export class ProfileComponent implements OnInit {
     return consumerProfile.userPhone?.trim() || '—';
   }
 
-  distributorCompanyEmail(profile: CompanyProfile): string | undefined {
+  isEmailUnverified(profile: CompanyProfile): boolean {
+    return 'emailVerified' in profile && profile.emailVerified === false;
+  }
+
+  isPhoneVerified(profile: CompanyProfile): boolean {
+    return 'phoneVerified' in profile && profile.phoneVerified === true;
+  }
+
+  companyEmail(profile: CompanyProfile): string | undefined {
     return 'companyEmail' in profile ? profile.companyEmail : undefined;
   }
 
-  distributorCompanyPhone(profile: CompanyProfile): string | undefined {
+  companyPhone(profile: CompanyProfile): string | undefined {
     return 'companyPhone' in profile ? profile.companyPhone : undefined;
   }
 

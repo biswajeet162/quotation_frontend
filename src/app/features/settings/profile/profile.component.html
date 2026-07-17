@@ -105,7 +105,12 @@
               </div>
               <div class="info-item">
                 <dt>Email</dt>
-                <dd>{{ consumerEmail(profile) }}</dd>
+                <dd>
+                  {{ consumerEmail(profile) }}
+                  @if (isEmailUnverified(profile)) {
+                    <span class="field-hint field-hint-warning">Not verified — check your inbox for the verification link.</span>
+                  }
+                </dd>
               </div>
               <div class="info-item">
                 <dt>Mobile number</dt>
@@ -117,10 +122,16 @@
                       [ngModel]="form().userPhone"
                       (ngModelChange)="updateFormField('userPhone', $event)"
                       name="userPhone"
+                      placeholder="10-digit mobile"
                       required
                     />
                   } @else {
                     {{ consumerPhone(profile) }}
+                    @if (isPhoneVerified(profile)) {
+                      <span class="field-hint field-hint-ok">Verified</span>
+                    } @else if (consumerPhone(profile) !== '—') {
+                      <span class="field-hint field-hint-warning">Not verified — confirm with OTP when submitting an inquiry.</span>
+                    }
                   }
                 </dd>
               </div>
@@ -227,7 +238,6 @@
                     </dd>
                   </div>
                 }
-                @if (!isConsumer()) {
                 <div class="info-item">
                   <dt>Company email</dt>
                   <dd>
@@ -241,12 +251,12 @@
                         required
                       />
                     } @else {
-                      {{ displayValue(distributorCompanyEmail(profile)) }}
+                      {{ displayValue(companyEmail(profile)) }}
                     }
                   </dd>
                 </div>
                 <div class="info-item">
-                  <dt>Mobile number</dt>
+                  <dt>Company phone</dt>
                   <dd>
                     @if (editDetailsMode()) {
                       <input
@@ -258,11 +268,10 @@
                         required
                       />
                     } @else {
-                      {{ displayValue(distributorCompanyPhone(profile)) }}
+                      {{ displayValue(companyPhone(profile)) }}
                     }
                   </dd>
                 </div>
-                }
               </dl>
 
               <dl class="info-grid">
