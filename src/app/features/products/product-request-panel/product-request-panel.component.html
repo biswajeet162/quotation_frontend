@@ -186,11 +186,11 @@
               @if (companyProfile()?.panNumber; as pan) {
                 <li><span class="detail-label">PAN:</span> {{ pan }}</li>
               }
-              @if (companyProfile()?.userPhone; as phone) {
-                <li>{{ phone }}</li>
+              @if (previewCompanyPhone(); as phone) {
+                <li><span class="detail-label">Phone:</span> {{ phone }}</li>
               }
-              @if (companyProfile()?.email; as email) {
-                <li>{{ email }}</li>
+              @if (previewCompanyEmail(); as email) {
+                <li><span class="detail-label">Email:</span> {{ email }}</li>
               }
             </ul>
           </div>

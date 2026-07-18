@@ -29,6 +29,7 @@ interface ProfileFormState {
   panNumber: string;
   companyEmail: string;
   companyPhone: string;
+  companyPhoneSecondary: string;
   address: string;
   city: string;
   state: string;
@@ -46,6 +47,7 @@ const emptyForm = (): ProfileFormState => ({
   panNumber: '',
   companyEmail: '',
   companyPhone: '',
+  companyPhoneSecondary: '',
   address: '',
   city: '',
   state: '',
@@ -369,6 +371,7 @@ export class ProfileComponent implements OnInit {
       companyName: form.companyName.trim(),
       companyEmail: form.companyEmail.trim(),
       companyPhone: form.companyPhone.trim(),
+      companyPhoneSecondary: form.companyPhoneSecondary.trim() || undefined,
       gstNumber: form.gstNumber.trim() || undefined,
       panNumber: form.panNumber.trim() || undefined,
       address: form.address.trim() || undefined,
@@ -411,6 +414,8 @@ export class ProfileComponent implements OnInit {
       panNumber: 'panNumber' in profile ? (profile.panNumber ?? '') : '',
       companyEmail: 'companyEmail' in profile ? (profile.companyEmail ?? '') : '',
       companyPhone: 'companyPhone' in profile ? (profile.companyPhone ?? '') : '',
+      companyPhoneSecondary:
+        'companyPhoneSecondary' in profile ? (profile.companyPhoneSecondary ?? '') : '',
       address: profile.address ?? '',
       city: profile.city ?? '',
       state: profile.state ?? '',
@@ -442,6 +447,10 @@ export class ProfileComponent implements OnInit {
 
   companyPhone(profile: CompanyProfile): string | undefined {
     return 'companyPhone' in profile ? profile.companyPhone : undefined;
+  }
+
+  companyPhoneSecondary(profile: CompanyProfile): string | undefined {
+    return 'companyPhoneSecondary' in profile ? profile.companyPhoneSecondary : undefined;
   }
 
   private loadLogoPreview(): void {

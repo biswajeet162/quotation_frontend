@@ -114,6 +114,18 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
 
   readonly previewCompanyAddress = computed(() => this.formatAddress(this.companyProfile()));
 
+  /** Company phone — never the employee phone. */
+  readonly previewCompanyPhone = computed(() => {
+    const phone = this.companyProfile()?.companyPhone?.trim();
+    return phone || null;
+  });
+
+  /** Company email — never the employee/login email. */
+  readonly previewCompanyEmail = computed(() => {
+    const email = this.companyProfile()?.companyEmail?.trim();
+    return email || null;
+  });
+
   readonly previewContactName = computed(() => {
     const profile = this.companyProfile();
     return profile?.userName?.trim() || 'Contact Person';
@@ -126,8 +138,7 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
     if (!profile) {
       return '—';
     }
-    const consumerProfile = profile as ConsumerProfile;
-    return consumerProfile.userPhone?.trim() || '—';
+    return profile.userPhone?.trim() || '—';
   });
 
   readonly previewContactEmail = computed(() => {

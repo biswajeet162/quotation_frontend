@@ -7,6 +7,7 @@ export interface AdminPortalProfile {
   companyName: string;
   companyEmail: string;
   companyPhone: string;
+  companyPhoneSecondary?: string;
   gstNumber?: string;
   panNumber?: string;
   address?: string;
@@ -20,6 +21,7 @@ export interface UpdateAdminPortalProfileRequest {
   companyName: string;
   companyEmail: string;
   companyPhone: string;
+  companyPhoneSecondary?: string;
   gstNumber?: string;
   panNumber?: string;
   address?: string;

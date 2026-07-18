@@ -272,6 +272,24 @@
                     }
                   </dd>
                 </div>
+                @if (isAdmin()) {
+                  <div class="info-item">
+                    <dt>Company phone (2)</dt>
+                    <dd>
+                      @if (editDetailsMode()) {
+                        <input
+                          class="inline-input"
+                          type="tel"
+                          [ngModel]="form().companyPhoneSecondary"
+                          (ngModelChange)="updateFormField('companyPhoneSecondary', $event)"
+                          name="companyPhoneSecondary"
+                        />
+                      } @else {
+                        {{ displayValue(companyPhoneSecondary(profile)) }}
+                      }
+                    </dd>
+                  </div>
+                }
               </dl>
 
               <dl class="info-grid">
