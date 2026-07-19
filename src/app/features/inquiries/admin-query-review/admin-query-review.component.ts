@@ -427,8 +427,8 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
           replaceUrl: true,
         });
       }
+      this.load();
     });
-    this.load();
   }
 
   ngOnDestroy(): void {
@@ -437,6 +437,14 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   }
 
   load(): void {
+    const requestedInquiryRef = this.route.snapshot.queryParamMap.get('inq')?.trim() ?? null;
+    if (requestedInquiryRef && this.inquiries().length > 0) {
+      const current = this.selectedInquiry();
+      if (current?.inquiryId === requestedInquiryRef) {
+        return;
+      }
+    }
+
     this.loading.set(true);
     this.errorMessage.set(null);
 
@@ -444,6 +452,24 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
       next: (list) => {
         this.inquiries.set(list);
         this.loading.set(false);
+
+        if (requestedInquiryRef) {
+          const match = list.find((inquiry) => inquiry.inquiryId === requestedInquiryRef);
+          if (match) {
+            this.searchQuery.set('');
+            this.statusFilter.set('all');
+            this.selectedId.set(match.id);
+            this.hydrateLineDraftsFromInquiry(match);
+            this.markAwaitingConsumer.set(match.status === 'NEW');
+            this.loadTimeline();
+            return;
+          }
+          this.selectedId.set(null);
+          this.timelineEntries.set([]);
+          this.errorMessage.set('No such inquiry exists.');
+          return;
+        }
+
         const current = this.selectedId();
         const stillVisible =
           current != null && this.filteredInquiries().some((q) => q.id === current);
@@ -504,6 +530,13 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
     }
     this.markAwaitingConsumer.set(inquiry?.status === 'NEW');
     this.loadTimeline();
+
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: inquiry ? { inq: inquiry.inquiryId } : { inq: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 
   loadTimeline(options?: { silent?: boolean; scrollToBottom?: boolean; preserveScroll?: boolean }): void {
