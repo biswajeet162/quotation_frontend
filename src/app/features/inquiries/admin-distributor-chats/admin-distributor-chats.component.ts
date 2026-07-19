@@ -328,31 +328,36 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   );
 
   /**
-   * Per distributor: selected wins / products they quoted (or were assigned).
-   * Used in the By distributors list as e.g. 3/5 after mix cancellations.
+   * Per distributor: admin mix picks / products sent to that distributor.
+   * Shown in the By distributors list from the start (e.g. 0/3, then 2/3 as picks are made).
    */
   readonly distributorPickRatios = computed(() => {
     const quotes = this.quotesByDistributor();
     const selections = this.productSelections();
+    const inquiryItemCount = this.inquiry()?.items?.length ?? 0;
     const map = new Map<string, { selected: number; total: number }>();
 
     for (const distributor of this.distributors()) {
-      const quoteItems = (quotes.get(distributor.companyId) ?? []).filter((item) =>
-        this.hasQuotationLine(item),
-      );
-      // Only show after this distributor has submitted quote lines.
-      if (quoteItems.length === 0) {
+      const assignedItems = quotes.get(distributor.companyId) ?? [];
+      const total =
+        distributor.assignedItemCount != null && distributor.assignedItemCount > 0
+          ? distributor.assignedItemCount
+          : assignedItems.length > 0
+            ? assignedItems.length
+            : inquiryItemCount;
+
+      if (total <= 0) {
         continue;
       }
 
       let selected = 0;
-      for (const item of quoteItems) {
+      for (const item of assignedItems) {
         const itemKey = item.id ?? item.productId;
         if (itemKey && selections.get(itemKey) === distributor.companyId) {
           selected += 1;
         }
       }
-      map.set(distributor.companyId, { selected, total: quoteItems.length });
+      map.set(distributor.companyId, { selected, total });
     }
     return map;
   });
