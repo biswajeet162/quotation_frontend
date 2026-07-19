@@ -584,10 +584,10 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
           this.closePreview();
           this.closeAttachments();
           this.lastSubmitted.set(inquiry);
-          this.submitted.emit(inquiry);
           if (inquiry.id) {
             this.downloadSubmissionPdf(inquiry.id, inquiry.inquiryId);
           }
+          this.submitted.emit(inquiry);
         },
         error: (error: unknown) => {
           this.submitting.set(false);

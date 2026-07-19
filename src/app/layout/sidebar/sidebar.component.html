@@ -32,7 +32,7 @@
         <a
           [routerLink]="item.path"
           routerLinkActive="active"
-          [routerLinkActiveOptions]="item.children?.length ? { exact: false } : { exact: true }"
+          [routerLinkActiveOptions]="item.children?.length ? prefixActiveOptions : exactActiveOptions"
           class="nav-link"
           [class.nav-group-parent]="item.children?.length"
         >
@@ -45,7 +45,7 @@
               <a
                 [routerLink]="child.path"
                 routerLinkActive="active"
-                [routerLinkActiveOptions]="{ exact: true }"
+                [routerLinkActiveOptions]="exactActiveOptions"
                 class="nav-link nav-child-link"
               >
                 <span>{{ child.label }}</span>

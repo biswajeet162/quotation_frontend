@@ -1,5 +1,5 @@
 import { Component, computed, inject, input, output } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { IsActiveMatchOptions, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthUser } from '../../core/models/auth.model';
 import { AuthService } from '../../core/services/auth/auth.service';
 
@@ -30,6 +30,21 @@ export class SidebarComponent {
 
   readonly collapsed = input(false);
   readonly toggleSidebar = output<void>();
+
+  /** Keep nav active when the path matches, even with ?inq= or other query params. */
+  readonly exactActiveOptions: IsActiveMatchOptions = {
+    paths: 'exact',
+    queryParams: 'ignored',
+    fragment: 'ignored',
+    matrixParams: 'ignored',
+  };
+
+  readonly prefixActiveOptions: IsActiveMatchOptions = {
+    paths: 'subset',
+    queryParams: 'ignored',
+    fragment: 'ignored',
+    matrixParams: 'ignored',
+  };
 
   private readonly allNavItems: NavItem[] = [
     { label: 'Dashboard', path: '/dashboard', icon: '◫' },
