@@ -26,6 +26,7 @@ import {
   TimelineAttachmentMediaType,
 } from '../../../core/models/inquiry-timeline.model';
 import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
+import { ToastService } from '../../../core/services/toast/toast.service';
 import { InquiryChatAttachmentComponent } from '../../../shared/components/inquiry-chat-attachment/inquiry-chat-attachment.component';
 import { ChatAudioPlayerComponent } from '../../../shared/components/chat-audio-player/chat-audio-player.component';
 import {
@@ -82,6 +83,7 @@ interface DistributorSendPricingSnapshot {
 })
 export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   private readonly inquiryService = inject(InquiryService);
+  private readonly toast = inject(ToastService);
   private readonly sanitizer = inject(DomSanitizer);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -420,6 +422,7 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
     this.route.queryParamMap.subscribe((params) => {
       if (params.get('finalized') === '1') {
         this.successMessage.set('Quotation request has been sent to the customer.');
+        this.toast.success('Quotation request has been sent to the customer.');
         void this.router.navigate([], {
           relativeTo: this.route,
           queryParams: { finalized: null },
@@ -467,6 +470,7 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
           this.selectedId.set(null);
           this.timelineEntries.set([]);
           this.errorMessage.set('No such inquiry exists.');
+          this.toast.warning('No such inquiry exists.');
           return;
         }
 
@@ -479,9 +483,10 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
           this.loadTimeline();
         }
       },
-      error: () => {
+      error: (err) => {
         this.loading.set(false);
         this.errorMessage.set('Could not load consumer queries.');
+        this.toast.fromApiError(err, 'Could not load consumer queries.');
       },
     });
   }
@@ -582,11 +587,12 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
           scrollEl.scrollTop = previousScrollTop;
         }
       },
-      error: () => {
+      error: (err) => {
         this.timelineLoading.set(false);
         this.timelineRefreshing.set(false);
         if (!silent) {
           this.timelineError.set('Could not load messages.');
+          this.toast.fromApiError(err, 'Could not load messages.');
         }
       },
     });
@@ -603,6 +609,7 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
 
     if (!inquiry || (!message && attachments.length === 0)) {
       this.messageError.set('Enter a message or attach a file before sending.');
+      this.toast.warning('Enter a message or attach a file before sending.');
       return;
     }
 
@@ -640,6 +647,7 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
       error: (err) => {
         this.messageLoading.set(false);
         this.messageError.set(err?.error?.message ?? 'Could not send your message.');
+        this.toast.fromApiError(err, 'Could not send your message.');
       },
     });
   }
@@ -677,6 +685,9 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
           this.distributorOptionsError.set(
             'No distributors carry the brands in this request. Update distributor catalogs before sending.',
           );
+          this.toast.warning(
+            'No distributors carry the brands in this request. Update distributor catalogs before sending.',
+          );
         }
       },
       error: (err) => {
@@ -684,6 +695,7 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
         this.distributorOptionsError.set(
           err?.error?.message ?? 'Could not load brand routing preview.',
         );
+        this.toast.fromApiError(err, 'Could not load brand routing preview.');
       },
     });
   }
@@ -725,12 +737,14 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
       this.distributorOptionsError.set(
         'No distributors carry the brands in this request.',
       );
+      this.toast.warning('No distributors carry the brands in this request.');
       return;
     }
 
     const pricingError = this.validateLinePricing(inquiry);
     if (pricingError) {
       this.distributorOptionsError.set(pricingError);
+      this.toast.warning(pricingError);
       return;
     }
 
@@ -747,6 +761,7 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
         this.actionLoading.set(false);
         this.distributorPickerOpen.set(false);
         this.loadTimeline({ silent: true, scrollToBottom: true });
+        this.toast.success('Quotation request sent to distributors.');
         this.openDistributorChats(updated.id);
       },
       error: (err) => {
@@ -754,6 +769,7 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
         this.distributorOptionsError.set(
           err?.error?.message ?? 'Could not send to distributors.',
         );
+        this.toast.fromApiError(err, 'Could not send to distributors.');
       },
     });
   }
@@ -1137,8 +1153,9 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
       next: (blob) => {
         this.openPdfInViewer(blob, 'application/pdf', this.submissionPdfFileName(inquiry));
       },
-      error: () => {
+      error: (err) => {
         this.messageError.set('Could not open the request PDF.');
+        this.toast.fromApiError(err, 'Could not open the request PDF.');
       },
     });
   }
@@ -1148,8 +1165,9 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
       next: (blob) => {
         this.openPdfInViewer(blob, 'application/pdf', this.adminRfqPdfFileName(inquiry));
       },
-      error: () => {
+      error: (err) => {
         this.messageError.set('Could not open the RFQ PDF.');
+        this.toast.fromApiError(err, 'Could not open the RFQ PDF.');
       },
     });
   }

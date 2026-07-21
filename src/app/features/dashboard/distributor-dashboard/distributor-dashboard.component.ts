@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { DistributorDashboardOverview } from '../../../core/models/distributor.model';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { DistributorDashboardService } from '../../../core/services/distributor/distributor-dashboard.service';
+import { ToastService } from '../../../core/services/toast/toast.service';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 
 @Component({
@@ -13,6 +14,7 @@ import { LoadingOverlayComponent } from '../../../shared/components/loading-over
 })
 export class DistributorDashboardComponent implements OnInit {
   private readonly dashboardService = inject(DistributorDashboardService);
+  private readonly toast = inject(ToastService);
   protected readonly auth = inject(AuthService);
 
   readonly loading = signal(true);
@@ -32,9 +34,10 @@ export class DistributorDashboardComponent implements OnInit {
         this.overview.set(data);
         this.loading.set(false);
       },
-      error: () => {
+      error: (err: unknown) => {
         this.loading.set(false);
         this.errorMessage.set('Could not load your distributor summary.');
+        this.toast.fromApiError(err, 'Could not load your distributor summary.');
       },
     });
   }

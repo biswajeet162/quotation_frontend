@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { GoogleSignInService } from '../../../core/services/auth/google-sign-in.service';
+import { ToastService } from '../../../core/services/toast/toast.service';
 import { AuthLoadingOverlayComponent } from '../../../shared/components/auth-loading-overlay/auth-loading-overlay.component';
 import { extractApiErrorMessage } from '../../../core/utils/api-error.util';
 
@@ -17,6 +18,7 @@ export class LoginComponent implements AfterViewInit {
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
   private readonly googleSignIn = inject(GoogleSignInService);
+  private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
@@ -82,6 +84,7 @@ export class LoginComponent implements AfterViewInit {
         this.loading.set(false);
         if (response.message) {
           this.infoMessage.set(response.message);
+          this.toast.warning(response.message);
           setTimeout(() => this.navigateAfterAuth(), 2000);
           return;
         }
@@ -94,6 +97,7 @@ export class LoginComponent implements AfterViewInit {
   private handleError(err: HttpErrorResponse, fallback: string): void {
     this.loading.set(false);
     this.errorMessage.set(extractApiErrorMessage(err, fallback));
+    this.toast.fromApiError(err, fallback);
   }
 
   private navigateAfterAuth(): void {

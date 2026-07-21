@@ -27,6 +27,7 @@ import { AuthService } from '../../../core/services/auth/auth.service';
 import { InquiryCartService } from '../../../core/services/inquiry/inquiry-cart.service';
 import { ProductQueryFormService } from '../../../core/services/product/product-query-form.service';
 import { AdminDistributorProductService } from '../../../core/services/admin/admin-distributor-product.service';
+import { ToastService } from '../../../core/services/toast/toast.service';
 import {
   DistributorBrand,
   DistributorProductAttachment,
@@ -88,6 +89,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
   private readonly cart = inject(InquiryCartService);
   private readonly queryForm = inject(ProductQueryFormService);
   private readonly adminProducts = inject(AdminDistributorProductService);
+  private readonly toast = inject(ToastService);
 
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
@@ -353,6 +355,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
     }
     if (!file.type.startsWith('image/')) {
       this.errorMessage.set('Please select an image file for brand logo.');
+      this.toast.warning('Please select an image file for brand logo.');
       return;
     }
 
@@ -367,6 +370,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
         });
         this.brandLogoTarget.set(null);
         this.applyUploadedBrandLogo({ ...brand, brandName: brand.brandName || brandName }, file);
+        this.toast.success('Brand logo updated.');
       },
       error: (err) => {
         this.brandLogoUploading.update((items) => {
@@ -375,6 +379,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
           return next;
         });
         this.errorMessage.set(err?.error?.message ?? 'Could not update brand logo.');
+        this.toast.fromApiError(err, 'Could not update brand logo.');
       },
     });
   }
@@ -554,13 +559,15 @@ export class ProductListComponent implements OnInit, OnDestroy {
           return next;
         });
         this.loadAdminAuditLogs(product.id);
+        this.toast.success(nextActive ? 'Product activated.' : 'Product deactivated.');
       },
-      error: () => {
+      error: (err) => {
         this.statusUpdatingIds.update((ids) => {
           const next = new Set(ids);
           next.delete(product.id);
           return next;
         });
+        this.toast.fromApiError(err, 'Could not update product status.');
       },
     });
   }
@@ -657,10 +664,12 @@ export class ProductListComponent implements OnInit, OnDestroy {
         this.updateAdminAttachmentCount(product.id, this.adminAttachments().length);
         this.adminAttachmentsUploading.set(false);
         this.loadAdminAuditLogs(product.id);
+        this.toast.success('Attachment deleted.');
       },
-      error: () => {
+      error: (err) => {
         this.adminAttachmentsUploading.set(false);
         this.adminAttachmentError.set('Could not delete attachment.');
+        this.toast.fromApiError(err, 'Could not delete attachment.');
       },
     });
   }
@@ -734,6 +743,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
     }
     if (!brand || !designation || rsp == null) {
       this.adminActionError.set('Brand, designation, and RSP are required.');
+      this.toast.warning('Brand, designation, and RSP are required.');
       return;
     }
 
@@ -759,10 +769,12 @@ export class ProductListComponent implements OnInit, OnDestroy {
         this.adminSaving.set(false);
         this.loadBrands();
         this.loadAdminAuditLogs(product.id);
+        this.toast.success('Product updated successfully.');
       },
       error: (err) => {
         this.adminSaving.set(false);
         this.adminActionError.set(err?.error?.message ?? 'Could not update product. Please try again.');
+        this.toast.fromApiError(err, 'Could not update product. Please try again.');
       },
     });
   }
@@ -793,10 +805,12 @@ export class ProductListComponent implements OnInit, OnDestroy {
         this.updateAdminAttachmentCount(product.id, this.adminEditAttachments().length);
         this.adminEditAttachmentsUploading.set(false);
         this.loadAdminAuditLogs(product.id);
+        this.toast.success('Attachment deleted.');
       },
-      error: () => {
+      error: (err) => {
         this.adminEditAttachmentsUploading.set(false);
         this.adminEditAttachmentError.set('Could not delete attachment.');
+        this.toast.fromApiError(err, 'Could not delete attachment.');
       },
     });
   }
@@ -1026,10 +1040,12 @@ export class ProductListComponent implements OnInit, OnDestroy {
         }
         this.adminEditAttachmentsUploading.set(false);
         this.loadAdminAuditLogs(product.id);
+        this.toast.success(mapped.length === 1 ? 'Attachment uploaded.' : 'Attachments uploaded.');
       },
       error: (err) => {
         this.adminEditAttachmentsUploading.set(false);
         this.adminEditAttachmentError.set(err?.error?.message ?? 'Could not upload attachment.');
+        this.toast.fromApiError(err, 'Could not upload attachment.');
       },
     });
   }
@@ -1052,10 +1068,12 @@ export class ProductListComponent implements OnInit, OnDestroy {
         }
         this.adminAttachmentsUploading.set(false);
         this.loadAdminAuditLogs(product.id);
+        this.toast.success(mapped.length === 1 ? 'Attachment uploaded.' : 'Attachments uploaded.');
       },
       error: (err) => {
         this.adminAttachmentsUploading.set(false);
         this.adminAttachmentError.set(err?.error?.message ?? 'Could not upload attachment.');
+        this.toast.fromApiError(err, 'Could not upload attachment.');
       },
     });
   }

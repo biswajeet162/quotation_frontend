@@ -12,6 +12,8 @@ import { AdminPortalProfileService } from '../../../core/services/admin/admin-po
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { ConsumerDashboardService } from '../../../core/services/consumer/consumer-dashboard.service';
 import { DistributorDashboardService } from '../../../core/services/distributor/distributor-dashboard.service';
+import { ToastService } from '../../../core/services/toast/toast.service';
+import { extractApiErrorMessage } from '../../../core/utils/api-error.util';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 import { hasEmployeeName, isValidEmployeePhone } from '../../../shared/utils/employee-contact.util';
 
@@ -65,6 +67,7 @@ export class ProfileComponent implements OnInit {
   private readonly distributorDashboardService = inject(DistributorDashboardService);
   private readonly consumerDashboardService = inject(ConsumerDashboardService);
   private readonly adminPortalProfileService = inject(AdminPortalProfileService);
+  private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
   protected readonly auth = inject(AuthService);
 
@@ -106,9 +109,11 @@ export class ProfileComponent implements OnInit {
           this.loadLogoPreview();
           this.loading.set(false);
         },
-        error: () => {
+        error: (error: unknown) => {
           this.loading.set(false);
-          this.errorMessage.set('Could not load your profile details.');
+          const fallback = 'Could not load your profile details.';
+          this.errorMessage.set(fallback);
+          this.toast.fromApiError(error, fallback);
         },
       });
       return;
@@ -120,9 +125,11 @@ export class ProfileComponent implements OnInit {
           this.applyProfile(profile);
           this.loading.set(false);
         },
-        error: () => {
+        error: (error: unknown) => {
           this.loading.set(false);
-          this.errorMessage.set('Could not load portal company details.');
+          const fallback = 'Could not load portal company details.';
+          this.errorMessage.set(fallback);
+          this.toast.fromApiError(error, fallback);
         },
       });
       return;
@@ -134,9 +141,11 @@ export class ProfileComponent implements OnInit {
         this.loadLogoPreview();
         this.loading.set(false);
       },
-      error: () => {
+      error: (error: unknown) => {
         this.loading.set(false);
-        this.errorMessage.set('Could not load your profile details.');
+        const fallback = 'Could not load your profile details.';
+        this.errorMessage.set(fallback);
+        this.toast.fromApiError(error, fallback);
       },
     });
   }
@@ -152,6 +161,7 @@ export class ProfileComponent implements OnInit {
 
     if (!file.type.startsWith('image/')) {
       this.errorMessage.set('Please choose an image file for the logo.');
+      this.toast.warning('Please choose an image file for the logo.');
       return;
     }
 
@@ -184,11 +194,14 @@ export class ProfileComponent implements OnInit {
     this.loadLogoPreview();
     this.saving.set(false);
     this.successMessage.set('Logo updated successfully.');
+    this.toast.success('Logo updated successfully.');
   }
 
   private onLogoUploadError(error: unknown): void {
     this.saving.set(false);
-    this.errorMessage.set(this.extractErrorMessage(error));
+    const fallback = 'Could not update logo. Please try again.';
+    this.errorMessage.set(extractApiErrorMessage(error, fallback));
+    this.toast.fromApiError(error, fallback);
   }
 
   saveProfile(): void {
@@ -205,21 +218,26 @@ export class ProfileComponent implements OnInit {
         !form.companyEmail.trim() ||
         !form.companyPhone.trim()
       ) {
-        this.errorMessage.set(
-          'Your name, phone number, company name, company email, and company phone are required.'
-        );
+        const msg =
+          'Your name, phone number, company name, company email, and company phone are required.';
+        this.errorMessage.set(msg);
+        this.toast.warning(msg);
         return;
       }
       if (!hasEmployeeName(form.userName)) {
         this.errorMessage.set('Please enter your full name.');
+        this.toast.warning('Please enter your full name.');
         return;
       }
       if (!isValidEmployeePhone(form.userPhone)) {
-        this.errorMessage.set('Please enter a valid 10-digit mobile number (optionally with +91).');
+        const msg = 'Please enter a valid 10-digit mobile number (optionally with +91).';
+        this.errorMessage.set(msg);
+        this.toast.warning(msg);
         return;
       }
     } else if (!form.companyName.trim() || !form.companyEmail.trim() || !form.companyPhone.trim()) {
       this.errorMessage.set('Company name, email, and phone are required.');
+      this.toast.warning('Company name, email, and phone are required.');
       return;
     }
 
@@ -259,6 +277,7 @@ export class ProfileComponent implements OnInit {
     this.editDetailsMode.set(false);
     this.saving.set(false);
     this.successMessage.set('Profile saved successfully.');
+    this.toast.success('Profile saved successfully.');
   }
 
   private resolveStoredPhone(profile: CompanyProfile): string | null {
@@ -274,7 +293,9 @@ export class ProfileComponent implements OnInit {
 
   private onProfileSaveError(error: unknown): void {
     this.saving.set(false);
-    this.errorMessage.set(this.extractErrorMessage(error));
+    const fallback = 'Could not save your profile. Please try again.';
+    this.errorMessage.set(extractApiErrorMessage(error, fallback));
+    this.toast.fromApiError(error, fallback);
   }
 
   updateFormField<K extends keyof ProfileFormState>(field: K, value: ProfileFormState[K]): void {
@@ -493,21 +514,5 @@ export class ProfileComponent implements OnInit {
       URL.revokeObjectURL(this.serverLogoObjectUrl);
       this.serverLogoObjectUrl = null;
     }
-  }
-
-  private extractErrorMessage(error: unknown): string {
-    if (error && typeof error === 'object' && 'error' in error) {
-      const payload = (error as { error?: unknown }).error;
-      if (typeof payload === 'string' && payload.trim()) {
-        return payload;
-      }
-      if (payload && typeof payload === 'object' && 'message' in payload) {
-        const message = (payload as { message?: unknown }).message;
-        if (typeof message === 'string' && message.trim()) {
-          return message;
-        }
-      }
-    }
-    return 'Could not save your profile. Please try again.';
   }
 }

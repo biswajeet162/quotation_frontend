@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth/auth.service';
+import { ToastService } from '../../../core/services/toast/toast.service';
 import { AuthLoadingOverlayComponent } from '../../../shared/components/auth-loading-overlay/auth-loading-overlay.component';
 import { extractApiErrorMessage } from '../../../core/utils/api-error.util';
 
@@ -14,6 +15,7 @@ import { extractApiErrorMessage } from '../../../core/utils/api-error.util';
 export class ForgotPasswordComponent {
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
+  private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
 
   readonly loading = signal(false);
@@ -38,10 +40,13 @@ export class ForgotPasswordComponent {
       next: (response) => {
         this.loading.set(false);
         this.successMessage.set(response.message);
+        this.toast.success(response.message || 'Password reset email sent.');
       },
       error: (err) => {
         this.loading.set(false);
-        this.errorMessage.set(extractApiErrorMessage(err, 'Request failed. Please try again.'));
+        const fallback = 'Request failed. Please try again.';
+        this.errorMessage.set(extractApiErrorMessage(err, fallback));
+        this.toast.fromApiError(err, fallback);
       },
     });
   }

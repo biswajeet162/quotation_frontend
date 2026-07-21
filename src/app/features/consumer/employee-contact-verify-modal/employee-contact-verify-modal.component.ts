@@ -2,6 +2,8 @@ import { Component, effect, inject, input, output, signal } from '@angular/core'
 import { FormsModule } from '@angular/forms';
 import { ConsumerProfile } from '../../../core/models/consumer.model';
 import { ConsumerDashboardService } from '../../../core/services/consumer/consumer-dashboard.service';
+import { ToastService } from '../../../core/services/toast/toast.service';
+import { extractApiErrorMessage } from '../../../core/utils/api-error.util';
 import { isValidEmployeePhone } from '../../../shared/utils/employee-contact.util';
 
 @Component({
@@ -12,6 +14,7 @@ import { isValidEmployeePhone } from '../../../shared/utils/employee-contact.uti
 })
 export class EmployeeContactVerifyModalComponent {
   private readonly consumerDashboard = inject(ConsumerDashboardService);
+  private readonly toast = inject(ToastService);
 
   readonly profile = input.required<ConsumerProfile>();
   readonly closed = output<void>();
@@ -61,10 +64,13 @@ export class EmployeeContactVerifyModalComponent {
       next: (response) => {
         this.busy.set(false);
         this.infoMessage.set(response.message);
+        this.toast.success(response.message || 'Verification email sent.');
       },
       error: (error: unknown) => {
         this.busy.set(false);
-        this.errorMessage.set(this.extractError(error, 'Could not send verification email.'));
+        const fallback = 'Could not send verification email.';
+        this.errorMessage.set(extractApiErrorMessage(error, fallback));
+        this.toast.fromApiError(error, fallback);
       },
     });
   }
@@ -72,7 +78,9 @@ export class EmployeeContactVerifyModalComponent {
   sendOtp(): void {
     const phone = this.phone().trim();
     if (!isValidEmployeePhone(phone)) {
-      this.errorMessage.set('Enter a valid 10-digit mobile number (optionally with +91).');
+      const message = 'Enter a valid 10-digit mobile number (optionally with +91).';
+      this.errorMessage.set(message);
+      this.toast.warning(message);
       return;
     }
 
@@ -84,10 +92,13 @@ export class EmployeeContactVerifyModalComponent {
         this.busy.set(false);
         this.otpSent.set(true);
         this.infoMessage.set(response.message);
+        this.toast.success(response.message || 'OTP sent successfully.');
       },
       error: (error: unknown) => {
         this.busy.set(false);
-        this.errorMessage.set(this.extractError(error, 'Could not send OTP.'));
+        const fallback = 'Could not send OTP.';
+        this.errorMessage.set(extractApiErrorMessage(error, fallback));
+        this.toast.fromApiError(error, fallback);
       },
     });
   }
@@ -96,11 +107,15 @@ export class EmployeeContactVerifyModalComponent {
     const phone = this.phone().trim();
     const otp = this.otp().trim();
     if (!isValidEmployeePhone(phone)) {
-      this.errorMessage.set('Enter a valid 10-digit mobile number (optionally with +91).');
+      const message = 'Enter a valid 10-digit mobile number (optionally with +91).';
+      this.errorMessage.set(message);
+      this.toast.warning(message);
       return;
     }
     if (!otp) {
-      this.errorMessage.set('Enter the OTP sent to your mobile.');
+      const message = 'Enter the OTP sent to your mobile.';
+      this.errorMessage.set(message);
+      this.toast.warning(message);
       return;
     }
 
@@ -115,33 +130,20 @@ export class EmployeeContactVerifyModalComponent {
         this.localEmailVerified.set(updated.emailVerified === true);
         this.otpSent.set(false);
         this.otp.set('');
-        this.infoMessage.set(
+        const message =
           updated.emailVerified === true && updated.phoneVerified === true
             ? 'Mobile number verified. Close this dialog, then click Submit Quotation again.'
-            : 'Mobile number verified. Verify your email as well, then click Submit Quotation again.',
-        );
+            : 'Mobile number verified. Verify your email as well, then click Submit Quotation again.';
+        this.infoMessage.set(message);
+        this.toast.success(message);
         this.profileUpdated.emit(updated);
       },
       error: (error: unknown) => {
         this.busy.set(false);
-        this.errorMessage.set(this.extractError(error, 'Could not verify OTP.'));
+        const fallback = 'Could not verify OTP.';
+        this.errorMessage.set(extractApiErrorMessage(error, fallback));
+        this.toast.fromApiError(error, fallback);
       },
     });
-  }
-
-  private extractError(error: unknown, fallback: string): string {
-    if (error && typeof error === 'object' && 'error' in error) {
-      const payload = (error as { error?: unknown }).error;
-      if (typeof payload === 'string' && payload.trim()) {
-        return payload;
-      }
-      if (payload && typeof payload === 'object' && 'message' in payload) {
-        const message = (payload as { message?: unknown }).message;
-        if (typeof message === 'string' && message.trim()) {
-          return message;
-        }
-      }
-    }
-    return fallback;
   }
 }

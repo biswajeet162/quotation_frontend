@@ -8,6 +8,7 @@ import {
   UserRole,
 } from '../../../core/models/admin-user.model';
 import { AdminUserService } from '../../../core/services/admin/admin-user.service';
+import { ToastService } from '../../../core/services/toast/toast.service';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 
 type RoleTab = UserRole;
@@ -61,6 +62,7 @@ const ROLE_TABS: { role: RoleTab; label: string }[] = [
 })
 export class AdminUsersComponent implements OnInit {
   private readonly userService = inject(AdminUserService);
+  private readonly toast = inject(ToastService);
 
   readonly roleTabs = ROLE_TABS;
   readonly activeRole = signal<RoleTab>('CONSUMER');
@@ -138,9 +140,10 @@ export class AdminUsersComponent implements OnInit {
           this.selectedDetail.set(null);
         }
       },
-      error: () => {
+      error: (err) => {
         this.loading.set(false);
         this.errorMessage.set('Could not load users.');
+        this.toast.fromApiError(err, 'Could not load users.');
       },
     });
   }
@@ -162,9 +165,10 @@ export class AdminUsersComponent implements OnInit {
         this.selectedDetail.set(detail);
         this.detailLoading.set(false);
       },
-      error: () => {
+      error: (err) => {
         this.detailLoading.set(false);
         this.actionError.set('Could not load user details.');
+        this.toast.fromApiError(err, 'Could not load user details.');
       },
     });
   }
@@ -215,14 +219,17 @@ export class AdminUsersComponent implements OnInit {
     const state = this.form();
     if (!state.name.trim() || !state.email.trim()) {
       this.actionError.set('Name and email are required.');
+      this.toast.warning('Name and email are required.');
       return;
     }
     if (!state.companyName.trim() || !state.companyEmail.trim() || !state.companyPhone.trim()) {
       this.actionError.set('Company name, email, and phone are required.');
+      this.toast.warning('Company name, email, and phone are required.');
       return;
     }
     if (this.formMode() === 'create' && !state.password.trim()) {
       this.actionError.set('Password is required for new users.');
+      this.toast.warning('Password is required for new users.');
       return;
     }
 
@@ -238,10 +245,12 @@ export class AdminUsersComponent implements OnInit {
           this.formOpen.set(false);
           this.selectedId.set(created.id);
           this.selectedDetail.set(created);
+          this.toast.success('User created successfully.');
         },
         error: (err) => {
           this.saving.set(false);
           this.actionError.set(this.extractError(err));
+          this.toast.fromApiError(err, 'Could not create user.');
         },
       });
       return;
@@ -262,10 +271,12 @@ export class AdminUsersComponent implements OnInit {
         this.selectedDetail.set(updated);
         this.saving.set(false);
         this.formOpen.set(false);
+        this.toast.success('User updated successfully.');
       },
       error: (err) => {
         this.saving.set(false);
         this.actionError.set(this.extractError(err));
+        this.toast.fromApiError(err, 'Could not update user.');
       },
     });
   }
@@ -296,10 +307,12 @@ export class AdminUsersComponent implements OnInit {
         this.selectedId.set(null);
         this.selectedDetail.set(null);
         this.deleting.set(false);
+        this.toast.success('User deactivated.');
       },
       error: (err) => {
         this.deleting.set(false);
         this.actionError.set(this.extractError(err));
+        this.toast.fromApiError(err, 'Could not deactivate user.');
       },
     });
   }

@@ -6,6 +6,8 @@ import {
   ConsumerCompanyPreview,
   ConsumerOnboardingService,
 } from '../../../core/services/consumer/consumer-onboarding.service';
+import { ToastService } from '../../../core/services/toast/toast.service';
+import { extractApiErrorMessage } from '../../../core/utils/api-error.util';
 
 type SetupMode = 'choose' | 'create';
 
@@ -40,6 +42,7 @@ const emptyCompanyForm = (): CompanyFormState => ({
 export class CompanySetupModalComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly onboarding = inject(ConsumerOnboardingService);
+  private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly completed = output<void>();
@@ -76,9 +79,10 @@ export class CompanySetupModalComponent implements OnInit {
           this.mode.set('create');
         }
       },
-      error: () => {
+      error: (err: unknown) => {
         this.loadingCompanies.set(false);
         this.mode.set('create');
+        this.toast.fromApiError(err, 'Could not load companies. You can still create a new one.');
       },
     });
   }
@@ -165,7 +169,9 @@ export class CompanySetupModalComponent implements OnInit {
     if (this.mode() === 'choose') {
       const companyId = this.selectedCompanyId().trim();
       if (!companyId) {
-        this.errorMessage.set('Please choose your company from the list.');
+        const message = 'Please choose your company from the list.';
+        this.errorMessage.set(message);
+        this.toast.warning(message);
         return;
       }
       this.save({ companyId });
@@ -175,7 +181,9 @@ export class CompanySetupModalComponent implements OnInit {
     const form = this.companyForm();
     const companyName = form.companyName.trim();
     if (!companyName) {
-      this.errorMessage.set('Company name is required.');
+      const message = 'Company name is required.';
+      this.errorMessage.set(message);
+      this.toast.warning(message);
       return;
     }
 
@@ -201,11 +209,18 @@ export class CompanySetupModalComponent implements OnInit {
       next: (response) => {
         this.auth.applyAuthResponse(response);
         this.saving.set(false);
+        this.toast.success(
+          this.mode() === 'create'
+            ? 'Company created successfully.'
+            : 'Company linked successfully.',
+        );
         this.completed.emit();
       },
-      error: (err: { error?: { message?: string } }) => {
+      error: (err: unknown) => {
         this.saving.set(false);
-        this.errorMessage.set(err?.error?.message ?? 'Could not link your company. Please try again.');
+        const fallback = 'Could not link your company. Please try again.';
+        this.errorMessage.set(extractApiErrorMessage(err, fallback));
+        this.toast.fromApiError(err, fallback);
       },
     });
   }

@@ -2,6 +2,7 @@ import { Component, computed, effect, inject, input, output, signal } from '@ang
 import { FormsModule } from '@angular/forms';
 import { Inquiry, InquiryDistributor, InquiryItem } from '../../../core/models/inquiry.model';
 import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
+import { ToastService } from '../../../core/services/toast/toast.service';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 import { formatExpectedDeliveryDate } from '../../../shared/utils/inquiry-display.util';
 
@@ -23,6 +24,7 @@ export interface FinalizeLineDraft {
 })
 export class FinalizeQuotationModalComponent {
   private readonly inquiryService = inject(InquiryService);
+  private readonly toast = inject(ToastService);
 
   readonly open = input(false);
   readonly inquiry = input<Inquiry | null>(null);
@@ -199,6 +201,7 @@ export class FinalizeQuotationModalComponent {
     const distributor = this.distributor();
     if (!hasMix && !distributor) {
       this.errorMessage.set('No distributor mix is available to finalize.');
+      this.toast.warning('No distributor mix is available to finalize.');
       return;
     }
 
@@ -221,6 +224,7 @@ export class FinalizeQuotationModalComponent {
 
     if (linePricing.length === 0) {
       this.errorMessage.set('No priced lines available to send to the consumer.');
+      this.toast.warning('No priced lines available to send to the consumer.');
       return;
     }
 
@@ -238,12 +242,14 @@ export class FinalizeQuotationModalComponent {
       .subscribe({
         next: () => {
           this.loading.set(false);
+          this.toast.success('Final quotation sent to the consumer.');
           this.finalized.emit();
           this.close();
         },
         error: (err) => {
           this.loading.set(false);
           this.errorMessage.set(err?.error?.message ?? 'Could not send the final quotation to the consumer.');
+          this.toast.fromApiError(err, 'Could not send the final quotation to the consumer.');
         },
       });
   }

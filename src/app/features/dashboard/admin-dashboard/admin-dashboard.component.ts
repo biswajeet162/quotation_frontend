@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { AdminDashboardOverview } from '../../../core/models/admin-dashboard.model';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { AdminDashboardService } from '../../../core/services/admin/admin-dashboard.service';
+import { ToastService } from '../../../core/services/toast/toast.service';
 import { getRequestSourceLabel } from '../../../shared/utils/inquiry-display.util';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 
@@ -14,6 +15,7 @@ import { LoadingOverlayComponent } from '../../../shared/components/loading-over
 })
 export class AdminDashboardComponent implements OnInit {
   private readonly adminDashboard = inject(AdminDashboardService);
+  private readonly toast = inject(ToastService);
   protected readonly auth = inject(AuthService);
 
   readonly loading = signal(true);
@@ -53,9 +55,10 @@ export class AdminDashboardComponent implements OnInit {
         this.overview.set(data);
         this.loading.set(false);
       },
-      error: () => {
+      error: (err) => {
         this.loading.set(false);
         this.errorMessage.set('Could not load dashboard metrics. Is the backend running?');
+        this.toast.fromApiError(err, 'Could not load dashboard metrics. Is the backend running?');
       },
     });
   }

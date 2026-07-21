@@ -9,6 +9,8 @@ import {
   TimelineAttachmentMediaType,
 } from '../../../core/models/inquiry-timeline.model';
 import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
+import { ToastService } from '../../../core/services/toast/toast.service';
+import { extractApiErrorMessage } from '../../../core/utils/api-error.util';
 import { InquiryChatAttachmentComponent } from '../../../shared/components/inquiry-chat-attachment/inquiry-chat-attachment.component';
 import { ChatAudioPlayerComponent } from '../../../shared/components/chat-audio-player/chat-audio-player.component';
 import {
@@ -61,6 +63,7 @@ interface PendingAttachment {
 })
 export class InquiryTrackingComponent implements OnInit, OnDestroy {
   private readonly inquiryService = inject(InquiryService);
+  private readonly toast = inject(ToastService);
   private readonly sanitizer = inject(DomSanitizer);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -358,9 +361,11 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
           this.loadTimeline();
         }
       },
-      error: () => {
+      error: (err: unknown) => {
         this.loading.set(false);
-        this.errorMessage.set('Could not load your quotation requests.');
+        const fallback = 'Could not load your quotation requests.';
+        this.errorMessage.set(fallback);
+        this.toast.fromApiError(err, fallback);
       },
     });
   }
@@ -477,11 +482,13 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
           scrollEl.scrollTop = previousScrollTop;
         }
       },
-      error: () => {
+      error: (err: unknown) => {
         this.timelineLoading.set(false);
         this.timelineRefreshing.set(false);
         if (!silent) {
-          this.timelineError.set('Could not load messages.');
+          const fallback = 'Could not load messages.';
+          this.timelineError.set(fallback);
+          this.toast.fromApiError(err, fallback);
         }
       },
     });
@@ -528,9 +535,11 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
         this.focusComposeInput();
         this.loadTimeline({ silent: true, scrollToBottom: true });
       },
-      error: (err) => {
+      error: (err: unknown) => {
         this.messageLoading.set(false);
-        this.messageError.set(err?.error?.message ?? 'Could not send your message.');
+        const fallback = 'Could not send your message.';
+        this.messageError.set(extractApiErrorMessage(err, fallback));
+        this.toast.fromApiError(err, fallback);
       },
     });
   }
@@ -987,7 +996,9 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
         this.openPdfInViewer(blob, attachment.contentType || 'application/pdf', attachment.fileName);
       },
       error: () => {
-        this.messageError.set('Could not open the quotation PDF.');
+        const message = 'Could not open the quotation PDF.';
+        this.messageError.set(message);
+        this.toast.error(message);
       },
     });
   }
@@ -998,7 +1009,9 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
         this.openPdfInViewer(blob, 'application/pdf', this.submissionPdfFileName(inquiry));
       },
       error: () => {
-        this.messageError.set('Could not open the request PDF.');
+        const message = 'Could not open the request PDF.';
+        this.messageError.set(message);
+        this.toast.error(message);
       },
     });
   }
@@ -1030,6 +1043,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     }
 
     this.messageError.set('Could not open the quotation PDF.');
+    this.toast.error('Could not open the quotation PDF.');
   }
 
   private openPdfInViewer(blob: Blob, contentType: string, fileName: string): void {
@@ -1102,13 +1116,16 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
         this.selectedId.set(first?.id ?? null);
         this.deleteLoading.set(false);
         this.deleteConfirmOpen.set(false);
+        this.toast.success('Quotation request deleted.');
         if (this.selectedId()) {
           this.loadTimeline();
         }
       },
-      error: (err) => {
+      error: (err: unknown) => {
         this.deleteLoading.set(false);
-        this.deleteError.set(err?.error?.message ?? 'Could not delete this request.');
+        const fallback = 'Could not delete this request.';
+        this.deleteError.set(extractApiErrorMessage(err, fallback));
+        this.toast.fromApiError(err, fallback);
         this.deleteConfirmOpen.set(false);
       },
     });

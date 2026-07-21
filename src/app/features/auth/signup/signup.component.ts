@@ -3,6 +3,7 @@ import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Va
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { GoogleSignInService } from '../../../core/services/auth/google-sign-in.service';
+import { ToastService } from '../../../core/services/toast/toast.service';
 import { AuthLoadingOverlayComponent } from '../../../shared/components/auth-loading-overlay/auth-loading-overlay.component';
 import { extractApiErrorMessage } from '../../../core/utils/api-error.util';
 
@@ -25,6 +26,7 @@ export class SignupComponent implements AfterViewInit {
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
   private readonly googleSignIn = inject(GoogleSignInService);
+  private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
 
   @ViewChild('googleButtonHost') googleButtonHost?: ElementRef<HTMLDivElement>;
@@ -65,6 +67,7 @@ export class SignupComponent implements AfterViewInit {
         this.loading.set(false);
         this.registeredEmail.set(response.email);
         this.successMessage.set(response.message);
+        this.toast.success(response.message || 'Signup successful. Please check your email.');
       },
       error: (err) => this.handleError(err, 'Signup failed. Please try again.'),
     });
@@ -91,6 +94,7 @@ export class SignupComponent implements AfterViewInit {
     } catch {
       this.googleSignInEnabled.set(false);
       this.errorMessage.set('Google Sign-In could not be loaded.');
+      this.toast.warning('Google Sign-In could not be loaded.');
     }
   }
 
@@ -111,5 +115,6 @@ export class SignupComponent implements AfterViewInit {
   private handleError(err: unknown, fallback: string): void {
     this.loading.set(false);
     this.errorMessage.set(extractApiErrorMessage(err, fallback));
+    this.toast.fromApiError(err, fallback);
   }
 }

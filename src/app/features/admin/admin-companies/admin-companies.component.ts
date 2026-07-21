@@ -9,6 +9,7 @@ import {
   CreateAdminConsumerEmployeeRequest,
 } from '../../../core/models/admin-company.model';
 import { AdminCompanyService } from '../../../core/services/admin/admin-company.service';
+import { ToastService } from '../../../core/services/toast/toast.service';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 
 interface CompanyFormState {
@@ -61,6 +62,7 @@ const emptyEmployeeForm = (): EmployeeFormState => ({
 })
 export class AdminCompaniesComponent implements OnInit {
   private readonly companyService = inject(AdminCompanyService);
+  private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly loading = signal(true);
@@ -132,9 +134,10 @@ export class AdminCompaniesComponent implements OnInit {
           this.logoPreviewUrl.set(null);
         }
       },
-      error: () => {
+      error: (err) => {
         this.loading.set(false);
         this.errorMessage.set('Could not load companies.');
+        this.toast.fromApiError(err, 'Could not load companies.');
       },
     });
   }
@@ -159,9 +162,10 @@ export class AdminCompaniesComponent implements OnInit {
         this.detailLoading.set(false);
         this.loadLogoPreview(id, detail.consumerLogoUrl);
       },
-      error: () => {
+      error: (err) => {
         this.detailLoading.set(false);
         this.actionError.set('Could not load company details.');
+        this.toast.fromApiError(err, 'Could not load company details.');
       },
     });
   }
@@ -209,6 +213,7 @@ export class AdminCompaniesComponent implements OnInit {
     const state = this.companyForm();
     if (!state.name.trim() || !state.email.trim() || !state.phone.trim()) {
       this.actionError.set('Company name, email, and phone are required.');
+      this.toast.warning('Company name, email, and phone are required.');
       return;
     }
 
@@ -261,6 +266,7 @@ export class AdminCompaniesComponent implements OnInit {
     input.value = '';
     if (!file || !file.type.startsWith('image/')) {
       this.actionError.set('Please choose an image file for the logo.');
+      this.toast.warning('Please choose an image file for the logo.');
       return;
     }
 
@@ -276,10 +282,12 @@ export class AdminCompaniesComponent implements OnInit {
           this.applyDetail(updated);
           this.uploadingLogo.set(false);
           this.successMessage.set('Company logo updated.');
+          this.toast.success('Company logo updated.');
         },
         error: (err) => {
           this.uploadingLogo.set(false);
           this.actionError.set(this.extractError(err));
+          this.toast.fromApiError(err, 'Could not update company logo.');
         },
       });
   }
@@ -306,6 +314,7 @@ export class AdminCompaniesComponent implements OnInit {
     }
     if (!state.name.trim() || !state.email.trim() || !state.phone.trim() || !state.password.trim()) {
       this.actionError.set('Employee name, email, phone, and password are required.');
+      this.toast.warning('Employee name, email, phone, and password are required.');
       return;
     }
 
@@ -325,6 +334,7 @@ export class AdminCompaniesComponent implements OnInit {
         this.saving.set(false);
         this.employeeFormOpen.set(false);
         this.successMessage.set('Employee added successfully.');
+        this.toast.success('Employee added successfully.');
       },
       error: (err) => this.onSaveError(err),
     });
@@ -349,10 +359,12 @@ export class AdminCompaniesComponent implements OnInit {
         this.applyDetail(updated);
         this.deletingEmployee.set(false);
         this.successMessage.set('Employee deactivated.');
+        this.toast.success('Employee deactivated.');
       },
       error: (err) => {
         this.deletingEmployee.set(false);
         this.actionError.set(this.extractError(err));
+        this.toast.fromApiError(err, 'Could not deactivate employee.');
       },
     });
   }
@@ -403,6 +415,7 @@ export class AdminCompaniesComponent implements OnInit {
     this.saving.set(false);
     this.companyFormOpen.set(false);
     this.successMessage.set(created ? 'Company created successfully.' : 'Company updated successfully.');
+    this.toast.success(created ? 'Company created successfully.' : 'Company updated successfully.');
   }
 
   private applyDetail(detail: AdminConsumerCompanyDetail): void {
@@ -430,6 +443,7 @@ export class AdminCompaniesComponent implements OnInit {
   private onSaveError(err: { error?: { message?: string } }): void {
     this.saving.set(false);
     this.actionError.set(this.extractError(err));
+    this.toast.fromApiError(err, 'Something went wrong. Please try again.');
   }
 
   private loadLogoPreview(companyId: string, logoPath?: string): void {

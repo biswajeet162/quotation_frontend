@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { ConsumerInquiry } from '../../../core/models/inquiry.model';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
+import { ToastService } from '../../../core/services/toast/toast.service';
 import {
   getConsumerInquiryDisplay,
   getInquiryListStep,
@@ -18,6 +19,7 @@ import { LoadingOverlayComponent } from '../../../shared/components/loading-over
 })
 export class ConsumerDashboardComponent implements OnInit {
   private readonly inquiryService = inject(InquiryService);
+  private readonly toast = inject(ToastService);
   protected readonly auth = inject(AuthService);
 
   readonly loading = signal(true);
@@ -66,9 +68,11 @@ export class ConsumerDashboardComponent implements OnInit {
         this.inquiries.set(list);
         this.loading.set(false);
       },
-      error: () => {
+      error: (err: unknown) => {
         this.loading.set(false);
-        this.errorMessage.set('Could not load your quotation summary.');
+        const fallback = 'Could not load your quotation summary.';
+        this.errorMessage.set(fallback);
+        this.toast.fromApiError(err, fallback);
       },
     });
   }

@@ -7,6 +7,7 @@ import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
 import { ProductService } from '../../../core/services/product/product.service';
 import { ProductCatalogLookupService } from '../../../core/services/product/product-catalog-lookup.service';
 import { ProductQueryFormService } from '../../../core/services/product/product-query-form.service';
+import { ToastService } from '../../../core/services/toast/toast.service';
 import { ConsumerProfile } from '../../../core/models/consumer.model';
 import { ConsumerInquiryCreated } from '../../../core/models/inquiry.model';
 import { ProductFormDraft, ProductFormRow, RowLocalAttachment } from '../../../core/models/product-form.model';
@@ -47,6 +48,7 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
   private readonly consumerDashboard = inject(ConsumerDashboardService);
   private readonly productService = inject(ProductService);
   private readonly catalog = inject(ProductCatalogLookupService);
+  private readonly toast = inject(ToastService);
   readonly formState = inject(ProductQueryFormService);
 
   readonly submitted = output<ConsumerInquiryCreated>();
@@ -299,7 +301,9 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
 
   async startVoiceRecording(): Promise<void> {
     if (this.recording() || !navigator.mediaDevices?.getUserMedia) {
-      this.attachmentError.set('Voice recording is not supported in this browser.');
+      const message = 'Voice recording is not supported in this browser.';
+      this.attachmentError.set(message);
+      this.toast.warning(message);
       return;
     }
 
@@ -359,7 +363,9 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
       this.startLevelMonitor();
     } catch {
       this.cleanupRecordingResources(false);
-      this.attachmentError.set('Microphone access was denied or unavailable.');
+      const message = 'Microphone access was denied or unavailable.';
+      this.attachmentError.set(message);
+      this.toast.warning(message);
     }
   }
 
@@ -472,7 +478,9 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
   submitRequest(): void {
     const user = this.auth.currentUser();
     if (!user || user.role !== 'CONSUMER') {
-      this.submitError.set('Only consumer accounts can create inquiries.');
+      const message = 'Only consumer accounts can create inquiries.';
+      this.submitError.set(message);
+      this.toast.warning(message);
       return;
     }
 
@@ -494,9 +502,11 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
 
         this.performSubmit();
       },
-      error: () => {
+      error: (error: unknown) => {
         this.profileLoading.set(false);
-        this.submitError.set('Could not verify your contact details. Please try again.');
+        const fallback = 'Could not verify your contact details. Please try again.';
+        this.submitError.set(fallback);
+        this.toast.fromApiError(error, fallback);
       },
     });
   }
@@ -513,7 +523,9 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
   private performSubmit(): void {
     const valid = this.previewRows();
     if (valid.length === 0) {
-      this.submitError.set('Add at least one product row with some details.');
+      const message = 'Add at least one product row with some details.';
+      this.submitError.set(message);
+      this.toast.warning(message);
       return;
     }
 
@@ -521,19 +533,24 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
       (r) => !r.catalogProductId && (!r.brand.trim() || !r.designation.trim()),
     );
     if (notSubmittable.length > 0) {
-      this.submitError.set(
-        'Each product row needs brand and designation, or must be added from the catalog.',
-      );
+      const message =
+        'Each product row needs brand and designation, or must be added from the catalog.';
+      this.submitError.set(message);
+      this.toast.warning(message);
       return;
     }
 
     if (this.formState.hasUploadingAttachments(valid)) {
-      this.submitError.set('Please wait until all image uploads finish.');
+      const message = 'Please wait until all image uploads finish.';
+      this.submitError.set(message);
+      this.toast.warning(message);
       return;
     }
 
     if (this.formState.hasAttachmentErrors(valid)) {
-      this.submitError.set('Fix or remove image uploads that failed before submitting.');
+      const message = 'Fix or remove image uploads that failed before submitting.';
+      this.submitError.set(message);
+      this.toast.warning(message);
       return;
     }
 
@@ -585,6 +602,11 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
           this.closePreview();
           this.closeAttachments();
           this.lastSubmitted.set(inquiry);
+          if (inquiry.inquiryId) {
+            this.toast.success(`Quotation request ${inquiry.inquiryId} submitted successfully.`);
+          } else {
+            this.toast.success('Quotation request submitted successfully.');
+          }
           if (inquiry.id) {
             this.downloadSubmissionPdf(inquiry.id, inquiry.inquiryId);
           }
@@ -592,10 +614,14 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
         },
         error: (error: unknown) => {
           this.submitting.set(false);
+          const fallback = 'Could not submit your quotation request. Please try again.';
           this.submitError.set(this.extractSubmitErrorMessage(error));
           if (this.isEmployeeContactIncompleteError(error)) {
+            this.toast.warning(extractApiErrorMessage(error, fallback));
             this.loadCompanyProfile(true);
             this.verifyModalOpen.set(true);
+          } else {
+            this.toast.fromApiError(error, fallback);
           }
         },
       });
@@ -641,7 +667,9 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
           if (updated && this.attachmentRow()?.rowId === rowId) {
             this.attachmentRow.set(updated);
           }
-          this.attachmentError.set('Could not upload one or more images. Please try again.');
+          const message = 'Could not upload one or more images. Please try again.';
+          this.attachmentError.set(message);
+          this.toast.error(message);
         },
       });
   }
@@ -672,6 +700,7 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
       const mediaType = resolveAttachmentMediaType(file);
       if (mediaType !== expected) {
         this.attachmentError.set('Please choose an image file.');
+        this.toast.warning('Please choose an image file.');
         continue;
       }
       validFiles.push(file);

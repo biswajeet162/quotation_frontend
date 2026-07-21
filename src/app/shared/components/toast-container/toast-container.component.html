@@ -1,0 +1,28 @@
+<div class="toast-viewport" aria-live="polite" aria-relevant="additions">
+  @for (item of toast.toasts(); track item.id) {
+    <div
+      class="toast"
+      [class.toast-success]="item.severity === 'SUCCESS'"
+      [class.toast-warning]="item.severity === 'WARNING'"
+      [class.toast-error]="item.severity === 'ERROR'"
+      role="status"
+    >
+      <span class="toast-bar" aria-hidden="true"></span>
+      <div class="toast-body">
+        <p class="toast-label">
+          @if (item.severity === 'SUCCESS') {
+            Success
+          } @else if (item.severity === 'WARNING') {
+            Warning
+          } @else {
+            Error
+          }
+        </p>
+        <p class="toast-message">{{ item.message }}</p>
+      </div>
+      <button type="button" class="toast-close" (click)="dismiss(item.id)" aria-label="Dismiss">
+        ×
+      </button>
+    </div>
+  }
+</div>

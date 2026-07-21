@@ -8,6 +8,7 @@ import {
   InquiryItemAttachment,
 } from '../../../core/models/inquiry.model';
 import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
+import { ToastService } from '../../../core/services/toast/toast.service';
 import { formatExpectedDeliveryDate } from '../../../shared/utils/inquiry-display.util';
 import { quotationLinePricingFromDistributor } from '../../../shared/utils/inquiry-pricing.util';
 import {
@@ -49,6 +50,7 @@ export interface ProductMatrixRow {
 })
 export class QuotationComparisonModalComponent {
   private readonly inquiryService = inject(InquiryService);
+  private readonly toast = inject(ToastService);
 
   readonly open = input(false);
   readonly inquiry = input<Inquiry | null>(null);
@@ -354,10 +356,11 @@ export class QuotationComparisonModalComponent {
         this.loading.set(false);
         this.syncLocalSelectionsFromSources();
       },
-      error: () => {
+      error: (err) => {
         this.quotesByDistributor.set(new Map());
         this.loading.set(false);
         this.errorMessage.set('Could not load distributor quotations for comparison.');
+        this.toast.fromApiError(err, 'Could not load distributor quotations for comparison.');
       },
     });
   }

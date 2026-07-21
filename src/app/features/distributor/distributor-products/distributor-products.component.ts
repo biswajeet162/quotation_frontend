@@ -20,6 +20,8 @@ import {
 
 import { DistributorProductService } from '../../../core/services/distributor/distributor-product.service';
 
+import { ToastService } from '../../../core/services/toast/toast.service';
+
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 
 import { InquiryChatAttachmentComponent } from '../../../shared/components/inquiry-chat-attachment/inquiry-chat-attachment.component';
@@ -110,6 +112,7 @@ const emptyForm = (): ProductFormState => ({
 export class DistributorProductsComponent implements OnInit, OnDestroy {
 
   private readonly productService = inject(DistributorProductService);
+  private readonly toast = inject(ToastService);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -354,11 +357,12 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
 
       },
 
-      error: () => {
+      error: (err: unknown) => {
 
         this.loading.set(false);
 
         this.errorMessage.set('Could not load your products.');
+        this.toast.fromApiError(err, 'Could not load your products.');
 
       },
 
@@ -420,6 +424,7 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
     const mediaType = this.resolveMediaType(file);
     if (mediaType !== 'IMAGE') {
       this.actionError.set('Please select an image file for brand logo.');
+      this.toast.warning('Please select an image file for brand logo.');
       return;
     }
 
@@ -439,9 +444,11 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
       next: (brand) => {
         this.brandLogoTarget.set(null);
         this.applyUploadedBrandLogo({ ...brand, brandName: brand.brandName || brandName }, file);
+        this.toast.success('Brand logo updated.');
       },
-      error: () => {
+      error: (err: unknown) => {
         this.actionError.set('Could not update brand logo.');
+        this.toast.fromApiError(err, 'Could not update brand logo.');
       },
     });
 
@@ -716,11 +723,12 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
 
       },
 
-      error: () => {
+      error: (err: unknown) => {
 
         this.attachmentsLoading.set(false);
 
         this.attachmentError.set('Could not load attachments.');
+        this.toast.fromApiError(err, 'Could not load attachments.');
 
       },
 
@@ -744,9 +752,10 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
           .find((type) => list.some((attachment) => attachment.mediaType === type));
         this.detailsAttachmentTab.set(firstWithItems ?? 'IMAGE');
       },
-      error: () => {
+      error: (err: unknown) => {
         this.detailsLoading.set(false);
         this.detailsError.set('Could not load product details.');
+        this.toast.fromApiError(err, 'Could not load product details.');
       },
     });
 
@@ -783,6 +792,7 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
     if (this.recording() || !navigator.mediaDevices?.getUserMedia) {
 
       this.attachmentError.set('Voice recording is not supported in this browser.');
+      this.toast.warning('Voice recording is not supported in this browser.');
 
       return;
 
@@ -903,6 +913,7 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
       this.cleanupRecordingResources(false);
 
       this.attachmentError.set('Microphone access was denied or unavailable.');
+      this.toast.warning('Microphone access was denied or unavailable.');
 
     }
 
@@ -989,14 +1000,16 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
         this.updateAttachmentCount(product.id, this.attachments().length);
 
         this.attachmentsUploading.set(false);
+        this.toast.success('Attachment deleted.');
 
       },
 
-      error: () => {
+      error: (err: unknown) => {
 
         this.attachmentsUploading.set(false);
 
         this.attachmentError.set('Could not delete attachment.');
+        this.toast.fromApiError(err, 'Could not delete attachment.');
 
       },
 
@@ -1017,6 +1030,7 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
     ) {
 
       this.actionError.set('Brand, designation, and RSP are required.');
+      this.toast.warning('Brand, designation, and RSP are required.');
 
       return;
 
@@ -1025,6 +1039,7 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
     const duplicateError = this.duplicateProductError();
     if (duplicateError) {
       this.actionError.set(duplicateError);
+      this.toast.warning(duplicateError);
       return;
     }
 
@@ -1073,12 +1088,14 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
           this.attachments.set([]);
           this.attachmentProduct.set(null);
           this.loadBrands();
+          this.toast.success('Product added successfully.');
 
         },
 
-        error: (err) => {
+        error: (err: unknown) => {
 
-          this.actionError.set(err?.error?.message ?? 'Could not add product. Please try again.');
+          this.actionError.set('Could not add product. Please try again.');
+          this.toast.fromApiError(err, 'Could not add product. Please try again.');
 
         },
 
@@ -1122,12 +1139,14 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
 
         this.formOpen.set(false);
         this.loadBrands();
+        this.toast.success('Product updated successfully.');
 
       },
 
-      error: (err) => {
+      error: (err: unknown) => {
 
-        this.actionError.set(err?.error?.message ?? 'Could not update product. Please try again.');
+        this.actionError.set('Could not update product. Please try again.');
+        this.toast.fromApiError(err, 'Could not update product. Please try again.');
 
       },
 
@@ -1198,10 +1217,11 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
           return next;
 
         });
+        this.toast.success(product.isActive ? 'Product deactivated.' : 'Product activated.');
 
       },
 
-      error: () => {
+      error: (err: unknown) => {
 
         this.togglingActiveIds.update((ids) => {
 
@@ -1214,6 +1234,7 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
         });
 
         this.actionError.set('Could not update product status.');
+        this.toast.fromApiError(err, 'Could not update product status.');
 
       },
 
@@ -1282,6 +1303,7 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
               : 'Please choose a document file (PDF, Word, Excel, etc.).';
 
         this.attachmentError.set(label);
+        this.toast.warning(label);
 
         continue;
 
@@ -1342,6 +1364,7 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
 
     if (queued.length === 0) {
       this.attachmentError.set('Could not queue selected attachment files.');
+      this.toast.warning('Could not queue selected attachment files.');
       return;
     }
 
@@ -1385,14 +1408,18 @@ export class DistributorProductsComponent implements OnInit, OnDestroy {
         }
 
         this.attachmentsUploading.set(false);
+        this.toast.success(
+          uploaded.length === 1 ? 'Attachment uploaded.' : 'Attachments uploaded.',
+        );
 
       },
 
-      error: (err) => {
+      error: (err: unknown) => {
 
         this.attachmentsUploading.set(false);
 
-        this.attachmentError.set(err?.error?.message ?? 'Could not upload attachment.');
+        this.attachmentError.set('Could not upload attachment.');
+        this.toast.fromApiError(err, 'Could not upload attachment.');
 
       },
 

@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth/auth.service';
+import { ToastService } from '../../../core/services/toast/toast.service';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 import { extractApiErrorMessage } from '../../../core/utils/api-error.util';
 
@@ -14,6 +15,7 @@ export class VerifyEmailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
+  private readonly toast = inject(ToastService);
 
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
@@ -23,7 +25,9 @@ export class VerifyEmailComponent implements OnInit {
 
     if (!token) {
       this.loading.set(false);
-      this.errorMessage.set('Invalid verification link. No token provided.');
+      const message = 'Invalid verification link. No token provided.';
+      this.errorMessage.set(message);
+      this.toast.error(message);
       return;
     }
 
@@ -32,13 +36,14 @@ export class VerifyEmailComponent implements OnInit {
     this.auth.verifyEmail(token).subscribe({
       next: () => {
         this.loading.set(false);
+        this.toast.success('Email verified successfully.');
         void this.router.navigate(['/dashboard']);
       },
       error: (err) => {
         this.loading.set(false);
-        this.errorMessage.set(
-          extractApiErrorMessage(err, 'Verification failed. The link may be invalid or expired.'),
-        );
+        const fallback = 'Verification failed. The link may be invalid or expired.';
+        this.errorMessage.set(extractApiErrorMessage(err, fallback));
+        this.toast.fromApiError(err, fallback);
       },
     });
   }

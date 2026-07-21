@@ -20,6 +20,7 @@ import {
   TimelineAttachmentMediaType,
 } from '../../../core/models/inquiry-timeline.model';
 import { DistributorInquiryService } from '../../../core/services/distributor/distributor-inquiry.service';
+import { ToastService } from '../../../core/services/toast/toast.service';
 import { InquiryChatAttachmentComponent } from '../../../shared/components/inquiry-chat-attachment/inquiry-chat-attachment.component';
 import { ChatAudioPlayerComponent } from '../../../shared/components/chat-audio-player/chat-audio-player.component';
 import { formatExpectedDeliveryDate, getRequestSourceLabel } from '../../../shared/utils/inquiry-display.util';
@@ -68,6 +69,7 @@ type PdfViewerSource = 'request' | 'response';
 })
 export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   private readonly distributorInquiryService = inject(DistributorInquiryService);
+  private readonly toast = inject(ToastService);
   private readonly route = inject(ActivatedRoute);
   private readonly sanitizer = inject(DomSanitizer);
 
@@ -265,9 +267,10 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
           this.loadSelectedInquiry(this.selectedId()!);
         }
       },
-      error: () => {
+      error: (err: unknown) => {
         this.loading.set(false);
         this.errorMessage.set('Could not load quotation requests.');
+        this.toast.fromApiError(err, 'Could not load quotation requests.');
       },
     });
   }
@@ -590,7 +593,9 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     }
 
     if (!this.canMessage(inquiry)) {
-      this.quotationError.set('This request is closed. You cannot send a quotation.');
+      const msg = 'This request is closed. You cannot send a quotation.';
+      this.quotationError.set(msg);
+      this.toast.warning(msg);
       return;
     }
 
@@ -602,11 +607,11 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
           this.isPercentageOverLimit(draft.discountPercentage)
         );
       });
-      this.quotationError.set(
-        hasPercentOverLimit
-          ? 'Discount % and GST % cannot be greater than 100%.'
-          : 'Fill MRP and GST % for every product before sending.',
-      );
+      const msg = hasPercentOverLimit
+        ? 'Discount % and GST % cannot be greater than 100%.'
+        : 'Fill MRP and GST % for every product before sending.';
+      this.quotationError.set(msg);
+      this.toast.warning(msg);
       return;
     }
 
@@ -648,10 +653,12 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
           ),
         );
         this.loadTimeline({ silent: true, scrollToBottom: true });
+        this.toast.success('Quotation sent successfully.');
       },
-      error: (err) => {
+      error: (err: unknown) => {
         this.quotationSending.set(false);
-        this.quotationError.set(err?.error?.message ?? 'Could not send your quotation.');
+        this.quotationError.set('Could not send your quotation.');
+        this.toast.fromApiError(err, 'Could not send your quotation.');
       },
     });
   }
@@ -692,9 +699,10 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
           this.loadResponsePdf(id);
         }
       },
-      error: () => {
+      error: (err: unknown) => {
         this.selectedInquiry.set(null);
         this.timelineError.set('Could not load this quotation request.');
+        this.toast.fromApiError(err, 'Could not load this quotation request.');
       },
     });
   }
@@ -724,10 +732,11 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
         this.pdfAvailable.set(true);
         this.pdfLoading.set(false);
       },
-      error: () => {
+      error: (err: unknown) => {
         this.pdfLoading.set(false);
         this.pdfAvailable.set(false);
         this.pdfBlob = null;
+        this.toast.fromApiError(err, 'Could not load quotation PDF.');
       },
     });
   }
@@ -742,10 +751,11 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
         this.responsePdfAvailable.set(true);
         this.responsePdfLoading.set(false);
       },
-      error: () => {
+      error: (err: unknown) => {
         this.responsePdfLoading.set(false);
         this.responsePdfAvailable.set(false);
         this.responsePdfBlob = null;
+        this.toast.fromApiError(err, 'Could not load your quotation PDF.');
       },
     });
   }
@@ -806,11 +816,12 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
           scrollEl.scrollTop = previousScrollTop;
         }
       },
-      error: () => {
+      error: (err: unknown) => {
         this.timelineLoading.set(false);
         this.timelineRefreshing.set(false);
         if (!silent) {
           this.timelineError.set('Could not load messages.');
+          this.toast.fromApiError(err, 'Could not load messages.');
         }
       },
     });
@@ -825,6 +836,7 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
 
     if (!inquiry || (!message && attachments.length === 0)) {
       this.messageError.set('Enter a message or attach a file before sending.');
+      this.toast.warning('Enter a message or attach a file before sending.');
       return;
     }
 
@@ -864,9 +876,10 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
         this.focusComposeInput();
         this.loadTimeline({ silent: true, scrollToBottom: true });
       },
-      error: (err) => {
+      error: (err: unknown) => {
         this.messageLoading.set(false);
-        this.messageError.set(err?.error?.message ?? 'Could not send your message.');
+        this.messageError.set('Could not send your message.');
+        this.toast.fromApiError(err, 'Could not send your message.');
       },
     });
   }
@@ -911,6 +924,7 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
               ? 'Please choose a video file.'
               : 'Please choose a document file (PDF, Word, Excel, etc.).';
         this.messageError.set(label);
+        this.toast.warning(label);
         continue;
       }
       this.addPendingFile(file);
@@ -921,6 +935,7 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   async startVoiceRecording(): Promise<void> {
     if (this.recording() || !navigator.mediaDevices?.getUserMedia) {
       this.messageError.set('Voice recording is not supported in this browser.');
+      this.toast.warning('Voice recording is not supported in this browser.');
       return;
     }
 
@@ -981,6 +996,7 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     } catch {
       this.cleanupRecordingResources(false);
       this.messageError.set('Microphone access was denied or unavailable.');
+      this.toast.warning('Microphone access was denied or unavailable.');
     }
   }
 
@@ -1378,6 +1394,7 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     const mediaType = this.resolveMediaType(file);
     if (!mediaType) {
       this.messageError.set('Unsupported file type. Use image, video, audio, or document.');
+      this.toast.warning('Unsupported file type. Use image, video, audio, or document.');
       return;
     }
 

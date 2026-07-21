@@ -1,0 +1,130 @@
+.toast-viewport {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  width: min(24rem, calc(100vw - 1.5rem));
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  display: grid;
+  grid-template-columns: 4px 1fr auto;
+  align-items: start;
+  gap: 0.75rem;
+  padding: 0.85rem 0.9rem;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  animation: toast-in 180ms ease-out;
+}
+
+.toast-bar {
+  width: 4px;
+  min-height: 100%;
+  border-radius: 999px;
+  align-self: stretch;
+}
+
+.toast-body {
+  min-width: 0;
+}
+
+.toast-label {
+  margin: 0 0 0.15rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.toast-message {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: #0f172a;
+  word-break: break-word;
+}
+
+.toast-close {
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.toast-close:hover {
+  color: #0f172a;
+}
+
+.toast-success {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+.toast-success .toast-bar,
+.toast-success .toast-label {
+  color: #15803d;
+}
+
+.toast-success .toast-bar {
+  background: #22c55e;
+}
+
+.toast-warning {
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+
+.toast-warning .toast-bar,
+.toast-warning .toast-label {
+  color: #a16207;
+}
+
+.toast-warning .toast-bar {
+  background: #eab308;
+}
+
+.toast-error {
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.toast-error .toast-bar,
+.toast-error .toast-label {
+  color: #b91c1c;
+}
+
+.toast-error .toast-bar {
+  background: #ef4444;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.4rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 640px) {
+  .toast-viewport {
+    top: auto;
+    bottom: 1rem;
+    left: 0.75rem;
+    right: 0.75rem;
+    width: auto;
+  }
+}

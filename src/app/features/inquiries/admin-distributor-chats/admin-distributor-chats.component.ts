@@ -21,6 +21,7 @@ import {
   TimelineAttachmentMediaType,
 } from '../../../core/models/inquiry-timeline.model';
 import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
+import { ToastService } from '../../../core/services/toast/toast.service';
 import { InquiryChatAttachmentComponent } from '../../../shared/components/inquiry-chat-attachment/inquiry-chat-attachment.component';
 import { ChatAudioPlayerComponent } from '../../../shared/components/chat-audio-player/chat-audio-player.component';
 import { formatExpectedDeliveryDate, getRequestSourceLabel } from '../../../shared/utils/inquiry-display.util';
@@ -110,6 +111,7 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly inquiryService = inject(InquiryService);
+  private readonly toast = inject(ToastService);
   private readonly sanitizer = inject(DomSanitizer);
 
   readonly loading = signal(true);
@@ -436,6 +438,7 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
     const inquiryId = this.route.snapshot.paramMap.get('inquiryId');
     if (!inquiryId) {
       this.errorMessage.set('Missing inquiry reference.');
+      this.toast.warning('Missing inquiry reference.');
       this.loading.set(false);
       return;
     }
@@ -480,9 +483,10 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
         this.resolveFinalChoiceOnLoad(inquiry);
         this.loadAllDistributorQuotes();
       },
-      error: () => {
+      error: (err) => {
         this.loading.set(false);
         this.errorMessage.set('Could not load this quotation request.');
+        this.toast.fromApiError(err, 'Could not load this quotation request.');
       },
     });
   }
@@ -605,10 +609,11 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
         // Default policy: auto-pick the ranked winner for every product.
         this.selectBestOffersForAll();
       },
-      error: () => {
+      error: (err) => {
         this.quotesByDistributor.set(new Map());
         this.productQuotesLoading.set(false);
         this.productQuotesError.set('Could not load distributor quotations by product.');
+        this.toast.fromApiError(err, 'Could not load distributor quotations by product.');
       },
     });
   }
@@ -750,12 +755,14 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
         this.loadQuotationItems();
         this.loadQuotationHistory();
         this.loadAllDistributorQuotes();
+        this.toast.success('Re-quotation requested.');
       },
       error: (err) => {
         this.requoteLoading.set(false);
         this.messageError.set(
           err?.error?.message ?? 'Could not request a re-quotation from this distributor.',
         );
+        this.toast.fromApiError(err, 'Could not request a re-quotation from this distributor.');
       },
     });
   }
@@ -885,11 +892,12 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
         this.loadQuotationItems();
         this.loadQuotationHistory();
       },
-      error: () => {
+      error: (err) => {
         this.timelineLoading.set(false);
         this.timelineRefreshing.set(false);
         if (!silent) {
           this.timelineError.set('Could not load distributor messages.');
+          this.toast.fromApiError(err, 'Could not load distributor messages.');
         }
       },
     });
@@ -905,6 +913,7 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
 
     if (!inquiry || !distributorCompanyId || (!message && attachments.length === 0)) {
       this.messageError.set('Enter a message or attach a file before sending.');
+      this.toast.warning('Enter a message or attach a file before sending.');
       return;
     }
 
@@ -942,6 +951,7 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
       error: (err) => {
         this.messageLoading.set(false);
         this.messageError.set(err?.error?.message ?? 'Could not send your message.');
+        this.toast.fromApiError(err, 'Could not send your message.');
       },
     });
   }
@@ -1349,11 +1359,13 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
       next: () => {
         this.deleteLoading.set(false);
         this.deleteConfirmOpen.set(false);
+        this.toast.success('Quotation request deleted.');
         void this.router.navigate(['/admin/queries']);
       },
       error: (err) => {
         this.deleteLoading.set(false);
         this.deleteError.set(err?.error?.message ?? 'Could not delete this request.');
+        this.toast.fromApiError(err, 'Could not delete this request.');
       },
     });
   }
@@ -1629,8 +1641,9 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
           this.distributorQuotationPdfFileName(inquiry, distributor),
         );
       },
-      error: () => {
+      error: (err) => {
         this.messageError.set('Could not open the distributor quotation PDF.');
+        this.toast.fromApiError(err, 'Could not open the distributor quotation PDF.');
       },
     });
   }
@@ -1645,8 +1658,9 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
       next: (blob) => {
         this.openPdfInViewer(blob, 'application/pdf', this.submissionPdfFileName(inquiry));
       },
-      error: () => {
+      error: (err) => {
         this.messageError.set('Could not open the request PDF.');
+        this.toast.fromApiError(err, 'Could not open the request PDF.');
       },
     });
   }
