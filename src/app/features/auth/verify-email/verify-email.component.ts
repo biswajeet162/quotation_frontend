@@ -2,6 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
+import { extractApiErrorMessage } from '../../../core/utils/api-error.util';
 
 @Component({
   selector: 'app-verify-email',
@@ -35,11 +36,8 @@ export class VerifyEmailComponent implements OnInit {
       },
       error: (err) => {
         this.loading.set(false);
-        const message = err?.error?.message;
         this.errorMessage.set(
-          typeof message === 'string'
-            ? message
-            : 'Verification failed. The link may be invalid or expired.',
+          extractApiErrorMessage(err, 'Verification failed. The link may be invalid or expired.'),
         );
       },
     });

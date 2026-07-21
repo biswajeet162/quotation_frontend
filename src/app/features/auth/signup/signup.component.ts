@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { GoogleSignInService } from '../../../core/services/auth/google-sign-in.service';
 import { AuthLoadingOverlayComponent } from '../../../shared/components/auth-loading-overlay/auth-loading-overlay.component';
+import { extractApiErrorMessage } from '../../../core/utils/api-error.util';
 
 function passwordsMatchValidator(control: AbstractControl): ValidationErrors | null {
   const password = control.get('password')?.value;
@@ -107,16 +108,8 @@ export class SignupComponent implements AfterViewInit {
     });
   }
 
-  private handleError(err: { error?: { message?: string | Record<string, string> } }, fallback: string): void {
+  private handleError(err: unknown, fallback: string): void {
     this.loading.set(false);
-    const message = err?.error?.message;
-    if (typeof message === 'string') {
-      this.errorMessage.set(message);
-    } else if (typeof message === 'object' && message !== null) {
-      const firstError = Object.values(message)[0];
-      this.errorMessage.set(typeof firstError === 'string' ? firstError : fallback);
-    } else {
-      this.errorMessage.set(fallback);
-    }
+    this.errorMessage.set(extractApiErrorMessage(err, fallback));
   }
 }

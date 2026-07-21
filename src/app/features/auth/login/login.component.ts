@@ -5,6 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { GoogleSignInService } from '../../../core/services/auth/google-sign-in.service';
 import { AuthLoadingOverlayComponent } from '../../../shared/components/auth-loading-overlay/auth-loading-overlay.component';
+import { extractApiErrorMessage } from '../../../core/utils/api-error.util';
 
 @Component({
   selector: 'app-login',
@@ -92,11 +93,7 @@ export class LoginComponent implements AfterViewInit {
 
   private handleError(err: HttpErrorResponse, fallback: string): void {
     this.loading.set(false);
-    if (typeof err.error?.message === 'string') {
-      this.errorMessage.set(err.error.message);
-      return;
-    }
-    this.errorMessage.set(fallback);
+    this.errorMessage.set(extractApiErrorMessage(err, fallback));
   }
 
   private navigateAfterAuth(): void {

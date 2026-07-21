@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { AuthLoadingOverlayComponent } from '../../../shared/components/auth-loading-overlay/auth-loading-overlay.component';
+import { extractApiErrorMessage } from '../../../core/utils/api-error.util';
 
 @Component({
   selector: 'app-forgot-password',
@@ -40,15 +41,7 @@ export class ForgotPasswordComponent {
       },
       error: (err) => {
         this.loading.set(false);
-        const message = err?.error?.message;
-        if (typeof message === 'string') {
-          this.errorMessage.set(message);
-        } else if (typeof message === 'object' && message !== null) {
-          const firstError = Object.values(message)[0];
-          this.errorMessage.set(typeof firstError === 'string' ? firstError : 'Request failed. Please try again.');
-        } else {
-          this.errorMessage.set('Request failed. Please try again.');
-        }
+        this.errorMessage.set(extractApiErrorMessage(err, 'Request failed. Please try again.'));
       },
     });
   }

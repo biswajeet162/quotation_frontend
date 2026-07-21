@@ -20,6 +20,7 @@ import { ProductFieldAutocompleteComponent } from '../product-field-autocomplete
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 import { InquiryChatAttachmentComponent } from '../../../shared/components/inquiry-chat-attachment/inquiry-chat-attachment.component';
 import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
+import { extractApiErrorMessage, isApiErrorCode } from '../../../core/utils/api-error.util';
 
 interface QueryAttachmentItem {
   key: string;
@@ -765,30 +766,11 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
   }
 
   private isEmployeeContactIncompleteError(error: unknown): boolean {
-    if (!error || typeof error !== 'object' || !('error' in error)) {
-      return false;
-    }
-    const payload = (error as { error?: unknown }).error;
-    if (!payload || typeof payload !== 'object') {
-      return false;
-    }
-    return (payload as { code?: unknown }).code === 'EMPLOYEE_CONTACT_INCOMPLETE';
+    return isApiErrorCode(error, 'EMPLOYEE_CONTACT_INCOMPLETE');
   }
 
   private extractSubmitErrorMessage(error: unknown): string {
-    if (error && typeof error === 'object' && 'error' in error) {
-      const payload = (error as { error?: unknown }).error;
-      if (typeof payload === 'string' && payload.trim()) {
-        return payload;
-      }
-      if (payload && typeof payload === 'object' && 'message' in payload) {
-        const message = (payload as { message?: unknown }).message;
-        if (typeof message === 'string' && message.trim()) {
-          return message;
-        }
-      }
-    }
-    return 'Could not submit your quotation request. Please try again.';
+    return extractApiErrorMessage(error, 'Could not submit your quotation request. Please try again.');
   }
 
   private formatAddress(profile: ConsumerProfile | null): string {

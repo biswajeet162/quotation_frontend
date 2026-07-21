@@ -3,6 +3,7 @@ import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Va
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { AuthLoadingOverlayComponent } from '../../../shared/components/auth-loading-overlay/auth-loading-overlay.component';
+import { extractApiErrorMessage } from '../../../core/utils/api-error.util';
 
 function passwordsMatchValidator(control: AbstractControl): ValidationErrors | null {
   const password = control.get('password')?.value;
@@ -68,15 +69,7 @@ export class ResetPasswordComponent implements OnInit {
       },
       error: (err) => {
         this.loading.set(false);
-        const message = err?.error?.message;
-        if (typeof message === 'string') {
-          this.errorMessage.set(message);
-        } else if (typeof message === 'object' && message !== null) {
-          const firstError = Object.values(message)[0];
-          this.errorMessage.set(typeof firstError === 'string' ? firstError : 'Reset failed. Please try again.');
-        } else {
-          this.errorMessage.set('Reset failed. Please try again.');
-        }
+        this.errorMessage.set(extractApiErrorMessage(err, 'Reset failed. Please try again.'));
       },
     });
   }
