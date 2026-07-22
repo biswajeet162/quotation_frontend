@@ -14,6 +14,12 @@ export interface ToastMessage {
   durationMs: number;
 }
 
+/**
+ * Single place to tune toast behaviour for the whole app.
+ * Change {@link TOAST_DURATION_MS} to adjust how long every toast stays visible.
+ */
+export const TOAST_DURATION_MS = 5000;
+
 @Injectable({ providedIn: 'root' })
 export class ToastService {
   private readonly _toasts = signal<ToastMessage[]>([]);
@@ -22,15 +28,15 @@ export class ToastService {
 
   readonly toasts = this._toasts.asReadonly();
 
-  success(message: string, durationMs = 4000): void {
+  success(message: string, durationMs = TOAST_DURATION_MS): void {
     this.show('SUCCESS', message, durationMs);
   }
 
-  warning(message: string, durationMs = 5000): void {
+  warning(message: string, durationMs = TOAST_DURATION_MS): void {
     this.show('WARNING', message, durationMs);
   }
 
-  error(message: string, durationMs = 6000): void {
+  error(message: string, durationMs = TOAST_DURATION_MS): void {
     this.show('ERROR', message, durationMs);
   }
 
