@@ -660,7 +660,6 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
                   responseReceived: updated.responseReceived,
                   requotationRequested: updated.requotationRequested,
                   status: updated.status,
-                  itemCount: updated.items?.length ?? summary.itemCount,
                 }
               : summary,
           ),
@@ -704,7 +703,6 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     this.distributorInquiryService.getById(id).subscribe({
       next: (inquiry) => {
         this.selectedInquiry.set(inquiry);
-        this.syncSummaryItemCount(inquiry);
         this.hydrateLineDraftsFromInquiry(inquiry, true);
         this.loadSubmissionPdf(id);
         this.loadQuotationHistory(id);
@@ -1188,25 +1186,6 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   productCountLabel(items?: DistributorInquiry['items']): string {
     const count = items?.length ?? 0;
     return count === 1 ? '1 product' : `${count} products`;
-  }
-
-  /** Prefer the loaded inquiry items length so the list count matches the product table. */
-  productCountLabelForSummary(summary: DistributorInquirySummary): string {
-    const selected = this.selectedInquiry();
-    const count =
-      selected && selected.id === summary.inquiryUuid
-        ? (selected.items?.length ?? summary.itemCount ?? 0)
-        : (summary.itemCount ?? 0);
-    return count === 1 ? '1 product' : `${count} products`;
-  }
-
-  private syncSummaryItemCount(inquiry: DistributorInquiry): void {
-    const itemCount = inquiry.items?.length ?? 0;
-    this.inquirySummaries.update((list) =>
-      list.map((summary) =>
-        summary.inquiryUuid === inquiry.id ? { ...summary, itemCount } : summary,
-      ),
-    );
   }
 
   totalItemQuantity(items?: DistributorInquiry['items']): number {
