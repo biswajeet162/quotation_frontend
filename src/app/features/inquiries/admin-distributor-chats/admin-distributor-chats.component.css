@@ -886,6 +886,18 @@
   padding: 0.85rem 1rem;
 }
 
+.distributor-unavailable-notice {
+  margin: 0 0 0.85rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #cbd5e1;
+  border-left: 4px solid #0f172a;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
 .requote-note-label {
   margin: 0 0 0.35rem;
   font-size: 0.72rem;

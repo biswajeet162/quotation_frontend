@@ -536,6 +536,15 @@
                       </div>
                     </section>
 
+                    @if (selectedDistributor(); as distributor) {
+                      @if (allQuotationItemsUnavailable(quotationItems())) {
+                        <p class="distributor-unavailable-notice" role="note">
+                          {{ distributorLabel(distributor) }} confirmed they do not have any of the
+                          assigned products.
+                        </p>
+                      }
+                    }
+
                     @if (quotationHistoryLoading()) {
                       <p class="products-empty">Loading quotation history…</p>
                     } @else {
@@ -558,6 +567,11 @@
                             </div>
 
                             <div class="inquiry-event-content">
+                              @if (quotationEntryAllUnavailable(entry)) {
+                                <p class="distributor-unavailable-notice" role="note">
+                                  This distributor marked every assigned product as unavailable.
+                                </p>
+                              }
                               @if ((entry.items ?? []).some(hasQuotationLine)) {
                                 <div class="preview-table-wrap admin-pricing-table-wrap">
                                   <table class="preview-table admin-pricing-table">

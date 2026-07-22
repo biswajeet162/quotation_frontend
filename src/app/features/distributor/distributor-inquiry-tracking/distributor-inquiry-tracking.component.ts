@@ -604,12 +604,10 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
       return false;
     }
 
-    const availableItems = items.filter((item) => this.isLineAvailable(inquiry.id, item));
-    if (availableItems.length === 0) {
-      return false;
-    }
-
-    return availableItems.every((item) => {
+    return items.every((item) => {
+      if (!this.isLineAvailable(inquiry.id, item)) {
+        return true;
+      }
       const draft = this.getLineDraft(inquiry.id, item);
       if (draft.mrp == null || draft.gstPercentage == null) {
         return false;
@@ -622,6 +620,18 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
       }
       return true;
     });
+  }
+
+  allLinesUnavailable(inquiry: DistributorInquiry): boolean {
+    const items = inquiry.items ?? [];
+    return items.length > 0 && items.every((item) => !this.isLineAvailable(inquiry.id, item));
+  }
+
+  markAllLinesUnavailable(inquiry: DistributorInquiry): void {
+    for (const item of inquiry.items ?? []) {
+      this.setLineAvailable(inquiry.id, item, false);
+    }
+    this.quotationError.set(null);
   }
 
   isRequiredNumberEmpty(value?: number | null): boolean {
@@ -668,14 +678,9 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
           this.isPercentageOverLimit(draft.discountPercentage)
         );
       });
-      const hasAvailableLine = (inquiry.items ?? []).some((item) =>
-        this.isLineAvailable(inquiry.id, item),
-      );
       const msg = hasPercentOverLimit
         ? 'Discount % and GST % cannot be greater than 100%.'
-        : !hasAvailableLine
-          ? 'Mark at least one product as available before sending.'
-          : 'Fill MRP and GST % for every available product before sending.';
+        : 'Fill MRP and GST % for every available product before sending.';
       this.quotationError.set(msg);
       this.toast.warning(msg);
       return;

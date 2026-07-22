@@ -1487,7 +1487,29 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
     if (distributor.requotationRequested) {
       return 'Re-quote requested';
     }
-    return distributor.responseReceived ? 'Responded' : 'Pending response';
+    if (distributor.responseReceived) {
+      const items = this.quotesByDistributor().get(distributor.companyId) ?? [];
+      if (this.allQuotationItemsUnavailable(items)) {
+        return 'No products available';
+      }
+      return 'Responded';
+    }
+    return 'Pending response';
+  }
+
+  allQuotationItemsUnavailable(items: InquiryItem[]): boolean {
+    if (items.length === 0) {
+      return false;
+    }
+    return items.every((item) => this.isLineUnavailable(item));
+  }
+
+  quotationEntryAllUnavailable(entry: DistributorQuotationHistoryEntry): boolean {
+    const items = entry.items ?? [];
+    if (items.length === 0) {
+      return false;
+    }
+    return items.every((item) => this.isLineUnavailable(item));
   }
 
   isFinalChoiceDistributor(distributor: InquiryDistributor): boolean {
@@ -1649,6 +1671,9 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
     distributor: InquiryDistributor,
   ): string {
     const name = this.distributorLabel(distributor);
+    if (this.quotationEntryAllUnavailable(entry)) {
+      return `${name} confirmed they do not have these products.`;
+    }
     if ((entry.round ?? 1) > 1) {
       return `${name} shared a revised quotation.`;
     }

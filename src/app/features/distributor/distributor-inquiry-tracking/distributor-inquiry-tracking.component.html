@@ -895,6 +895,12 @@
       </div>
 
       <div class="quotation-dialog-body">
+      @if (allLinesUnavailable(inquiry)) {
+        <p class="quotation-all-unavailable-note" role="note">
+          All products are marked unavailable. You can still send this response so the admin team knows
+          you do not carry these items.
+        </p>
+      }
       @if ((inquiry.items ?? []).length > 0) {
         <div class="preview-table-wrap pricing-table-wrap quotation-table-wrap">
           <table class="preview-table pricing-table">
@@ -1151,6 +1157,14 @@
         <button
           type="button"
           class="btn-secondary"
+          (click)="markAllLinesUnavailable(inquiry)"
+          [disabled]="quotationSending() || allLinesUnavailable(inquiry)"
+        >
+          Mark all unavailable
+        </button>
+        <button
+          type="button"
+          class="btn-secondary"
           (click)="closeQuotationPanel()"
           [disabled]="quotationSending()"
         >
@@ -1165,6 +1179,8 @@
           @if (quotationSending()) {
             <span class="send-spinner" aria-hidden="true"></span>
             Sending…
+          } @else if (allLinesUnavailable(inquiry)) {
+            Send unavailable response
           } @else {
             Send quotation
           }
