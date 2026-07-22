@@ -23,7 +23,7 @@ import { DistributorInquiryService } from '../../../core/services/distributor/di
 import { ToastService } from '../../../core/services/toast/toast.service';
 import { InquiryChatAttachmentComponent } from '../../../shared/components/inquiry-chat-attachment/inquiry-chat-attachment.component';
 import { ChatAudioPlayerComponent } from '../../../shared/components/chat-audio-player/chat-audio-player.component';
-import { formatExpectedDeliveryDate, getRequestSourceLabel } from '../../../shared/utils/inquiry-display.util';
+import { formatExpectedDeliveryDate, getRequestSourceLabel, distributorInquiryDisplayTitle } from '../../../shared/utils/inquiry-display.util';
 import {
   canReplyToTimelineEntry,
   ChatReplyTarget,
@@ -703,6 +703,21 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     this.distributorInquiryService.getById(id).subscribe({
       next: (inquiry) => {
         this.selectedInquiry.set(inquiry);
+        this.inquirySummaries.update((list) =>
+          list.map((summary) =>
+            summary.inquiryUuid === inquiry.id
+              ? {
+                  ...summary,
+                  itemCount: inquiry.items?.length ?? summary.itemCount,
+                  title: distributorInquiryDisplayTitle(
+                    summary.title,
+                    inquiry.items?.length ?? summary.itemCount,
+                    inquiry.items,
+                  ),
+                }
+              : summary,
+          ),
+        );
         this.hydrateLineDraftsFromInquiry(inquiry, true);
         this.loadSubmissionPdf(id);
         this.loadQuotationHistory(id);
@@ -1186,6 +1201,14 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   productCountLabel(items?: DistributorInquiry['items']): string {
     const count = items?.length ?? 0;
     return count === 1 ? '1 product' : `${count} products`;
+  }
+
+  summaryTitle(summary: DistributorInquirySummary): string {
+    return distributorInquiryDisplayTitle(summary.title, summary.itemCount);
+  }
+
+  inquiryTitle(inquiry: DistributorInquiry): string {
+    return distributorInquiryDisplayTitle(inquiry.title, inquiry.items?.length ?? 0, inquiry.items);
   }
 
   totalItemQuantity(items?: DistributorInquiry['items']): number {

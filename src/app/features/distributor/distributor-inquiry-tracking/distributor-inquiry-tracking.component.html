@@ -59,7 +59,7 @@
               (click)="selectInquiry(summary.inquiryUuid)"
             >
               <span class="query-id">{{ summary.reference }}</span>
-              <span class="query-title">{{ summary.title }}</span>
+              <span class="query-title">{{ summaryTitle(summary) }}</span>
               <span class="query-meta">{{ summaryStatusLabel(summary) }} · {{ summary.itemCount }} product{{ summary.itemCount === 1 ? '' : 's' }}</span>
             </button>
           </li>
@@ -70,9 +70,10 @@
         <div class="query-detail">
           <div class="detail-header">
             <div>
-              <h2>{{ inquiry.title }}</h2>
+              <h2>{{ inquiryTitle(inquiry) }}</h2>
               <p class="detail-meta">
                 {{ inquiry.inquiryId }} · {{ getRequestSourceLabel(inquiry.requestSource) }} ·
+                {{ productCountLabel(inquiry.items) }} ·
                 Received {{ formatDate(inquiry.receivedAt ?? inquiry.createdAt) }}
               </p>
             </div>
@@ -510,7 +511,7 @@
         <div class="chat-modal-header-text">
           <h2 id="distributor-chat-title">Messages</h2>
           <p class="chat-modal-subtitle">
-            {{ inquiry.title }} · {{ formatPostedDate(inquiry.receivedAt ?? inquiry.createdAt) }}
+            {{ inquiryTitle(inquiry) }} · {{ formatPostedDate(inquiry.receivedAt ?? inquiry.createdAt) }}
           </p>
         </div>
         <div class="chat-modal-header-actions">
@@ -868,7 +869,7 @@
       <div class="quotation-dialog-header">
         <div class="quotation-dialog-title-block">
           <h2 id="quotation-dialog-title">Create your quotation</h2>
-          <p class="quotation-dialog-subtitle">{{ inquiry.title }} · {{ inquiry.inquiryId }}</p>
+          <p class="quotation-dialog-subtitle">{{ inquiryTitle(inquiry) }} · {{ inquiry.inquiryId }}</p>
         </div>
         <div class="quotation-dialog-header-end">
           <p class="quotation-chat-note" role="note">

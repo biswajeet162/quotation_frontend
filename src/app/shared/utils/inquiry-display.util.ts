@@ -60,6 +60,30 @@ export function getRequestSourceLabel(source?: InquiryRequestSource): string {
   }
 }
 
+export function distributorInquiryDisplayTitle(
+  title: string,
+  itemCount: number,
+  items?: Pick<Inquiry, 'items'>['items'],
+): string {
+  const count = items?.length ?? itemCount;
+  if (count === 1) {
+    const item = items?.[0];
+    const brand = item?.productBrand?.trim();
+    const name = item?.productName?.trim();
+    if (brand && name) {
+      return `${brand} ${name}`;
+    }
+    if (!/^Quotation request \(\d+ products\)$/.test(title.trim())) {
+      return title;
+    }
+    return 'Quotation request (1 product)';
+  }
+  if (count > 1) {
+    return `Quotation request (${count} products)`;
+  }
+  return title || 'Quotation request';
+}
+
 export function getInquiryListStep(inquiry: Pick<Inquiry, 'status'>): InquiryListStep {
   if (inquiry.status === 'CLOSED' || inquiry.status === 'FINAL_SENT') {
     return 'green';
