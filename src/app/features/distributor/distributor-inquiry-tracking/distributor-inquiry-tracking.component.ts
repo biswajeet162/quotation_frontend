@@ -52,6 +52,7 @@ interface PendingAttachment {
 }
 
 interface DistributorInquiryLineDraft {
+  available?: boolean;
   hsnCode?: string;
   mrp?: number;
   discountPercentage?: number;
@@ -533,6 +534,7 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
 
   getSubmittedLineDraft(_inquiryId: string, item: InquiryItem): DistributorInquiryLineDraft {
     return {
+      available: item.distributorAvailable !== false,
       hsnCode: item.distributorHsnCode,
       mrp: item.distributorMrp,
       discountPercentage: item.distributorDiscountPercentage,
@@ -542,7 +544,14 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   }
 
   hasSubmittedLine(item: InquiryItem): boolean {
+    if (item.distributorAvailable === false) {
+      return true;
+    }
     return item.distributorMrp != null && item.distributorGstPercentage != null;
+  }
+
+  isSubmittedLineUnavailable(item: InquiryItem): boolean {
+    return item.distributorAvailable === false;
   }
 
   submittedLineAmount(inquiryId: string, item: InquiryItem): number | null {
@@ -595,7 +604,12 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
       return false;
     }
 
-    return items.every((item) => {
+    const availableItems = items.filter((item) => this.isLineAvailable(inquiry.id, item));
+    if (availableItems.length === 0) {
+      return false;
+    }
+
+    return availableItems.every((item) => {
       const draft = this.getLineDraft(inquiry.id, item);
       if (draft.mrp == null || draft.gstPercentage == null) {
         return false;
@@ -645,15 +659,23 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
 
     if (!this.canSubmitQuotation(inquiry)) {
       const hasPercentOverLimit = (inquiry.items ?? []).some((item) => {
+        if (!this.isLineAvailable(inquiry.id, item)) {
+          return false;
+        }
         const draft = this.getLineDraft(inquiry.id, item);
         return (
           this.isPercentageOverLimit(draft.gstPercentage) ||
           this.isPercentageOverLimit(draft.discountPercentage)
         );
       });
+      const hasAvailableLine = (inquiry.items ?? []).some((item) =>
+        this.isLineAvailable(inquiry.id, item),
+      );
       const msg = hasPercentOverLimit
         ? 'Discount % and GST % cannot be greater than 100%.'
-        : 'Fill MRP and GST % for every product before sending.';
+        : !hasAvailableLine
+          ? 'Mark at least one product as available before sending.'
+          : 'Fill MRP and GST % for every available product before sending.';
       this.quotationError.set(msg);
       this.toast.warning(msg);
       return;
@@ -661,13 +683,15 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
 
     const lines = (inquiry.items ?? []).map((item) => {
       const draft = this.getLineDraft(inquiry.id, item);
+      const available = this.isLineAvailable(inquiry.id, item);
       return {
         inquiryItemId: item.id ?? item.productId,
-        hsnCode: draft.hsnCode,
-        mrp: draft.mrp!,
-        discountPercentage: draft.discountPercentage,
-        gstPercentage: draft.gstPercentage!,
-        ourDeliveryDate: draft.ourDeliveryDate,
+        available,
+        hsnCode: available ? draft.hsnCode : undefined,
+        mrp: available ? draft.mrp : undefined,
+        discountPercentage: available ? draft.discountPercentage : undefined,
+        gstPercentage: available ? draft.gstPercentage : undefined,
+        ourDeliveryDate: available ? draft.ourDeliveryDate : undefined,
       };
     });
 
@@ -1257,7 +1281,19 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   }
 
   getLineDraft(inquiryId: string, item: InquiryItem): DistributorInquiryLineDraft {
-    return this.lineDrafts().get(this.lineDraftKey(inquiryId, item)) ?? {};
+    const draft = this.lineDrafts().get(this.lineDraftKey(inquiryId, item)) ?? {};
+    return {
+      ...draft,
+      available: draft.available !== false,
+    };
+  }
+
+  isLineAvailable(inquiryId: string, item: InquiryItem): boolean {
+    return this.getLineDraft(inquiryId, item).available !== false;
+  }
+
+  setLineAvailable(inquiryId: string, item: InquiryItem, available: boolean): void {
+    this.patchLineDraft(inquiryId, item, { available });
   }
 
   updateLineTextField(
@@ -1287,6 +1323,9 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
 
   lineAmount(inquiryId: string, item: InquiryItem, draft?: DistributorInquiryLineDraft): number | null {
     const lineDraft = draft ?? this.getLineDraft(inquiryId, item);
+    if (lineDraft.available === false) {
+      return null;
+    }
     if (lineDraft.mrp == null) {
       return null;
     }
@@ -1601,7 +1640,12 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   }
 
   private lineDraftFromPersistedItem(item: InquiryItem): DistributorInquiryLineDraft {
+    if (item.distributorAvailable === false) {
+      return { available: false };
+    }
+
     return {
+      available: true,
       hsnCode: item.distributorHsnCode ?? item.adminHsnCode,
       mrp: item.distributorMrp ?? item.adminMrp,
       discountPercentage: item.distributorDiscountPercentage ?? item.adminDiscountPercentage,
@@ -1612,6 +1656,7 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
 
   private hasPersistedLineDraftValues(draft: DistributorInquiryLineDraft): boolean {
     return (
+      draft.available === false ||
       !!draft.hsnCode?.trim() ||
       draft.mrp != null ||
       draft.discountPercentage != null ||
@@ -1633,6 +1678,9 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     const existing = this.getLineDraft(inquiryId, item);
     const patch: Partial<DistributorInquiryLineDraft> = {};
 
+    if (persisted.available === false && (!onlyMissing || existing.available !== false)) {
+      patch.available = false;
+    }
     if (persisted.hsnCode?.trim() && (!onlyMissing || !existing.hsnCode?.trim())) {
       patch.hsnCode = persisted.hsnCode.trim();
     }

@@ -39,6 +39,7 @@ export interface InquiryItem {
   distributorDiscountPercentage?: number;
   distributorGstPercentage?: number;
   distributorOurDeliveryDate?: string;
+  distributorAvailable?: boolean;
 }
 
 /** Returned to consumers after POST /inquiries (no admin/line-item payload). */

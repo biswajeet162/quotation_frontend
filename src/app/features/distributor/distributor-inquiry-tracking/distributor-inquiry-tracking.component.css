@@ -547,8 +547,30 @@
 }
 
 .pricing-table {
-  min-width: 86rem;
+  min-width: 90rem;
   table-layout: auto;
+}
+
+.pricing-table .col-available {
+  width: 4.75rem;
+  text-align: center;
+}
+
+.pricing-table .line-available-checkbox {
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+}
+
+.pricing-table tr.line-unavailable td:not(.col-available):not(.col-sno):not(.col-designation):not(.col-brand):not(.col-description):not(.col-qty):not(.col-expected-delivery):not(.col-attachment) {
+  opacity: 0.72;
+}
+
+.line-unavailable-label {
+  display: inline-block;
+  color: #64748b;
+  font-size: 0.82rem;
+  font-weight: 600;
 }
 
 .pricing-table .col-sno {

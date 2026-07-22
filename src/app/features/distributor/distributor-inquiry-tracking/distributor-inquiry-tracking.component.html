@@ -352,9 +352,13 @@
                                         </td>
                                         <td class="col-qty consumer-cell">{{ item.quantity }}</td>
                                         <td class="col-mrp">
-                                          <span class="line-input line-input-number line-input-readonly request-readonly-value">
-                                            {{ formatOptionalNumber(quoted.mrp) }}
-                                          </span>
+                                          @if (isSubmittedLineUnavailable(item)) {
+                                            <span class="line-unavailable-label">Unavailable</span>
+                                          } @else {
+                                            <span class="line-input line-input-number line-input-readonly request-readonly-value">
+                                              {{ formatOptionalNumber(quoted.mrp) }}
+                                            </span>
+                                          }
                                         </td>
                                         <td class="col-discount">
                                           <span class="line-input line-input-number line-input-readonly request-readonly-value">
@@ -896,6 +900,7 @@
           <table class="preview-table pricing-table">
             <thead>
               <tr>
+                <th class="col-available">Available</th>
                 <th class="col-sno">S.No.</th>
                 <th class="col-designation">Designation</th>
                 <th class="col-brand">Brand</th>
@@ -914,7 +919,21 @@
             </thead>
             <tbody>
               @for (item of inquiry.items ?? []; track item.id ?? item.productId) {
-                <tr>
+                <tr [class.line-unavailable]="!isLineAvailable(inquiry.id, item)">
+                  <td class="col-available">
+                    <input
+                      type="checkbox"
+                      class="line-available-checkbox"
+                      [ngModel]="isLineAvailable(inquiry.id, item)"
+                      (ngModelChange)="setLineAvailable(inquiry.id, item, $event)"
+                      [attr.aria-label]="
+                        'Available: ' +
+                        displayProductField(item.productBrand) +
+                        ' ' +
+                        displayProductField(item.productName)
+                      "
+                    />
+                  </td>
                   <td class="col-sno">{{ $index + 1 }}</td>
                   <td class="col-designation consumer-cell" [title]="displayProductField(item.productName)">
                     {{ displayProductField(item.productName) }}
@@ -926,6 +945,7 @@
                     <input
                       type="text"
                       class="line-input"
+                      [disabled]="!isLineAvailable(inquiry.id, item)"
                       [ngModel]="getLineDraft(inquiry.id, item).hsnCode ?? ''"
                       (ngModelChange)="updateLineTextField(inquiry.id, item, 'hsnCode', $event)"
                       placeholder="—"
@@ -940,31 +960,37 @@
                   </td>
                   <td class="col-qty consumer-cell">{{ item.quantity }}</td>
                   <td class="col-mrp">
-                    <input
-                      type="number"
-                      class="line-input line-input-number"
-                      [class.line-input-invalid]="
-                        isRequiredNumberEmpty(getLineDraft(inquiry.id, item).mrp)
-                      "
-                      [class.line-input-valid]="
-                        isRequiredNumberFilled(getLineDraft(inquiry.id, item).mrp)
-                      "
-                      min="0"
-                      step="0.01"
-                      [ngModel]="getLineDraft(inquiry.id, item).mrp ?? ''"
-                      (ngModelChange)="updateLineNumberField(inquiry.id, item, 'mrp', $event)"
-                      placeholder="Required"
-                      aria-label="MRP (required)"
-                      required
-                    />
+                    @if (isLineAvailable(inquiry.id, item)) {
+                      <input
+                        type="number"
+                        class="line-input line-input-number"
+                        [class.line-input-invalid]="
+                          isRequiredNumberEmpty(getLineDraft(inquiry.id, item).mrp)
+                        "
+                        [class.line-input-valid]="
+                          isRequiredNumberFilled(getLineDraft(inquiry.id, item).mrp)
+                        "
+                        min="0"
+                        step="0.01"
+                        [ngModel]="getLineDraft(inquiry.id, item).mrp ?? ''"
+                        (ngModelChange)="updateLineNumberField(inquiry.id, item, 'mrp', $event)"
+                        placeholder="Required"
+                        aria-label="MRP (required)"
+                        required
+                      />
+                    } @else {
+                      <span class="line-unavailable-label">Unavailable</span>
+                    }
                   </td>
                   <td class="col-discount">
                     <div
                       class="line-field"
                       [class.line-field-invalid]="
+                        isLineAvailable(inquiry.id, item) &&
                         isPercentageOverLimit(getLineDraft(inquiry.id, item).discountPercentage)
                       "
                       [class.line-field-valid]="
+                        isLineAvailable(inquiry.id, item) &&
                         isPercentageFieldValid(getLineDraft(inquiry.id, item).discountPercentage)
                       "
                     >
@@ -972,10 +998,13 @@
                         <input
                           type="number"
                           class="line-input line-input-number"
+                          [disabled]="!isLineAvailable(inquiry.id, item)"
                           [class.line-input-invalid]="
+                            isLineAvailable(inquiry.id, item) &&
                             isPercentageOverLimit(getLineDraft(inquiry.id, item).discountPercentage)
                           "
                           [class.line-input-valid]="
+                            isLineAvailable(inquiry.id, item) &&
                             isPercentageFieldValid(getLineDraft(inquiry.id, item).discountPercentage)
                           "
                           min="0"
@@ -988,11 +1017,17 @@
                           placeholder="—"
                           aria-label="Discount percentage"
                         />
-                        @if (isPercentageFieldValid(getLineDraft(inquiry.id, item).discountPercentage)) {
+                        @if (
+                          isLineAvailable(inquiry.id, item) &&
+                          isPercentageFieldValid(getLineDraft(inquiry.id, item).discountPercentage)
+                        ) {
                           <span class="line-field-ok" aria-hidden="true" title="Valid">✓</span>
                         }
                       </div>
-                      @if (isPercentageOverLimit(getLineDraft(inquiry.id, item).discountPercentage)) {
+                      @if (
+                        isLineAvailable(inquiry.id, item) &&
+                        isPercentageOverLimit(getLineDraft(inquiry.id, item).discountPercentage)
+                      ) {
                         <span class="line-field-error" role="alert"
                           >Cannot be greater than 100%</span
                         >
@@ -1008,42 +1043,51 @@
                     <div
                       class="line-field"
                       [class.line-field-invalid]="
+                        isLineAvailable(inquiry.id, item) &&
                         isPercentageFieldEmptyOrOverLimit(
                           getLineDraft(inquiry.id, item).gstPercentage
                         )
                       "
                       [class.line-field-valid]="
+                        isLineAvailable(inquiry.id, item) &&
                         isPercentageFieldValid(getLineDraft(inquiry.id, item).gstPercentage)
                       "
                     >
                       <div class="line-field-input-row">
-                        <input
-                          type="number"
-                          class="line-input line-input-number"
-                          [class.line-input-invalid]="
-                            isPercentageFieldEmptyOrOverLimit(
-                              getLineDraft(inquiry.id, item).gstPercentage
-                            )
-                          "
-                          [class.line-input-valid]="
-                            isPercentageFieldValid(getLineDraft(inquiry.id, item).gstPercentage)
-                          "
-                          min="0"
-                          max="100"
-                          step="0.01"
-                          [ngModel]="getLineDraft(inquiry.id, item).gstPercentage ?? ''"
-                          (ngModelChange)="
-                            updateLineNumberField(inquiry.id, item, 'gstPercentage', $event)
-                          "
-                          placeholder="Required"
-                          aria-label="GST percentage (required)"
-                          required
-                        />
-                        @if (isPercentageFieldValid(getLineDraft(inquiry.id, item).gstPercentage)) {
-                          <span class="line-field-ok" aria-hidden="true" title="Valid">✓</span>
+                        @if (isLineAvailable(inquiry.id, item)) {
+                          <input
+                            type="number"
+                            class="line-input line-input-number"
+                            [class.line-input-invalid]="
+                              isPercentageFieldEmptyOrOverLimit(
+                                getLineDraft(inquiry.id, item).gstPercentage
+                              )
+                            "
+                            [class.line-input-valid]="
+                              isPercentageFieldValid(getLineDraft(inquiry.id, item).gstPercentage)
+                            "
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            [ngModel]="getLineDraft(inquiry.id, item).gstPercentage ?? ''"
+                            (ngModelChange)="
+                              updateLineNumberField(inquiry.id, item, 'gstPercentage', $event)
+                            "
+                            placeholder="Required"
+                            aria-label="GST percentage (required)"
+                            required
+                          />
+                          @if (isPercentageFieldValid(getLineDraft(inquiry.id, item).gstPercentage)) {
+                            <span class="line-field-ok" aria-hidden="true" title="Valid">✓</span>
+                          }
+                        } @else {
+                          <span class="line-unavailable-label">—</span>
                         }
                       </div>
-                      @if (isPercentageOverLimit(getLineDraft(inquiry.id, item).gstPercentage)) {
+                      @if (
+                        isLineAvailable(inquiry.id, item) &&
+                        isPercentageOverLimit(getLineDraft(inquiry.id, item).gstPercentage)
+                      ) {
                         <span class="line-field-error" role="alert"
                           >Cannot be greater than 100%</span
                         >
@@ -1062,6 +1106,7 @@
                     <input
                       type="date"
                       class="line-input line-input-date"
+                      [disabled]="!isLineAvailable(inquiry.id, item)"
                       [ngModel]="getLineDraft(inquiry.id, item).ourDeliveryDate ?? ''"
                       (ngModelChange)="updateLineDateField(inquiry.id, item, $event)"
                       aria-label="Our delivery date"

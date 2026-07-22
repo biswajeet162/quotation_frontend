@@ -41,10 +41,11 @@ export class DistributorInquiryService {
     id: string,
     lines: {
       inquiryItemId: string;
+      available?: boolean;
       hsnCode?: string;
-      mrp: number;
+      mrp?: number;
       discountPercentage?: number;
-      gstPercentage: number;
+      gstPercentage?: number;
       ourDeliveryDate?: string;
     }[],
   ): Observable<DistributorInquiry> {
