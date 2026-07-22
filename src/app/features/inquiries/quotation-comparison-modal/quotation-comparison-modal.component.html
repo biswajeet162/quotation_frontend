@@ -45,14 +45,15 @@
           <div class="matrix-toolbar">
             <p class="matrix-hint">
               Green marks the lowest amount. Click any offer to pick it for the mix.
-              Finalize opens pricing so you can set your margin, then send to the customer.
+              You can finalize with only the products you have picked — unpicked lines will
+              be sent to the customer as unavailable.
             </p>
             <button
               type="button"
               class="btn-finalize"
               (click)="requestFinalize()"
-              [disabled]="!allProductsPicked()"
-              title="Set margin and send the mixed quotation to the customer"
+              [disabled]="!canFinalize()"
+              title="Set margin and send the quotation to the customer (partial finalization allowed)"
             >
               Finalize
             </button>
@@ -76,7 +77,7 @@
               </thead>
               <tbody>
                 @for (row of productMatrix(); track row.itemKey) {
-                  <tr>
+                  <tr [class.row-unpicked]="!selectedOfferForRow(row)">
                     <td class="sticky-col">
                       <div class="product-cell">
                         <span class="product-name">{{ row.productName }}</span>
@@ -138,7 +139,7 @@
                           <span class="pick-note">Not lowest</span>
                         }
                       } @else {
-                        <span class="is-empty">—</span>
+                        <span class="pick-unavailable">Not included</span>
                       }
                     </td>
                   </tr>

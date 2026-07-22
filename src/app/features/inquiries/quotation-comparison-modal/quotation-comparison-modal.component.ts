@@ -188,6 +188,11 @@ export class QuotationComparisonModalComponent {
     return rows.every((row) => this.selectedOfferForRow(row) != null);
   });
 
+  /** At least one product has a distributor pick — enough to finalize partially. */
+  readonly canFinalize = computed(() =>
+    this.productMatrix().some((row) => this.selectedOfferForRow(row) != null),
+  );
+
   readonly formatExpectedDeliveryDate = formatExpectedDeliveryDate;
 
   constructor() {
@@ -243,8 +248,8 @@ export class QuotationComparisonModalComponent {
   }
 
   requestFinalize(): void {
-    if (!this.allProductsPicked()) {
-      this.finalizeError.set('Pick an offer for every product before finalizing.');
+    if (!this.canFinalize()) {
+      this.finalizeError.set('Pick at least one offer before finalizing.');
       return;
     }
     this.finalizeError.set(null);

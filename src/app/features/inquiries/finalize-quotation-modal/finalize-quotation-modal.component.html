@@ -38,14 +38,15 @@
       <div class="finalize-body">
         <p class="finalize-hint">
           Compare distributor quote vs what the consumer will pay. Edit <strong>Our MRP</strong> and
-          <strong>Our disc.</strong> — they start with the same values as the distributor quote.
+          <strong>Our disc.</strong> for included products — they start with the same values as the
+          distributor quote. Unpicked products are marked unavailable and crossed out for the customer.
         </p>
 
         @if (errorMessage()) {
           <div class="finalize-alert" role="alert">{{ errorMessage() }}</div>
         }
 
-        @if (items().length === 0) {
+        @if (displayItems().length === 0) {
           <p class="finalize-empty">No quotation lines are available for this mix.</p>
         } @else {
           <div class="comparison-summary">
@@ -115,13 +116,29 @@
                 </tr>
               </thead>
               <tbody>
-                @for (item of items(); track item.id ?? item.productId) {
-                  <tr>
+                @for (item of displayItems(); track item.id ?? item.productId) {
+                  <tr [class.line-unavailable]="isItemUnavailable(item)">
                     <td class="col-sno">{{ $index + 1 }}</td>
                     <td class="col-designation">{{ displayProductField(item.productName) }}</td>
                     <td class="col-brand">{{ displayProductField(item.productBrand) }}</td>
-                    <td class="col-hsn">{{ displayProductField(getLineDraft(inquiry.id, item).hsnCode) }}</td>
+                    <td class="col-hsn">
+                      @if (isItemUnavailable(item)) {
+                        <span class="line-unavailable-label">Unavailable</span>
+                      } @else {
+                        {{ displayProductField(getLineDraft(inquiry.id, item).hsnCode) }}
+                      }
+                    </td>
                     <td class="col-qty">{{ item.quantity }}</td>
+                    @if (isItemUnavailable(item)) {
+                      <td class="col-num col-distributor" colspan="5">
+                        <span class="line-unavailable-label">Unavailable</span>
+                      </td>
+                      <td class="col-input col-consumer" colspan="4">
+                        <span class="line-unavailable-label">Unavailable</span>
+                      </td>
+                      <td class="col-num col-margin">—</td>
+                      <td class="col-delivery">—</td>
+                    } @else {
                     <td class="col-num col-distributor">
                       {{ formatCurrency(getLineDraft(inquiry.id, item).distributorMrp) }}
                     </td>
@@ -177,6 +194,7 @@
                     <td class="col-delivery">
                       {{ formatExpectedDeliveryDate(getLineDraft(inquiry.id, item).deliveryDate) }}
                     </td>
+                    }
                   </tr>
                 }
               </tbody>
@@ -226,7 +244,7 @@
           type="button"
           class="btn-primary"
           (click)="sendToConsumer()"
-          [disabled]="loading() || items().length === 0"
+          [disabled]="loading() || !canSendToConsumer()"
         >
           {{ loading() ? 'Sending…' : 'Send to consumer' }}
         </button>

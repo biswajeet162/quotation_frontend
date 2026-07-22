@@ -342,7 +342,7 @@
                   </div>
 
                   <div class="inquiry-event-content">
-                    @if ((inquiry.items ?? []).some(hasFinalPricingLine)) {
+                    @if ((inquiry.items ?? []).some(hasFinalQuotationLine)) {
                       <div class="chat-pricing-table-wrap final-quotation-table-wrap">
                         <table class="preview-table admin-pricing-table chat-pricing-table">
                           <thead>
@@ -364,8 +364,8 @@
                           </thead>
                           <tbody>
                             @for (item of inquiry.items ?? []; track item.id ?? item.productId) {
-                              @if (hasFinalPricingLine(item)) {
-                                <tr>
+                              @if (hasFinalQuotationLine(item)) {
+                                <tr [class.line-unavailable]="isFinalLineUnavailable(item)">
                                   <td class="col-sno">{{ $index + 1 }}</td>
                                   <td
                                     class="col-designation consumer-cell"
@@ -380,9 +380,13 @@
                                     {{ displayProductField(item.productBrand) }}
                                   </td>
                                   <td class="col-hsn-code">
-                                    <span class="line-input line-input-readonly chat-readonly-value">
-                                      {{ displayProductField(item.adminHsnCode) }}
-                                    </span>
+                                    @if (isFinalLineUnavailable(item)) {
+                                      <span class="line-unavailable-label">Unavailable</span>
+                                    } @else {
+                                      <span class="line-input line-input-readonly chat-readonly-value">
+                                        {{ displayProductField(item.adminHsnCode) }}
+                                      </span>
+                                    }
                                   </td>
                                   <td
                                     class="col-description consumer-cell preview-multiline"
@@ -391,6 +395,11 @@
                                     {{ displayProductField(item.productDescription) }}
                                   </td>
                                   <td class="col-qty consumer-cell">{{ item.quantity }}</td>
+                                  @if (isFinalLineUnavailable(item)) {
+                                    <td class="col-mrp" colspan="5">
+                                      <span class="line-unavailable-label">Unavailable</span>
+                                    </td>
+                                  } @else {
                                   <td class="col-mrp">
                                     <span class="line-input line-input-number line-input-readonly chat-readonly-value">
                                       {{ formatCurrency(item.adminMrp) }}
@@ -416,6 +425,7 @@
                                       {{ formatCurrency(finalLineNetValue(item)) }}
                                     </span>
                                   </td>
+                                  }
                                   <td class="col-expected-delivery consumer-cell">
                                     {{ formatExpectedDeliveryDate(item.expectedDeliveryDate) }}
                                   </td>

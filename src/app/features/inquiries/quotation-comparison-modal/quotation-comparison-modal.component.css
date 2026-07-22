@@ -435,6 +435,17 @@
   cursor: pointer;
 }
 
+.matrix-table tbody tr.row-unpicked td {
+  opacity: 0.72;
+}
+
+.pick-unavailable {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
 @media (max-width: 720px) {
   .comparison-overlay {
     padding: 0;

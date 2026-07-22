@@ -1158,6 +1158,14 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     return item.adminMrp != null;
   }
 
+  hasFinalQuotationLine(item: InquiryItem): boolean {
+    return item.adminMrp != null || item.adminAvailable === false;
+  }
+
+  isFinalLineUnavailable(item: InquiryItem): boolean {
+    return item.adminAvailable === false;
+  }
+
   formatCurrency(value: number | null | undefined): string {
     return value == null ? '—' : value.toLocaleString(undefined, { maximumFractionDigits: 2 });
   }

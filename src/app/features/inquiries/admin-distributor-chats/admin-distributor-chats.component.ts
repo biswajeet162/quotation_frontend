@@ -164,6 +164,7 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   readonly finalizeModalOpen = signal(false);
   readonly mixFinalizeItems = signal<InquiryItem[]>([]);
   readonly mixDistributorByItemId = signal<Record<string, string>>({});
+  readonly mixUnavailableItemIds = signal<string[]>([]);
   /** Frontend-only: distributor chosen when finalizing (drives green + double-tick). */
   readonly finalChoiceCompanyId = signal<string | null>(null);
 
@@ -706,11 +707,16 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   onComparisonFinalizeRequested(selections: Map<string, string>): void {
     this.productSelections.set(new Map(selections));
     const mix = this.buildMixFinalizePayload(selections);
-    if (mix.items.length === 0) {
+    if (mix.items.length === 0 && mix.unavailableItemIds.length === 0) {
+      return;
+    }
+    if (mix.pricedItems.length === 0) {
+      this.toast.warning('Pick at least one product before finalizing.');
       return;
     }
     this.mixFinalizeItems.set(mix.items);
     this.mixDistributorByItemId.set(mix.mixDistributorByItemId);
+    this.mixUnavailableItemIds.set(mix.unavailableItemIds);
     this.comparisonModalOpen.set(false);
     this.finalizeModalOpen.set(true);
   }
@@ -721,21 +727,27 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
 
   onQuotationFinalized(): void {
     this.finalizeModalOpen.set(false);
-    void this.router.navigate(['/admin/queries'], {
-      queryParams: { finalized: '1' },
-    });
+    const inquiryId = this.inquiry()?.id;
+    if (inquiryId) {
+      this.loadInquiry(inquiryId);
+      this.loadAllDistributorQuotes();
+    }
   }
 
   private buildMixFinalizePayload(selections: Map<string, string>): {
     items: InquiryItem[];
+    pricedItems: InquiryItem[];
     mixDistributorByItemId: Record<string, string>;
+    unavailableItemIds: string[];
   } {
     const inquiry = this.inquiry();
     const quotes = this.quotesByDistributor();
     const items: InquiryItem[] = [];
+    const pricedItems: InquiryItem[] = [];
     const mixDistributorByItemId: Record<string, string> = {};
+    const unavailableItemIds: string[] = [];
     if (!inquiry) {
-      return { items, mixDistributorByItemId };
+      return { items, pricedItems, mixDistributorByItemId, unavailableItemIds };
     }
 
     for (const item of inquiry.items ?? []) {
@@ -745,25 +757,31 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
       }
       const companyId = selections.get(itemKey);
       if (!companyId) {
+        items.push({ ...item });
+        unavailableItemIds.push(item.id);
         continue;
       }
       const quoteItem = (quotes.get(companyId) ?? []).find(
         (line) => (line.id ?? line.productId) === itemKey,
       );
       if (!quoteItem || quoteItem.distributorMrp == null) {
+        items.push({ ...item });
+        unavailableItemIds.push(item.id);
         continue;
       }
-      items.push({
+      const pricedItem: InquiryItem = {
         ...item,
         distributorHsnCode: quoteItem.distributorHsnCode,
         distributorMrp: quoteItem.distributorMrp,
         distributorDiscountPercentage: quoteItem.distributorDiscountPercentage,
         distributorGstPercentage: quoteItem.distributorGstPercentage,
         distributorOurDeliveryDate: quoteItem.distributorOurDeliveryDate,
-      });
+      };
+      items.push(pricedItem);
+      pricedItems.push(pricedItem);
       mixDistributorByItemId[item.id] = companyId;
     }
-    return { items, mixDistributorByItemId };
+    return { items, pricedItems, mixDistributorByItemId, unavailableItemIds };
   }
 
   askForRequotation(): void {

@@ -34,6 +34,7 @@ export interface InquiryItem {
   adminMrp?: number;
   adminDiscountPercentage?: number;
   adminGstPercentage?: number;
+  adminAvailable?: boolean;
   distributorHsnCode?: string;
   distributorMrp?: number;
   distributorDiscountPercentage?: number;
@@ -207,5 +208,7 @@ export interface FinalizeQuotationRequest {
   /** Inquiry item id → source distributor company id for mix cost basis. */
   mixDistributorByItemId?: Record<string, string>;
   linePricing: AdminInquiryLinePricing[];
+  /** Inquiry item ids excluded from the final quotation (shown as unavailable to the consumer). */
+  unavailableItemIds?: string[];
   message?: string;
 }

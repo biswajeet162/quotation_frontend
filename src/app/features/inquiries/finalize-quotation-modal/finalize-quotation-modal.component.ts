@@ -33,6 +33,8 @@ export class FinalizeQuotationModalComponent {
   readonly quotationItems = input<InquiryItem[]>([]);
   /** itemId → distributor companyId for mix finalize. */
   readonly mixDistributorByItemId = input<Record<string, string>>({});
+  /** Inquiry item ids that will be sent as unavailable to the consumer. */
+  readonly unavailableItemIds = input<string[]>([]);
 
   readonly closed = output<void>();
   readonly finalized = output<void>();
@@ -45,6 +47,12 @@ export class FinalizeQuotationModalComponent {
   readonly formatExpectedDeliveryDate = formatExpectedDeliveryDate;
 
   readonly items = computed(() => this.quotationItems().filter((item) => item.distributorMrp != null));
+
+  readonly displayItems = computed(() => this.quotationItems());
+
+  readonly unavailableItemIdSet = computed(() => new Set(this.unavailableItemIds()));
+
+  readonly canSendToConsumer = computed(() => this.items().length > 0);
 
   readonly isMixFinalize = computed(() => Object.keys(this.mixDistributorByItemId()).length > 0);
 
@@ -190,6 +198,11 @@ export class FinalizeQuotationModalComponent {
     return trimmed ? trimmed : '—';
   }
 
+  isItemUnavailable(item: InquiryItem): boolean {
+    const itemId = item.id;
+    return itemId != null && this.unavailableItemIdSet().has(itemId);
+  }
+
   sendToConsumer(): void {
     const inquiry = this.inquiry();
     if (!inquiry) {
@@ -237,12 +250,18 @@ export class FinalizeQuotationModalComponent {
           ? { mixDistributorByItemId: mixMap }
           : { distributorCompanyId: distributor!.companyId }),
         linePricing,
+        unavailableItemIds: this.unavailableItemIds().length > 0 ? this.unavailableItemIds() : undefined,
         message: this.consumerMessage().trim() || undefined,
       })
       .subscribe({
         next: () => {
           this.loading.set(false);
-          this.toast.success('Final quotation sent to the consumer.');
+          const isRevision = this.inquiry()?.status === 'FINAL_SENT';
+          this.toast.success(
+            isRevision
+              ? 'Updated final quotation sent to the consumer.'
+              : 'Final quotation sent to the consumer.',
+          );
           this.finalized.emit();
           this.close();
         },
