@@ -212,3 +212,37 @@ export interface FinalizeQuotationRequest {
   unavailableItemIds?: string[];
   message?: string;
 }
+
+export interface InquiryFinalizationSnapshotLine {
+  inquiryItemId?: string;
+  productId?: string;
+  productName?: string;
+  productBrand?: string;
+  productDescription?: string;
+  quantity: number;
+  adminHsnCode?: string;
+  adminMrp?: number;
+  adminDiscountPercentage?: number;
+  adminGstPercentage?: number;
+  adminAvailable?: boolean;
+  expectedDeliveryDate?: string;
+}
+
+export interface InquiryFinalizationSnapshot {
+  id?: string;
+  communicationId?: string;
+  revisionNumber: number;
+  sentAt?: string;
+  message?: string;
+  consumerTotal?: number;
+  distributorTotal?: number;
+  marginPercentage?: number;
+  pdfAttachment?: {
+    id: string;
+    fileName: string;
+    contentType: string;
+    mediaType: string;
+    url: string;
+  };
+  items: InquiryFinalizationSnapshotLine[];
+}

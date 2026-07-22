@@ -25,6 +25,19 @@
         >
           By products
         </button>
+        <button
+          type="button"
+          role="tab"
+          class="view-mode-btn"
+          [class.active]="listViewMode() === 'finalization'"
+          [attr.aria-selected]="listViewMode() === 'finalization'"
+          (click)="setListViewMode('finalization')"
+        >
+          Finalization
+          @if (finalizationHistory().length > 0) {
+            <span class="view-mode-count">({{ finalizationHistory().length }})</span>
+          }
+        </button>
       </div>
     </div>
     <div class="page-header-actions">
@@ -58,7 +71,7 @@
       <button
         type="button"
         class="btn-secondary"
-        (click)="inquiry() && loadInquiry(inquiry()!.id)"
+        (click)="refreshList()"
         [disabled]="loading()"
       >
         Refresh
@@ -231,6 +244,143 @@
             }
           </p>
         </footer>
+      }
+    </div>
+  } @else if (listViewMode() === 'finalization') {
+    <div class="finalization-panel">
+      <div class="finalization-toolbar">
+        <p class="finalization-hint">
+          Every time you finalize from quotation comparison and send to the customer, a snapshot appears here
+          with the product table and PDF that was shared.
+        </p>
+      </div>
+
+      @if (finalizationError()) {
+        <div class="alert alert-error" role="alert">{{ finalizationError() }}</div>
+      }
+
+      @if (finalizationLoading()) {
+        <p class="state-message">Loading finalization history…</p>
+      } @else if (finalizationHistory().length === 0) {
+        <p class="state-message">
+          No finalizations yet. Use quotation comparison to pick products and send a final quotation to the customer.
+        </p>
+      } @else {
+        <div class="finalization-list">
+          @for (snapshot of finalizationHistory(); track snapshot.id ?? snapshot.communicationId ?? snapshot.revisionNumber) {
+            <article class="finalization-card">
+              <header class="finalization-card-header">
+                <div>
+                  <h2 class="finalization-card-title">
+                    Finalization #{{ snapshot.revisionNumber }}
+                  </h2>
+                  <p class="finalization-card-meta">
+                    Sent {{ formatFinalizationDate(snapshot.sentAt) }}
+                    @if (snapshot.consumerTotal != null) {
+                      · Consumer total {{ formatCurrency(snapshot.consumerTotal) }}
+                    }
+                  </p>
+                </div>
+                @if (snapshot.pdfAttachment; as pdf) {
+                  <button
+                    type="button"
+                    class="btn-pdf-view"
+                    (click)="openFinalizationPdf(snapshot)"
+                  >
+                    View PDF
+                  </button>
+                }
+              </header>
+
+              @if (snapshot.message) {
+                <p class="finalization-message">{{ snapshot.message }}</p>
+              }
+
+              @if (snapshot.items.length > 0) {
+                <div class="preview-table-wrap admin-pricing-table-wrap">
+                  <table class="preview-table admin-pricing-table">
+                    <thead>
+                      <tr>
+                        <th class="col-sno">S.No.</th>
+                        <th class="col-designation">Designation</th>
+                        <th class="col-brand">Brand</th>
+                        <th class="col-hsn-code">HSN code</th>
+                        <th class="col-description">Description</th>
+                        <th class="col-qty">Qty</th>
+                        <th class="col-mrp">MRP</th>
+                        <th class="col-discount">Disc. %</th>
+                        <th class="col-amount">Amount</th>
+                        <th class="col-gst">GST %</th>
+                        <th class="col-net-value">Net value</th>
+                        <th class="col-expected-delivery">Expected delivery</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (line of snapshot.items; track line.inquiryItemId ?? $index) {
+                        @if (hasSnapshotLine(line)) {
+                          <tr [class.line-unavailable]="isSnapshotLineUnavailable(line)">
+                            <td class="col-sno">{{ $index + 1 }}</td>
+                            <td class="col-designation consumer-cell">
+                              {{ displayProductField(line.productName) }}
+                            </td>
+                            <td class="col-brand consumer-cell">
+                              {{ displayProductField(line.productBrand) }}
+                            </td>
+                            <td class="col-hsn-code">
+                              @if (isSnapshotLineUnavailable(line)) {
+                                <span class="line-unavailable-label">Unavailable</span>
+                              } @else {
+                                {{ displayProductField(line.adminHsnCode) }}
+                              }
+                            </td>
+                            <td class="col-description consumer-cell preview-multiline">
+                              {{ displayProductField(line.productDescription) }}
+                            </td>
+                            <td class="col-qty consumer-cell">{{ line.quantity }}</td>
+                            @if (isSnapshotLineUnavailable(line)) {
+                              <td class="col-mrp" colspan="5">
+                                <span class="line-unavailable-label">Unavailable</span>
+                              </td>
+                            } @else {
+                              <td class="col-mrp">{{ formatCurrency(line.adminMrp) }}</td>
+                              <td class="col-discount">
+                                {{ formatOptionalPercent(line.adminDiscountPercentage) }}
+                              </td>
+                              <td class="col-amount">{{ formatCurrency(snapshotLineAmount(line)) }}</td>
+                              <td class="col-gst">
+                                {{ formatOptionalPercent(line.adminGstPercentage) }}
+                              </td>
+                              <td class="col-net-value">
+                                {{ formatCurrency(snapshotLineNetValue(line)) }}
+                              </td>
+                            }
+                            <td class="col-expected-delivery consumer-cell">
+                              {{ formatExpectedDeliveryDate(line.expectedDeliveryDate) }}
+                            </td>
+                          </tr>
+                        }
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              } @else {
+                <p class="finalization-legacy-note">
+                  Line-level details were not recorded for this finalization. Open the PDF to review what was sent.
+                </p>
+              }
+
+              @if (snapshot.pdfAttachment; as pdf) {
+                <div class="finalization-pdf-row">
+                  <span class="finalization-pdf-label">Attached PDF</span>
+                  <span class="finalization-pdf-filename" [title]="pdf.fileName">{{ pdf.fileName }}</span>
+                  <button type="button" class="btn-pdf-view" (click)="openFinalizationPdf(snapshot)">
+                    View
+                  </button>
+                </div>
+              }
+            </article>
+          }
+        </div>
       }
     </div>
   } @else {

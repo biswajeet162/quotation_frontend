@@ -14,7 +14,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { Inquiry, InquiryDistributor, InquiryItem, DistributorQuotationHistoryEntry } from '../../../core/models/inquiry.model';
+import { Inquiry, InquiryDistributor, InquiryItem, DistributorQuotationHistoryEntry, InquiryFinalizationSnapshot, InquiryFinalizationSnapshotLine } from '../../../core/models/inquiry.model';
 import { AdminCompanyProfile } from '../../../core/models/admin-company.model';
 import {
   InquiryTimelineEntry,
@@ -59,7 +59,7 @@ import { openPublicImages } from '../../../shared/utils/public-image.util';
 import { QuotationComparisonModalComponent } from '../quotation-comparison-modal/quotation-comparison-modal.component';
 import { FinalizeQuotationModalComponent } from '../finalize-quotation-modal/finalize-quotation-modal.component';
 
-type ListViewMode = 'distributors' | 'products';
+type ListViewMode = 'distributors' | 'products' | 'finalization';
 
 interface PendingAttachment {
   id: string;
@@ -165,6 +165,9 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   readonly mixFinalizeItems = signal<InquiryItem[]>([]);
   readonly mixDistributorByItemId = signal<Record<string, string>>({});
   readonly mixUnavailableItemIds = signal<string[]>([]);
+  readonly finalizationHistory = signal<InquiryFinalizationSnapshot[]>([]);
+  readonly finalizationLoading = signal(false);
+  readonly finalizationError = signal<string | null>(null);
   /** Frontend-only: distributor chosen when finalizing (drives green + double-tick). */
   readonly finalChoiceCompanyId = signal<string | null>(null);
 
@@ -507,6 +510,11 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
         this.syncDistributorSelection();
         this.resolveFinalChoiceOnLoad(inquiry);
         this.loadAllDistributorQuotes();
+        if (inquiry.status === 'FINAL_SENT') {
+          this.loadFinalizationHistory();
+        } else {
+          this.finalizationHistory.set([]);
+        }
       },
       error: (err) => {
         this.loading.set(false);
@@ -521,6 +529,116 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
     if (mode === 'products' && this.quotesByDistributor().size === 0) {
       this.loadAllDistributorQuotes();
     }
+    if (mode === 'finalization') {
+      this.loadFinalizationHistory();
+    }
+  }
+
+  refreshList(): void {
+    const inquiry = this.inquiry();
+    if (!inquiry) {
+      return;
+    }
+    this.loadInquiry(inquiry.id);
+    if (this.listViewMode() === 'products') {
+      this.loadAllDistributorQuotes();
+    }
+    if (this.listViewMode() === 'finalization') {
+      this.loadFinalizationHistory();
+    }
+  }
+
+  loadFinalizationHistory(): void {
+    const inquiry = this.inquiry();
+    if (!inquiry) {
+      this.finalizationHistory.set([]);
+      return;
+    }
+
+    this.finalizationLoading.set(true);
+    this.finalizationError.set(null);
+    this.inquiryService.getFinalizationHistory(inquiry.id).subscribe({
+      next: (history) => {
+        this.finalizationHistory.set(history ?? []);
+        this.finalizationLoading.set(false);
+      },
+      error: (err) => {
+        this.finalizationHistory.set([]);
+        this.finalizationLoading.set(false);
+        this.finalizationError.set('Could not load finalization history.');
+        this.toast.fromApiError(err, 'Could not load finalization history.');
+      },
+    });
+  }
+
+  hasSnapshotLine(line: InquiryFinalizationSnapshotLine): boolean {
+    return line.adminMrp != null || line.adminAvailable === false;
+  }
+
+  isSnapshotLineUnavailable(line: InquiryFinalizationSnapshotLine): boolean {
+    return line.adminAvailable === false;
+  }
+
+  snapshotLineAsItem(line: InquiryFinalizationSnapshotLine): InquiryItem {
+    return {
+      id: line.inquiryItemId,
+      productId: line.productId ?? line.inquiryItemId ?? '',
+      productName: line.productName,
+      productBrand: line.productBrand,
+      productDescription: line.productDescription,
+      quantity: line.quantity,
+      adminHsnCode: line.adminHsnCode,
+      adminMrp: line.adminMrp,
+      adminDiscountPercentage: line.adminDiscountPercentage,
+      adminGstPercentage: line.adminGstPercentage,
+      adminAvailable: line.adminAvailable,
+      expectedDeliveryDate: line.expectedDeliveryDate,
+    };
+  }
+
+  snapshotLineAmount(line: InquiryFinalizationSnapshotLine): number | null {
+    return quotationLinePricingFromAdmin(this.snapshotLineAsItem(line)).amount;
+  }
+
+  snapshotLineNetValue(line: InquiryFinalizationSnapshotLine): number | null {
+    return quotationLinePricingFromAdmin(this.snapshotLineAsItem(line)).netValue;
+  }
+
+  formatFinalizationDate(iso?: string): string {
+    if (!iso) {
+      return '—';
+    }
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) {
+      return iso;
+    }
+    return date.toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  }
+
+  openFinalizationPdf(snapshot: InquiryFinalizationSnapshot): void {
+    const attachment = snapshot.pdfAttachment;
+    if (!attachment?.url) {
+      this.toast.warning('No PDF is attached to this finalization.');
+      return;
+    }
+    this.inquiryService.fetchAttachmentBlob(attachment.url).subscribe({
+      next: (blob) => {
+        this.openPdfInViewer(
+          blob,
+          attachment.contentType || 'application/pdf',
+          attachment.fileName || 'final-quotation.pdf',
+        );
+      },
+      error: (err) => {
+        this.toast.fromApiError(err, 'Could not open the final quotation PDF.');
+      },
+    });
   }
 
   selectProductOffer(itemKey: string, companyId: string): void {
@@ -731,6 +849,9 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
     if (inquiryId) {
       this.loadInquiry(inquiryId);
       this.loadAllDistributorQuotes();
+      if (this.listViewMode() === 'finalization') {
+        this.loadFinalizationHistory();
+      }
     }
   }
 

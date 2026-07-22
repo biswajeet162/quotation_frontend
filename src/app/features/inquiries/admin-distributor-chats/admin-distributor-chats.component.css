@@ -68,6 +68,109 @@
   color: #0f172a;
 }
 
+.view-mode-count {
+  margin-left: 0.15rem;
+  font-size: 0.78rem;
+  opacity: 0.85;
+}
+
+.finalization-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow: auto;
+}
+
+.finalization-toolbar {
+  flex-shrink: 0;
+}
+
+.finalization-hint {
+  margin: 0;
+  font-size: 0.86rem;
+  color: #64748b;
+  max-width: 48rem;
+}
+
+.finalization-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.finalization-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.finalization-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+  background: #ecfdf5;
+  border-bottom: 1px solid #d1fae5;
+}
+
+.finalization-card-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #065f46;
+}
+
+.finalization-card-meta {
+  margin: 0.25rem 0 0;
+  font-size: 0.84rem;
+  color: #047857;
+}
+
+.finalization-message {
+  margin: 0;
+  padding: 0.85rem 1.1rem 0;
+  font-size: 0.88rem;
+  color: #334155;
+  white-space: pre-wrap;
+}
+
+.finalization-legacy-note {
+  margin: 0;
+  padding: 1rem 1.1rem;
+  font-size: 0.88rem;
+  color: #64748b;
+}
+
+.finalization-pdf-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1.1rem 1rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.finalization-pdf-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.finalization-pdf-filename {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.88rem;
+  color: #0f172a;
+}
+
 .products-compare-panel {
   flex: 1;
   min-height: 0;
