@@ -81,7 +81,15 @@
               <p class="detail-meta">
                 <span>{{ inquiry.inquiryId }}</span>
                 <span class="detail-meta-sep" aria-hidden="true">·</span>
-                <span class="detail-company">{{ inquiry.companyName || '—' }}</span>
+                <button
+                  type="button"
+                  class="detail-company detail-company-link"
+                  (click)="openCompanyDetails(inquiry.companyId, $event)"
+                  [attr.aria-label]="'View details for ' + (inquiry.companyName || 'company')"
+                  title="View company details"
+                >
+                  {{ inquiry.companyName || '—' }}
+                </button>
                 <span class="detail-meta-sep" aria-hidden="true">·</span>
                 <span>{{ productCountLabel(inquiry.items) }}</span>
                 <span class="detail-meta-sep" aria-hidden="true">·</span>
@@ -1354,6 +1362,81 @@
           </button>
         </div>
       </div>
+    </div>
+  </div>
+}
+
+@if (companyDetailsOpen()) {
+  <div class="confirm-overlay" (click)="closeCompanyDetails()" role="presentation">
+    <div
+      class="company-details-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="company-details-title"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="company-details-header">
+        <h2 id="company-details-title">Company details</h2>
+        <button type="button" class="company-details-close" (click)="closeCompanyDetails()" aria-label="Close">
+          ×
+        </button>
+      </div>
+
+      @if (companyDetailsLoading()) {
+        <p class="company-details-state">Loading company details…</p>
+      } @else if (companyDetailsError()) {
+        <div class="alert alert-error" role="alert">{{ companyDetailsError() }}</div>
+      } @else {
+        @if (companyDetails(); as company) {
+          <div class="company-details-body">
+            <div class="company-details-brand">
+              <div class="company-details-logo">
+                @if (companyLogoPreviewUrl()) {
+                  <img [src]="companyLogoPreviewUrl()!" [alt]="company.name + ' logo'" />
+                } @else {
+                  <span class="company-details-logo-placeholder">No logo</span>
+                }
+              </div>
+              <div>
+                <h3 class="company-details-name">{{ company.name }}</h3>
+                <p class="company-details-type">
+                  {{ company.companyType === 'CONSUMER' ? 'Consumer' : (company.companyType || 'Company') }}
+                  @if (company.isActive === false) {
+                    · Inactive
+                  }
+                </p>
+              </div>
+            </div>
+
+            <dl class="company-details-grid">
+              <div>
+                <dt>Email</dt>
+                <dd>{{ displayCompanyValue(company.email) }}</dd>
+              </div>
+              <div>
+                <dt>Phone</dt>
+                <dd>{{ displayCompanyValue(company.phone) }}</dd>
+              </div>
+              <div>
+                <dt>Secondary phone</dt>
+                <dd>{{ displayCompanyValue(company.phoneSecondary) }}</dd>
+              </div>
+              <div>
+                <dt>GST</dt>
+                <dd>{{ displayCompanyValue(company.gstNumber) }}</dd>
+              </div>
+              <div>
+                <dt>PAN</dt>
+                <dd>{{ displayCompanyValue(company.panNumber) }}</dd>
+              </div>
+              <div class="company-details-span">
+                <dt>Address</dt>
+                <dd>{{ formatCompanyAddress(company) }}</dd>
+              </div>
+            </dl>
+          </div>
+        }
+      }
     </div>
   </div>
 }

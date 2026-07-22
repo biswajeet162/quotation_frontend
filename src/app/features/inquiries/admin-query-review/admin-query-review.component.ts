@@ -26,7 +26,9 @@ import {
   TimelineAttachmentMediaType,
 } from '../../../core/models/inquiry-timeline.model';
 import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
+import { AdminCompanyService } from '../../../core/services/admin/admin-company.service';
 import { ToastService } from '../../../core/services/toast/toast.service';
+import { AdminCompanyProfile } from '../../../core/models/admin-company.model';
 import { InquiryChatAttachmentComponent } from '../../../shared/components/inquiry-chat-attachment/inquiry-chat-attachment.component';
 import { ChatAudioPlayerComponent } from '../../../shared/components/chat-audio-player/chat-audio-player.component';
 import {
@@ -83,6 +85,7 @@ interface DistributorSendPricingSnapshot {
 })
 export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   private readonly inquiryService = inject(InquiryService);
+  private readonly adminCompanyService = inject(AdminCompanyService);
   private readonly toast = inject(ToastService);
   private readonly sanitizer = inject(DomSanitizer);
   private readonly router = inject(Router);
@@ -98,6 +101,13 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   readonly actionLoading = signal(false);
   readonly actionError = signal<string | null>(null);
   readonly markAwaitingConsumer = signal(true);
+
+  readonly companyDetailsOpen = signal(false);
+  readonly companyDetailsLoading = signal(false);
+  readonly companyDetailsError = signal<string | null>(null);
+  readonly companyDetails = signal<AdminCompanyProfile | null>(null);
+  readonly companyLogoPreviewUrl = signal<string | null>(null);
+  private companyLogoObjectUrl: string | null = null;
 
   readonly distributorPickerOpen = signal(false);
   readonly distributorOptionsLoading = signal(false);
@@ -405,6 +415,10 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
+    if (this.companyDetailsOpen()) {
+      this.closeCompanyDetails();
+      return;
+    }
     if (this.quotationPdfViewerOpen()) {
       this.closeQuotationPdfViewer();
       return;
@@ -437,6 +451,7 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.cleanupRecordingResources(false);
     this.closeQuotationPdfViewer();
+    this.closeCompanyDetails();
   }
 
   load(): void {
@@ -1225,6 +1240,76 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
     }
     const pdfType = contentType.includes('pdf') ? contentType : 'application/pdf';
     return new Blob([blob], { type: pdfType });
+  }
+
+  openCompanyDetails(companyId: string | null | undefined, event?: Event): void {
+    event?.stopPropagation();
+    event?.preventDefault();
+    const id = companyId?.trim();
+    if (!id) {
+      this.toast.warning('Company details are not available for this request.');
+      return;
+    }
+
+    this.companyDetailsOpen.set(true);
+    this.companyDetailsLoading.set(true);
+    this.companyDetailsError.set(null);
+    this.companyDetails.set(null);
+    this.revokeCompanyLogoPreview();
+
+    this.adminCompanyService.getProfile(id).subscribe({
+      next: (profile) => {
+        this.companyDetails.set(profile);
+        this.companyDetailsLoading.set(false);
+        if (profile.logoUrl) {
+          this.loadCompanyLogoPreview(profile.id);
+        }
+      },
+      error: (err) => {
+        this.companyDetailsLoading.set(false);
+        this.companyDetailsError.set('Could not load company details.');
+        this.toast.fromApiError(err, 'Could not load company details.');
+      },
+    });
+  }
+
+  closeCompanyDetails(): void {
+    this.companyDetailsOpen.set(false);
+    this.companyDetailsLoading.set(false);
+    this.companyDetailsError.set(null);
+    this.companyDetails.set(null);
+    this.revokeCompanyLogoPreview();
+  }
+
+  displayCompanyValue(value?: string | null): string {
+    const trimmed = value?.trim();
+    return trimmed ? trimmed : '—';
+  }
+
+  formatCompanyAddress(profile: AdminCompanyProfile): string {
+    const parts = [profile.address, profile.city, profile.state, profile.country, profile.pinCode]
+      .map((part) => part?.trim())
+      .filter((part): part is string => !!part);
+    return parts.length > 0 ? parts.join(', ') : '—';
+  }
+
+  private loadCompanyLogoPreview(companyId: string): void {
+    this.adminCompanyService.loadProfileLogoBlob(companyId).subscribe({
+      next: (blob) => {
+        this.revokeCompanyLogoPreview();
+        this.companyLogoObjectUrl = URL.createObjectURL(blob);
+        this.companyLogoPreviewUrl.set(this.companyLogoObjectUrl);
+      },
+      error: () => this.revokeCompanyLogoPreview(),
+    });
+  }
+
+  private revokeCompanyLogoPreview(): void {
+    if (this.companyLogoObjectUrl) {
+      URL.revokeObjectURL(this.companyLogoObjectUrl);
+      this.companyLogoObjectUrl = null;
+    }
+    this.companyLogoPreviewUrl.set(null);
   }
 
   productCountLabel(items?: Inquiry['items']): string {
