@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { DistributorInquiry, DistributorInquirySummary } from '../../../core/models/distributor.model';
 import { InquiryItem, DistributorQuotationHistoryEntry } from '../../../core/models/inquiry.model';
 import {
@@ -71,10 +71,12 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   private readonly distributorInquiryService = inject(DistributorInquiryService);
   private readonly toast = inject(ToastService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly sanitizer = inject(DomSanitizer);
 
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
+  readonly deepLinkError = signal<string | null>(null);
   readonly inquirySummaries = signal<DistributorInquirySummary[]>([]);
   readonly selectedInquiry = signal<DistributorInquiry | null>(null);
   readonly searchQuery = signal('');
@@ -220,11 +222,9 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   );
 
   ngOnInit(): void {
-    const preselect = this.route.snapshot.queryParamMap.get('inquiry');
-    if (preselect) {
-      this.selectedId.set(preselect);
-    }
-    this.load();
+    this.route.queryParamMap.subscribe(() => {
+      this.load();
+    });
   }
 
   ngOnDestroy(): void {
@@ -253,11 +253,34 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   load(): void {
     this.loading.set(true);
     this.errorMessage.set(null);
+    this.deepLinkError.set(null);
+
+    const requestedInquiryRef =
+      this.route.snapshot.queryParamMap.get('inq')?.trim() ??
+      this.route.snapshot.queryParamMap.get('inquiry')?.trim() ??
+      null;
 
     this.distributorInquiryService.list().subscribe({
       next: (list) => {
         this.inquirySummaries.set(list);
         this.loading.set(false);
+
+        if (requestedInquiryRef) {
+          const match = list.find((summary) => summary.reference === requestedInquiryRef);
+          if (match) {
+            this.searchQuery.set('');
+            this.statusFilter.set('all');
+            this.selectedId.set(match.inquiryUuid);
+            this.loadSelectedInquiry(match.inquiryUuid);
+            return;
+          }
+          this.selectedId.set(null);
+          this.selectedInquiry.set(null);
+          this.timelineEntries.set([]);
+          this.deepLinkError.set('No such quotation request exists.');
+          return;
+        }
+
         const current = this.selectedId();
         const stillVisible =
           current != null && this.filteredSummaries().some((q) => q.inquiryUuid === current);
@@ -293,11 +316,20 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     this.closePdfViewer();
     this.quotationError.set(null);
     this.selectedId.set(id);
+    this.deepLinkError.set(null);
     this.messageError.set(null);
     this.messageText.set('');
     this.clearReplyTarget();
     this.timelineEntries.set([]);
     this.loadSelectedInquiry(id);
+
+    const summary = this.inquirySummaries().find((item) => item.inquiryUuid === id);
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: summary ? { inq: summary.reference } : { inq: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 
   openChatModal(): void {

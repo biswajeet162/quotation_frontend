@@ -64,7 +64,7 @@
               <a
                 class="recent-link"
                 [routerLink]="['/distributor/tracking']"
-                [queryParams]="item.inquiryUuid ? { inquiry: item.inquiryUuid } : {}"
+                [queryParams]="item.reference ? { inq: item.reference } : {}"
               >
               <div class="recent-main">
                 <span class="recent-id">{{ item.reference }}</span>
