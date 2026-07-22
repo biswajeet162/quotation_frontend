@@ -137,9 +137,6 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   readonly chatModalOpen = signal(false);
   readonly chatModalPosition = signal<{ x: number; y: number } | null>(null);
   readonly chatModalSize = signal<{ width: number; height: number } | null>(null);
-  readonly deleteConfirmOpen = signal(false);
-  readonly deleteLoading = signal(false);
-  readonly deleteError = signal<string | null>(null);
   readonly quotationPdfViewerOpen = signal(false);
   readonly quotationPdfSafeUrl = signal<SafeResourceUrl | null>(null);
   readonly quotationPdfViewerFileName = signal('');
@@ -459,10 +456,6 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
     }
     if (this.chatModalOpen()) {
       this.closeChatModal();
-      return;
-    }
-    if (this.deleteConfirmOpen()) {
-      this.closeDeleteConfirm();
     }
   }
 
@@ -1328,46 +1321,6 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
     ) {
       this.endChatPointerInteraction();
     }
-  }
-
-  openDeleteConfirm(): void {
-    if (!this.inquiry()) {
-      return;
-    }
-    this.deleteError.set(null);
-    this.deleteConfirmOpen.set(true);
-  }
-
-  closeDeleteConfirm(): void {
-    if (this.deleteLoading()) {
-      return;
-    }
-    this.deleteConfirmOpen.set(false);
-  }
-
-  confirmDelete(): void {
-    const inquiry = this.inquiry();
-    if (!inquiry) {
-      this.closeDeleteConfirm();
-      return;
-    }
-
-    this.deleteLoading.set(true);
-    this.deleteError.set(null);
-
-    this.inquiryService.delete(inquiry.id).subscribe({
-      next: () => {
-        this.deleteLoading.set(false);
-        this.deleteConfirmOpen.set(false);
-        this.toast.success('Quotation request deleted.');
-        void this.router.navigate(['/admin/queries']);
-      },
-      error: (err) => {
-        this.deleteLoading.set(false);
-        this.deleteError.set(err?.error?.message ?? 'Could not delete this request.');
-        this.toast.fromApiError(err, 'Could not delete this request.');
-      },
-    });
   }
 
   refreshMessages(): void {

@@ -932,23 +932,6 @@
   color: #fff;
 }
 
-.btn-delete {
-  padding: 0.5rem 0.85rem;
-  border-radius: 8px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  cursor: pointer;
-  background: #fff;
-  border: 1px solid #fecaca;
-  color: #b91c1c;
-  white-space: nowrap;
-}
-
-.btn-delete:hover {
-  background: #fef2f2;
-  border-color: #f87171;
-}
-
 .btn-requote {
   white-space: nowrap;
 }

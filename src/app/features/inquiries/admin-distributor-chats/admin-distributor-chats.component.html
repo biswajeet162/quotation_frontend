@@ -347,9 +347,6 @@
                     </svg>
                     Chat with distributor
                   </button>
-                  <button type="button" class="btn-delete" (click)="openDeleteConfirm()">
-                    Delete request
-                  </button>
                   @if (distributor.responseReceived && !distributor.requotationRequested) {
                     <button
                       type="button"
@@ -1118,47 +1115,6 @@
   }
 }
 
-@if (deleteConfirmOpen() && inquiry(); as toDelete) {
-  <div class="confirm-overlay" (click)="closeDeleteConfirm()" role="presentation">
-    <div
-      class="confirm-dialog"
-      role="alertdialog"
-      aria-labelledby="delete-confirm-title"
-      aria-modal="true"
-      (click)="$event.stopPropagation()"
-    >
-      <div class="confirm-icon" aria-hidden="true">!</div>
-      <h2 id="delete-confirm-title">Delete this quotation request?</h2>
-      <p class="confirm-lead">
-        This will permanently remove the request and all product lines. You cannot undo this.
-      </p>
-      <div class="confirm-summary">
-        <div class="confirm-summary-row">
-          <span class="confirm-label">Reference</span>
-          <span class="confirm-value">{{ toDelete.inquiryId }}</span>
-        </div>
-        <div class="confirm-summary-row">
-          <span class="confirm-label">Title</span>
-          <span class="confirm-value">{{ toDelete.title }}</span>
-        </div>
-      </div>
-      @if (deleteError()) {
-        <div class="alert alert-error confirm-alert" role="alert">{{ deleteError() }}</div>
-      }
-      <div class="confirm-actions">
-        <button type="button" class="btn-secondary" (click)="closeDeleteConfirm()">Keep request</button>
-        <button
-          type="button"
-          class="btn-danger-solid"
-          [disabled]="deleteLoading()"
-          (click)="confirmDelete()"
-        >
-          {{ deleteLoading() ? 'Deleting…' : 'Yes, delete' }}
-        </button>
-      </div>
-    </div>
-  </div>
-}
 @if (quotationPdfViewerOpen() && quotationPdfSafeUrl(); as pdfUrl) {
   <div class="pdf-viewer-overlay" role="presentation">
     <div
