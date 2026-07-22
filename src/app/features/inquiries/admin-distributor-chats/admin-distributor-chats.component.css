@@ -252,6 +252,33 @@
   font-weight: 600;
 }
 
+.product-offers-table tr.offer-unavailable {
+  position: relative;
+  background: #f8fafc;
+  color: #334155;
+}
+
+.product-offers-table tr.offer-unavailable td {
+  position: relative;
+  color: #334155;
+  background-image: linear-gradient(
+    to bottom,
+    transparent calc(50% - 1px),
+    #0f172a calc(50% - 1px),
+    #0f172a calc(50% + 1px),
+    transparent calc(50% + 1px)
+  );
+}
+
+.product-offers-table tr.offer-unavailable .offer-distributor-link {
+  color: #334155;
+}
+
+.offer-badge--unavailable {
+  color: #334155;
+  background: #e2e8f0;
+}
+
 .offer-distributor-link {
   border: none;
   background: none;
@@ -818,11 +845,38 @@
   );
 }
 
+.preview-table tbody tr.line-unavailable td {
+  position: relative;
+  color: #334155;
+  background-image: linear-gradient(
+    to bottom,
+    transparent calc(50% - 1.5px),
+    #0f172a calc(50% - 1.5px),
+    #0f172a calc(50% + 1.5px),
+    transparent calc(50% + 1.5px)
+  );
+}
+
 .preview-table tbody tr.line-cancelled .line-input,
 .preview-table tbody tr.line-cancelled .chat-readonly-value,
 .preview-table tbody tr.line-cancelled .consumer-cell,
 .preview-table tbody tr.line-cancelled .btn-attachment-link {
   color: #b91c1c;
+}
+
+.preview-table tbody tr.line-unavailable .line-input,
+.preview-table tbody tr.line-unavailable .chat-readonly-value,
+.preview-table tbody tr.line-unavailable .consumer-cell,
+.preview-table tbody tr.line-unavailable .btn-attachment-link,
+.preview-table tbody tr.line-unavailable .line-unavailable-label {
+  color: #334155;
+}
+
+.line-unavailable-label {
+  display: inline-block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #334155;
 }
 
 .requote-note-panel {

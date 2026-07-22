@@ -1,5 +1,8 @@
 import { InquiryItem } from '../../core/models/inquiry.model';
-import { quotationLinePricingFromDistributor } from './inquiry-pricing.util';
+import {
+  isDistributorLineUnavailable,
+  quotationLinePricingFromDistributor,
+} from './inquiry-pricing.util';
 
 /**
  * Product-offer ranking policy (admin "By products" mix + comparison dashboard).
@@ -80,7 +83,8 @@ export function toRankableOfferFromQuoteItem(
     companyId,
     amount: pricing.amount,
     deliveryDate: pricing.ourDeliveryDate ?? null,
-    responseReceived: responseReceived && pricing.mrp != null,
+    responseReceived:
+      responseReceived && !isDistributorLineUnavailable(quoteItem) && pricing.mrp != null,
   };
 }
 

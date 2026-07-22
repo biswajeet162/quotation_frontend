@@ -113,6 +113,9 @@
                       @if (section.awaitingCount > 0) {
                         · {{ section.awaitingCount }} awaiting
                       }
+                      @if (section.unavailableCount > 0) {
+                        · {{ section.unavailableCount }} unavailable
+                      }
                     </p>
                   </div>
                 </div>
@@ -150,14 +153,15 @@
                           [class.offer-best]="offer.isBestPrice"
                           [class.offer-selected]="isProductOfferSelected(section.itemKey, offer.companyId)"
                           [class.offer-cancelled]="isOfferCancelled(section, offer)"
-                          [class.offer-awaiting]="!offer.responseReceived"
+                          [class.offer-unavailable]="offer.unavailable"
+                          [class.offer-awaiting]="!offer.responseReceived && !offer.unavailable"
                         >
                           <td class="col-pick">
                             <input
                               type="radio"
                               [name]="'product-offer-' + section.itemKey"
                               [checked]="isProductOfferSelected(section.itemKey, offer.companyId)"
-                              [disabled]="!offer.responseReceived"
+                              [disabled]="!offer.responseReceived || offer.unavailable"
                               (change)="selectProductOffer(section.itemKey, offer.companyId)"
                               [attr.aria-label]="
                                 'Select ' + offer.companyName + ' for ' + displayProductField(section.item.productBrand)
@@ -178,11 +182,20 @@
                             @if (isOfferCancelled(section, offer)) {
                               <span class="offer-badge offer-badge--cancelled">Cancelled</span>
                             }
+                            @if (offer.unavailable) {
+                              <span class="offer-badge offer-badge--unavailable">Unavailable</span>
+                            }
                           </td>
                           <td>
-                            {{ offer.responseReceived ? 'Quoted' : 'Awaiting' }}
+                            @if (offer.unavailable) {
+                              Unavailable
+                            } @else if (offer.responseReceived) {
+                              Quoted
+                            } @else {
+                              Awaiting
+                            }
                           </td>
-                          <td>{{ formatOptionalNumber(offer.mrp) }}</td>
+                          <td>{{ offer.unavailable ? 'Unavailable' : formatOptionalNumber(offer.mrp) }}</td>
                           <td>{{ offer.responseReceived ? formatOptionalPercent(offer.discountPercentage) : '—' }}</td>
                           <td>{{ formatCurrency(offer.amount) }}</td>
                           <td>{{ offer.responseReceived ? formatOptionalPercent(offer.gstPercentage) : '—' }}</td>
@@ -571,7 +584,9 @@
                                         @if (hasQuotationLine(item)) {
                                           @if (getQuotationLineDraft(item); as quoted) {
                                             <tr
+                                              [class.line-unavailable]="isLineUnavailable(item)"
                                               [class.line-cancelled]="
+                                                !isLineUnavailable(item) &&
                                                 isLatestQuotationHistoryEntry(entry) &&
                                                 isDistributorItemCancelled(item, distributor.companyId)
                                               "
@@ -602,9 +617,13 @@
                                               </td>
                                               <td class="col-qty consumer-cell">{{ item.quantity }}</td>
                                               <td class="col-mrp">
-                                                <span class="line-input line-input-number line-input-readonly chat-readonly-value">
-                                                  {{ formatOptionalNumber(quoted.mrp) }}
-                                                </span>
+                                                @if (isLineUnavailable(item)) {
+                                                  <span class="line-unavailable-label">Unavailable</span>
+                                                } @else {
+                                                  <span class="line-input line-input-number line-input-readonly chat-readonly-value">
+                                                    {{ formatOptionalNumber(quoted.mrp) }}
+                                                  </span>
+                                                }
                                               </td>
                                               <td class="col-discount">
                                                 <span class="line-input line-input-number line-input-readonly chat-readonly-value">

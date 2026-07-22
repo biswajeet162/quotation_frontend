@@ -28,6 +28,8 @@ import { InquiryChatAttachmentComponent } from '../../../shared/components/inqui
 import { ChatAudioPlayerComponent } from '../../../shared/components/chat-audio-player/chat-audio-player.component';
 import { formatExpectedDeliveryDate, getRequestSourceLabel } from '../../../shared/utils/inquiry-display.util';
 import {
+  hasDistributorQuotationResponse,
+  isDistributorLineUnavailable,
   quotationLinePricingFromAdmin,
   quotationLinePricingFromDistributor,
 } from '../../../shared/utils/inquiry-pricing.util';
@@ -77,6 +79,7 @@ interface AdminInquiryLineDraft {
 interface ProductOfferQuote {
   companyId: string;
   companyName: string;
+  unavailable: boolean;
   responseReceived: boolean;
   mrp: number | null;
   discountPercentage: number;
@@ -93,6 +96,7 @@ interface ProductCompareSection {
   offers: ProductOfferQuote[];
   selectedCompanyId: string | null;
   quotedCount: number;
+  unavailableCount: number;
   awaitingCount: number;
 }
 
@@ -280,16 +284,19 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
           continue;
         }
 
+        const unavailable = isDistributorLineUnavailable(quoteItem);
         const pricing = quotationLinePricingFromDistributor(quoteItem);
         offers.push({
           companyId: distributor.companyId,
           companyName: distributor.companyName?.trim() || 'Distributor',
-          responseReceived: !!distributor.responseReceived && pricing.mrp != null,
-          mrp: pricing.mrp,
+          unavailable,
+          responseReceived:
+            !unavailable && !!distributor.responseReceived && pricing.mrp != null,
+          mrp: unavailable ? null : pricing.mrp,
           discountPercentage: pricing.discountPercentage,
           gstPercentage: pricing.gstPercentage,
-          amount: pricing.amount,
-          netValue: pricing.netValue,
+          amount: unavailable ? null : pricing.amount,
+          netValue: unavailable ? null : pricing.netValue,
           deliveryDate: pricing.ourDeliveryDate,
           isBestPrice: false,
         });
@@ -303,19 +310,26 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
       }));
 
       markedOffers.sort((a, b) => {
-        if (a.responseReceived !== b.responseReceived) {
-          return a.responseReceived ? -1 : 1;
-        }
-        const aRank = rank.rankedCompanyIds.indexOf(a.companyId);
-        const bRank = rank.rankedCompanyIds.indexOf(b.companyId);
-        if (aRank >= 0 && bRank >= 0 && aRank !== bRank) {
+        const rankValue = (offer: ProductOfferQuote) => {
+          if (offer.responseReceived) {
+            return 0;
+          }
+          if (offer.unavailable) {
+            return 1;
+          }
+          return 2;
+        };
+        const aRank = rankValue(a);
+        const bRank = rankValue(b);
+        if (aRank !== bRank) {
           return aRank - bRank;
         }
-        if (aRank >= 0) {
-          return -1;
-        }
-        if (bRank >= 0) {
-          return 1;
+        if (a.responseReceived && b.responseReceived) {
+          const aRankIndex = rank.rankedCompanyIds.indexOf(a.companyId);
+          const bRankIndex = rank.rankedCompanyIds.indexOf(b.companyId);
+          if (aRankIndex >= 0 && bRankIndex >= 0 && aRankIndex !== bRankIndex) {
+            return aRankIndex - bRankIndex;
+          }
         }
         return a.companyName.localeCompare(b.companyName, undefined, { sensitivity: 'base' });
       });
@@ -326,7 +340,9 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
         offers: markedOffers,
         selectedCompanyId: selections.get(itemKey) ?? null,
         quotedCount: markedOffers.filter((offer) => offer.responseReceived).length,
-        awaitingCount: markedOffers.filter((offer) => !offer.responseReceived).length,
+        unavailableCount: markedOffers.filter((offer) => offer.unavailable).length,
+        awaitingCount: markedOffers.filter((offer) => !offer.responseReceived && !offer.unavailable)
+          .length,
       };
     });
   });
@@ -554,8 +570,11 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
     this.selectDistributor(companyId);
   }
 
-  /** Quoted rows that are not the current pick — kept visible with a cancel strike. */
+  /** Quoted rows that are not the current pick — kept visible with a red cancel strike. */
   isOfferCancelled(section: ProductCompareSection, offer: ProductOfferQuote): boolean {
+    if (offer.unavailable) {
+      return false;
+    }
     if (!offer.responseReceived) {
       return false;
     }
@@ -570,6 +589,9 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
    * in the by-products mix selection.
    */
   isDistributorItemCancelled(item: InquiryItem, distributorCompanyId?: string | null): boolean {
+    if (this.isLineUnavailable(item)) {
+      return false;
+    }
     const companyId = distributorCompanyId ?? this.selectedDistributorCompanyId();
     if (!companyId) {
       return false;
@@ -1634,8 +1656,10 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   }
 
   hasQuotationLine(item: InquiryItem): boolean {
-    return item.distributorMrp != null;
+    return hasDistributorQuotationResponse(item);
   }
+
+  readonly isLineUnavailable = isDistributorLineUnavailable;
 
   quotationLineAmount(item: InquiryItem, draft?: AdminInquiryLineDraft): number | null {
     const lineDraft = draft ?? this.getQuotationLineDraft(item);

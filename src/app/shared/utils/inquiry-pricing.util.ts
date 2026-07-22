@@ -1,5 +1,17 @@
 import { InquiryItem } from '../../core/models/inquiry.model';
 
+export function isDistributorLineUnavailable(item: InquiryItem): boolean {
+  return item.distributorAvailable === false;
+}
+
+/** Distributor submitted a priced line or explicitly marked the product unavailable. */
+export function hasDistributorQuotationResponse(item: InquiryItem): boolean {
+  if (isDistributorLineUnavailable(item)) {
+    return true;
+  }
+  return item.distributorMrp != null;
+}
+
 export interface QuotationLinePricing {
   mrp: number | null;
   discountPercentage: number;
