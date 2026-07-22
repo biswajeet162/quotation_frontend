@@ -40,6 +40,26 @@ export interface AdminConsumerCompanyDetail {
   employees: AdminConsumerEmployee[];
 }
 
+export interface AdminCompanyProfile {
+  id: string;
+  name: string;
+  companyType?: string;
+  email: string;
+  phone: string;
+  phoneSecondary?: string;
+  gstNumber?: string;
+  panNumber?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  pinCode?: string;
+  isActive?: boolean;
+  logoUrl?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface CreateAdminConsumerCompanyRequest {
   name: string;
   email: string;

@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import {
+  AdminCompanyProfile,
   AdminConsumerCompanyDetail,
   AdminConsumerCompanySummary,
   CreateAdminConsumerCompanyRequest,
@@ -25,6 +26,10 @@ export class AdminCompanyService {
     return this.http.get<AdminConsumerCompanyDetail>(`${this.baseUrl}/${id}`);
   }
 
+  getProfile(id: string): Observable<AdminCompanyProfile> {
+    return this.http.get<AdminCompanyProfile>(`${this.baseUrl}/${id}/profile`);
+  }
+
   create(request: CreateAdminConsumerCompanyRequest): Observable<AdminConsumerCompanyDetail> {
     return this.http.post<AdminConsumerCompanyDetail>(this.baseUrl, request);
   }
@@ -41,6 +46,10 @@ export class AdminCompanyService {
 
   loadLogoBlob(id: string): Observable<Blob> {
     return this.http.get(`${this.baseUrl}/${id}/logo/content`, { responseType: 'blob' });
+  }
+
+  loadProfileLogoBlob(id: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/${id}/profile/logo`, { responseType: 'blob' });
   }
 
   addEmployee(id: string, request: CreateAdminConsumerEmployeeRequest): Observable<AdminConsumerCompanyDetail> {
