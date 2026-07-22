@@ -18,7 +18,7 @@ export interface ToastMessage {
  * Single place to tune toast behaviour for the whole app.
  * Change {@link TOAST_DURATION_MS} to adjust how long every toast stays visible.
  */
-export const TOAST_DURATION_MS = 5000;
+export const TOAST_DURATION_MS = 8000;
 
 @Injectable({ providedIn: 'root' })
 export class ToastService {
