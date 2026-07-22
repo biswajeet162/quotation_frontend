@@ -578,8 +578,20 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     });
   }
 
+  isRequiredNumberEmpty(value?: number | null): boolean {
+    return value == null;
+  }
+
+  isRequiredNumberFilled(value?: number | null): boolean {
+    return value != null && value >= 0;
+  }
+
   isPercentageOverLimit(value?: number | null): boolean {
     return value != null && value > 100;
+  }
+
+  isPercentageFieldEmptyOrOverLimit(value?: number | null): boolean {
+    return this.isRequiredNumberEmpty(value) || this.isPercentageOverLimit(value);
   }
 
   isPercentageFieldValid(value?: number | null): boolean {
