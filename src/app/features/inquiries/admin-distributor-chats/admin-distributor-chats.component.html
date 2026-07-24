@@ -24,6 +24,9 @@
           (click)="setListViewMode('products')"
         >
           By products
+          @if (hasQuoteChangeAlerts()) {
+            <span class="view-mode-need-action">Need action</span>
+          }
         </button>
         <button
           type="button"
@@ -79,6 +82,31 @@
     </div>
   </header>
 
+  @if (hasQuoteChangeAlerts()) {
+    <div class="quote-change-banner" role="status">
+      <div class="quote-change-banner-text">
+        <strong>Need action</strong>
+        <span>
+          {{ quoteChangeAlerts().length }} product{{ quoteChangeAlerts().length === 1 ? '' : 's' }}
+          ha{{ quoteChangeAlerts().length === 1 ? 's' : 've' }} new or better quotes since
+          @if (latestFinalization(); as latest) {
+            finalization #{{ latest.revisionNumber }}.
+          } @else {
+            the last finalization.
+          }
+        </span>
+      </div>
+      <div class="quote-change-banner-actions">
+        <button type="button" class="btn-secondary btn-banner-action" (click)="openQuoteChangeModal()">
+          View details
+        </button>
+        <button type="button" class="btn-comparison btn-banner-action" (click)="openComparisonModal()">
+          Compare quotes
+        </button>
+      </div>
+    </div>
+  }
+
   @if (!loading()) {
   @if (errorMessage()) {
     <div class="alert alert-error" role="alert">{{ errorMessage() }}</div>
@@ -110,7 +138,11 @@
       } @else {
         <div class="products-compare-list">
           @for (section of productCompareSections(); track section.itemKey; let idx = $index) {
-            <article class="product-compare-card" [class.has-selection]="!!section.selectedCompanyId">
+            <article
+              class="product-compare-card"
+              [class.has-selection]="!!section.selectedCompanyId"
+              [class.needs-action]="isProductNeedingAction(section.itemKey)"
+            >
               <header class="product-compare-header">
                 <div class="product-compare-title-block">
                   <span class="product-compare-index">{{ idx + 1 }}.</span>
@@ -120,6 +152,9 @@
                       ·
                       {{ displayProductField(section.item.productName) }}
                     </h2>
+                    @if (isProductNeedingAction(section.itemKey)) {
+                      <span class="need-action-badge">Need action</span>
+                    }
                     <p class="product-compare-meta">
                       Qty {{ section.item.quantity }}
                       · {{ section.quotedCount }} quote{{ section.quotedCount === 1 ? '' : 's' }}
@@ -412,6 +447,7 @@
                 [class.step-in-progress]="getDistributorListStep(distributor) === 'in-progress'"
                 [class.step-green]="getDistributorListStep(distributor) === 'green'"
                 [class.is-final-choice]="isFinalChoiceDistributor(distributor)"
+                [class.needs-action]="isDistributorNeedingAction(distributor)"
                 [attr.aria-label]="
                   distributorLabel(distributor) +
                   ' — ' +
@@ -422,6 +458,9 @@
               >
                 <span class="query-item-heading">
                   <span class="query-title">{{ distributorLabel(distributor) }}</span>
+                  @if (isDistributorNeedingAction(distributor)) {
+                    <span class="need-action-badge need-action-badge--compact">Need action</span>
+                  }
                   <span class="query-heading-end">
                     @if (distributorPickRatio(distributor); as pick) {
                       <span
@@ -518,15 +557,19 @@
                     </svg>
                     Chat with distributor
                   </button>
-                  @if (distributor.responseReceived && !distributor.requotationRequested) {
+                  @if (canShowRequotationButton(distributor)) {
                     <button
                       type="button"
                       class="btn-secondary btn-requote"
                       (click)="askForRequotation()"
                       [disabled]="!canAskRequotation() || requoteLoading()"
-                      title="Ask this distributor to submit a revised quotation"
+                      [title]="
+                        canAskRequotation()
+                          ? 'Ask this distributor to submit a revised quotation'
+                          : requotationButtonLabel(distributor)
+                      "
                     >
-                      {{ requoteLoading() ? 'Requesting…' : 'Ask for re-quotations' }}
+                      {{ requoteLoading() ? 'Requesting…' : requotationButtonLabel(distributor) }}
                     </button>
                   }
                 </div>
@@ -1408,6 +1451,92 @@
         [src]="pdfUrl"
         [title]="quotationPdfViewerFileName()"
       ></iframe>
+    </div>
+  </div>
+}
+
+@if (quoteChangeModalOpen()) {
+  <div class="quote-change-overlay" (click)="dismissQuoteChangeModal()" role="presentation">
+    <div
+      class="quote-change-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="quote-change-title"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="quote-change-header">
+        <div>
+          <p class="quote-change-eyebrow">Need action</p>
+          <h2 id="quote-change-title">New quotes since last finalization</h2>
+          @if (latestFinalization(); as latest) {
+            <p class="quote-change-subtitle">
+              Compared with finalization #{{ latest.revisionNumber }}
+              · {{ formatFinalizationDate(latest.sentAt) }}
+            </p>
+          }
+        </div>
+        <button
+          type="button"
+          class="quote-change-close"
+          (click)="dismissQuoteChangeModal()"
+          aria-label="Close"
+        >
+          ×
+        </button>
+      </header>
+
+      <div class="quote-change-body">
+        <p class="quote-change-intro">
+          Distributor pricing has changed since you last sent a final quotation. This may be from a
+          re-quotation response, a late distributor reply, or a better price now available. Review
+          and compare before sending an updated finalization to the customer.
+        </p>
+
+        <ul class="quote-change-list">
+          @for (alert of quoteChangeAlerts(); track alert.itemKey) {
+            <li class="quote-change-item">
+              <div class="quote-change-item-head">
+                <strong>
+                  {{ displayProductField(alert.productBrand) }}
+                  ·
+                  {{ displayProductField(alert.productName) }}
+                </strong>
+                <span class="need-action-badge">Need action</span>
+              </div>
+              <ul class="quote-change-reasons">
+                @for (reason of alert.reasons; track reason) {
+                  <li>{{ reason }}</li>
+                }
+              </ul>
+              @if (alert.distributorNames.length > 0) {
+                <p class="quote-change-distributors">
+                  Updated from:
+                  {{ alert.distributorNames.join(', ') }}
+                </p>
+              }
+              @if (alert.previousSummary || alert.currentSummary) {
+                <p class="quote-change-amounts">
+                  @if (alert.previousSummary) {
+                    <span>Last: {{ alert.previousSummary }}</span>
+                  }
+                  @if (alert.currentSummary) {
+                    <span>Best now: {{ alert.currentSummary }}</span>
+                  }
+                </p>
+              }
+            </li>
+          }
+        </ul>
+      </div>
+
+      <footer class="quote-change-footer">
+        <button type="button" class="btn-secondary" (click)="dismissQuoteChangeModal()">
+          Dismiss
+        </button>
+        <button type="button" class="btn-comparison" (click)="openComparisonFromQuoteChangeAlert()">
+          Open quotation comparison
+        </button>
+      </footer>
     </div>
   </div>
 }

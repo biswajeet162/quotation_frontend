@@ -226,6 +226,10 @@ export interface InquiryFinalizationSnapshotLine {
   adminGstPercentage?: number;
   adminAvailable?: boolean;
   expectedDeliveryDate?: string;
+  distributorCompanyId?: string;
+  distributorMrp?: number;
+  distributorDiscountPercentage?: number;
+  distributorGstPercentage?: number;
 }
 
 export interface InquiryFinalizationSnapshot {

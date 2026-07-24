@@ -55,6 +55,13 @@ import {
   noticeDisplayLabel,
 } from '../../../shared/utils/timeline-chat.util';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
+import {
+  buildQuoteChangeAlerts,
+  distributorNeedsQuoteAction,
+  productNeedsQuoteAction,
+  quoteChangeDismissKey,
+  QuoteChangeAlert,
+} from '../../../shared/utils/quote-change-alert.util';
 import { openPublicImages } from '../../../shared/utils/public-image.util';
 import { QuotationComparisonModalComponent } from '../quotation-comparison-modal/quotation-comparison-modal.component';
 import { FinalizeQuotationModalComponent } from '../finalize-quotation-modal/finalize-quotation-modal.component';
@@ -229,15 +236,41 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   readonly canAskRequotation = computed(() => {
     const inquiry = this.inquiry();
     const distributor = this.selectedDistributor();
+    if (!inquiry || inquiry.status === 'CLOSED' || !distributor) {
+      return false;
+    }
+    if (distributor.requotationRequested && !distributor.responseReceived) {
+      return false;
+    }
     return (
-      !!inquiry &&
-      inquiry.status !== 'CLOSED' &&
-      inquiry.status !== 'FINAL_SENT' &&
-      !!distributor?.responseReceived &&
-      !distributor.requotationRequested &&
+      (!!distributor.responseReceived || this.hasPreviousDistributorQuotation()) &&
       this.canMessage(inquiry)
     );
   });
+
+  readonly latestFinalization = computed(() => this.finalizationHistory()[0] ?? null);
+
+  readonly quoteChangeAlerts = computed((): QuoteChangeAlert[] =>
+    buildQuoteChangeAlerts(
+      this.latestFinalization(),
+      this.productCompareSections().map((section) => ({
+        itemKey: section.itemKey,
+        item: section.item,
+        offers: section.offers.map((offer) => ({
+          companyId: offer.companyId,
+          companyName: offer.companyName,
+          responseReceived: offer.responseReceived,
+          unavailable: offer.unavailable,
+          amount: offer.amount,
+        })),
+      })),
+      this.distributors(),
+    ),
+  );
+
+  readonly hasQuoteChangeAlerts = computed(() => this.quoteChangeAlerts().length > 0);
+
+  readonly quoteChangeModalOpen = signal(false);
 
   readonly hasPreviousDistributorQuotation = computed(() =>
     this.quotationHistory().some((entry) => entry.type === 'QUOTATION') ||
@@ -548,6 +581,67 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
     }
   }
 
+  canShowRequotationButton(distributor: InquiryDistributor): boolean {
+    const inquiry = this.inquiry();
+    if (!inquiry || inquiry.status === 'CLOSED') {
+      return false;
+    }
+    return !!distributor.responseReceived || !!distributor.requotationRequested;
+  }
+
+  requotationButtonLabel(distributor: InquiryDistributor): string {
+    if (distributor.requotationRequested && !distributor.responseReceived) {
+      return 'Re-quotation pending';
+    }
+    return 'Ask for re-quotations';
+  }
+
+  isProductNeedingAction(itemKey: string): boolean {
+    return productNeedsQuoteAction(itemKey, this.quoteChangeAlerts());
+  }
+
+  isDistributorNeedingAction(distributor: InquiryDistributor): boolean {
+    return distributorNeedsQuoteAction(
+      distributor.companyId,
+      this.latestFinalization(),
+      this.distributors(),
+    );
+  }
+
+  openQuoteChangeModal(): void {
+    this.quoteChangeModalOpen.set(true);
+  }
+
+  dismissQuoteChangeModal(): void {
+    const inquiry = this.inquiry();
+    const latest = this.latestFinalization();
+    if (inquiry && latest) {
+      sessionStorage.setItem(quoteChangeDismissKey(inquiry, latest), '1');
+    }
+    this.quoteChangeModalOpen.set(false);
+  }
+
+  openComparisonFromQuoteChangeAlert(): void {
+    this.dismissQuoteChangeModal();
+    this.openComparisonModal();
+  }
+
+  private maybeShowQuoteChangeModal(): void {
+    if (this.finalizationLoading() || this.productQuotesLoading()) {
+      return;
+    }
+    const inquiry = this.inquiry();
+    const latest = this.latestFinalization();
+    const alerts = this.quoteChangeAlerts();
+    if (!inquiry || !latest || alerts.length === 0) {
+      return;
+    }
+    if (sessionStorage.getItem(quoteChangeDismissKey(inquiry, latest)) === '1') {
+      return;
+    }
+    this.quoteChangeModalOpen.set(true);
+  }
+
   loadFinalizationHistory(): void {
     const inquiry = this.inquiry();
     if (!inquiry) {
@@ -561,6 +655,7 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
       next: (history) => {
         this.finalizationHistory.set(history ?? []);
         this.finalizationLoading.set(false);
+        this.maybeShowQuoteChangeModal();
       },
       error: (err) => {
         this.finalizationHistory.set([]);
@@ -757,6 +852,7 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
         this.productQuotesLoading.set(false);
         // Default policy: auto-pick the ranked winner for every product.
         this.selectBestOffersForAll();
+        this.maybeShowQuoteChangeModal();
       },
       error: (err) => {
         this.quotesByDistributor.set(new Map());
