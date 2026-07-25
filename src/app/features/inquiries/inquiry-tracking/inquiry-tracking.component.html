@@ -464,10 +464,94 @@
                               }
                             }
                           </tbody>
+                          @if (snapshotConsumerTotals(snapshot); as totals) {
+                            <tfoot>
+                              <tr class="finalization-table-totals-row">
+                                <td colspan="5" class="finalization-table-total-label">
+                                  <strong>Total</strong>
+                                </td>
+                                <td class="col-qty consumer-cell">
+                                  <strong>{{ totals.totalQuantity }}</strong>
+                                </td>
+                                <td class="col-mrp">
+                                  <strong>{{ formatCurrency(totals.totalMrp) }}</strong>
+                                </td>
+                                <td class="col-discount">
+                                  @if (totals.totalDiscountApplied != null) {
+                                    <strong>{{ formatCurrency(totals.totalDiscountApplied) }}</strong>
+                                    @if (totals.totalDiscountPercent != null) {
+                                      <span class="finalization-table-total-sub">
+                                        {{ formatOptionalPercent(totals.totalDiscountPercent) }}
+                                      </span>
+                                    }
+                                  } @else {
+                                    —
+                                  }
+                                </td>
+                                <td class="col-amount">
+                                  <strong>{{ formatCurrency(totals.totalAmount) }}</strong>
+                                </td>
+                                <td class="col-gst"></td>
+                                <td class="col-net-value finalization-table-total-net">
+                                  <strong>{{ formatCurrency(totals.totalNetValue) }}</strong>
+                                </td>
+                                <td colspan="2"></td>
+                              </tr>
+                            </tfoot>
+                          }
                         </table>
                       </div>
+
+                      @if (snapshotConsumerTotals(snapshot); as totals) {
+                        <div class="finalization-consumer-metrics" aria-label="Quotation totals">
+                          <div class="finalization-consumer-metrics-grid">
+                            <div class="finalization-metric">
+                              <span class="finalization-metric-label">Products available</span>
+                              <strong>{{ totals.availableProducts }}</strong>
+                            </div>
+                            @if (totals.totalMrp != null) {
+                              <div class="finalization-metric">
+                                <span class="finalization-metric-label">Total MRP</span>
+                                <strong>{{ formatCurrency(totals.totalMrp) }}</strong>
+                              </div>
+                            }
+                            @if (totals.totalDiscountApplied != null) {
+                              <div class="finalization-metric">
+                                <span class="finalization-metric-label">Total discount applied</span>
+                                <strong>{{ formatCurrency(totals.totalDiscountApplied) }}</strong>
+                                @if (totals.totalDiscountPercent != null) {
+                                  <span class="finalization-metric-hint">
+                                    {{ formatOptionalPercent(totals.totalDiscountPercent) }} average
+                                  </span>
+                                }
+                              </div>
+                            }
+                            @if (totals.totalAmount != null) {
+                              <div class="finalization-metric">
+                                <span class="finalization-metric-label">Total amount</span>
+                                <strong>{{ formatCurrency(totals.totalAmount) }}</strong>
+                                <span class="finalization-metric-hint">Excl. GST</span>
+                              </div>
+                            }
+                            @if (totals.totalNetValue != null) {
+                              <div class="finalization-metric finalization-metric--total">
+                                <span class="finalization-metric-label">Total net value</span>
+                                <strong>{{ formatCurrency(totals.totalNetValue) }}</strong>
+                                <span class="finalization-metric-hint">Final payable (incl. GST)</span>
+                              </div>
+                            }
+                          </div>
+                        </div>
+                      }
                     } @else {
                       <p class="products-empty">Quotation details will appear here once available.</p>
+                    }
+
+                    @if (snapshot.message?.trim()) {
+                      <div class="finalization-consumer-note">
+                        <span class="finalization-consumer-note-label">Note from admin</span>
+                        <p>{{ snapshot.message }}</p>
+                      </div>
                     }
 
                     <div class="quotation-pdf-section">

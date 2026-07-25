@@ -35,7 +35,7 @@ import {
   noticeDisplayDetail,
   noticeDisplayLabel,
 } from '../../../shared/utils/timeline-chat.util';
-import { quotationLinePricingFromAdmin } from '../../../shared/utils/inquiry-pricing.util';
+import { averageDiscountPercentage, quotationLinePricingFromAdmin } from '../../../shared/utils/inquiry-pricing.util';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 import { formatSpecificationsInline } from '../../../shared/utils/specifications-display.util';
 import { openPublicImages } from '../../../shared/utils/public-image.util';
@@ -1251,6 +1251,54 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
 
   snapshotLineNetValue(line: InquiryFinalizationSnapshotLine): number | null {
     return quotationLinePricingFromAdmin(this.snapshotLineAsItem(line)).netValue;
+  }
+
+  snapshotConsumerTotals(snapshot: InquiryFinalizationSnapshot): {
+    availableProducts: number;
+    totalQuantity: number;
+    totalMrp: number | null;
+    totalDiscountApplied: number | null;
+    totalDiscountPercent: number | null;
+    totalAmount: number | null;
+    totalNetValue: number | null;
+  } {
+    const availableLines = snapshot.items.filter(
+      (line) => this.hasSnapshotLine(line) && !this.isSnapshotLineUnavailable(line),
+    );
+    const availableItems = availableLines.map((line) => this.snapshotLineAsItem(line));
+
+    let totalMrp = 0;
+    let totalAmount = 0;
+    let totalNetValue = 0;
+    let hasMrp = false;
+    let hasAmount = false;
+    let hasNet = false;
+
+    for (const line of availableLines) {
+      const pricing = quotationLinePricingFromAdmin(this.snapshotLineAsItem(line));
+      if (pricing.mrp != null) {
+        totalMrp += pricing.mrp * pricing.quantity;
+        hasMrp = true;
+      }
+      if (pricing.amount != null) {
+        totalAmount += pricing.amount;
+        hasAmount = true;
+      }
+      if (pricing.netValue != null) {
+        totalNetValue += pricing.netValue;
+        hasNet = true;
+      }
+    }
+
+    return {
+      availableProducts: availableLines.length,
+      totalQuantity: availableLines.reduce((sum, line) => sum + (line.quantity ?? 0), 0),
+      totalMrp: hasMrp ? totalMrp : null,
+      totalDiscountApplied: hasMrp && hasAmount ? totalMrp - totalAmount : null,
+      totalDiscountPercent: averageDiscountPercentage(availableItems, false),
+      totalAmount: hasAmount ? totalAmount : null,
+      totalNetValue: snapshot.consumerTotal ?? (hasNet ? totalNetValue : null),
+    };
   }
 
   inquiryItemForSnapshotLine(line: InquiryFinalizationSnapshotLine): InquiryItem | undefined {

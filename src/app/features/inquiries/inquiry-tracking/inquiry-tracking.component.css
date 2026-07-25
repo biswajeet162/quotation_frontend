@@ -368,8 +368,144 @@
   margin-top: 0.15rem;
 }
 
+.inquiry-event-content .final-quotation-table-wrap + .finalization-consumer-metrics {
+  border-top: 1px solid #e2e8f0;
+}
+
+.finalization-table-totals-row td {
+  border-top: 2px solid #cbd5e1;
+  background: #f8fafc;
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
+  vertical-align: middle;
+}
+
+.finalization-table-total-label {
+  text-align: right;
+  padding-right: 0.75rem;
+  color: #475569;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.finalization-table-total-label strong {
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.finalization-table-totals-row .col-mrp,
+.finalization-table-totals-row .col-discount,
+.finalization-table-totals-row .col-amount,
+.finalization-table-totals-row .col-qty {
+  text-align: right;
+}
+
+.finalization-table-total-sub {
+  display: block;
+  margin-top: 0.12rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.finalization-table-total-net {
+  text-align: right;
+  background: #ecfdf5;
+}
+
+.finalization-table-total-net strong {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #065f46;
+}
+
+.finalization-consumer-metrics {
+  padding: 0.85rem 1rem;
+  background: #f8fafc;
+}
+
+.finalization-consumer-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 0.65rem;
+}
+
+.finalization-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  min-width: 0;
+}
+
+.finalization-metric-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.finalization-metric strong {
+  font-size: 0.92rem;
+  color: #0f172a;
+}
+
+.finalization-metric-hint {
+  font-size: 0.68rem;
+  color: #94a3b8;
+}
+
+.finalization-metric--total {
+  border-color: #99f6e4;
+  background: #ecfdf5;
+}
+
+.finalization-metric--total .finalization-metric-label {
+  color: #0f766e;
+}
+
+.finalization-metric--total strong {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #065f46;
+}
+
+.finalization-consumer-note {
+  padding: 0.85rem 1rem;
+  border-top: 1px solid #e2e8f0;
+  background: #fffbeb;
+}
+
+.finalization-consumer-note-label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #92400e;
+}
+
+.finalization-consumer-note p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #78350f;
+  white-space: pre-wrap;
+}
+
+.finalization-consumer-note + .quotation-pdf-section,
+.finalization-consumer-metrics + .finalization-consumer-note + .quotation-pdf-section,
+.finalization-consumer-metrics + .quotation-pdf-section {
+  border-top: 1px solid #e2e8f0;
+}
+
 .inquiry-event-content .final-quotation-table-wrap + .quotation-pdf-section {
-  margin-top: 0.75rem;
+  margin-top: 0;
   border-top: none;
 }
 
