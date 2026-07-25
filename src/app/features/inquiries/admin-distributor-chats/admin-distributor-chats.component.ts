@@ -175,6 +175,7 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   readonly finalizationHistory = signal<InquiryFinalizationSnapshot[]>([]);
   readonly finalizationLoading = signal(false);
   readonly finalizationError = signal<string | null>(null);
+  readonly expandedFinalizationDistributorIds = signal<ReadonlySet<string>>(new Set());
   /** Frontend-only: distributor chosen when finalizing (drives green + double-tick). */
   readonly finalChoiceCompanyId = signal<string | null>(null);
 
@@ -707,6 +708,115 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
 
   snapshotLineNetValue(line: InquiryFinalizationSnapshotLine): number | null {
     return quotationLinePricingFromAdmin(this.snapshotLineAsItem(line)).netValue;
+  }
+
+  snapshotLineAsDistributorItem(line: InquiryFinalizationSnapshotLine): InquiryItem {
+    return {
+      id: line.inquiryItemId,
+      productId: line.productId ?? line.inquiryItemId ?? '',
+      quantity: line.quantity,
+      distributorMrp: line.distributorMrp,
+      distributorDiscountPercentage: line.distributorDiscountPercentage,
+      distributorGstPercentage: line.distributorGstPercentage,
+    };
+  }
+
+  snapshotDistributorLineAmount(line: InquiryFinalizationSnapshotLine): number | null {
+    return quotationLinePricingFromDistributor(this.snapshotLineAsDistributorItem(line)).amount;
+  }
+
+  snapshotDistributorLineNetValue(line: InquiryFinalizationSnapshotLine): number | null {
+    return quotationLinePricingFromDistributor(this.snapshotLineAsDistributorItem(line)).netValue;
+  }
+
+  snapshotLineMargin(line: InquiryFinalizationSnapshotLine): number | null {
+    const consumer = this.snapshotLineNetValue(line);
+    const distributor = this.snapshotDistributorLineNetValue(line);
+    if (consumer == null || distributor == null) {
+      return null;
+    }
+    return consumer - distributor;
+  }
+
+  snapshotLineMarginPercent(line: InquiryFinalizationSnapshotLine): number | null {
+    const distributor = this.snapshotDistributorLineNetValue(line);
+    const consumer = this.snapshotLineNetValue(line);
+    if (distributor == null || consumer == null || distributor === 0) {
+      return null;
+    }
+    return ((consumer - distributor) / distributor) * 100;
+  }
+
+  snapshotDistributorName(line: InquiryFinalizationSnapshotLine): string {
+    const companyId = line.distributorCompanyId;
+    if (!companyId) {
+      return '—';
+    }
+    return (
+      this.distributors().find((distributor) => distributor.companyId === companyId)?.companyName?.trim() ||
+      'Distributor'
+    );
+  }
+
+  hasSnapshotDistributorLine(line: InquiryFinalizationSnapshotLine): boolean {
+    return !!line.distributorCompanyId && !this.isSnapshotLineUnavailable(line);
+  }
+
+  finalizationSnapshotKey(snapshot: InquiryFinalizationSnapshot): string {
+    return snapshot.id ?? snapshot.communicationId ?? String(snapshot.revisionNumber);
+  }
+
+  snapshotHasDistributorBreakdown(snapshot: InquiryFinalizationSnapshot): boolean {
+    return snapshot.items.some((line) => this.hasSnapshotLine(line) && this.hasSnapshotDistributorLine(line));
+  }
+
+  isFinalizationDistributorsOpen(snapshot: InquiryFinalizationSnapshot): boolean {
+    return this.expandedFinalizationDistributorIds().has(this.finalizationSnapshotKey(snapshot));
+  }
+
+  toggleFinalizationDistributors(snapshot: InquiryFinalizationSnapshot): void {
+    const key = this.finalizationSnapshotKey(snapshot);
+    this.expandedFinalizationDistributorIds.update((current) => {
+      const next = new Set(current);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  }
+
+  snapshotMarginTotal(snapshot: InquiryFinalizationSnapshot): number | null {
+    if (snapshot.consumerTotal != null && snapshot.distributorTotal != null) {
+      return snapshot.consumerTotal - snapshot.distributorTotal;
+    }
+    let total = 0;
+    let hasValue = false;
+    for (const line of snapshot.items) {
+      const margin = this.snapshotLineMargin(line);
+      if (margin != null) {
+        total += margin;
+        hasValue = true;
+      }
+    }
+    return hasValue ? total : null;
+  }
+
+  formatSignedCurrency(value: number | null | undefined): string {
+    if (value == null) {
+      return '—';
+    }
+    const prefix = value > 0 ? '+' : value < 0 ? '−' : '';
+    return `${prefix}${this.formatCurrency(Math.abs(value))}`;
+  }
+
+  formatSignedPercent(value: number | null | undefined): string {
+    if (value == null) {
+      return '—';
+    }
+    const prefix = value > 0 ? '+' : value < 0 ? '−' : '';
+    return `${prefix}${Math.abs(value).toLocaleString(undefined, { maximumFractionDigits: 1 })}%`;
   }
 
   formatFinalizationDate(iso?: string): string {

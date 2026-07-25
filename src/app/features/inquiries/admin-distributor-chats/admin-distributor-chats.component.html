@@ -336,9 +336,6 @@
                   </h2>
                   <p class="finalization-card-meta">
                     Sent {{ formatFinalizationDate(snapshot.sentAt) }}
-                    @if (snapshot.consumerTotal != null) {
-                      · Consumer total {{ formatCurrency(snapshot.consumerTotal) }}
-                    }
                   </p>
                 </div>
                 @if (snapshot.pdfAttachment; as pdf) {
@@ -358,8 +355,14 @@
 
               @if (snapshot.items.length > 0) {
                 <div class="preview-table-wrap admin-pricing-table-wrap">
-                  <table class="preview-table admin-pricing-table">
+                  <table class="preview-table admin-pricing-table finalization-pricing-table">
                     <thead>
+                      <tr class="finalization-group-header-row">
+                        <th colspan="6" class="group-spacer"></th>
+                        <th colspan="5" class="group-header group-distributor">Distributor quoted</th>
+                        <th colspan="5" class="group-header group-consumer">Our price to customer</th>
+                        <th colspan="2" class="group-header group-margin">Result</th>
+                      </tr>
                       <tr>
                         <th class="col-sno">S.No.</th>
                         <th class="col-designation">Designation</th>
@@ -367,11 +370,17 @@
                         <th class="col-hsn-code">HSN code</th>
                         <th class="col-description">Description</th>
                         <th class="col-qty">Qty</th>
-                        <th class="col-mrp">MRP</th>
-                        <th class="col-discount">Disc. %</th>
-                        <th class="col-amount">Amount</th>
-                        <th class="col-gst">GST %</th>
-                        <th class="col-net-value">Net value</th>
+                        <th class="col-mrp col-distributor">MRP</th>
+                        <th class="col-discount col-distributor">Disc.</th>
+                        <th class="col-amount col-distributor">Amount</th>
+                        <th class="col-gst col-distributor">GST %</th>
+                        <th class="col-net-value col-distributor">Net</th>
+                        <th class="col-mrp col-consumer">Our MRP</th>
+                        <th class="col-discount col-consumer">Our disc.</th>
+                        <th class="col-amount col-consumer">Amount</th>
+                        <th class="col-gst col-consumer">GST %</th>
+                        <th class="col-net-value col-consumer">Net</th>
+                        <th class="col-margin">Profit / loss</th>
                         <th class="col-expected-delivery">Expected delivery</th>
                       </tr>
                     </thead>
@@ -398,20 +407,59 @@
                             </td>
                             <td class="col-qty consumer-cell">{{ line.quantity }}</td>
                             @if (isSnapshotLineUnavailable(line)) {
-                              <td class="col-mrp" colspan="5">
+                              <td class="col-distributor" colspan="5">
                                 <span class="line-unavailable-label">Unavailable</span>
                               </td>
+                              <td class="col-consumer" colspan="5">
+                                <span class="line-unavailable-label">Unavailable</span>
+                              </td>
+                              <td class="col-margin">—</td>
                             } @else {
-                              <td class="col-mrp">{{ formatCurrency(line.adminMrp) }}</td>
-                              <td class="col-discount">
+                              <td class="col-mrp col-distributor">
+                                {{ formatCurrency(line.distributorMrp) }}
+                              </td>
+                              <td class="col-discount col-distributor">
+                                {{ formatOptionalPercent(line.distributorDiscountPercentage) }}
+                              </td>
+                              <td class="col-amount col-distributor">
+                                {{ formatCurrency(snapshotDistributorLineAmount(line)) }}
+                              </td>
+                              <td class="col-gst col-distributor">
+                                {{ formatOptionalPercent(line.distributorGstPercentage) }}
+                              </td>
+                              <td class="col-net-value col-distributor">
+                                {{ formatCurrency(snapshotDistributorLineNetValue(line)) }}
+                              </td>
+                              <td class="col-mrp col-consumer">
+                                {{ formatCurrency(line.adminMrp) }}
+                              </td>
+                              <td class="col-discount col-consumer">
                                 {{ formatOptionalPercent(line.adminDiscountPercentage) }}
                               </td>
-                              <td class="col-amount">{{ formatCurrency(snapshotLineAmount(line)) }}</td>
-                              <td class="col-gst">
+                              <td class="col-amount col-consumer">
+                                {{ formatCurrency(snapshotLineAmount(line)) }}
+                              </td>
+                              <td class="col-gst col-consumer">
                                 {{ formatOptionalPercent(line.adminGstPercentage) }}
                               </td>
-                              <td class="col-net-value">
+                              <td class="col-net-value col-consumer">
                                 {{ formatCurrency(snapshotLineNetValue(line)) }}
+                              </td>
+                              <td
+                                class="col-margin"
+                                [class.cell-margin-positive]="(snapshotLineMargin(line) ?? 0) > 0"
+                                [class.cell-margin-negative]="(snapshotLineMargin(line) ?? 0) < 0"
+                              >
+                                @if (snapshotLineMargin(line) != null) {
+                                  <span class="margin-amount">
+                                    {{ formatSignedCurrency(snapshotLineMargin(line)) }}
+                                  </span>
+                                  <span class="margin-percent">
+                                    {{ formatSignedPercent(snapshotLineMarginPercent(line)) }}
+                                  </span>
+                                } @else {
+                                  —
+                                }
                               </td>
                             }
                             <td class="col-expected-delivery consumer-cell">
@@ -421,8 +469,155 @@
                         }
                       }
                     </tbody>
+                    @if (snapshot.consumerTotal != null || snapshot.distributorTotal != null) {
+                      <tfoot>
+                        <tr class="finalization-totals-row">
+                          <td colspan="6"><strong>Totals</strong></td>
+                          <td colspan="4" class="col-distributor"></td>
+                          <td class="col-net-value col-distributor">
+                            <strong>{{ formatCurrency(snapshot.distributorTotal) }}</strong>
+                          </td>
+                          <td colspan="4" class="col-consumer"></td>
+                          <td class="col-net-value col-consumer">
+                            <strong>{{ formatCurrency(snapshot.consumerTotal) }}</strong>
+                          </td>
+                          <td
+                            class="col-margin"
+                            [class.cell-margin-positive]="(snapshotMarginTotal(snapshot) ?? 0) > 0"
+                            [class.cell-margin-negative]="(snapshotMarginTotal(snapshot) ?? 0) < 0"
+                          >
+                            <strong class="margin-amount">
+                              {{ formatSignedCurrency(snapshotMarginTotal(snapshot)) }}
+                            </strong>
+                            @if (snapshot.marginPercentage != null) {
+                              <strong class="margin-percent">
+                                {{ formatSignedPercent(snapshot.marginPercentage) }}
+                              </strong>
+                            }
+                          </td>
+                          <td></td>
+                        </tr>
+                      </tfoot>
+                    }
                   </table>
                 </div>
+
+                <section class="finalization-benefits-panel" aria-label="Finalization summary">
+                  <h3 class="finalization-benefits-title">Benefits &amp; totals</h3>
+                  <div class="finalization-summary">
+                    @if (snapshot.distributorTotal != null) {
+                      <article class="finalization-summary-item">
+                        <span class="finalization-summary-label">Distributor cost</span>
+                        <strong>{{ formatCurrency(snapshot.distributorTotal) }}</strong>
+                        <span class="finalization-summary-hint">What vendors quoted (incl. GST)</span>
+                      </article>
+                    }
+                    @if (snapshot.consumerTotal != null) {
+                      <article class="finalization-summary-item">
+                        <span class="finalization-summary-label">Consumer total</span>
+                        <strong>{{ formatCurrency(snapshot.consumerTotal) }}</strong>
+                        <span class="finalization-summary-hint">What the customer pays (incl. GST)</span>
+                      </article>
+                    }
+                    @if (snapshotMarginTotal(snapshot); as margin) {
+                      <article
+                        class="finalization-summary-item"
+                        [class.summary-positive]="margin > 0"
+                        [class.summary-negative]="margin < 0"
+                      >
+                        <span class="finalization-summary-label">
+                          {{ margin >= 0 ? 'Extra benefit / profit' : 'Loss' }}
+                        </span>
+                        <strong>{{ formatSignedCurrency(margin) }}</strong>
+                        @if (snapshot.marginPercentage != null) {
+                          <span class="finalization-summary-percent">
+                            {{ formatSignedPercent(snapshot.marginPercentage) }} vs distributor cost
+                          </span>
+                        }
+                        <span class="finalization-summary-hint">Consumer total − distributor cost</span>
+                      </article>
+                    }
+                  </div>
+
+                  @if (snapshotHasDistributorBreakdown(snapshot)) {
+                    <button
+                      type="button"
+                      class="btn-secondary btn-see-distributors"
+                      (click)="toggleFinalizationDistributors(snapshot)"
+                      [attr.aria-expanded]="isFinalizationDistributorsOpen(snapshot)"
+                    >
+                      {{
+                        isFinalizationDistributorsOpen(snapshot)
+                          ? 'Hide distributors'
+                          : 'See distributors'
+                      }}
+                    </button>
+                  }
+                </section>
+
+                @if (isFinalizationDistributorsOpen(snapshot)) {
+                  <section class="finalization-distributor-breakdown" aria-label="Distributor picks">
+                    <h3 class="finalization-distributor-title">Products picked from distributors</h3>
+                    <div class="preview-table-wrap admin-pricing-table-wrap">
+                      <table class="preview-table admin-pricing-table finalization-distributor-table">
+                        <thead>
+                          <tr>
+                            <th class="col-sno">S.No.</th>
+                            <th class="col-designation">Designation</th>
+                            <th class="col-brand">Brand</th>
+                            <th class="col-qty">Qty</th>
+                            <th class="col-distributor-name">Distributor chosen</th>
+                            <th class="col-mrp">MRP</th>
+                            <th class="col-discount">Disc.</th>
+                            <th class="col-amount">Amount</th>
+                            <th class="col-gst">GST %</th>
+                            <th class="col-net-value">Net value</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (line of snapshot.items; track line.inquiryItemId ?? $index) {
+                            @if (hasSnapshotLine(line) && hasSnapshotDistributorLine(line)) {
+                              <tr>
+                                <td class="col-sno">{{ $index + 1 }}</td>
+                                <td class="col-designation">
+                                  {{ displayProductField(line.productName) }}
+                                </td>
+                                <td class="col-brand">{{ displayProductField(line.productBrand) }}</td>
+                                <td class="col-qty">{{ line.quantity }}</td>
+                                <td class="col-distributor-name">
+                                  {{ snapshotDistributorName(line) }}
+                                </td>
+                                <td class="col-mrp">{{ formatCurrency(line.distributorMrp) }}</td>
+                                <td class="col-discount">
+                                  {{ formatOptionalPercent(line.distributorDiscountPercentage) }}
+                                </td>
+                                <td class="col-amount">
+                                  {{ formatCurrency(snapshotDistributorLineAmount(line)) }}
+                                </td>
+                                <td class="col-gst">
+                                  {{ formatOptionalPercent(line.distributorGstPercentage) }}
+                                </td>
+                                <td class="col-net-value">
+                                  {{ formatCurrency(snapshotDistributorLineNetValue(line)) }}
+                                </td>
+                              </tr>
+                            }
+                          }
+                        </tbody>
+                        @if (snapshot.distributorTotal != null) {
+                          <tfoot>
+                            <tr class="finalization-totals-row">
+                              <td colspan="9"><strong>Distributor cost total</strong></td>
+                              <td class="col-net-value">
+                                <strong>{{ formatCurrency(snapshot.distributorTotal) }}</strong>
+                              </td>
+                            </tr>
+                          </tfoot>
+                        }
+                      </table>
+                    </div>
+                  </section>
+                }
               } @else {
                 <p class="finalization-legacy-note">
                   Line-level details were not recorded for this finalization. Open the PDF to review what was sent.

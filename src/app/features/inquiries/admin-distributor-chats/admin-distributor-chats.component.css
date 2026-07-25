@@ -328,6 +328,192 @@
   color: #047857;
 }
 
+.finalization-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.btn-see-distributors {
+  white-space: nowrap;
+  margin-top: 0.75rem;
+}
+
+.finalization-benefits-panel {
+  padding: 1rem 1.1rem;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.finalization-benefits-title {
+  margin: 0 0 0.75rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.finalization-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.finalization-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  min-width: 10rem;
+  flex: 1 1 10rem;
+  max-width: 16rem;
+}
+
+.finalization-summary-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.finalization-summary-item strong {
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+.finalization-summary-hint {
+  font-size: 0.72rem;
+  color: #64748b;
+}
+
+.finalization-summary-percent {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #0f766e;
+}
+
+.finalization-summary-item.summary-positive .finalization-summary-percent,
+.finalization-summary-item.summary-positive strong {
+  color: #15803d;
+}
+
+.finalization-summary-item.summary-negative .finalization-summary-percent,
+.finalization-summary-item.summary-negative strong {
+  color: #b91c1c;
+}
+
+.finalization-distributor-breakdown {
+  padding: 0 1.1rem 1rem;
+  border-top: 1px solid #e2e8f0;
+  background: #f1f5f9;
+}
+
+.finalization-distributor-title {
+  margin: 0.85rem 0 0.65rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.finalization-pricing-table {
+  min-width: 108rem;
+}
+
+.finalization-distributor-table {
+  min-width: 62rem;
+}
+
+.finalization-group-header-row th {
+  padding: 0.35rem 0.45rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-bottom: none;
+}
+
+.finalization-group-header-row .group-header {
+  text-align: center;
+  border-radius: 6px 6px 0 0;
+}
+
+.finalization-group-header-row .group-distributor {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.finalization-group-header-row .group-consumer {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.finalization-group-header-row .group-margin {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.finalization-pricing-table .col-distributor {
+  background: rgba(237, 233, 254, 0.22);
+}
+
+.finalization-pricing-table .col-consumer {
+  background: rgba(236, 253, 245, 0.35);
+}
+
+.finalization-pricing-table thead .col-distributor {
+  background: #f5f3ff;
+}
+
+.finalization-pricing-table thead .col-consumer {
+  background: #ecfdf5;
+}
+
+.finalization-totals-row td {
+  background: #f8fafc;
+  border-top: 2px solid #e2e8f0;
+  font-size: 0.82rem;
+}
+
+.admin-pricing-table .col-margin {
+  min-width: 6.5rem;
+  text-align: right;
+}
+
+.admin-pricing-table .col-distributor-name {
+  min-width: 8rem;
+}
+
+.admin-pricing-table .col-amount,
+.admin-pricing-table .col-net-value {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.cell-margin-positive {
+  color: #15803d;
+}
+
+.cell-margin-negative {
+  color: #b91c1c;
+}
+
+.margin-amount {
+  display: block;
+  font-weight: 700;
+}
+
+.margin-percent {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
 .finalization-message {
   margin: 0;
   padding: 0.85rem 1.1rem 0;
