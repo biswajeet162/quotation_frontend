@@ -36,6 +36,8 @@ import {
   getInquiryListStep,
 } from '../../../shared/utils/inquiry-display.util';
 import { isDateInputBefore, todayAsDateInputValue } from '../../../shared/utils/date-input.util';
+import { inquiryHasConsumerDealDone } from '../../../shared/utils/inquiry-deal.util';
+import { DealDoneSealComponent } from '../../../shared/components/deal-done-seal/deal-done-seal.component';
 import { quotationLinePricingFromAdmin } from '../../../shared/utils/inquiry-pricing.util';
 import {
   canReplyToTimelineEntry,
@@ -80,7 +82,13 @@ interface DistributorSendPricingSnapshot {
 
 @Component({
   selector: 'app-admin-query-review',
-  imports: [FormsModule, InquiryChatAttachmentComponent, ChatAudioPlayerComponent, LoadingOverlayComponent],
+  imports: [
+    FormsModule,
+    InquiryChatAttachmentComponent,
+    ChatAudioPlayerComponent,
+    LoadingOverlayComponent,
+    DealDoneSealComponent,
+  ],
   templateUrl: './admin-query-review.component.html',
   styleUrl: './admin-query-review.component.css',
 })
@@ -257,6 +265,7 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
     noticeDisplayDetail(entry, 'ADMIN');
   readonly formatExpectedDeliveryDate = formatExpectedDeliveryDate;
   readonly todayAsDateInputValue = todayAsDateInputValue;
+  readonly inquiryHasConsumerDealDone = inquiryHasConsumerDealDone;
   readonly getInquiryListStep = getInquiryListStep;
 
   assignedDistributorCount(inquiry: Inquiry): number {

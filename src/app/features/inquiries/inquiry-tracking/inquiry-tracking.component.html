@@ -71,9 +71,14 @@
               [attr.aria-label]="inquiry.inquiryId + ' — ' + inquiry.title"
               (click)="selectInquiry(inquiry.id)"
             >
-              <span class="query-id">{{ inquiry.inquiryId }}</span>
-              <span class="query-title">{{ inquiry.title }}</span>
-              <span class="query-posted">{{ formatPostedDate(inquiry.createdAt) }}</span>
+              <span class="query-item-content">
+                <span class="query-id">{{ inquiry.inquiryId }}</span>
+                <span class="query-title">{{ inquiry.title }}</span>
+                <span class="query-posted">{{ formatPostedDate(inquiry.createdAt) }}</span>
+              </span>
+              @if (inquiryHasConsumerDealDone(inquiry)) {
+                <app-deal-done-seal [compact]="true" />
+              }
             </button>
           </li>
         }

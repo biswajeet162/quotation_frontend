@@ -39,6 +39,8 @@ import { averageDiscountPercentage, quotationLinePricingFromAdmin } from '../../
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 import { formatSpecificationsInline } from '../../../shared/utils/specifications-display.util';
 import { openPublicImages } from '../../../shared/utils/public-image.util';
+import { inquiryHasConsumerDealDone } from '../../../shared/utils/inquiry-deal.util';
+import { DealDoneSealComponent } from '../../../shared/components/deal-done-seal/deal-done-seal.component';
 
 type StatusFilter = 'all' | InquiryStatus | 'ACTION_REQUIRED';
 type SortBy = 'date' | 'inquiryNumber' | 'productCount';
@@ -57,6 +59,7 @@ interface PendingAttachment {
     InquiryChatAttachmentComponent,
     ChatAudioPlayerComponent,
     LoadingOverlayComponent,
+    DealDoneSealComponent,
   ],
   templateUrl: './inquiry-tracking.component.html',
   styleUrl: './inquiry-tracking.component.css',
@@ -325,6 +328,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   readonly getInquiryListStep = getInquiryListStep;
   readonly formatExpectedDeliveryDate = formatExpectedDeliveryDate;
   readonly getConsumerInquiryDisplay = getConsumerInquiryDisplay;
+  readonly inquiryHasConsumerDealDone = inquiryHasConsumerDealDone;
 
   readonly messageFieldLabel = computed(() => {
     const inquiry = this.selectedInquiry();

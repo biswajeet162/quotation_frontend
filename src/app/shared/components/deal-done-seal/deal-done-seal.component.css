@@ -1,0 +1,52 @@
+:host {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.deal-done-seal {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.85rem;
+  height: 2.85rem;
+  border: 2.5px double #065f46;
+  border-radius: 50%;
+  color: #065f46;
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.35), transparent 55%),
+    rgba(236, 253, 245, 0.92);
+  box-shadow:
+    inset 0 0 0 1px rgba(6, 95, 70, 0.18),
+    0 1px 2px rgba(6, 95, 70, 0.12);
+  transform: rotate(-14deg);
+  pointer-events: none;
+  user-select: none;
+}
+
+.deal-done-seal::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 1px solid rgba(6, 95, 70, 0.35);
+  border-radius: 50%;
+}
+
+.deal-done-seal-text {
+  position: relative;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.deal-done-seal--compact {
+  width: 2.35rem;
+  height: 2.35rem;
+}
+
+.deal-done-seal--compact .deal-done-seal-text {
+  font-size: 0.5rem;
+  letter-spacing: 0.12em;
+}
