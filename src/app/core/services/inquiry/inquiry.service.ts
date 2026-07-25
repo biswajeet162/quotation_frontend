@@ -159,6 +159,10 @@ export class InquiryService {
     return this.http.get<InquiryFinalizationSnapshot[]>(`${this.baseUrl}/${id}/finalization-history`);
   }
 
+  getMyFinalizationHistory(id: string): Observable<InquiryFinalizationSnapshot[]> {
+    return this.http.get<InquiryFinalizationSnapshot[]>(`${this.baseUrl}/${id}/my-finalization-history`);
+  }
+
   getDistributorOptions(id: string): Observable<BrandRoutingPreview> {
     return this.http.get<BrandRoutingPreview>(`${this.baseUrl}/${id}/distributor-options`);
   }

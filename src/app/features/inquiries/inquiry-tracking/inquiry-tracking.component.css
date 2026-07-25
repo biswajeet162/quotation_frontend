@@ -373,6 +373,15 @@
   border-top: none;
 }
 
+.inquiry-event-card--final + .inquiry-event-card--final {
+  margin-top: 1rem;
+}
+
+.inquiry-event-status--updated {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
 .products-panel-body {
   border: 1px solid #e2e8f0;
   border-radius: 10px;

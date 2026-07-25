@@ -18,6 +18,7 @@
   overflow: hidden;
 }
 
+
 .page-card.brands-view {
   padding-bottom: 0.75rem;
 }
@@ -225,6 +226,105 @@
 
 .actions-cell {
   white-space: nowrap;
+}
+
+.col-select {
+  width: 2.5rem;
+  text-align: center;
+}
+
+.select-cell {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.product-select-checkbox {
+  width: 1rem;
+  height: 1rem;
+  accent-color: #0f766e;
+  cursor: pointer;
+}
+
+.product-row.selected-row {
+  background: #f0fdfa;
+}
+
+.selection-bar {
+  flex-shrink: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0.65rem 0 0;
+  padding: 0.85rem 1.1rem;
+  border: 1px solid #99f6e4;
+  border-radius: 12px;
+  background: #0f766e;
+  color: #fff;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.18);
+  animation: selection-bar-in 160ms ease-out;
+}
+
+@keyframes selection-bar-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.selection-bar-text {
+  font-size: 0.95rem;
+}
+
+.selection-bar-text strong {
+  font-weight: 700;
+}
+
+.selection-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+}
+
+.selection-bar .btn-primary {
+  background: #fff;
+  color: #0f766e;
+}
+
+.selection-bar .btn-primary:hover {
+  background: #f0fdfa;
+}
+
+.selection-bar .selection-clear {
+  border-color: rgba(255, 255, 255, 0.45);
+  background: transparent;
+  color: #fff;
+}
+
+.selection-bar .selection-clear:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+@media (max-width: 640px) {
+  .selection-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .selection-bar-actions {
+    width: 100%;
+  }
+
+  .selection-bar-actions .btn-primary,
+  .selection-bar-actions .selection-clear {
+    flex: 1;
+  }
 }
 
 .btn-add {

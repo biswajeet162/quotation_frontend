@@ -440,6 +440,21 @@
                 <table class="products-table">
                   <thead>
                     <tr>
+                      @if (isConsumer()) {
+                        <th class="col-select">
+                          <input
+                            type="checkbox"
+                            class="product-select-checkbox"
+                            [checked]="areAllVisibleSelected(selectedBrandProducts())"
+                            [indeterminate]="
+                              areSomeVisibleSelected(selectedBrandProducts()) &&
+                              !areAllVisibleSelected(selectedBrandProducts())
+                            "
+                            (click)="toggleSelectAllVisible(selectedBrandProducts(), $event)"
+                            [attr.aria-label]="'Select all ' + (selectedBrand() || '') + ' products'"
+                          />
+                        </th>
+                      }
                       <th class="col-serial">S.No</th>
                       <th class="col-brand sort-col">
                         <button type="button" class="sort-btn" (click)="toggleSort('brand')">
@@ -470,10 +485,24 @@
                     @for (product of selectedBrandProducts(); track product.productId; let index = $index) {
                       <tr
                         class="product-row"
+                        [class.selected-row]="isProductSelected(product.productId)"
                         tabindex="0"
                         (click)="openProductDetail(product, $event)"
                         (keydown.enter)="openProductDetail(product, $event)"
                       >
+                        @if (isConsumer()) {
+                          <td class="select-cell" (click)="$event.stopPropagation()">
+                            <input
+                              type="checkbox"
+                              class="product-select-checkbox"
+                              [checked]="isProductSelected(product.productId)"
+                              (change)="toggleProductSelection(product, $event)"
+                              [attr.aria-label]="
+                                'Select ' + product.brand + ' ' + product.designation
+                              "
+                            />
+                          </td>
+                        }
                         <td class="serial-cell">{{ index + 1 }}</td>
                         <td class="brand-cell" [title]="product.brand">
                           @let brandLogoUrl = getBrandLogoUrl(product.brand);
@@ -535,6 +564,21 @@
         <table class="products-table">
           <thead>
             <tr>
+              @if (isConsumer()) {
+                <th class="col-select">
+                  <input
+                    type="checkbox"
+                    class="product-select-checkbox"
+                    [checked]="areAllVisibleSelected(sortedFilteredProducts())"
+                    [indeterminate]="
+                      areSomeVisibleSelected(sortedFilteredProducts()) &&
+                      !areAllVisibleSelected(sortedFilteredProducts())
+                    "
+                    (click)="toggleSelectAllVisible(sortedFilteredProducts(), $event)"
+                    aria-label="Select all visible products"
+                  />
+                </th>
+              }
               <th class="col-serial">S.No</th>
               <th class="col-brand sort-col">
                 <button type="button" class="sort-btn" (click)="toggleSort('brand')">
@@ -565,10 +609,22 @@
             @for (product of sortedFilteredProducts(); track product.productId; let index = $index) {
               <tr
                 class="product-row"
+                [class.selected-row]="isProductSelected(product.productId)"
                 tabindex="0"
                 (click)="openProductDetail(product, $event)"
                 (keydown.enter)="openProductDetail(product, $event)"
               >
+                @if (isConsumer()) {
+                  <td class="select-cell" (click)="$event.stopPropagation()">
+                    <input
+                      type="checkbox"
+                      class="product-select-checkbox"
+                      [checked]="isProductSelected(product.productId)"
+                      (change)="toggleProductSelection(product, $event)"
+                      [attr.aria-label]="'Select ' + product.brand + ' ' + product.designation"
+                    />
+                  </td>
+                }
                 <td class="serial-cell">{{ index + 1 }}</td>
                 <td class="brand-cell" [title]="product.brand">
                   @let brandLogoUrl = getBrandLogoUrl(product.brand);
@@ -622,6 +678,23 @@
     }
   }
 </section>
+
+@if (isConsumer() && selectedCount() > 0) {
+  <div class="selection-bar" role="status" aria-live="polite">
+    <div class="selection-bar-text">
+      <strong>{{ selectedCount() }}</strong>
+      {{ selectedCount() === 1 ? 'product' : 'products' }} selected
+    </div>
+    <div class="selection-bar-actions">
+      <button type="button" class="btn-secondary selection-clear" (click)="clearProductSelection()">
+        Clear
+      </button>
+      <button type="button" class="btn-primary" (click)="addSelectedToInquiry()">
+        Add to inquiry
+      </button>
+    </div>
+  </div>
+}
 
 @if (adminEditOpen()) {
   <div class="modal-backdrop" role="presentation" (click)="closeAdminEdit()"></div>

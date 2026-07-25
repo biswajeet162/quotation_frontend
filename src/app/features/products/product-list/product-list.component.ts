@@ -118,6 +118,9 @@ export class ProductListComponent implements OnInit, OnDestroy {
   readonly sortDirection = signal<SortDirection>('asc');
 
   readonly selectedProduct = signal<CatalogProduct | null>(null);
+  readonly selectedProductIds = signal<ReadonlySet<string>>(new Set());
+
+  readonly selectedCount = computed(() => this.selectedProductIds().size);
 
   readonly attachmentPanelOpen = signal(false);
   readonly attachmentProduct = signal<CatalogProduct | null>(null);
@@ -483,6 +486,86 @@ export class ProductListComponent implements OnInit, OnDestroy {
     }
 
     this.queryForm.fillFromCatalogProduct(entry, 'CATALOG_MATCH');
+    void this.router.navigate(['/requests']);
+  }
+
+  isProductSelected(productId: string): boolean {
+    return this.selectedProductIds().has(productId);
+  }
+
+  toggleProductSelection(product: CatalogProduct, event: Event): void {
+    event.stopPropagation();
+    if (!this.isConsumer()) {
+      return;
+    }
+
+    this.selectedProductIds.update((ids) => {
+      const next = new Set(ids);
+      if (next.has(product.productId)) {
+        next.delete(product.productId);
+      } else {
+        next.add(product.productId);
+      }
+      return next;
+    });
+  }
+
+  areAllVisibleSelected(products: CatalogProduct[]): boolean {
+    return products.length > 0 && products.every((product) => this.isProductSelected(product.productId));
+  }
+
+  areSomeVisibleSelected(products: CatalogProduct[]): boolean {
+    return products.some((product) => this.isProductSelected(product.productId));
+  }
+
+  toggleSelectAllVisible(products: CatalogProduct[], event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!this.isConsumer() || products.length === 0) {
+      return;
+    }
+
+    const selectAll = !this.areAllVisibleSelected(products);
+    this.selectedProductIds.update((ids) => {
+      const next = new Set(ids);
+      for (const product of products) {
+        if (selectAll) {
+          next.add(product.productId);
+        } else {
+          next.delete(product.productId);
+        }
+      }
+      return next;
+    });
+  }
+
+  clearProductSelection(): void {
+    this.selectedProductIds.set(new Set());
+  }
+
+  addSelectedToInquiry(): void {
+    if (!this.isConsumer()) {
+      return;
+    }
+
+    const selectedIds = this.selectedProductIds();
+    if (selectedIds.size === 0) {
+      return;
+    }
+
+    const byId = new Map(this.catalogProducts().map((product) => [product.productId, product]));
+    const products = [...selectedIds]
+      .map((id) => byId.get(id))
+      .filter((product): product is CatalogProduct => !!product);
+
+    if (products.length === 0) {
+      return;
+    }
+
+    for (const product of products) {
+      this.queryForm.fillFromCatalogProduct(product, 'CATALOG_MATCH');
+    }
+    this.clearProductSelection();
     void this.router.navigate(['/requests']);
   }
 

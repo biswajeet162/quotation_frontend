@@ -2,7 +2,7 @@ import { Component, computed, ElementRef, HostListener, inject, OnDestroy, OnIni
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ConsumerInquiry, InquiryItem, InquiryStatus } from '../../../core/models/inquiry.model';
+import { ConsumerInquiry, InquiryFinalizationSnapshot, InquiryFinalizationSnapshotLine, InquiryItem, InquiryStatus } from '../../../core/models/inquiry.model';
 import {
   InquiryTimelineEntry,
   InquiryTimelineAttachment,
@@ -81,6 +81,8 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   readonly timelineRefreshing = signal(false);
   readonly timelineError = signal<string | null>(null);
   readonly timelineEntries = signal<InquiryTimelineEntry[]>([]);
+  readonly finalizationHistory = signal<InquiryFinalizationSnapshot[]>([]);
+  readonly finalizationHistoryLoading = signal(false);
 
   readonly messageText = signal('');
   readonly messageLoading = signal(false);
@@ -233,6 +235,25 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     const entries = this.timelineEntries().filter((entry) => isFinalQuotationNotice(entry));
     const latest = entries.at(-1);
     return latest?.occurredAt;
+  });
+
+  /** Oldest finalization first so each update appears below the previous one. */
+  readonly consumerFinalizationHistory = computed(() =>
+    [...this.finalizationHistory()].reverse(),
+  );
+
+  readonly showLegacyFinalQuotation = computed(() => {
+    if (this.finalizationHistoryLoading()) {
+      return false;
+    }
+    if (this.finalizationHistory().length > 0) {
+      return false;
+    }
+    const inquiry = this.selectedInquiry();
+    return (
+      inquiry?.status === 'FINAL_SENT' ||
+      this.finalQuotationPdfAttachments().length > 0
+    );
   });
 
   isInReview(inquiry: ConsumerInquiry): boolean {
@@ -434,6 +455,20 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     });
   }
 
+  private loadFinalizationHistory(inquiryId: string): void {
+    this.finalizationHistoryLoading.set(true);
+    this.inquiryService.getMyFinalizationHistory(inquiryId).subscribe({
+      next: (history) => {
+        this.finalizationHistory.set(history ?? []);
+        this.finalizationHistoryLoading.set(false);
+      },
+      error: () => {
+        this.finalizationHistory.set([]);
+        this.finalizationHistoryLoading.set(false);
+      },
+    });
+  }
+
   loadTimeline(options?: { silent?: boolean; scrollToBottom?: boolean; preserveScroll?: boolean }): void {
     const inquiry = this.selectedInquiry();
     if (!inquiry) {
@@ -473,6 +508,9 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
           (timeline.entries ?? []).some((entry) => entry.noticeCode === 'FINAL_QUOTATION_SENT')
         ) {
           this.refreshInquiryItems(inquiry.id);
+          this.loadFinalizationHistory(inquiry.id);
+        } else {
+          this.finalizationHistory.set([]);
         }
 
         if (options?.scrollToBottom) {
@@ -1180,6 +1218,82 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
 
   finalLineNetValue(item: InquiryItem): number | null {
     return quotationLinePricingFromAdmin(item).netValue;
+  }
+
+  hasSnapshotLine(line: InquiryFinalizationSnapshotLine): boolean {
+    return line.adminMrp != null || line.adminAvailable === false;
+  }
+
+  isSnapshotLineUnavailable(line: InquiryFinalizationSnapshotLine): boolean {
+    return line.adminAvailable === false;
+  }
+
+  snapshotLineAsItem(line: InquiryFinalizationSnapshotLine): InquiryItem {
+    return {
+      id: line.inquiryItemId,
+      productId: line.productId ?? line.inquiryItemId ?? '',
+      productName: line.productName,
+      productBrand: line.productBrand,
+      productDescription: line.productDescription,
+      quantity: line.quantity,
+      adminHsnCode: line.adminHsnCode,
+      adminMrp: line.adminMrp,
+      adminDiscountPercentage: line.adminDiscountPercentage,
+      adminGstPercentage: line.adminGstPercentage,
+      adminAvailable: line.adminAvailable,
+      expectedDeliveryDate: line.expectedDeliveryDate,
+    };
+  }
+
+  snapshotLineAmount(line: InquiryFinalizationSnapshotLine): number | null {
+    return quotationLinePricingFromAdmin(this.snapshotLineAsItem(line)).amount;
+  }
+
+  snapshotLineNetValue(line: InquiryFinalizationSnapshotLine): number | null {
+    return quotationLinePricingFromAdmin(this.snapshotLineAsItem(line)).netValue;
+  }
+
+  inquiryItemForSnapshotLine(line: InquiryFinalizationSnapshotLine): InquiryItem | undefined {
+    const inquiry = this.selectedInquiry();
+    if (!inquiry?.items || !line.inquiryItemId) {
+      return undefined;
+    }
+    return inquiry.items.find((item) => item.id === line.inquiryItemId);
+  }
+
+  finalizationSectionTitle(snapshot: InquiryFinalizationSnapshot): string {
+    if ((snapshot.revisionNumber ?? 1) <= 1) {
+      return 'Your final quotation is ready.';
+    }
+    return 'Your updated final quotation is ready.';
+  }
+
+  finalizationStatusLabel(snapshot: InquiryFinalizationSnapshot): string {
+    return (snapshot.revisionNumber ?? 1) <= 1 ? 'Final' : 'Updated';
+  }
+
+  formatFinalizationDate(iso?: string): string {
+    return this.formatPostedDate(iso);
+  }
+
+  openFinalizationPdf(snapshot: InquiryFinalizationSnapshot): void {
+    const attachment = snapshot.pdfAttachment;
+    if (!attachment?.url) {
+      this.toast.warning('No PDF is attached to this quotation.');
+      return;
+    }
+    this.inquiryService.fetchAttachmentBlob(attachment.url).subscribe({
+      next: (blob) => {
+        this.openPdfInViewer(
+          blob,
+          attachment.contentType || 'application/pdf',
+          attachment.fileName || 'final-quotation.pdf',
+        );
+      },
+      error: (err: unknown) => {
+        this.toast.fromApiError(err, 'Could not open the final quotation PDF.');
+      },
+    });
   }
 
   quotationPdfAttachments(entry: InquiryTimelineEntry): InquiryTimelineAttachment[] {
