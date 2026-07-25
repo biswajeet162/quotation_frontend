@@ -1112,6 +1112,7 @@
                     <input
                       type="date"
                       class="line-input line-input-date"
+                      [min]="todayAsDateInputValue()"
                       [disabled]="!isLineAvailable(inquiry.id, item)"
                       [ngModel]="getLineDraft(inquiry.id, item).ourDeliveryDate ?? ''"
                       (ngModelChange)="updateLineDateField(inquiry.id, item, $event)"

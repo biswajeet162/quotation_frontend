@@ -24,6 +24,7 @@ import { ToastService } from '../../../core/services/toast/toast.service';
 import { InquiryChatAttachmentComponent } from '../../../shared/components/inquiry-chat-attachment/inquiry-chat-attachment.component';
 import { ChatAudioPlayerComponent } from '../../../shared/components/chat-audio-player/chat-audio-player.component';
 import { formatExpectedDeliveryDate, getRequestSourceLabel, distributorInquiryDisplayTitle } from '../../../shared/utils/inquiry-display.util';
+import { isDateInputBefore, todayAsDateInputValue } from '../../../shared/utils/date-input.util';
 import {
   canReplyToTimelineEntry,
   ChatReplyTarget,
@@ -215,6 +216,7 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     noticeDisplayDetail(entry, 'DISTRIBUTOR');
   readonly getRequestSourceLabel = getRequestSourceLabel;
   readonly formatExpectedDeliveryDate = formatExpectedDeliveryDate;
+  readonly todayAsDateInputValue = todayAsDateInputValue;
 
   readonly messageFieldLabel = computed(() => 'Message to admin (quotation or availability)');
 
@@ -1323,6 +1325,9 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
 
   updateLineDateField(inquiryId: string, item: InquiryItem, value: string): void {
     const trimmed = value.trim();
+    if (trimmed && isDateInputBefore(trimmed, todayAsDateInputValue())) {
+      return;
+    }
     this.patchLineDraft(inquiryId, item, { ourDeliveryDate: trimmed || undefined });
   }
 

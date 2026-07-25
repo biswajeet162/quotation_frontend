@@ -1223,6 +1223,7 @@
                         <input
                           type="date"
                           class="line-input line-input-date"
+                          [min]="todayAsDateInputValue()"
                           [ngModel]="getLineDraft(inquiry.id, item).expectedDeliveryDate ?? ''"
                           (ngModelChange)="updateLineDateField(inquiry.id, item, $event)"
                           aria-label="Expected delivery date"

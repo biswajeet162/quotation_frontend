@@ -14,6 +14,7 @@ import { ProductFormDraft, ProductFormRow, RowLocalAttachment } from '../../../c
 import { InquiryTimelineAttachment, TimelineAttachmentMediaType } from '../../../core/models/inquiry-timeline.model';
 import { formatSpecificationsInline } from '../../../shared/utils/specifications-display.util';
 import { formatExpectedDeliveryDate } from '../../../shared/utils/inquiry-display.util';
+import { isDateInputBefore, todayAsDateInputValue } from '../../../shared/utils/date-input.util';
 import { resolveAttachmentMediaType } from '../../../shared/utils/attachment-media-type.util';
 import { isValidEmployeePhone } from '../../../shared/utils/employee-contact.util';
 import { EmployeeContactVerifyModalComponent } from '../../consumer/employee-contact-verify-modal/employee-contact-verify-modal.component';
@@ -89,18 +90,11 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
   readonly rows = this.formState.rows;
   readonly highlight = this.formState.highlight;
   readonly formatExpectedDeliveryDate = formatExpectedDeliveryDate;
+  readonly todayAsDateInputValue = todayAsDateInputValue;
 
   readonly quotationDate = computed(() => this.formatQuotationDate(new Date()));
 
   readonly termsText = signal('');
-
-  readonly minExpectedDeliveryDate = computed(() => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = (today.getMonth() + 1).toString().padStart(2, '0');
-    const day = today.getDate().toString().padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  });
 
   readonly termsLines = computed(() =>
     this.termsText()
@@ -201,6 +195,14 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
     field: K,
     value: ProductFormDraft[K],
   ): void {
+    if (
+      field === 'expectedDeliveryDate' &&
+      typeof value === 'string' &&
+      value.trim() &&
+      isDateInputBefore(value, todayAsDateInputValue())
+    ) {
+      return;
+    }
     this.formState.updateRow(rowId, { [field]: value });
   }
 

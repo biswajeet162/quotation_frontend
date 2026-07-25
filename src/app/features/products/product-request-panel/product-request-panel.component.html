@@ -86,7 +86,7 @@
               <td class="col-expected-delivery">
                 <input
                   type="date"
-                  [min]="minExpectedDeliveryDate()"
+                  [min]="todayAsDateInputValue()"
                   [ngModel]="row.expectedDeliveryDate"
                   (ngModelChange)="updateRowField(row.rowId, 'expectedDeliveryDate', $event)"
                   [attr.aria-label]="'Expected delivery for row ' + ($index + 1)"

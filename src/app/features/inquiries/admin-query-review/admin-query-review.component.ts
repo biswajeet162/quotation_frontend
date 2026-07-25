@@ -35,6 +35,7 @@ import {
   formatExpectedDeliveryDate,
   getInquiryListStep,
 } from '../../../shared/utils/inquiry-display.util';
+import { isDateInputBefore, todayAsDateInputValue } from '../../../shared/utils/date-input.util';
 import { quotationLinePricingFromAdmin } from '../../../shared/utils/inquiry-pricing.util';
 import {
   canReplyToTimelineEntry,
@@ -255,6 +256,7 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   readonly noticeDisplayDetail = (entry: InquiryTimelineEntry) =>
     noticeDisplayDetail(entry, 'ADMIN');
   readonly formatExpectedDeliveryDate = formatExpectedDeliveryDate;
+  readonly todayAsDateInputValue = todayAsDateInputValue;
   readonly getInquiryListStep = getInquiryListStep;
 
   assignedDistributorCount(inquiry: Inquiry): number {
@@ -1356,6 +1358,9 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
 
   updateLineDateField(inquiryId: string, item: InquiryItem, value: string): void {
     const trimmed = value.trim();
+    if (trimmed && isDateInputBefore(trimmed, todayAsDateInputValue())) {
+      return;
+    }
     this.patchLineDraft(inquiryId, item, { expectedDeliveryDate: trimmed || undefined });
   }
 
