@@ -680,6 +680,43 @@
                   </button>
                 </div>
               }
+
+              @if (consumerResponseForSnapshot(snapshot); as response) {
+                <section
+                  class="finalization-benefits-panel finalization-consumer-response-panel"
+                  [attr.data-response-type]="response.responseType"
+                  aria-label="Consumer response"
+                >
+                  <h3 class="finalization-benefits-title">
+                    {{ consumerResponseLabel(response) }}
+                  </h3>
+                  @if (response.createdAt) {
+                    <p class="finalization-hint">
+                      Received {{ formatPostedDate(response.createdAt) }}
+                    </p>
+                  }
+                  @if (response.reasonCode) {
+                    <p class="finalization-hint">
+                      Reason: {{ consumerReasonLabel(response.reasonCode) }}
+                    </p>
+                  }
+                  @if (response.note?.trim()) {
+                    <p class="finalization-message">{{ response.note }}</p>
+                  }
+                  @if (response.lineNotes?.length) {
+                    <ul class="finalization-hint">
+                      @for (lineNote of response.lineNotes ?? []; track lineNote.inquiryItemId ?? $index) {
+                        <li>
+                          <strong>
+                            {{ lineNote.productBrand ? lineNote.productBrand + ' ' : '' }}{{ lineNote.productName || 'Product' }}:
+                          </strong>
+                          {{ lineNote.note }}
+                        </li>
+                      }
+                    </ul>
+                  }
+                </section>
+              }
             </article>
           }
         </div>

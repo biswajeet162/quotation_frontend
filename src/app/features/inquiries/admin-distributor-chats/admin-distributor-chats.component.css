@@ -553,6 +553,16 @@
   color: #0f172a;
 }
 
+.finalization-consumer-response-panel[data-response-type='DEAL_DONE'] {
+  border-color: #86efac;
+  background: #ecfdf5;
+}
+
+.finalization-consumer-response-panel[data-response-type='NOT_INTERESTED'] {
+  border-color: #fecdd3;
+  background: #fff1f2;
+}
+
 .products-compare-panel {
   flex: 1;
   min-height: 0;

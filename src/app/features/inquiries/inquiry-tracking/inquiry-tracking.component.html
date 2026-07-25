@@ -585,6 +585,55 @@
                         </div>
                       }
                     </div>
+
+                    @if (consumerResponseForSnapshot(snapshot); as response) {
+                      <div class="finalization-consumer-response" [attr.data-response-type]="response.responseType">
+                        <span class="finalization-consumer-response-label">Your response</span>
+                        <p class="finalization-consumer-response-title">
+                          {{ consumerResponseLabel(response) }}
+                        </p>
+                        @if (response.reasonCode) {
+                          <p class="finalization-consumer-response-meta">
+                            Reason: {{ consumerReasonLabel(response.reasonCode) }}
+                          </p>
+                        }
+                        @if (response.note?.trim()) {
+                          <p class="finalization-consumer-response-note">{{ response.note }}</p>
+                        }
+                        @if (response.lineNotes?.length) {
+                          <ul class="finalization-consumer-response-lines">
+                            @for (lineNote of response.lineNotes ?? []; track lineNote.inquiryItemId ?? $index) {
+                              <li>
+                                <strong>
+                                  {{ lineNote.productBrand ? lineNote.productBrand + ' ' : '' }}{{ lineNote.productName || 'Product' }}:
+                                </strong>
+                                {{ lineNote.note }}
+                              </li>
+                            }
+                          </ul>
+                        }
+                      </div>
+                    } @else if (canRespondToFinalSnapshot(snapshot)) {
+                      <div class="finalization-consumer-actions" aria-label="Respond to final quotation">
+                        <p class="finalization-consumer-actions-lead">
+                          Review the quotation above and let us know how you would like to proceed.
+                        </p>
+                        <div class="finalization-consumer-actions-grid">
+                          <button type="button" class="btn-deal-done" (click)="openDealConfirm(snapshot)">
+                            Deal done
+                          </button>
+                          <button type="button" class="btn-requote" (click)="openRequoteModal(snapshot)">
+                            Ask for re-quotation
+                          </button>
+                          <button type="button" class="btn-decline" (click)="openDeclineModal(snapshot)">
+                            Not interested
+                          </button>
+                          <button type="button" class="btn-help" (click)="openHelpModal(snapshot)">
+                            Need help / talk
+                          </button>
+                        </div>
+                      </div>
+                    }
                   </div>
                 </section>
               }
@@ -1187,6 +1236,214 @@
         title="Resize"
         (pointerdown)="startChatResize($event)"
       ></div>
+    </div>
+  </div>
+}
+
+@if (dealConfirmOpen() && finalResponseSnapshot(); as snapshot) {
+  <div class="confirm-overlay" (click)="closeDealConfirm()" role="presentation">
+    <div
+      class="confirm-dialog confirm-dialog--deal"
+      role="alertdialog"
+      aria-labelledby="deal-confirm-title"
+      aria-modal="true"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="confirm-icon confirm-icon--success" aria-hidden="true">✓</div>
+      <h2 id="deal-confirm-title">Confirm deal done?</h2>
+      <p class="confirm-lead">
+        You are confirming that you accept final quotation revision #{{ snapshot.revisionNumber }} and want to proceed.
+      </p>
+      @if (finalResponseError()) {
+        <div class="alert alert-error confirm-alert" role="alert">{{ finalResponseError() }}</div>
+      }
+      <div class="confirm-actions">
+        <button type="button" class="btn-secondary" (click)="closeDealConfirm()">Not yet</button>
+        <button
+          type="button"
+          class="btn-deal-done"
+          [disabled]="finalResponseLoading()"
+          (click)="confirmDealDone()"
+        >
+          {{ finalResponseLoading() ? 'Confirming…' : 'Yes, deal done' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (requoteModalOpen() && finalResponseSnapshot(); as snapshot) {
+  <div class="confirm-overlay" (click)="closeRequoteModal()" role="presentation">
+    <div
+      class="confirm-dialog confirm-dialog--wide"
+      role="dialog"
+      aria-labelledby="requote-modal-title"
+      aria-modal="true"
+      (click)="$event.stopPropagation()"
+    >
+      <h2 id="requote-modal-title">Ask for re-quotation</h2>
+      <p class="confirm-lead">
+        Tell us what should change. Add a general note and optional product-specific notes (up to 3).
+      </p>
+      <label class="final-response-field">
+        <span class="final-response-field-label">What would you like changed?</span>
+        <textarea
+          rows="4"
+          [ngModel]="requoteGeneralNote()"
+          (ngModelChange)="requoteGeneralNote.set($event)"
+          placeholder="Describe the changes you need in the revised quotation…"
+        ></textarea>
+      </label>
+      @if (availableSnapshotLines(snapshot).length > 0) {
+        <div class="final-response-line-notes">
+          <span class="final-response-field-label">Product-specific notes (optional, max 3)</span>
+          <div class="final-response-line-notes-table-wrap">
+            <table class="preview-table final-response-line-notes-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Change requested</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (line of availableSnapshotLines(snapshot); track line.inquiryItemId ?? $index) {
+                  <tr>
+                    <td>
+                      {{ line.productBrand ? line.productBrand + ' ' : '' }}{{ line.productName || 'Product' }}
+                    </td>
+                    <td>
+                      <textarea
+                        rows="2"
+                        [ngModel]="requoteLineNoteValue(line.inquiryItemId!)"
+                        (ngModelChange)="updateRequoteLineNote(line.inquiryItemId!, $event)"
+                        placeholder="Optional note for this line"
+                      ></textarea>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+      @if (finalResponseError()) {
+        <div class="alert alert-error confirm-alert" role="alert">{{ finalResponseError() }}</div>
+      }
+      <div class="confirm-actions">
+        <button type="button" class="btn-secondary" (click)="closeRequoteModal()">Cancel</button>
+        <button
+          type="button"
+          class="btn-requote"
+          [disabled]="finalResponseLoading() || !requoteGeneralNote().trim()"
+          (click)="submitRequoteRequest()"
+        >
+          {{ finalResponseLoading() ? 'Sending…' : 'Send re-quotation request' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (declineModalOpen() && finalResponseSnapshot()) {
+  <div class="confirm-overlay" (click)="closeDeclineModal()" role="presentation">
+    <div
+      class="confirm-dialog"
+      role="dialog"
+      aria-labelledby="decline-modal-title"
+      aria-modal="true"
+      (click)="$event.stopPropagation()"
+    >
+      <h2 id="decline-modal-title">Not interested in this quotation?</h2>
+      <p class="confirm-lead">Please share why you are declining so we can improve future offers.</p>
+      <label class="final-response-field">
+        <span class="final-response-field-label">Reason</span>
+        <select
+          [ngModel]="declineReasonCode()"
+          (ngModelChange)="declineReasonCode.set($event)"
+        >
+          <option value="">Select a reason</option>
+          @for (option of declineReasonOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      </label>
+      <label class="final-response-field">
+        <span class="final-response-field-label">Additional details (optional)</span>
+        <textarea
+          rows="3"
+          [ngModel]="declineNote()"
+          (ngModelChange)="declineNote.set($event)"
+          placeholder="Tell us more about your decision…"
+        ></textarea>
+      </label>
+      @if (finalResponseError()) {
+        <div class="alert alert-error confirm-alert" role="alert">{{ finalResponseError() }}</div>
+      }
+      <div class="confirm-actions">
+        <button type="button" class="btn-secondary" (click)="closeDeclineModal()">Keep reviewing</button>
+        <button
+          type="button"
+          class="btn-decline"
+          [disabled]="finalResponseLoading() || (!declineReasonCode() && !declineNote().trim())"
+          (click)="submitDecline()"
+        >
+          {{ finalResponseLoading() ? 'Sending…' : 'Confirm not interested' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (helpModalOpen() && finalResponseSnapshot()) {
+  <div class="confirm-overlay" (click)="closeHelpModal()" role="presentation">
+    <div
+      class="confirm-dialog"
+      role="dialog"
+      aria-labelledby="help-modal-title"
+      aria-modal="true"
+      (click)="$event.stopPropagation()"
+    >
+      <h2 id="help-modal-title">Need help or want to talk?</h2>
+      <p class="confirm-lead">Share your question and our team will reach out to you.</p>
+      <label class="final-response-field">
+        <span class="final-response-field-label">Your message</span>
+        <textarea
+          rows="4"
+          [ngModel]="helpNote()"
+          (ngModelChange)="helpNote.set($event)"
+          placeholder="What would you like to discuss about this quotation?"
+        ></textarea>
+      </label>
+      @if (finalResponseError()) {
+        <div class="alert alert-error confirm-alert" role="alert">{{ finalResponseError() }}</div>
+      }
+      <div class="confirm-actions">
+        <button type="button" class="btn-secondary" (click)="closeHelpModal()">Cancel</button>
+        <button
+          type="button"
+          class="btn-help"
+          [disabled]="finalResponseLoading() || !helpNote().trim()"
+          (click)="submitHelpRequest()"
+        >
+          {{ finalResponseLoading() ? 'Sending…' : 'Send message' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (dealCelebrationOpen()) {
+  <div class="deal-celebration-overlay" role="dialog" aria-labelledby="deal-celebration-title" aria-modal="true">
+    <div class="deal-celebration-card">
+      <div class="deal-celebration-confetti" aria-hidden="true">
+        @for (piece of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]; track piece) {
+          <span class="deal-celebration-piece"></span>
+        }
+      </div>
+      <div class="deal-celebration-icon" aria-hidden="true">🎉</div>
+      <h2 id="deal-celebration-title">Deal done!</h2>
+      <p>Congratulations — your quotation is confirmed. Our team will follow up with next steps.</p>
+      <button type="button" class="btn-deal-done" (click)="closeDealCelebration()">Continue</button>
     </div>
   </div>
 }

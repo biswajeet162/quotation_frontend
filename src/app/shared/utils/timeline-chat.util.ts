@@ -131,6 +131,24 @@ export function noticeDisplayLabel(
   if (isFinalQuotationNotice(entry)) {
     return viewer === 'CONSUMER' ? 'Your final quotation is ready' : 'Final quotation sent';
   }
+  if (entry.noticeCode === 'CONSUMER_DEAL_DONE' || entry.title === 'Deal confirmed') {
+    return viewer === 'CONSUMER' ? 'You confirmed the deal' : 'Consumer confirmed the deal';
+  }
+  if (
+    entry.noticeCode === 'CONSUMER_REQUOTE_REQUESTED' ||
+    entry.title === 'Re-quotation requested by consumer'
+  ) {
+    return viewer === 'CONSUMER' ? 'You asked for a re-quotation' : 'Consumer asked for a re-quotation';
+  }
+  if (
+    entry.noticeCode === 'CONSUMER_NOT_INTERESTED' ||
+    entry.title === 'Consumer declined quotation'
+  ) {
+    return viewer === 'CONSUMER' ? 'You declined this quotation' : 'Consumer declined the quotation';
+  }
+  if (entry.noticeCode === 'CONSUMER_NEED_HELP' || entry.title === 'Consumer requested help') {
+    return viewer === 'CONSUMER' ? 'You requested help' : 'Consumer requested help';
+  }
   if (isFinalQuotationForwardedNotice(entry)) {
     return 'Quotation has been sent to consumer';
   }
@@ -166,6 +184,18 @@ export function noticeDisplayDetail(
   if (isFinalQuotationNotice(entry) || isFinalQuotationForwardedNotice(entry)) {
     // Keep optional admin note text in chat; tables/PDFs stay in the main content area.
     return entry.message?.trim() || null;
+  }
+  if (
+    entry.noticeCode === 'CONSUMER_DEAL_DONE' ||
+    entry.noticeCode === 'CONSUMER_REQUOTE_REQUESTED' ||
+    entry.noticeCode === 'CONSUMER_NOT_INTERESTED' ||
+    entry.noticeCode === 'CONSUMER_NEED_HELP' ||
+    entry.title === 'Deal confirmed' ||
+    entry.title === 'Re-quotation requested by consumer' ||
+    entry.title === 'Consumer declined quotation' ||
+    entry.title === 'Consumer requested help'
+  ) {
+    return entry.message?.trim() || entry.detail?.trim() || null;
   }
   if (
     entry.noticeCode === 'SENT_TO_DISTRIBUTORS' ||

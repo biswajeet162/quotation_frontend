@@ -504,6 +504,227 @@
   border-top: 1px solid #e2e8f0;
 }
 
+.finalization-consumer-actions {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.finalization-consumer-actions-lead {
+  margin: 0 0 0.85rem;
+  color: #475569;
+  font-size: 0.92rem;
+}
+
+.finalization-consumer-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.finalization-consumer-actions-grid button {
+  border: none;
+  border-radius: 10px;
+  padding: 0.75rem 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.finalization-consumer-actions-grid button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.btn-deal-done {
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.25);
+}
+
+.btn-requote {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe !important;
+}
+
+.btn-decline {
+  background: #fff1f2;
+  color: #be123c;
+  border: 1px solid #fecdd3 !important;
+}
+
+.btn-help {
+  background: #faf5ff;
+  color: #7e22ce;
+  border: 1px solid #e9d5ff !important;
+}
+
+.finalization-consumer-response {
+  margin-top: 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: 10px;
+  border: 1px solid #dbeafe;
+  background: #f8fafc;
+}
+
+.finalization-consumer-response[data-response-type='DEAL_DONE'] {
+  border-color: #86efac;
+  background: #ecfdf5;
+}
+
+.finalization-consumer-response[data-response-type='NOT_INTERESTED'] {
+  border-color: #fecdd3;
+  background: #fff1f2;
+}
+
+.finalization-consumer-response-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.finalization-consumer-response-title {
+  margin: 0.35rem 0 0;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.finalization-consumer-response-meta,
+.finalization-consumer-response-note {
+  margin: 0.45rem 0 0;
+  color: #475569;
+  white-space: pre-wrap;
+}
+
+.finalization-consumer-response-lines {
+  margin: 0.65rem 0 0;
+  padding-left: 1.1rem;
+  color: #334155;
+}
+
+.confirm-dialog--wide {
+  width: min(720px, calc(100vw - 2rem));
+}
+
+.confirm-dialog--deal .confirm-icon--success {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.final-response-field {
+  display: block;
+  margin-top: 0.85rem;
+}
+
+.final-response-field-label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.final-response-field textarea,
+.final-response-field select {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.65rem 0.75rem;
+  font: inherit;
+  resize: vertical;
+}
+
+.final-response-line-notes {
+  margin-top: 1rem;
+}
+
+.final-response-line-notes-table-wrap {
+  margin-top: 0.5rem;
+  overflow: auto;
+}
+
+.final-response-line-notes-table textarea {
+  width: 100%;
+  min-width: 220px;
+}
+
+.deal-celebration-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+}
+
+.deal-celebration-card {
+  position: relative;
+  width: min(420px, calc(100vw - 2rem));
+  padding: 2rem 1.5rem 1.5rem;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ecfdf5 0%, #ffffff 55%);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
+  text-align: center;
+  overflow: hidden;
+}
+
+.deal-celebration-icon {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.deal-celebration-card h2 {
+  margin: 0.75rem 0 0.35rem;
+  color: #065f46;
+}
+
+.deal-celebration-card p {
+  margin: 0 0 1.25rem;
+  color: #475569;
+}
+
+.deal-celebration-confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.deal-celebration-piece {
+  position: absolute;
+  top: -12px;
+  width: 8px;
+  height: 14px;
+  border-radius: 2px;
+  animation: dealConfettiFall 2.8s linear infinite;
+}
+
+.deal-celebration-piece:nth-child(5n + 1) { left: 8%; background: #34d399; animation-delay: 0s; }
+.deal-celebration-piece:nth-child(5n + 2) { left: 22%; background: #60a5fa; animation-delay: 0.3s; }
+.deal-celebration-piece:nth-child(5n + 3) { left: 38%; background: #fbbf24; animation-delay: 0.6s; }
+.deal-celebration-piece:nth-child(5n + 4) { left: 56%; background: #f472b6; animation-delay: 0.15s; }
+.deal-celebration-piece:nth-child(5n) { left: 74%; background: #a78bfa; animation-delay: 0.45s; }
+
+@keyframes dealConfettiFall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(320px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .finalization-consumer-actions-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .inquiry-event-content .final-quotation-table-wrap + .quotation-pdf-section {
   margin-top: 0;
   border-top: none;

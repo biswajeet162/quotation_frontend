@@ -14,7 +14,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { Inquiry, InquiryDistributor, InquiryItem, DistributorQuotationHistoryEntry, InquiryFinalizationSnapshot, InquiryFinalizationSnapshotLine } from '../../../core/models/inquiry.model';
+import { Inquiry, InquiryDistributor, InquiryItem, DistributorQuotationHistoryEntry, InquiryFinalizationSnapshot, InquiryFinalizationSnapshotLine, ConsumerFinalResponse } from '../../../core/models/inquiry.model';
 import { AdminCompanyProfile } from '../../../core/models/admin-company.model';
 import {
   InquiryTimelineEntry,
@@ -764,6 +764,48 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
 
   finalizationSnapshotKey(snapshot: InquiryFinalizationSnapshot): string {
     return snapshot.id ?? snapshot.communicationId ?? String(snapshot.revisionNumber);
+  }
+
+  consumerResponseForSnapshot(snapshot: InquiryFinalizationSnapshot): ConsumerFinalResponse | undefined {
+    const responses = this.inquiry()?.finalResponses ?? [];
+    return responses.find((response) => {
+      if (response.finalizationSnapshotId && snapshot.id) {
+        return response.finalizationSnapshotId === snapshot.id;
+      }
+      return response.revisionNumber === snapshot.revisionNumber;
+    });
+  }
+
+  consumerResponseLabel(response: ConsumerFinalResponse): string {
+    switch (response.responseType) {
+      case 'DEAL_DONE':
+        return 'Consumer confirmed the deal';
+      case 'REQUOTE':
+        return 'Consumer requested a re-quotation';
+      case 'NOT_INTERESTED':
+        return 'Consumer is not interested';
+      case 'NEED_HELP':
+        return 'Consumer requested help';
+      default:
+        return 'Consumer responded';
+    }
+  }
+
+  consumerReasonLabel(reasonCode?: string): string {
+    switch (reasonCode) {
+      case 'PRICE_TOO_HIGH':
+        return 'Price is too high';
+      case 'TIMELINE_NOT_SUITABLE':
+        return 'Delivery timeline does not work';
+      case 'FOUND_ALTERNATIVE':
+        return 'Found an alternative supplier';
+      case 'SPEC_MISMATCH':
+        return 'Specifications do not match their needs';
+      case 'OTHER':
+        return 'Other';
+      default:
+        return reasonCode?.replace(/_/g, ' ') ?? '';
+    }
   }
 
   snapshotHasDistributorBreakdown(snapshot: InquiryFinalizationSnapshot): boolean {

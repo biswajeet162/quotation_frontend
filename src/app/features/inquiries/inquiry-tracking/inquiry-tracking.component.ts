@@ -2,7 +2,7 @@ import { Component, computed, ElementRef, HostListener, inject, OnDestroy, OnIni
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ConsumerInquiry, InquiryFinalizationSnapshot, InquiryFinalizationSnapshotLine, InquiryItem, InquiryStatus } from '../../../core/models/inquiry.model';
+import { ConsumerInquiry, InquiryFinalizationSnapshot, InquiryFinalizationSnapshotLine, InquiryItem, InquiryStatus, ConsumerFinalResponse, ConsumerFinalResponseType } from '../../../core/models/inquiry.model';
 import {
   InquiryTimelineEntry,
   InquiryTimelineAttachment,
@@ -102,6 +102,20 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   readonly quotationPdfViewerOpen = signal(false);
   readonly quotationPdfSafeUrl = signal<SafeResourceUrl | null>(null);
   readonly quotationPdfViewerFileName = signal('');
+  readonly dealConfirmOpen = signal(false);
+  readonly requoteModalOpen = signal(false);
+  readonly declineModalOpen = signal(false);
+  readonly helpModalOpen = signal(false);
+  readonly dealCelebrationOpen = signal(false);
+  readonly finalResponseLoading = signal(false);
+  readonly finalResponseError = signal<string | null>(null);
+  readonly finalResponseSnapshot = signal<InquiryFinalizationSnapshot | null>(null);
+  readonly requoteGeneralNote = signal('');
+  readonly requoteLineNotes = signal<Record<string, string>>({});
+  readonly declineReasonCode = signal('');
+  readonly declineNote = signal('');
+  readonly helpNote = signal('');
+  private celebrationTimerId: ReturnType<typeof setTimeout> | null = null;
   private readonly detailScrollRef = viewChild<ElementRef<HTMLElement>>('detailScroll');
   private readonly chatScrollRef = viewChild<ElementRef<HTMLElement>>('chatScroll');
   private readonly messageInputRef = viewChild<ElementRef<HTMLTextAreaElement>>('messageInput');
@@ -242,6 +256,16 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     [...this.finalizationHistory()].reverse(),
   );
 
+  readonly latestFinalizationSnapshot = computed(() => this.finalizationHistory()[0] ?? null);
+
+  readonly declineReasonOptions = [
+    { value: 'PRICE_TOO_HIGH', label: 'Price is too high' },
+    { value: 'TIMELINE_NOT_SUITABLE', label: 'Delivery timeline does not work' },
+    { value: 'FOUND_ALTERNATIVE', label: 'Found an alternative supplier' },
+    { value: 'SPEC_MISMATCH', label: 'Specifications do not match our needs' },
+    { value: 'OTHER', label: 'Other' },
+  ] as const;
+
   readonly showLegacyFinalQuotation = computed(() => {
     if (this.finalizationHistoryLoading()) {
       return false;
@@ -340,6 +364,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.closeDealCelebration();
     this.cleanupRecordingResources(false);
     this.closeQuotationPdfViewer();
   }
@@ -1322,6 +1347,224 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
 
   formatFinalizationDate(iso?: string): string {
     return this.formatPostedDate(iso);
+  }
+
+  isLatestFinalizationSnapshot(snapshot: InquiryFinalizationSnapshot): boolean {
+    const latest = this.latestFinalizationSnapshot();
+    if (!latest) {
+      return false;
+    }
+    if (latest.id && snapshot.id) {
+      return latest.id === snapshot.id;
+    }
+    return latest.revisionNumber === snapshot.revisionNumber;
+  }
+
+  consumerResponseForSnapshot(snapshot: InquiryFinalizationSnapshot): ConsumerFinalResponse | undefined {
+    const responses = this.selectedInquiry()?.finalResponses ?? [];
+    return responses.find((response) => {
+      if (response.finalizationSnapshotId && snapshot.id) {
+        return response.finalizationSnapshotId === snapshot.id;
+      }
+      return response.revisionNumber === snapshot.revisionNumber;
+    });
+  }
+
+  canRespondToFinalSnapshot(snapshot: InquiryFinalizationSnapshot): boolean {
+    const inquiry = this.selectedInquiry();
+    if (!inquiry || inquiry.status !== 'FINAL_SENT') {
+      return false;
+    }
+    if (!this.isLatestFinalizationSnapshot(snapshot)) {
+      return false;
+    }
+    return !this.consumerResponseForSnapshot(snapshot);
+  }
+
+  consumerResponseLabel(response: ConsumerFinalResponse): string {
+    switch (response.responseType) {
+      case 'DEAL_DONE':
+        return 'Deal confirmed';
+      case 'REQUOTE':
+        return 'Re-quotation requested';
+      case 'NOT_INTERESTED':
+        return 'Not interested';
+      case 'NEED_HELP':
+        return 'Help requested';
+      default:
+        return 'Response sent';
+    }
+  }
+
+  consumerReasonLabel(reasonCode?: string): string {
+    const match = this.declineReasonOptions.find((option) => option.value === reasonCode);
+    return match?.label ?? reasonCode?.replace(/_/g, ' ') ?? '';
+  }
+
+  availableSnapshotLines(snapshot: InquiryFinalizationSnapshot): InquiryFinalizationSnapshotLine[] {
+    return snapshot.items.filter(
+      (line) => line.adminAvailable !== false && line.inquiryItemId && this.hasSnapshotLine(line),
+    );
+  }
+
+  requoteLineNoteValue(inquiryItemId: string): string {
+    return this.requoteLineNotes()[inquiryItemId] ?? '';
+  }
+
+  updateRequoteLineNote(inquiryItemId: string, value: string): void {
+    this.requoteLineNotes.update((current) => ({ ...current, [inquiryItemId]: value }));
+  }
+
+  openDealConfirm(snapshot: InquiryFinalizationSnapshot): void {
+    this.finalResponseSnapshot.set(snapshot);
+    this.finalResponseError.set(null);
+    this.dealConfirmOpen.set(true);
+  }
+
+  closeDealConfirm(): void {
+    if (this.finalResponseLoading()) {
+      return;
+    }
+    this.dealConfirmOpen.set(false);
+    this.finalResponseSnapshot.set(null);
+  }
+
+  openRequoteModal(snapshot: InquiryFinalizationSnapshot): void {
+    this.finalResponseSnapshot.set(snapshot);
+    this.finalResponseError.set(null);
+    this.requoteGeneralNote.set('');
+    this.requoteLineNotes.set({});
+    this.requoteModalOpen.set(true);
+  }
+
+  closeRequoteModal(): void {
+    if (this.finalResponseLoading()) {
+      return;
+    }
+    this.requoteModalOpen.set(false);
+    this.finalResponseSnapshot.set(null);
+  }
+
+  openDeclineModal(snapshot: InquiryFinalizationSnapshot): void {
+    this.finalResponseSnapshot.set(snapshot);
+    this.finalResponseError.set(null);
+    this.declineReasonCode.set('');
+    this.declineNote.set('');
+    this.declineModalOpen.set(true);
+  }
+
+  closeDeclineModal(): void {
+    if (this.finalResponseLoading()) {
+      return;
+    }
+    this.declineModalOpen.set(false);
+    this.finalResponseSnapshot.set(null);
+  }
+
+  openHelpModal(snapshot: InquiryFinalizationSnapshot): void {
+    this.finalResponseSnapshot.set(snapshot);
+    this.finalResponseError.set(null);
+    this.helpNote.set('');
+    this.helpModalOpen.set(true);
+  }
+
+  closeHelpModal(): void {
+    if (this.finalResponseLoading()) {
+      return;
+    }
+    this.helpModalOpen.set(false);
+    this.finalResponseSnapshot.set(null);
+  }
+
+  closeDealCelebration(): void {
+    this.dealCelebrationOpen.set(false);
+    if (this.celebrationTimerId) {
+      clearTimeout(this.celebrationTimerId);
+      this.celebrationTimerId = null;
+    }
+  }
+
+  confirmDealDone(): void {
+    this.submitFinalResponse('DEAL_DONE');
+  }
+
+  submitRequoteRequest(): void {
+    this.submitFinalResponse('REQUOTE');
+  }
+
+  submitDecline(): void {
+    this.submitFinalResponse('NOT_INTERESTED');
+  }
+
+  submitHelpRequest(): void {
+    this.submitFinalResponse('NEED_HELP');
+  }
+
+  private submitFinalResponse(responseType: ConsumerFinalResponseType): void {
+    const inquiry = this.selectedInquiry();
+    const snapshot = this.finalResponseSnapshot();
+    if (!inquiry?.id || !snapshot) {
+      return;
+    }
+
+    const note = responseType === 'REQUOTE'
+      ? this.requoteGeneralNote().trim()
+      : responseType === 'NOT_INTERESTED'
+        ? this.declineNote().trim()
+        : responseType === 'NEED_HELP'
+          ? this.helpNote().trim()
+          : undefined;
+
+    const reasonCode = responseType === 'NOT_INTERESTED'
+      ? this.declineReasonCode().trim() || undefined
+      : undefined;
+
+    const lineNotes = responseType === 'REQUOTE'
+      ? Object.entries(this.requoteLineNotes())
+          .filter(([, value]) => value.trim())
+          .slice(0, 3)
+          .map(([inquiryItemId, value]) => ({ inquiryItemId, note: value.trim() }))
+      : undefined;
+
+    this.finalResponseLoading.set(true);
+    this.finalResponseError.set(null);
+
+    this.inquiryService.submitConsumerFinalResponse(inquiry.id, {
+      responseType,
+      finalizationSnapshotId: snapshot.id,
+      note: note || undefined,
+      reasonCode,
+      lineNotes,
+    }).subscribe({
+      next: (updated) => {
+        this.finalResponseLoading.set(false);
+        this.inquiries.update((current) =>
+          current.map((item) => (item.id === updated.id ? { ...item, ...updated } : item)),
+        );
+        this.dealConfirmOpen.set(false);
+        this.requoteModalOpen.set(false);
+        this.declineModalOpen.set(false);
+        this.helpModalOpen.set(false);
+        this.finalResponseSnapshot.set(null);
+        this.loadTimeline({ silent: true });
+        if (responseType === 'DEAL_DONE') {
+          this.dealCelebrationOpen.set(true);
+          this.celebrationTimerId = setTimeout(() => this.closeDealCelebration(), 5000);
+        }
+        const successMessage = responseType === 'DEAL_DONE'
+          ? 'Congratulations! Your deal is confirmed.'
+          : responseType === 'REQUOTE'
+            ? 'Your re-quotation request has been sent.'
+            : responseType === 'NOT_INTERESTED'
+              ? 'Your response has been recorded.'
+              : 'We received your message and will get back to you.';
+        this.toast.success(successMessage);
+      },
+      error: (err: unknown) => {
+        this.finalResponseLoading.set(false);
+        this.finalResponseError.set(extractApiErrorMessage(err, 'Could not send your response.'));
+      },
+    });
   }
 
   openFinalizationPdf(snapshot: InquiryFinalizationSnapshot): void {

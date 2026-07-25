@@ -17,6 +17,7 @@ import {
   AdminInquiryLinePricing,
   FinalizeQuotationRequest,
   InquiryFinalizationSnapshot,
+  ConsumerFinalResponseRequest,
 } from '../../models/inquiry.model';
 
 @Injectable({ providedIn: 'root' })
@@ -161,6 +162,13 @@ export class InquiryService {
 
   getMyFinalizationHistory(id: string): Observable<InquiryFinalizationSnapshot[]> {
     return this.http.get<InquiryFinalizationSnapshot[]>(`${this.baseUrl}/${id}/my-finalization-history`);
+  }
+
+  submitConsumerFinalResponse(
+    id: string,
+    request: ConsumerFinalResponseRequest,
+  ): Observable<ConsumerInquiry> {
+    return this.http.post<ConsumerInquiry>(`${this.baseUrl}/${id}/consumer-final-response`, request);
   }
 
   getDistributorOptions(id: string): Observable<BrandRoutingPreview> {

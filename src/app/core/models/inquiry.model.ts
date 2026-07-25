@@ -65,8 +65,41 @@ export interface ConsumerInquiry {
   needsClarification?: boolean;
   clarificationMessage?: string;
   items?: InquiryItem[];
+  finalResponses?: ConsumerFinalResponse[];
   createdAt?: string;
   updatedAt?: string;
+}
+
+export type ConsumerFinalResponseType =
+  | 'DEAL_DONE'
+  | 'REQUOTE'
+  | 'NOT_INTERESTED'
+  | 'NEED_HELP';
+
+export interface ConsumerFinalResponseLineNote {
+  inquiryItemId?: string;
+  productBrand?: string;
+  productName?: string;
+  note?: string;
+}
+
+export interface ConsumerFinalResponse {
+  id?: string;
+  finalizationSnapshotId?: string;
+  revisionNumber?: number;
+  responseType: ConsumerFinalResponseType;
+  note?: string;
+  reasonCode?: string;
+  lineNotes?: ConsumerFinalResponseLineNote[];
+  createdAt?: string;
+}
+
+export interface ConsumerFinalResponseRequest {
+  responseType: ConsumerFinalResponseType;
+  finalizationSnapshotId?: string;
+  note?: string;
+  reasonCode?: string;
+  lineNotes?: { inquiryItemId: string; note: string }[];
 }
 
 export interface InquiryDistributor {
@@ -110,6 +143,7 @@ export interface Inquiry {
   searchTerm?: string;
   items?: InquiryItem[];
   distributors?: InquiryDistributor[];
+  finalResponses?: ConsumerFinalResponse[];
   createdAt?: string;
   updatedAt?: string;
 }
