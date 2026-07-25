@@ -49,6 +49,45 @@
   letter-spacing: -0.02em;
 }
 
+.comparison-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.comparison-pick-ratio {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.06rem;
+  padding: 0.18rem 0.5rem 0.2rem;
+  border-radius: 0.45rem;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  font-family: ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.comparison-pick-ratio .pick-num {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.comparison-pick-ratio .pick-sep {
+  font-size: 0.82rem;
+  font-weight: 500;
+  opacity: 0.85;
+  margin: 0 0.02rem;
+}
+
+.comparison-pick-ratio .pick-den {
+  font-size: 0.88rem;
+  font-weight: 600;
+  opacity: 0.92;
+}
+
 .comparison-subtitle {
   margin: 0.35rem 0 0;
   font-size: 0.88rem;
@@ -141,6 +180,19 @@
   font-size: 0.86rem;
   color: #64748b;
   max-width: 44rem;
+}
+
+.matrix-pick-summary {
+  display: block;
+  margin-top: 0.35rem;
+  color: #0f766e;
+  font-weight: 500;
+}
+
+.matrix-pick-summary strong {
+  font-family: ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
 }
 
 .btn-finalize {

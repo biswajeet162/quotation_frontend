@@ -389,6 +389,16 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
       this.productCompareSections().filter((section) => section.selectedCompanyId != null).length,
   );
 
+  /** Selected distributor picks / total customer inquiry products (e.g. 2/5). */
+  readonly quotationPickRatio = computed(() => {
+    const total =
+      this.inquiry()?.items?.length ?? this.productCompareSections().length;
+    return {
+      selected: this.selectedProductCount(),
+      total,
+    };
+  });
+
   /**
    * Per distributor: admin mix picks / products sent to that distributor.
    * Shown in the By distributors list from the start (e.g. 0/3, then 2/3 as picks are made).

@@ -67,8 +67,26 @@
         "
       >
         Quotation comparison
-        @if (respondedDistributorCount() > 0) {
-          <span class="btn-comparison-count">({{ respondedDistributorCount() }})</span>
+        @if (quotationPickRatio().total > 0) {
+          <span
+            class="btn-comparison-ratio"
+            [attr.title]="
+              quotationPickRatio().selected +
+              ' of ' +
+              quotationPickRatio().total +
+              ' customer products selected from distributors'
+            "
+            [attr.aria-label]="
+              quotationPickRatio().selected +
+              ' of ' +
+              quotationPickRatio().total +
+              ' customer products selected'
+            "
+          >
+            <span class="pick-num">{{ quotationPickRatio().selected }}</span>
+            <span class="pick-sep" aria-hidden="true">/</span>
+            <span class="pick-den">{{ quotationPickRatio().total }}</span>
+          </span>
         }
       </button>
       <button
@@ -102,6 +120,13 @@
         </button>
         <button type="button" class="btn-comparison btn-banner-action" (click)="openComparisonModal()">
           Compare quotes
+          @if (quotationPickRatio().total > 0) {
+            <span class="btn-comparison-ratio">
+              <span class="pick-num">{{ quotationPickRatio().selected }}</span>
+              <span class="pick-sep" aria-hidden="true">/</span>
+              <span class="pick-den">{{ quotationPickRatio().total }}</span>
+            </span>
+          }
         </button>
       </div>
     </div>
@@ -1535,6 +1560,13 @@
         </button>
         <button type="button" class="btn-comparison" (click)="openComparisonFromQuoteChangeAlert()">
           Open quotation comparison
+          @if (quotationPickRatio().total > 0) {
+            <span class="btn-comparison-ratio">
+              <span class="pick-num">{{ quotationPickRatio().selected }}</span>
+              <span class="pick-sep" aria-hidden="true">/</span>
+              <span class="pick-den">{{ quotationPickRatio().total }}</span>
+            </span>
+          }
         </button>
       </footer>
     </div>

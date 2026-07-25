@@ -193,6 +193,15 @@ export class QuotationComparisonModalComponent {
     this.productMatrix().some((row) => this.selectedOfferForRow(row) != null),
   );
 
+  /** Picked offers / total customer inquiry products (e.g. 2/5). */
+  readonly pickRatio = computed(() => {
+    const total = this.inquiry()?.items?.length ?? this.productMatrix().length;
+    const selected = this.productMatrix().filter(
+      (row) => this.selectedOfferForRow(row) != null,
+    ).length;
+    return { selected, total };
+  });
+
   readonly formatExpectedDeliveryDate = formatExpectedDeliveryDate;
 
   constructor() {

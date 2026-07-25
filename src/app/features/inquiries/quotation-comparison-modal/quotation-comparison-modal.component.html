@@ -10,7 +10,30 @@
       <header class="comparison-header">
         <div class="comparison-title-block">
           <p class="comparison-eyebrow">Amount · excl. GST</p>
-          <h2 id="comparison-title">Quotation comparison</h2>
+          <div class="comparison-title-row">
+            <h2 id="comparison-title">Quotation comparison</h2>
+            @if (pickRatio().total > 0) {
+              <span
+                class="comparison-pick-ratio"
+                [attr.title]="
+                  pickRatio().selected +
+                  ' of ' +
+                  pickRatio().total +
+                  ' customer products selected from distributors'
+                "
+                [attr.aria-label]="
+                  pickRatio().selected +
+                  ' of ' +
+                  pickRatio().total +
+                  ' customer products selected'
+                "
+              >
+                <span class="pick-num">{{ pickRatio().selected }}</span>
+                <span class="pick-sep" aria-hidden="true">/</span>
+                <span class="pick-den">{{ pickRatio().total }}</span>
+              </span>
+            }
+          </div>
           @if (inquiry(); as inquiry) {
             <p class="comparison-subtitle">
               <span>{{ inquiry.title }}</span>
@@ -47,6 +70,13 @@
               Green marks the lowest amount. Click any offer to pick it for the mix.
               You can finalize with only the products you have picked — unpicked lines will
               be sent to the customer as unavailable.
+              @if (pickRatio().total > 0) {
+                <span class="matrix-pick-summary">
+                  Selected
+                  <strong>{{ pickRatio().selected }}/{{ pickRatio().total }}</strong>
+                  customer product{{ pickRatio().total === 1 ? '' : 's' }}.
+                </span>
+              }
             </p>
             <button
               type="button"

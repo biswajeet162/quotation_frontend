@@ -673,6 +673,39 @@
   opacity: 0.9;
 }
 
+.btn-comparison-ratio {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.06rem;
+  margin-left: 0.15rem;
+  padding: 0.14rem 0.45rem 0.16rem;
+  border-radius: 0.4rem;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  font-family: ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.btn-comparison-ratio .pick-num {
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.btn-comparison-ratio .pick-sep {
+  font-size: 0.76rem;
+  font-weight: 500;
+  opacity: 0.85;
+  margin: 0 0.02rem;
+}
+
+.btn-comparison-ratio .pick-den {
+  font-size: 0.8rem;
+  font-weight: 600;
+  opacity: 0.92;
+}
+
 .page-card h1 {
   margin: 0;
   font-size: 1.25rem;
