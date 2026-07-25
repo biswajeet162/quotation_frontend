@@ -897,6 +897,13 @@
   font-size: 1.25rem;
 }
 
+.page-inquiry-id {
+  margin-left: 0.35rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
 .muted {
   color: #64748b;
   font-size: 0.9rem;

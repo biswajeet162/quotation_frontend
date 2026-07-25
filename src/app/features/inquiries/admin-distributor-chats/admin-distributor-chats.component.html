@@ -3,7 +3,12 @@
 
   <header class="page-header">
     <div class="page-header-title-block">
-      <h1>Distributors list</h1>
+      <h1>
+        Distributors list
+        @if (inquiry()?.inquiryId; as inquiryNumber) {
+          <span class="page-inquiry-id">({{ inquiryNumber }})</span>
+        }
+      </h1>
       <div class="view-mode-toggle" role="tablist" aria-label="List view mode">
         <button
           type="button"
