@@ -63,6 +63,8 @@ import {
   QuoteChangeAlert,
 } from '../../../shared/utils/quote-change-alert.util';
 import { openPublicImages } from '../../../shared/utils/public-image.util';
+import { inquiryHasConsumerDealDone } from '../../../shared/utils/inquiry-deal.util';
+import { DealDoneSealComponent, DealSealVariant } from '../../../shared/components/deal-done-seal/deal-done-seal.component';
 import { QuotationComparisonModalComponent } from '../quotation-comparison-modal/quotation-comparison-modal.component';
 import { FinalizeQuotationModalComponent } from '../finalize-quotation-modal/finalize-quotation-modal.component';
 
@@ -116,6 +118,7 @@ interface ProductCompareSection {
     LoadingOverlayComponent,
     QuotationComparisonModalComponent,
     FinalizeQuotationModalComponent,
+    DealDoneSealComponent,
   ],
   templateUrl: './admin-distributor-chats.component.html',
   styleUrl: './admin-distributor-chats.component.css',
@@ -250,6 +253,24 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   });
 
   readonly latestFinalization = computed(() => this.finalizationHistory()[0] ?? null);
+
+  /** Distributor company ids included in the latest sent final quotation mix. */
+  readonly dealFinalizedDistributorIds = computed(() => {
+    const snapshot = this.latestFinalization();
+    if (snapshot) {
+      const ids = new Set<string>();
+      for (const line of snapshot.items) {
+        if (line.distributorCompanyId && !this.isSnapshotLineUnavailable(line)) {
+          ids.add(line.distributorCompanyId);
+        }
+      }
+      if (ids.size > 0) {
+        return ids;
+      }
+    }
+    const fallback = this.finalChoiceCompanyId();
+    return fallback ? new Set([fallback]) : new Set<string>();
+  });
 
   readonly quoteChangeAlerts = computed((): QuoteChangeAlert[] =>
     buildQuoteChangeAlerts(
@@ -554,7 +575,7 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
         this.syncDistributorSelection();
         this.resolveFinalChoiceOnLoad(inquiry);
         this.loadAllDistributorQuotes();
-        if (inquiry.status === 'FINAL_SENT') {
+        if (inquiry.status === 'FINAL_SENT' || inquiry.status === 'CLOSED') {
           this.loadFinalizationHistory();
         } else {
           this.finalizationHistory.set([]);
@@ -1949,6 +1970,13 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
 
   isFinalChoiceDistributor(distributor: InquiryDistributor): boolean {
     return this.finalChoiceCompanyId() === distributor.companyId;
+  }
+
+  distributorDealSealVariant(distributor: InquiryDistributor): DealSealVariant | null {
+    if (!inquiryHasConsumerDealDone(this.inquiry())) {
+      return null;
+    }
+    return this.dealFinalizedDistributorIds().has(distributor.companyId) ? 'deal' : 'no-deal';
   }
 
   getDistributorListStep(distributor: InquiryDistributor): 'initiated' | 'in-progress' | 'green' {

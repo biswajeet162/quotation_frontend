@@ -1,4 +1,6 @@
-import { Component, input } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
+
+export type DealSealVariant = 'deal' | 'no-deal';
 
 @Component({
   selector: 'app-deal-done-seal',
@@ -6,14 +8,20 @@ import { Component, input } from '@angular/core';
     <span
       class="deal-done-seal"
       [class.deal-done-seal--compact]="compact()"
+      [class.deal-done-seal--no-deal]="variant() === 'no-deal'"
       role="img"
-      aria-label="Deal confirmed"
+      [attr.aria-label]="variant() === 'no-deal' ? 'Not included in confirmed deal' : 'Deal confirmed'"
     >
-      <span class="deal-done-seal-text">DEAL</span>
+      <span class="deal-done-seal-text">{{ sealText() }}</span>
     </span>
   `,
   styleUrl: './deal-done-seal.component.css',
 })
 export class DealDoneSealComponent {
   readonly compact = input(false);
+  readonly variant = input<DealSealVariant>('deal');
+
+  sealText(): string {
+    return this.variant() === 'no-deal' ? 'NO DEAL' : 'DEAL';
+  }
 }

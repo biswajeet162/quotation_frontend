@@ -760,63 +760,68 @@
                 "
                 (click)="selectDistributor(distributor.companyId)"
               >
-                <span class="query-item-heading">
-                  <span class="query-title">{{ distributorLabel(distributor) }}</span>
-                  @if (isDistributorNeedingAction(distributor)) {
-                    <span class="need-action-badge need-action-badge--compact">Need action</span>
-                  }
-                  <span class="query-heading-end">
-                    @if (distributorPickRatio(distributor); as pick) {
-                      <span
-                        class="distributor-pick-ratio"
-                        [attr.title]="
-                          pick.selected +
-                          ' of ' +
-                          pick.total +
-                          ' products sent to this distributor selected'
-                        "
-                        [attr.aria-label]="
-                          pick.selected +
-                          ' of ' +
-                          pick.total +
-                          ' products sent to this distributor selected'
-                        "
-                      >
-                        <span class="pick-num">{{ pick.selected }}</span>
-                        <span class="pick-sep" aria-hidden="true">/</span>
-                        <span class="pick-den">{{ pick.total }}</span>
-                      </span>
+                <span class="query-item-content">
+                  <span class="query-item-heading">
+                    <span class="query-title">{{ distributorLabel(distributor) }}</span>
+                    @if (isDistributorNeedingAction(distributor)) {
+                      <span class="need-action-badge need-action-badge--compact">Need action</span>
                     }
-                    @if (isFinalChoiceDistributor(distributor)) {
-                      <span
-                        class="final-choice-badge"
-                        title="Chosen and sent to consumer"
-                        aria-hidden="true"
-                      >
-                        <svg class="final-choice-ticks" viewBox="0 0 22 14" focusable="false">
-                          <path
-                            d="M1.2 7.4 4.6 11 11.4 2.6"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2.15"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                          />
-                          <path
-                            d="M8.2 7.4 11.6 11 18.4 2.6"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2.15"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                          />
-                        </svg>
-                      </span>
-                    }
+                    <span class="query-heading-end">
+                      @if (distributorPickRatio(distributor); as pick) {
+                        <span
+                          class="distributor-pick-ratio"
+                          [attr.title]="
+                            pick.selected +
+                            ' of ' +
+                            pick.total +
+                            ' products sent to this distributor selected'
+                          "
+                          [attr.aria-label]="
+                            pick.selected +
+                            ' of ' +
+                            pick.total +
+                            ' products sent to this distributor selected'
+                          "
+                        >
+                          <span class="pick-num">{{ pick.selected }}</span>
+                          <span class="pick-sep" aria-hidden="true">/</span>
+                          <span class="pick-den">{{ pick.total }}</span>
+                        </span>
+                      }
+                      @if (isFinalChoiceDistributor(distributor)) {
+                        <span
+                          class="final-choice-badge"
+                          title="Chosen and sent to consumer"
+                          aria-hidden="true"
+                        >
+                          <svg class="final-choice-ticks" viewBox="0 0 22 14" focusable="false">
+                            <path
+                              d="M1.2 7.4 4.6 11 11.4 2.6"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2.15"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M8.2 7.4 11.6 11 18.4 2.6"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2.15"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                          </svg>
+                        </span>
+                      }
+                    </span>
                   </span>
+                  <span class="query-meta">{{ distributorStatusLabel(distributor) }}</span>
+                  <span class="query-posted">{{ distributorListDateLabel(distributor) }}</span>
                 </span>
-                <span class="query-meta">{{ distributorStatusLabel(distributor) }}</span>
-                <span class="query-posted">{{ distributorListDateLabel(distributor) }}</span>
+                @if (distributorDealSealVariant(distributor); as sealVariant) {
+                  <app-deal-done-seal [compact]="true" [variant]="sealVariant" />
+                }
               </button>
             </li>
           }
