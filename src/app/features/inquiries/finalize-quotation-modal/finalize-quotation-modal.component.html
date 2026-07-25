@@ -112,7 +112,8 @@
                   <th class="col-num col-consumer">Amount</th>
                   <th class="col-num col-consumer">Net</th>
                   <th class="col-num col-margin">Δ</th>
-                  <th class="col-delivery">Delivery</th>
+                  <th class="col-delivery">Distributor delivery</th>
+                  <th class="col-admin-delivery">Admin delivery date</th>
                 </tr>
               </thead>
               <tbody>
@@ -138,6 +139,7 @@
                       </td>
                       <td class="col-num col-margin">—</td>
                       <td class="col-delivery">—</td>
+                      <td class="col-admin-delivery">—</td>
                     } @else {
                     <td class="col-num col-distributor">
                       {{ formatCurrency(getLineDraft(inquiry.id, item).distributorMrp) }}
@@ -194,6 +196,16 @@
                     <td class="col-delivery">
                       {{ formatExpectedDeliveryDate(getLineDraft(inquiry.id, item).deliveryDate) }}
                     </td>
+                    <td class="col-admin-delivery">
+                      <input
+                        type="date"
+                        class="line-input line-input-date"
+                        [min]="todayAsDateInputValue()"
+                        [ngModel]="getLineDraft(inquiry.id, item).adminDeliveryDate ?? ''"
+                        (ngModelChange)="updateAdminDeliveryDate(inquiry.id, item, $event)"
+                        aria-label="Admin delivery date"
+                      />
+                    </td>
                     }
                   </tr>
                 }
@@ -217,6 +229,7 @@
                     <strong class="margin-amount">{{ formatSignedCurrency(marginTotal()) }}</strong>
                     <strong class="margin-percent">{{ formatSignedPercent(marginPercentTotal()) }}</strong>
                   </td>
+                  <td></td>
                   <td></td>
                 </tr>
               </tfoot>

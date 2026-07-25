@@ -15,3 +15,18 @@ export function isDateInputBefore(value: string, min: string): boolean {
   }
   return trimmedValue < trimmedMin;
 }
+
+/** Latest YYYY-MM-DD from the given values (lexicographic max). */
+export function maxDateInputValue(...values: (string | null | undefined)[]): string | undefined {
+  let max: string | undefined;
+  for (const value of values) {
+    const trimmed = value?.trim();
+    if (!trimmed) {
+      continue;
+    }
+    if (!max || trimmed > max) {
+      max = trimmed;
+    }
+  }
+  return max;
+}

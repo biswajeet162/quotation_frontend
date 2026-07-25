@@ -5,6 +5,11 @@ import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
 import { ToastService } from '../../../core/services/toast/toast.service';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 import { formatExpectedDeliveryDate } from '../../../shared/utils/inquiry-display.util';
+import {
+  isDateInputBefore,
+  maxDateInputValue,
+  todayAsDateInputValue,
+} from '../../../shared/utils/date-input.util';
 
 export interface FinalizeLineDraft {
   hsnCode?: string;
@@ -13,7 +18,10 @@ export interface FinalizeLineDraft {
   ourMrp?: number;
   ourDiscountPercentage?: number;
   gstPercentage?: number;
+  /** Selected distributor's delivery date (read-only in UI). */
   deliveryDate?: string;
+  /** Admin-chosen delivery date sent to the consumer. */
+  adminDeliveryDate?: string;
 }
 
 @Component({
@@ -35,6 +43,8 @@ export class FinalizeQuotationModalComponent {
   readonly mixDistributorByItemId = input<Record<string, string>>({});
   /** Inquiry item ids that will be sent as unavailable to the consumer. */
   readonly unavailableItemIds = input<string[]>([]);
+  /** All distributor quotes — used to default admin delivery to the latest distributor date per product. */
+  readonly quotesByDistributor = input<Map<string, InquiryItem[]>>(new Map());
 
   readonly closed = output<void>();
   readonly finalized = output<void>();
@@ -45,6 +55,7 @@ export class FinalizeQuotationModalComponent {
   readonly lineDrafts = signal<Map<string, FinalizeLineDraft>>(new Map());
 
   readonly formatExpectedDeliveryDate = formatExpectedDeliveryDate;
+  readonly todayAsDateInputValue = todayAsDateInputValue;
 
   readonly items = computed(() => this.quotationItems().filter((item) => item.distributorMrp != null));
 
@@ -117,6 +128,14 @@ export class FinalizeQuotationModalComponent {
   ): void {
     const parsed = this.parseOptionalNumber(value);
     this.patchLineDraft(inquiryId, item, { ourDiscountPercentage: parsed ?? undefined });
+  }
+
+  updateAdminDeliveryDate(inquiryId: string, item: InquiryItem, value: string): void {
+    const trimmed = value.trim();
+    if (trimmed && isDateInputBefore(trimmed, todayAsDateInputValue())) {
+      return;
+    }
+    this.patchLineDraft(inquiryId, item, { adminDeliveryDate: trimmed || undefined });
   }
 
   distributorLineAmount(inquiryId: string, item: InquiryItem): number | null {
@@ -231,6 +250,7 @@ export class FinalizeQuotationModalComponent {
           mrp: draft.ourMrp,
           discountPercentage: draft.ourDiscountPercentage ?? 0,
           gstPercentage: draft.gstPercentage,
+          expectedDeliveryDate: draft.adminDeliveryDate || undefined,
         };
       })
       .filter((line): line is NonNullable<typeof line> => line != null);
@@ -294,10 +314,29 @@ export class FinalizeQuotationModalComponent {
         ourDiscountPercentage: distributorDiscount,
         gstPercentage: item.distributorGstPercentage,
         deliveryDate: item.distributorOurDeliveryDate,
+        adminDeliveryDate: this.defaultAdminDeliveryDate(item),
       });
     }
     this.lineDrafts.set(next);
     this.consumerMessage.set('');
+  }
+
+  private defaultAdminDeliveryDate(item: InquiryItem): string | undefined {
+    const itemKey = item.id ?? item.productId;
+    const distributorDates: string[] = [];
+    if (itemKey) {
+      for (const lines of this.quotesByDistributor().values()) {
+        const quoteLine = lines.find((line) => (line.id ?? line.productId) === itemKey);
+        if (quoteLine?.distributorOurDeliveryDate?.trim()) {
+          distributorDates.push(quoteLine.distributorOurDeliveryDate.trim());
+        }
+      }
+    }
+    return maxDateInputValue(
+      ...distributorDates,
+      item.distributorOurDeliveryDate,
+      item.expectedDeliveryDate,
+    );
   }
 
   private sumNetValues(getter: (item: InquiryItem) => number | null): number | null {

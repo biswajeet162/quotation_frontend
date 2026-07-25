@@ -276,6 +276,28 @@
   color: #64748b;
 }
 
+.col-admin-delivery {
+  min-width: 9.5rem;
+}
+
+.line-input-date {
+  width: 100%;
+  min-width: 8.5rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 0.35rem 0.45rem;
+  font: inherit;
+  font-size: 0.78rem;
+  color: #0f172a;
+  background: #fff;
+}
+
+.line-input-date:focus {
+  outline: none;
+  border-color: #14b8a6;
+  box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.2);
+}
+
 .col-distributor {
   background: #fafbfc;
 }
