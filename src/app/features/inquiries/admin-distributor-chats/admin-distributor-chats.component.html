@@ -514,14 +514,14 @@
                       <article class="finalization-summary-item">
                         <span class="finalization-summary-label">Distributor cost</span>
                         <strong>{{ formatCurrency(snapshot.distributorTotal) }}</strong>
-                        <span class="finalization-summary-hint">What vendors quoted (incl. GST)</span>
+                        <span class="finalization-summary-hint">Vendor quote total (incl. GST)</span>
                       </article>
                     }
                     @if (snapshot.consumerTotal != null) {
                       <article class="finalization-summary-item">
-                        <span class="finalization-summary-label">Consumer total</span>
+                        <span class="finalization-summary-label">Customer total</span>
                         <strong>{{ formatCurrency(snapshot.consumerTotal) }}</strong>
-                        <span class="finalization-summary-hint">What the customer pays (incl. GST)</span>
+                        <span class="finalization-summary-hint">Final price to customer (incl. GST)</span>
                       </article>
                     }
                     @if (snapshotMarginTotal(snapshot); as margin) {
@@ -531,16 +531,58 @@
                         [class.summary-negative]="margin < 0"
                       >
                         <span class="finalization-summary-label">
-                          {{ margin >= 0 ? 'Extra benefit / profit' : 'Loss' }}
+                          {{ margin >= 0 ? 'Total margin benefit' : 'Total loss' }}
                         </span>
                         <strong>{{ formatSignedCurrency(margin) }}</strong>
-                        @if (snapshot.marginPercentage != null) {
-                          <span class="finalization-summary-percent">
-                            {{ formatSignedPercent(snapshot.marginPercentage) }} vs distributor cost
-                          </span>
-                        }
-                        <span class="finalization-summary-hint">Consumer total − distributor cost</span>
+                        <span class="finalization-summary-hint">Customer total − distributor cost</span>
                       </article>
+                    }
+                    @if (snapshot.marginPercentage != null) {
+                      <article
+                        class="finalization-summary-item"
+                        [class.summary-positive]="snapshot.marginPercentage > 0"
+                        [class.summary-negative]="snapshot.marginPercentage < 0"
+                      >
+                        <span class="finalization-summary-label">Margin rate</span>
+                        <strong>{{ formatSignedPercent(snapshot.marginPercentage) }}</strong>
+                        <span class="finalization-summary-hint">Benefit as % of distributor cost</span>
+                      </article>
+                    }
+                    @if (snapshotFinalizedProductCounts(snapshot); as counts) {
+                      @if (counts.total > 0) {
+                        <article class="finalization-summary-item">
+                          <span class="finalization-summary-label">Products finalized</span>
+                          <strong>{{ counts.included }} / {{ counts.total }}</strong>
+                          <span class="finalization-summary-hint">
+                            @if (counts.unavailable > 0) {
+                              {{ counts.included }} included · {{ counts.unavailable }} unavailable
+                            } @else {
+                              All inquiry products included
+                            }
+                          </span>
+                        </article>
+                      }
+                    }
+                    @if (snapshotDistributorsUsedCount(snapshot); as vendorCount) {
+                      @if (vendorCount > 0) {
+                        <article class="finalization-summary-item">
+                          <span class="finalization-summary-label">Distributors used</span>
+                          <strong>
+                            {{ vendorCount }}
+                            {{ vendorCount === 1 ? 'vendor' : 'vendors' }}
+                          </strong>
+                          <span class="finalization-summary-hint">Unique distributors in this mix</span>
+                        </article>
+                      }
+                    }
+                    @if (snapshotTotalUnits(snapshot); as units) {
+                      @if (units > 0) {
+                        <article class="finalization-summary-item">
+                          <span class="finalization-summary-label">Total units</span>
+                          <strong>{{ units }}</strong>
+                          <span class="finalization-summary-hint">Combined quantity of included products</span>
+                        </article>
+                      }
                     }
                   </div>
 

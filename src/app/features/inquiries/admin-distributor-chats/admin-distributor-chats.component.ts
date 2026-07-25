@@ -803,6 +803,44 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
     return hasValue ? total : null;
   }
 
+  snapshotFinalizedProductCounts(snapshot: InquiryFinalizationSnapshot): {
+    included: number;
+    unavailable: number;
+    total: number;
+  } {
+    let included = 0;
+    let unavailable = 0;
+    let total = 0;
+    for (const line of snapshot.items) {
+      if (!this.hasSnapshotLine(line)) {
+        continue;
+      }
+      total += 1;
+      if (this.isSnapshotLineUnavailable(line)) {
+        unavailable += 1;
+      } else {
+        included += 1;
+      }
+    }
+    return { included, unavailable, total };
+  }
+
+  snapshotDistributorsUsedCount(snapshot: InquiryFinalizationSnapshot): number {
+    const ids = new Set<string>();
+    for (const line of snapshot.items) {
+      if (line.distributorCompanyId && !this.isSnapshotLineUnavailable(line)) {
+        ids.add(line.distributorCompanyId);
+      }
+    }
+    return ids.size;
+  }
+
+  snapshotTotalUnits(snapshot: InquiryFinalizationSnapshot): number {
+    return snapshot.items
+      .filter((line) => this.hasSnapshotLine(line) && !this.isSnapshotLineUnavailable(line))
+      .reduce((sum, line) => sum + (line.quantity ?? 0), 0);
+  }
+
   formatSignedCurrency(value: number | null | undefined): string {
     if (value == null) {
       return '—';
