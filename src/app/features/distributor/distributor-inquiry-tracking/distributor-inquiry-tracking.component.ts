@@ -36,11 +36,13 @@ import {
 } from '../../../shared/utils/chat-reply.util';
 import {
   buildChatTimelineEntries,
+  isFinalQuotationForwardedNotice,
   isTimelineNotice,
   noticeDisplayDetail,
   noticeDisplayLabel,
 } from '../../../shared/utils/timeline-chat.util';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
+import { DealDoneSealComponent, DealSealVariant } from '../../../shared/components/deal-done-seal/deal-done-seal.component';
 import { openPublicImages } from '../../../shared/utils/public-image.util';
 
 type StatusFilter = 'all' | 'pending' | 'responded' | 'CLOSED';
@@ -61,11 +63,11 @@ interface DistributorInquiryLineDraft {
   ourDeliveryDate?: string;
 }
 
-type PdfViewerSource = 'request' | 'response';
+type PdfViewerSource = 'request' | 'response' | 'final-deal';
 
 @Component({
   selector: 'app-distributor-inquiry-tracking',
-  imports: [FormsModule, InquiryChatAttachmentComponent, ChatAudioPlayerComponent, LoadingOverlayComponent],
+  imports: [FormsModule, InquiryChatAttachmentComponent, ChatAudioPlayerComponent, LoadingOverlayComponent, DealDoneSealComponent],
   templateUrl: './distributor-inquiry-tracking.component.html',
   styleUrl: './distributor-inquiry-tracking.component.css',
 })
@@ -197,6 +199,25 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   readonly distributorMessageEntries = computed(() =>
     this.chatTimelineEntries().filter((entry) => !isTimelineNotice(entry)),
   );
+
+  readonly finalDealPdfAttachment = computed(() => {
+    const entries = this.timelineEntries();
+    for (let index = entries.length - 1; index >= 0; index -= 1) {
+      const entry = entries[index];
+      if (!isFinalQuotationForwardedNotice(entry)) {
+        continue;
+      }
+      const pdf = (entry.attachments ?? []).find(
+        (attachment) =>
+          attachment.mediaType === 'DOCUMENT' ||
+          attachment.contentType?.toLowerCase().includes('pdf'),
+      );
+      if (pdf) {
+        return pdf;
+      }
+    }
+    return null;
+  });
 
   readonly canSendMessage = computed(
     () => this.messageText().trim().length > 0 || this.pendingAttachments().length > 0,
@@ -565,13 +586,25 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   }
 
   pdfViewerTitle(inquiry: DistributorInquiry): string {
-    return this.pdfViewerSource() === 'response' ? 'Your quotation PDF' : 'Quotation PDF';
+    const source = this.pdfViewerSource();
+    if (source === 'response') {
+      return 'Your quotation PDF';
+    }
+    if (source === 'final-deal') {
+      return 'Final quotation PDF';
+    }
+    return 'Quotation PDF';
   }
 
   pdfViewerLabel(inquiry: DistributorInquiry): string {
-    return this.pdfViewerSource() === 'response'
-      ? this.distributorQuotationPdfLabel(inquiry)
-      : this.submissionPdfLabel(inquiry);
+    const source = this.pdfViewerSource();
+    if (source === 'response') {
+      return this.distributorQuotationPdfLabel(inquiry);
+    }
+    if (source === 'final-deal') {
+      return this.finalDealPdfAttachment()?.fileName ?? `${inquiry.inquiryId}-final-quotation.pdf`;
+    }
+    return this.submissionPdfLabel(inquiry);
   }
 
   openPdfViewer(): void {
@@ -582,12 +615,51 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     this.openPdfViewerForSource('response');
   }
 
+  openFinalDealPdf(): void {
+    const attachment = this.finalDealPdfAttachment();
+    if (!attachment?.url) {
+      this.toast.warning('No final quotation PDF is available.');
+      return;
+    }
+
+    this.distributorInquiryService.fetchAttachmentBlob(attachment.url).subscribe({
+      next: (blob) => {
+        this.openPdfViewerForBlob(blob, 'final-deal');
+      },
+      error: (err: unknown) => {
+        this.toast.fromApiError(err, 'Could not open the final quotation PDF.');
+      },
+    });
+  }
+
+  distributorDealSealVariant(
+    summary: DistributorInquirySummary,
+  ): DealSealVariant | null {
+    if (!summary.consumerDealConfirmed) {
+      return null;
+    }
+    return summary.includedInConfirmedDeal ? 'deal' : 'no-deal';
+  }
+
+  showDealOutcome(inquiry: DistributorInquiry): boolean {
+    return !!inquiry.consumerDealConfirmed;
+  }
+
   private openPdfViewerForSource(source: PdfViewerSource): void {
-    const blob = source === 'response' ? this.responsePdfBlob : this.pdfBlob;
+    const blob =
+      source === 'response'
+        ? this.responsePdfBlob
+        : source === 'final-deal'
+          ? null
+          : this.pdfBlob;
     if (!blob) {
       return;
     }
 
+    this.openPdfViewerForBlob(blob, source);
+  }
+
+  private openPdfViewerForBlob(blob: Blob, source: PdfViewerSource): void {
     this.pdfViewerSource.set(source);
     this.revokePdfViewerUrl();
     this.pdfViewerObjectUrl = URL.createObjectURL(blob);
@@ -777,6 +849,8 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
                     inquiry.items?.length ?? summary.itemCount,
                     inquiry.items,
                   ),
+                  consumerDealConfirmed: inquiry.consumerDealConfirmed,
+                  includedInConfirmedDeal: inquiry.includedInConfirmedDeal,
                 }
               : summary,
           ),
@@ -787,6 +861,9 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
         this.responsePdfAvailable.set(!!inquiry.responsePdfAvailable);
         if (inquiry.responsePdfAvailable) {
           this.loadResponsePdf(id);
+        }
+        if (inquiry.consumerDealConfirmed) {
+          this.loadTimeline({ silent: true });
         }
       },
       error: (err: unknown) => {

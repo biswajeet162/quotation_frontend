@@ -105,6 +105,9 @@
 }
 
 .query-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
   width: 100%;
   text-align: left;
   padding: 0.75rem;
@@ -112,6 +115,11 @@
   border-bottom: 1px solid #e2e8f0;
   background: #fff;
   cursor: pointer;
+}
+
+.query-item-content {
+  flex: 1;
+  min-width: 0;
 }
 
 .query-item.step-initiated {
@@ -281,6 +289,73 @@
 
 .detail-summary {
   padding-top: 0.85rem;
+}
+
+.distributor-deal-outcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.85rem;
+  margin-top: 1.25rem;
+  padding: 1.35rem 1.1rem 1.5rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.distributor-deal-outcome--deal {
+  border-color: #a7f3d0;
+  background: linear-gradient(180deg, #ecfdf5 0%, #f0fdf4 100%);
+}
+
+.distributor-deal-outcome--no-deal {
+  border-color: #fecaca;
+  background: linear-gradient(180deg, #fef2f2 0%, #fff1f2 100%);
+}
+
+.distributor-deal-outcome-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.distributor-deal-outcome--deal .distributor-deal-outcome-title {
+  color: #065f46;
+}
+
+.distributor-deal-outcome--no-deal .distributor-deal-outcome-title {
+  color: #991b1b;
+}
+
+.distributor-deal-outcome-message {
+  margin: 0;
+  max-width: 42rem;
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.distributor-deal-outcome--deal .distributor-deal-outcome-message {
+  color: #047857;
+}
+
+.distributor-deal-outcome--no-deal .distributor-deal-outcome-message {
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+.distributor-deal-outcome-pdf {
+  width: 100%;
+  max-width: 36rem;
+  margin-top: 0.15rem;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.distributor-deal-outcome-pdf .quotation-pdf-row {
+  justify-content: center;
 }
 
 .detail-note {

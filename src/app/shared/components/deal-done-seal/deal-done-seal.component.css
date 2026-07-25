@@ -70,3 +70,24 @@
   font-size: 0.42rem;
   letter-spacing: 0.06em;
 }
+
+.deal-done-seal--large {
+  width: 5.75rem;
+  height: 5.75rem;
+  border-width: 3px;
+  transform: rotate(-12deg);
+}
+
+.deal-done-seal--large::before {
+  inset: 5px;
+}
+
+.deal-done-seal--large .deal-done-seal-text {
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+}
+
+.deal-done-seal--no-deal.deal-done-seal--large .deal-done-seal-text {
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+}

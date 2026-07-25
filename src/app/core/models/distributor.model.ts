@@ -19,6 +19,8 @@ export interface DistributorInquirySummary {
   responseReceived: boolean;
   requotationRequested?: boolean;
   receivedAt?: string;
+  consumerDealConfirmed?: boolean;
+  includedInConfirmedDeal?: boolean;
 }
 
 export interface DistributorInquiry {
@@ -38,6 +40,8 @@ export interface DistributorInquiry {
   responsePdfAvailable?: boolean;
   receivedAt?: string;
   createdAt?: string;
+  consumerDealConfirmed?: boolean;
+  includedInConfirmedDeal?: boolean;
 }
 
 export interface DistributorProfile {

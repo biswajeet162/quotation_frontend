@@ -62,9 +62,14 @@
               [attr.aria-label]="summary.title + ' — ' + summaryStatusLabel(summary)"
               (click)="selectInquiry(summary.inquiryUuid)"
             >
-              <span class="query-id">{{ summary.reference }}</span>
-              <span class="query-title">{{ summaryTitle(summary) }}</span>
-              <span class="query-meta">{{ summaryStatusLabel(summary) }} · {{ summary.itemCount }} product{{ summary.itemCount === 1 ? '' : 's' }}</span>
+              <span class="query-item-content">
+                <span class="query-id">{{ summary.reference }}</span>
+                <span class="query-title">{{ summaryTitle(summary) }}</span>
+                <span class="query-meta">{{ summaryStatusLabel(summary) }} · {{ summary.itemCount }} product{{ summary.itemCount === 1 ? '' : 's' }}</span>
+              </span>
+              @if (distributorDealSealVariant(summary); as sealVariant) {
+                <app-deal-done-seal [compact]="true" [variant]="sealVariant" />
+              }
             </button>
           </li>
         }
@@ -474,6 +479,48 @@
                 }
               }
             </div>
+
+              @if (showDealOutcome(inquiry)) {
+                <section
+                  class="distributor-deal-outcome"
+                  [class.distributor-deal-outcome--deal]="inquiry.includedInConfirmedDeal"
+                  [class.distributor-deal-outcome--no-deal]="!inquiry.includedInConfirmedDeal"
+                  [attr.aria-label]="
+                    inquiry.includedInConfirmedDeal ? 'Deal confirmed' : 'Quotation request closed'
+                  "
+                >
+                  <app-deal-done-seal
+                    [large]="true"
+                    [variant]="inquiry.includedInConfirmedDeal ? 'deal' : 'no-deal'"
+                  />
+                  @if (inquiry.includedInConfirmedDeal) {
+                    <h3 class="distributor-deal-outcome-title">Deal confirmed — your products were selected</h3>
+                    <p class="distributor-deal-outcome-message">
+                      The customer confirmed this quotation. Your quoted products are included in the
+                      final deal and this request is now closed.
+                    </p>
+                    @if (finalDealPdfAttachment(); as pdf) {
+                      <div class="quotation-pdf-section distributor-deal-outcome-pdf" aria-label="Final quotation PDF">
+                        <div class="quotation-pdf-row quotation-pdf-row--request">
+                          <span class="quotation-pdf-label">Final quotation</span>
+                          <span class="quotation-pdf-filename" [title]="pdf.fileName">
+                            {{ pdf.fileName }}
+                          </span>
+                          <button type="button" class="btn-pdf-view" (click)="openFinalDealPdf()">
+                            View
+                          </button>
+                        </div>
+                      </div>
+                    }
+                  } @else {
+                    <h3 class="distributor-deal-outcome-title">Quotation request closed</h3>
+                    <p class="distributor-deal-outcome-message">
+                      Sorry — the requirement is fulfilled. None of your quoted products were included in
+                      the final deal, and this quotation request is now closed.
+                    </p>
+                  }
+                </section>
+              }
 
           </div>
 
