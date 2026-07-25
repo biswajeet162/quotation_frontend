@@ -481,45 +481,15 @@
             </div>
 
               @if (showDealOutcome(inquiry)) {
-                <section
-                  class="distributor-deal-outcome"
-                  [class.distributor-deal-outcome--deal]="inquiry.includedInConfirmedDeal"
-                  [class.distributor-deal-outcome--no-deal]="!inquiry.includedInConfirmedDeal"
-                  [attr.aria-label]="
-                    inquiry.includedInConfirmedDeal ? 'Deal confirmed' : 'Quotation request closed'
-                  "
-                >
-                  <app-deal-done-seal
-                    [large]="true"
-                    [variant]="inquiry.includedInConfirmedDeal ? 'deal' : 'no-deal'"
-                  />
-                  @if (inquiry.includedInConfirmedDeal) {
-                    <h3 class="distributor-deal-outcome-title">Deal confirmed — your products were selected</h3>
-                    <p class="distributor-deal-outcome-message">
-                      The customer confirmed this quotation. Your quoted products are included in the
-                      final deal and this request is now closed.
-                    </p>
-                    @if (finalDealPdfAttachment(); as pdf) {
-                      <div class="quotation-pdf-section distributor-deal-outcome-pdf" aria-label="Final quotation PDF">
-                        <div class="quotation-pdf-row quotation-pdf-row--request">
-                          <span class="quotation-pdf-label">Final quotation</span>
-                          <span class="quotation-pdf-filename" [title]="pdf.fileName">
-                            {{ pdf.fileName }}
-                          </span>
-                          <button type="button" class="btn-pdf-view" (click)="openFinalDealPdf()">
-                            View
-                          </button>
-                        </div>
-                      </div>
-                    }
-                  } @else {
-                    <h3 class="distributor-deal-outcome-title">Quotation request closed</h3>
-                    <p class="distributor-deal-outcome-message">
-                      Sorry — the requirement is fulfilled. None of your quoted products were included in
-                      the final deal, and this quotation request is now closed.
-                    </p>
-                  }
-                </section>
+                <app-confirmed-deal-selection-panel
+                  [included]="!!inquiry.includedInConfirmedDeal"
+                  [selectedLines]="inquiry.confirmedDealLines ?? []"
+                  [totalQuotedCount]="distributorQuotedProductCount(inquiry)"
+                  [pdfFileName]="finalDealPdfFileName(inquiry)"
+                  [pdfAvailable]="!!finalDealPdfUrl(inquiry) && !!inquiry.includedInConfirmedDeal"
+                  audience="distributor"
+                  (viewPdf)="openFinalDealPdf()"
+                />
               }
 
           </div>

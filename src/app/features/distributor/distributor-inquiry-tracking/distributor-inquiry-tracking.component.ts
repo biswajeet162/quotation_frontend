@@ -43,6 +43,7 @@ import {
 } from '../../../shared/utils/timeline-chat.util';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 import { DealDoneSealComponent, DealSealVariant } from '../../../shared/components/deal-done-seal/deal-done-seal.component';
+import { ConfirmedDealSelectionPanelComponent } from '../../../shared/components/confirmed-deal-selection-panel/confirmed-deal-selection-panel.component';
 import { openPublicImages } from '../../../shared/utils/public-image.util';
 
 type StatusFilter = 'all' | 'pending' | 'responded' | 'CLOSED';
@@ -67,7 +68,7 @@ type PdfViewerSource = 'request' | 'response' | 'final-deal';
 
 @Component({
   selector: 'app-distributor-inquiry-tracking',
-  imports: [FormsModule, InquiryChatAttachmentComponent, ChatAudioPlayerComponent, LoadingOverlayComponent, DealDoneSealComponent],
+  imports: [FormsModule, InquiryChatAttachmentComponent, ChatAudioPlayerComponent, LoadingOverlayComponent, DealDoneSealComponent, ConfirmedDealSelectionPanelComponent],
   templateUrl: './distributor-inquiry-tracking.component.html',
   styleUrl: './distributor-inquiry-tracking.component.css',
 })
@@ -616,13 +617,14 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   }
 
   openFinalDealPdf(): void {
-    const attachment = this.finalDealPdfAttachment();
-    if (!attachment?.url) {
+    const inquiry = this.selectedInquiry();
+    const attachmentUrl = inquiry ? this.finalDealPdfUrl(inquiry) : null;
+    if (!attachmentUrl) {
       this.toast.warning('No final quotation PDF is available.');
       return;
     }
 
-    this.distributorInquiryService.fetchAttachmentBlob(attachment.url).subscribe({
+    this.distributorInquiryService.fetchAttachmentBlob(attachmentUrl).subscribe({
       next: (blob) => {
         this.openPdfViewerForBlob(blob, 'final-deal');
       },
@@ -630,6 +632,22 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
         this.toast.fromApiError(err, 'Could not open the final quotation PDF.');
       },
     });
+  }
+
+  finalDealPdfFileName(inquiry: DistributorInquiry): string | null {
+    return (
+      inquiry.finalDealPdfAttachment?.fileName ??
+      this.finalDealPdfAttachment()?.fileName ??
+      `${inquiry.inquiryId}-final-quotation.pdf`
+    );
+  }
+
+  finalDealPdfUrl(inquiry: DistributorInquiry): string | null {
+    return inquiry.finalDealPdfAttachment?.url ?? this.finalDealPdfAttachment()?.url ?? null;
+  }
+
+  distributorQuotedProductCount(inquiry: DistributorInquiry): number {
+    return inquiry.items?.length ?? 0;
   }
 
   distributorDealSealVariant(

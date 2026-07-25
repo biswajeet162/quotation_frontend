@@ -1,4 +1,4 @@
-import { InquiryItem, InquiryRequestSource, InquiryStatus } from './inquiry.model';
+import { InquiryFinalizationSnapshotLine, InquiryItem, InquiryRequestSource, InquiryStatus } from './inquiry.model';
 
 export interface DistributorDashboardOverview {
   totalProducts: number;
@@ -42,6 +42,14 @@ export interface DistributorInquiry {
   createdAt?: string;
   consumerDealConfirmed?: boolean;
   includedInConfirmedDeal?: boolean;
+  confirmedDealLines?: InquiryFinalizationSnapshotLine[];
+  finalDealPdfAttachment?: {
+    id: string;
+    fileName: string;
+    contentType: string;
+    mediaType: string;
+    url: string;
+  };
 }
 
 export interface DistributorProfile {

@@ -1,0 +1,104 @@
+<section
+  class="confirmed-deal-panel"
+  [class.confirmed-deal-panel--deal]="included()"
+  [class.confirmed-deal-panel--no-deal]="!included()"
+  [attr.aria-label]="included() ? 'Confirmed deal selection' : 'Quotation request closed'"
+>
+  <app-deal-done-seal [large]="true" [variant]="included() ? 'deal' : 'no-deal'" />
+
+  @if (included()) {
+    <h3 class="confirmed-deal-panel-title">{{ dealTitle() }}</h3>
+    <p class="confirmed-deal-panel-message">{{ dealMessage() }}</p>
+
+    @if (selectedLines().length > 0) {
+      <div class="preview-table-wrap pricing-table-wrap confirmed-deal-table-wrap">
+        <table class="preview-table pricing-table confirmed-deal-table">
+          <thead>
+            <tr>
+              <th class="col-sno">S.No.</th>
+              <th class="col-designation">Designation</th>
+              <th class="col-brand">Brand</th>
+              <th class="col-hsn-code">HSN code</th>
+              <th class="col-description">Description</th>
+              <th class="col-qty">Qty</th>
+              <th class="col-mrp">MRP</th>
+              <th class="col-discount">Disc. %</th>
+              <th class="col-amount">Amount</th>
+              <th class="col-gst">GST %</th>
+              <th class="col-net-value">Net value</th>
+              <th class="col-expected-delivery">Expected delivery</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (line of selectedLines(); track line.inquiryItemId ?? $index) {
+              <tr>
+                <td class="col-sno">{{ $index + 1 }}</td>
+                <td class="col-designation consumer-cell" [title]="displayProductField(line.productName)">
+                  {{ displayProductField(line.productName) }}
+                </td>
+                <td class="col-brand consumer-cell" [title]="displayProductField(line.productBrand)">
+                  {{ displayProductField(line.productBrand) }}
+                </td>
+                <td class="col-hsn-code">
+                  <span class="line-input line-input-readonly request-readonly-value">
+                    {{ displayProductField(line.adminHsnCode) }}
+                  </span>
+                </td>
+                <td
+                  class="col-description consumer-cell preview-multiline"
+                  [title]="displayProductField(line.productDescription)"
+                >
+                  {{ displayProductField(line.productDescription) }}
+                </td>
+                <td class="col-qty consumer-cell">{{ line.quantity }}</td>
+                <td class="col-mrp">
+                  <span class="line-input line-input-number line-input-readonly request-readonly-value">
+                    {{ formatOptionalNumber(line.distributorMrp) }}
+                  </span>
+                </td>
+                <td class="col-discount">
+                  <span class="line-input line-input-number line-input-readonly request-readonly-value">
+                    {{ formatOptionalPercent(line.distributorDiscountPercentage) }}
+                  </span>
+                </td>
+                <td class="col-amount">
+                  <span class="line-input line-input-number line-input-readonly request-readonly-value">
+                    {{ formatCurrency(lineAmount(line)) }}
+                  </span>
+                </td>
+                <td class="col-gst">
+                  <span class="line-input line-input-number line-input-readonly request-readonly-value">
+                    {{ formatOptionalPercent(line.distributorGstPercentage) }}
+                  </span>
+                </td>
+                <td class="col-net-value">
+                  <span class="line-input line-input-number line-input-readonly request-readonly-value">
+                    {{ formatCurrency(lineNetValue(line)) }}
+                  </span>
+                </td>
+                <td class="col-expected-delivery consumer-cell">
+                  {{ formatExpectedDeliveryDate(line.expectedDeliveryDate) }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    @if (pdfAvailable() && pdfFileName()) {
+      <div class="quotation-pdf-section confirmed-deal-pdf" aria-label="Final quotation PDF">
+        <div class="quotation-pdf-row quotation-pdf-row--request">
+          <span class="quotation-pdf-label">Final quotation</span>
+          <span class="quotation-pdf-filename" [title]="pdfFileName()!">
+            {{ pdfFileName() }}
+          </span>
+          <button type="button" class="btn-pdf-view" (click)="viewPdf.emit()">View</button>
+        </div>
+      </div>
+    }
+  } @else {
+    <h3 class="confirmed-deal-panel-title">{{ noDealTitle() }}</h3>
+    <p class="confirmed-deal-panel-message">{{ noDealMessage() }}</p>
+  }
+</section>

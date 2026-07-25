@@ -10,6 +10,11 @@ export type ConsumerInquiryPhase =
 
 export type InquiryListStep = 'initiated' | 'in-progress' | 'green';
 
+export function displayProductField(value?: string | null): string {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : '—';
+}
+
 export function formatExpectedDeliveryDate(iso?: string | number[] | Date | null): string {
   if (iso == null) {
     return '—';

@@ -1253,6 +1253,18 @@
 
                   </div>
 
+                  @if (showDistributorDealOutcome(distributor)) {
+                    <app-confirmed-deal-selection-panel
+                      [included]="isDistributorIncludedInDeal(distributor)"
+                      [selectedLines]="distributorConfirmedDealLines(distributor)"
+                      [totalQuotedCount]="quotationItems().length"
+                      [pdfFileName]="latestFinalDealPdfFileName()"
+                      [pdfAvailable]="latestFinalDealPdfAvailable(distributor)"
+                      audience="admin"
+                      (viewPdf)="openDistributorFinalDealPdf()"
+                    />
+                  }
+
                 </div>
 
                 <button

@@ -65,6 +65,7 @@ import {
 import { openPublicImages } from '../../../shared/utils/public-image.util';
 import { inquiryHasConsumerDealDone } from '../../../shared/utils/inquiry-deal.util';
 import { DealDoneSealComponent, DealSealVariant } from '../../../shared/components/deal-done-seal/deal-done-seal.component';
+import { ConfirmedDealSelectionPanelComponent } from '../../../shared/components/confirmed-deal-selection-panel/confirmed-deal-selection-panel.component';
 import { QuotationComparisonModalComponent } from '../quotation-comparison-modal/quotation-comparison-modal.component';
 import { FinalizeQuotationModalComponent } from '../finalize-quotation-modal/finalize-quotation-modal.component';
 
@@ -119,6 +120,7 @@ interface ProductCompareSection {
     QuotationComparisonModalComponent,
     FinalizeQuotationModalComponent,
     DealDoneSealComponent,
+    ConfirmedDealSelectionPanelComponent,
   ],
   templateUrl: './admin-distributor-chats.component.html',
   styleUrl: './admin-distributor-chats.component.css',
@@ -1977,6 +1979,43 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
       return null;
     }
     return this.dealFinalizedDistributorIds().has(distributor.companyId) ? 'deal' : 'no-deal';
+  }
+
+  showDistributorDealOutcome(_distributor: InquiryDistributor): boolean {
+    return inquiryHasConsumerDealDone(this.inquiry());
+  }
+
+  isDistributorIncludedInDeal(distributor: InquiryDistributor): boolean {
+    return this.dealFinalizedDistributorIds().has(distributor.companyId);
+  }
+
+  distributorConfirmedDealLines(distributor: InquiryDistributor): InquiryFinalizationSnapshotLine[] {
+    const snapshot = this.latestFinalization();
+    if (!snapshot) {
+      return [];
+    }
+    return (snapshot.items ?? []).filter(
+      (line) =>
+        line.distributorCompanyId === distributor.companyId && !this.isSnapshotLineUnavailable(line),
+    );
+  }
+
+  openDistributorFinalDealPdf(): void {
+    const snapshot = this.latestFinalization();
+    if (!snapshot) {
+      this.toast.warning('No final quotation PDF is available.');
+      return;
+    }
+    this.openFinalizationPdf(snapshot);
+  }
+
+  latestFinalDealPdfFileName(): string | null {
+    return this.latestFinalization()?.pdfAttachment?.fileName ?? null;
+  }
+
+  latestFinalDealPdfAvailable(distributor: InquiryDistributor): boolean {
+    const url = this.latestFinalization()?.pdfAttachment?.url;
+    return !!url && this.isDistributorIncludedInDeal(distributor);
   }
 
   getDistributorListStep(distributor: InquiryDistributor): 'initiated' | 'in-progress' | 'green' {
