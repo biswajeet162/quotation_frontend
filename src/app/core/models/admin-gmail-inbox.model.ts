@@ -49,3 +49,39 @@ export interface LinkExternalEmailResult {
 export interface LinkExternalEmailRequest {
   inquiryId: string;
 }
+
+export interface ConvertExternalEmailSuggestions {
+  suggestedTitle: string;
+  suggestedDescription?: string;
+  suggestedContactEmail: string;
+  suggestedContactName: string;
+  suggestedCompanyName: string;
+  suggestedBrand?: string;
+  suggestedDesignation?: string;
+  matchedConsumerCompanyId?: string;
+  matchedConsumerUserId?: string;
+  matchedConsumerCompanyName?: string;
+}
+
+export interface ConvertExternalEmailToInquiryRequest {
+  companyName: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone?: string;
+  consumerCompanyId?: string;
+  consumerUserId?: string;
+  title: string;
+  description?: string;
+  brand?: string;
+  designation?: string;
+  productNotes?: string;
+}
+
+export interface ConvertExternalEmailToInquiryResult {
+  inboxId: string;
+  inquiryId: string;
+  inquiryUuid: string;
+  communicationId?: string;
+  communicationCreated: boolean;
+  convertedAt: string;
+}

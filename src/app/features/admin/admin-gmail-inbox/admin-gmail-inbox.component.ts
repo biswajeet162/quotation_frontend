@@ -2,6 +2,7 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import {
+  ConvertExternalEmailToInquiryRequest,
   ExternalEmailInboxItem,
   ExternalEmailStatus,
   GmailSyncStatus,
@@ -17,6 +18,32 @@ interface StatusTab {
   label: string;
 }
 
+interface ConvertFormState {
+  companyName: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  title: string;
+  description: string;
+  brand: string;
+  designation: string;
+  productNotes: string;
+  consumerCompanyId?: string;
+  consumerUserId?: string;
+}
+
+const emptyConvertForm = (): ConvertFormState => ({
+  companyName: '',
+  contactName: '',
+  contactEmail: '',
+  contactPhone: '',
+  title: '',
+  description: '',
+  brand: 'Email inquiry',
+  designation: '',
+  productNotes: 'Created from synced Gmail message',
+});
+
 @Component({
   selector: 'app-admin-gmail-inbox',
   imports: [FormsModule, RouterLink, LoadingOverlayComponent],
@@ -30,6 +57,7 @@ export class AdminGmailInboxComponent implements OnInit {
   readonly statusTabs: StatusTab[] = [
     { value: 'UNLINKED', label: 'Unlinked' },
     { value: 'LINKED', label: 'Linked' },
+    { value: 'CONVERTED', label: 'Converted' },
     { value: 'DISMISSED', label: 'Dismissed' },
   ];
 
@@ -47,6 +75,9 @@ export class AdminGmailInboxComponent implements OnInit {
   readonly items = signal<ExternalEmailInboxItem[]>([]);
   readonly selectedId = signal<string | null>(null);
   readonly linkInquiryId = signal('');
+  readonly convertForm = signal<ConvertFormState>(emptyConvertForm());
+  readonly suggestionsLoading = signal(false);
+  readonly matchedCompanyHint = signal<string | null>(null);
 
   readonly overlayLoading = computed(() => this.loading() || this.syncing());
 
@@ -95,6 +126,8 @@ export class AdminGmailInboxComponent implements OnInit {
     this.statusFilter.set(value);
     this.selectedId.set(null);
     this.linkInquiryId.set('');
+    this.convertForm.set(emptyConvertForm());
+    this.matchedCompanyHint.set(null);
     this.actionError.set(null);
     this.loadInbox();
   }
@@ -103,6 +136,56 @@ export class AdminGmailInboxComponent implements OnInit {
     this.selectedId.set(item.id);
     this.linkInquiryId.set('');
     this.actionError.set(null);
+    this.loadConvertSuggestions(item.id);
+  }
+
+  updateConvertField<K extends keyof ConvertFormState>(field: K, value: ConvertFormState[K]): void {
+    this.convertForm.update((form) => ({ ...form, [field]: value }));
+  }
+
+  convertSelected(): void {
+    const item = this.selectedItem();
+    if (!item) {
+      return;
+    }
+
+    const form = this.convertForm();
+    if (!form.companyName.trim() || !form.contactName.trim() || !form.contactEmail.trim() || !form.title.trim()) {
+      this.actionError.set('Company, contact, email, and title are required to create an inquiry.');
+      this.toast.warning('Fill in company, contact, email, and title.');
+      return;
+    }
+
+    const request: ConvertExternalEmailToInquiryRequest = {
+      companyName: form.companyName.trim(),
+      contactName: form.contactName.trim(),
+      contactEmail: form.contactEmail.trim(),
+      contactPhone: form.contactPhone.trim() || undefined,
+      consumerCompanyId: form.consumerCompanyId,
+      consumerUserId: form.consumerUserId,
+      title: form.title.trim(),
+      description: form.description.trim() || undefined,
+      brand: form.brand.trim() || undefined,
+      designation: form.designation.trim() || undefined,
+      productNotes: form.productNotes.trim() || undefined,
+    };
+
+    this.actionLoading.set(true);
+    this.actionError.set(null);
+    this.gmailInboxService.convertToInquiry(item.id, request).subscribe({
+      next: (result) => {
+        this.actionLoading.set(false);
+        this.toast.success(`Created inquiry ${result.inquiryId}.`);
+        this.loadStatus();
+        this.statusFilter.set('CONVERTED');
+        this.loadInbox(true, result.inboxId);
+      },
+      error: (err) => {
+        this.actionLoading.set(false);
+        this.actionError.set('Could not create an inquiry from this email.');
+        this.toast.fromApiError(err, 'Could not create an inquiry from this email.');
+      },
+    });
   }
 
   runSync(): void {
@@ -213,6 +296,36 @@ export class AdminGmailInboxComponent implements OnInit {
       default:
         return status;
     }
+  }
+
+  private loadConvertSuggestions(inboxId: string): void {
+    this.suggestionsLoading.set(true);
+    this.convertForm.set(emptyConvertForm());
+    this.matchedCompanyHint.set(null);
+    this.gmailInboxService.getConvertSuggestions(inboxId).subscribe({
+      next: (suggestions) => {
+        this.suggestionsLoading.set(false);
+        this.convertForm.set({
+          companyName: suggestions.suggestedCompanyName,
+          contactName: suggestions.suggestedContactName,
+          contactEmail: suggestions.suggestedContactEmail,
+          contactPhone: '',
+          title: suggestions.suggestedTitle,
+          description: suggestions.suggestedDescription ?? '',
+          brand: suggestions.suggestedBrand ?? 'Email inquiry',
+          designation: suggestions.suggestedDesignation ?? '',
+          productNotes: 'Created from synced Gmail message',
+          consumerCompanyId: suggestions.matchedConsumerCompanyId,
+          consumerUserId: suggestions.matchedConsumerUserId,
+        });
+        if (suggestions.matchedConsumerCompanyName) {
+          this.matchedCompanyHint.set(`Matched existing company: ${suggestions.matchedConsumerCompanyName}`);
+        }
+      },
+      error: () => {
+        this.suggestionsLoading.set(false);
+      },
+    });
   }
 
   private loadStatus(): void {

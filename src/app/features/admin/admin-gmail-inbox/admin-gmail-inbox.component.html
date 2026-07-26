@@ -178,6 +178,100 @@
             </section>
 
             @if (item.status === 'UNLINKED') {
+              <section class="detail-section convert-section">
+                <h3>Create inquiry from email</h3>
+                <p class="muted link-help">
+                  Start a new quotation request using this email as the source message. No acknowledgement
+                  email is sent — the original email is added to the inquiry timeline.
+                </p>
+                @if (suggestionsLoading()) {
+                  <p class="state-message">Loading suggestions…</p>
+                } @else {
+                  @if (matchedCompanyHint()) {
+                    <p class="matched-company-hint">{{ matchedCompanyHint() }}</p>
+                  }
+                  <div class="convert-form">
+                    <div class="convert-grid">
+                      <label>
+                        Company name
+                        <input
+                          type="text"
+                          [ngModel]="convertForm().companyName"
+                          (ngModelChange)="updateConvertField('companyName', $event)"
+                          [disabled]="actionLoading()"
+                        />
+                      </label>
+                      <label>
+                        Contact name
+                        <input
+                          type="text"
+                          [ngModel]="convertForm().contactName"
+                          (ngModelChange)="updateConvertField('contactName', $event)"
+                          [disabled]="actionLoading()"
+                        />
+                      </label>
+                      <label>
+                        Contact email
+                        <input
+                          type="email"
+                          [ngModel]="convertForm().contactEmail"
+                          (ngModelChange)="updateConvertField('contactEmail', $event)"
+                          [disabled]="actionLoading()"
+                        />
+                      </label>
+                      <label>
+                        Inquiry title
+                        <input
+                          type="text"
+                          [ngModel]="convertForm().title"
+                          (ngModelChange)="updateConvertField('title', $event)"
+                          [disabled]="actionLoading()"
+                        />
+                      </label>
+                    </div>
+                    <label>
+                      Description
+                      <textarea
+                        rows="4"
+                        [ngModel]="convertForm().description"
+                        (ngModelChange)="updateConvertField('description', $event)"
+                        [disabled]="actionLoading()"
+                      ></textarea>
+                    </label>
+                    <div class="convert-grid">
+                      <label>
+                        Product brand
+                        <input
+                          type="text"
+                          [ngModel]="convertForm().brand"
+                          (ngModelChange)="updateConvertField('brand', $event)"
+                          [disabled]="actionLoading()"
+                        />
+                      </label>
+                      <label>
+                        Product designation
+                        <input
+                          type="text"
+                          [ngModel]="convertForm().designation"
+                          (ngModelChange)="updateConvertField('designation', $event)"
+                          [disabled]="actionLoading()"
+                        />
+                      </label>
+                    </div>
+                    <div class="link-actions">
+                      <button
+                        type="button"
+                        class="btn-primary"
+                        (click)="convertSelected()"
+                        [disabled]="actionLoading()"
+                      >
+                        {{ actionLoading() ? 'Creating…' : 'Create inquiry' }}
+                      </button>
+                    </div>
+                  </div>
+                }
+              </section>
+
               <section class="detail-section link-section">
                 <h3>Link to inquiry</h3>
                 <p class="muted link-help">

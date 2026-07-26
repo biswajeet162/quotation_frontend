@@ -228,6 +228,60 @@
   border-top: 1px solid #e2e8f0;
 }
 
+.convert-section {
+  margin-top: 1rem;
+}
+
+.convert-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.convert-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.convert-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.convert-form input,
+.convert-form textarea {
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+.convert-form textarea {
+  resize: vertical;
+  min-height: 96px;
+}
+
+.matched-company-hint {
+  margin: 0 0 0.75rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 900px) {
+  .convert-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .link-help {
   margin: 0 0 0.75rem;
 }

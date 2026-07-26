@@ -9,6 +9,9 @@ import {
   GmailSyncStatus,
   LinkExternalEmailRequest,
   LinkExternalEmailResult,
+  ConvertExternalEmailSuggestions,
+  ConvertExternalEmailToInquiryRequest,
+  ConvertExternalEmailToInquiryResult,
 } from '../../models/admin-gmail-inbox.model';
 
 @Injectable({ providedIn: 'root' })
@@ -40,5 +43,19 @@ export class AdminGmailInboxService {
 
   runSync(): Observable<GmailSyncRunResult> {
     return this.http.post<GmailSyncRunResult>(`${this.baseUrl}/sync/run`, {});
+  }
+
+  getConvertSuggestions(id: string): Observable<ConvertExternalEmailSuggestions> {
+    return this.http.get<ConvertExternalEmailSuggestions>(`${this.baseUrl}/inbox/${id}/convert-suggestions`);
+  }
+
+  convertToInquiry(
+    id: string,
+    request: ConvertExternalEmailToInquiryRequest,
+  ): Observable<ConvertExternalEmailToInquiryResult> {
+    return this.http.post<ConvertExternalEmailToInquiryResult>(
+      `${this.baseUrl}/inbox/${id}/convert-to-inquiry`,
+      request,
+    );
   }
 }
