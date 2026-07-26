@@ -1,0 +1,227 @@
+<section class="page-card">
+  <app-loading-overlay [loading]="overlayLoading()" message="Working…" />
+
+  <header class="page-header">
+    <div>
+      <h1>Gmail inbox</h1>
+      <p class="muted">
+        Review emails synced from the admin Gmail mailbox that could not be matched to an inquiry
+        automatically.
+      </p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn-secondary" (click)="load()" [disabled]="loading() || syncing()">
+        Refresh
+      </button>
+      <button
+        type="button"
+        class="btn-primary"
+        (click)="runSync()"
+        [disabled]="syncing() || !syncStatus()?.enabled"
+        title="Fetch new messages from Gmail now"
+      >
+        {{ syncing() ? 'Syncing…' : 'Sync now' }}
+      </button>
+    </div>
+  </header>
+
+  @if (syncStatus(); as status) {
+    <div class="sync-status-panel" [class.sync-status-panel--warn]="!status.enabled || !status.configured">
+      <div class="sync-status-grid">
+        <div class="sync-status-item">
+          <span class="sync-status-label">Sync</span>
+          <span class="sync-status-value">
+            @if (status.enabled && status.configured) {
+              Enabled
+            } @else if (status.enabled) {
+              Enabled (not configured)
+            } @else {
+              Disabled
+            }
+          </span>
+        </div>
+        <div class="sync-status-item">
+          <span class="sync-status-label">Mailbox</span>
+          <span class="sync-status-value">{{ status.mailbox || '—' }}</span>
+        </div>
+        <div class="sync-status-item">
+          <span class="sync-status-label">Unlinked</span>
+          <span class="sync-status-value">{{ status.unlinkedEmailCount }}</span>
+        </div>
+        <div class="sync-status-item">
+          <span class="sync-status-label">Last success</span>
+          <span class="sync-status-value">{{ formatDateTime(status.lastSuccessAt) }}</span>
+        </div>
+      </div>
+      @if (!status.enabled) {
+        <p class="sync-status-note">
+          Gmail sync is off. Set <code>app.gmail.enabled=true</code> in backend config to poll
+          automatically.
+        </p>
+      } @else if (status.lastError) {
+        <p class="sync-status-error" role="alert">Last error: {{ status.lastError }}</p>
+      }
+    </div>
+  }
+
+  <div class="status-tabs" role="tablist" aria-label="Inbox status">
+    @for (tab of statusTabs; track tab.value) {
+      <button
+        type="button"
+        class="status-tab"
+        role="tab"
+        [class.active]="statusFilter() === tab.value"
+        [attr.aria-selected]="statusFilter() === tab.value"
+        (click)="onStatusFilterChange(tab.value)"
+      >
+        {{ tab.label }}
+      </button>
+    }
+  </div>
+
+  <div class="toolbar">
+    <div class="search-field">
+      <label for="gmail-inbox-search">Search</label>
+      <input
+        id="gmail-inbox-search"
+        type="search"
+        placeholder="Subject, sender, preview…"
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)"
+      />
+    </div>
+  </div>
+
+  @if (!loading()) {
+    @if (errorMessage()) {
+      <div class="alert-error" role="alert">{{ errorMessage() }}</div>
+    } @else if (filteredItems().length === 0) {
+      <p class="state-message">
+        @if (statusFilter() === 'UNLINKED') {
+          No unlinked emails. Synced messages matched to inquiries appear in query chat timelines.
+        } @else {
+          No {{ statusFilter().toLowerCase() }} emails.
+        }
+      </p>
+    } @else {
+      <div class="inbox-layout">
+        <div class="inbox-list" role="listbox" aria-label="Gmail inbox messages">
+          @for (item of filteredItems(); track item.id) {
+            <button
+              type="button"
+              class="inbox-item"
+              [class.selected]="selectedId() === item.id"
+              (click)="selectItem(item)"
+            >
+              <span class="inbox-item-subject">{{ item.subject || '(no subject)' }}</span>
+              <span class="inbox-item-meta">{{ senderLabel(item) }}</span>
+              <span class="inbox-item-time">{{ formatDateTime(item.receivedAt) }}</span>
+            </button>
+          }
+        </div>
+
+        <aside class="inbox-detail" aria-live="polite">
+          @if (selectedItem(); as item) {
+            @if (actionError()) {
+              <div class="alert-error" role="alert">{{ actionError() }}</div>
+            }
+
+            <div class="detail-header">
+              <div>
+                <h2>{{ item.subject || '(no subject)' }}</h2>
+                <p class="detail-meta">
+                  <span class="status-pill" [class.status-pill--unlinked]="item.status === 'UNLINKED'">
+                    {{ statusLabel(item.status) }}
+                  </span>
+                  <span>{{ formatDateTime(item.receivedAt) }}</span>
+                </p>
+              </div>
+            </div>
+
+            <dl class="info-grid">
+              <div class="info-item">
+                <dt>From</dt>
+                <dd>{{ senderLabel(item) }}</dd>
+              </div>
+              <div class="info-item">
+                <dt>To</dt>
+                <dd>{{ item.toEmail }}</dd>
+              </div>
+              @if (item.linkedInquiryId) {
+                <div class="info-item">
+                  <dt>Linked inquiry</dt>
+                  <dd>
+                    <a
+                      class="inquiry-link"
+                      [routerLink]="['/admin/queries']"
+                      [queryParams]="{ inq: item.linkedInquiryId }"
+                    >
+                      {{ item.linkedInquiryId }}
+                    </a>
+                    @if (item.linkedAt) {
+                      <span class="linked-at"> · {{ formatDateTime(item.linkedAt) }}</span>
+                    }
+                  </dd>
+                </div>
+              }
+            </dl>
+
+            <section class="detail-section">
+              <h3>Preview</h3>
+              <div class="body-preview">
+                @if (item.bodyPreview?.trim()) {
+                  <p>{{ item.bodyPreview }}</p>
+                } @else {
+                  <p class="muted">No preview available.</p>
+                }
+              </div>
+            </section>
+
+            @if (item.status === 'UNLINKED') {
+              <section class="detail-section link-section">
+                <h3>Link to inquiry</h3>
+                <p class="muted link-help">
+                  Enter the inquiry reference shown in Review queries (e.g.
+                  <code>INQ-20260703-00001</code>).
+                </p>
+                <div class="link-form">
+                  <label for="link-inquiry-id">Inquiry reference</label>
+                  <input
+                    id="link-inquiry-id"
+                    type="text"
+                    placeholder="INQ-YYYYMMDD-NNNNN"
+                    [ngModel]="linkInquiryId()"
+                    (ngModelChange)="linkInquiryId.set($event)"
+                    [disabled]="actionLoading()"
+                  />
+                  <div class="link-actions">
+                    <button
+                      type="button"
+                      class="btn-primary"
+                      (click)="linkSelected()"
+                      [disabled]="actionLoading()"
+                    >
+                      {{ actionLoading() ? 'Linking…' : 'Link to inquiry' }}
+                    </button>
+                    <button
+                      type="button"
+                      class="btn-secondary"
+                      (click)="dismissSelected()"
+                      [disabled]="actionLoading()"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+              </section>
+            }
+          } @else {
+            <div class="detail-empty">
+              <p>Select an email to review details and link it to an inquiry.</p>
+            </div>
+          }
+        </aside>
+      </div>
+    }
+  }
+</section>

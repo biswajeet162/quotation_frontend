@@ -76,6 +76,7 @@ export class SidebarComponent {
     { label: 'Create inquiry', path: '/admin/inquiries/create', icon: '◎', roles: ['ADMIN'] },
     { label: 'Companies', path: '/admin/companies', icon: '◆', roles: ['ADMIN'] },
     { label: 'Users', path: '/admin/users', icon: '◈', roles: ['ADMIN'] },
+    { label: 'Gmail inbox', path: '/admin/gmail-inbox', icon: '✉', roles: ['ADMIN'] },
     { label: 'Company profile', path: '/profile', icon: '◇', roles: ['DISTRIBUTOR'] },
     { label: 'Profile', path: '/profile', icon: '◇', roles: ['ADMIN', 'CONSUMER'] },
   ];
