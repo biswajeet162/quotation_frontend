@@ -18,6 +18,6 @@
       </div>
     </header>
 
-    <app-product-request-panel #requestPanel mode="admin" />
+    <app-product-request-panel #requestPanel mode="admin" (submitted)="onSubmitted($event)" />
   </section>
 </div>

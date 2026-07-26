@@ -190,16 +190,35 @@
 
             @if (isAdminMode()) {
               <div class="preview-editable-fields">
-                <label class="preview-field-label">
+                <label class="preview-field-label preview-autocomplete-field">
                   Company name<span class="required-mark" aria-hidden="true">*</span>
                   <input
                     type="text"
                     class="preview-field-input preview-field-input-lg"
                     [ngModel]="adminCompanyName()"
-                    (ngModelChange)="adminCompanyName.set($event)"
+                    (ngModelChange)="onAdminCompanyNameInput($event)"
+                    (focus)="onAdminCompanyNameFocus()"
+                    (blur)="closeAdminCompanyDropdown()"
                     placeholder="Customer company name"
                     aria-required="true"
+                    autocomplete="off"
                   />
+                  @if (adminCompanyDropdownOpen() && adminCompanySuggestions().length > 0) {
+                    <ul class="preview-suggestion-list" role="listbox">
+                      @for (company of adminCompanySuggestions(); track company.id) {
+                        <li>
+                          <button
+                            type="button"
+                            class="preview-suggestion-item"
+                            (mousedown)="selectAdminCompany(company); $event.preventDefault()"
+                          >
+                            <span class="preview-suggestion-title">{{ company.name }}</span>
+                            <span class="preview-suggestion-meta">{{ company.city || company.email }}</span>
+                          </button>
+                        </li>
+                      }
+                    </ul>
+                  }
                 </label>
                 <label class="preview-field-label">
                   Address
@@ -280,14 +299,44 @@
             <h3 class="preview-section-title">Customer Details</h3>
             @if (isAdminMode()) {
               <div class="preview-editable-fields">
-                <label class="preview-field-label">
+                <label class="preview-field-label preview-autocomplete-field">
                   Contact person<span class="required-mark" aria-hidden="true">*</span>
                   <input
                     type="text"
                     class="preview-field-input"
                     [ngModel]="adminContactName()"
-                    (ngModelChange)="adminContactName.set($event)"
+                    (ngModelChange)="onAdminContactNameInput($event)"
+                    (focus)="onAdminContactNameFocus()"
+                    (blur)="closeAdminContactDropdown()"
                     placeholder="Contact person name"
+                    aria-required="true"
+                    autocomplete="off"
+                  />
+                  @if (adminContactDropdownOpen() && adminContactSuggestions().length > 0) {
+                    <ul class="preview-suggestion-list" role="listbox">
+                      @for (employee of adminContactSuggestions(); track employee.id) {
+                        <li>
+                          <button
+                            type="button"
+                            class="preview-suggestion-item"
+                            (mousedown)="selectAdminContact(employee); $event.preventDefault()"
+                          >
+                            <span class="preview-suggestion-title">{{ employee.name }}</span>
+                            <span class="preview-suggestion-meta">{{ employee.email }}</span>
+                          </button>
+                        </li>
+                      }
+                    </ul>
+                  }
+                </label>
+                <label class="preview-field-label">
+                  Contact email<span class="required-mark" aria-hidden="true">*</span>
+                  <input
+                    type="email"
+                    class="preview-field-input"
+                    [ngModel]="adminContactEmail()"
+                    (ngModelChange)="adminContactEmail.set($event)"
+                    placeholder="Contact email"
                     aria-required="true"
                   />
                 </label>
@@ -299,16 +348,6 @@
                     [ngModel]="adminContactPhone()"
                     (ngModelChange)="adminContactPhone.set($event)"
                     placeholder="Contact phone"
-                  />
-                </label>
-                <label class="preview-field-label">
-                  Contact email
-                  <input
-                    type="email"
-                    class="preview-field-input"
-                    [ngModel]="adminContactEmail()"
-                    (ngModelChange)="adminContactEmail.set($event)"
-                    placeholder="Contact email"
                   />
                 </label>
               </div>
@@ -418,10 +457,17 @@
             {{ submitting() ? 'Submitting…' : 'Submit Quotation' }}
           </button>
         } @else {
-          <p class="preview-admin-note">
-            Review the quotation above. Submit will be enabled in a follow-up step once customer
-            details are confirmed.
-          </p>
+          @if (submitError()) {
+            <p class="preview-submit-error" role="alert">{{ submitError() }}</p>
+          }
+          <button
+            type="button"
+            class="btn-submit-query"
+            (click)="submitRequest()"
+            [disabled]="submitting() || previewRows().length === 0"
+          >
+            {{ submitting() ? 'Submitting…' : 'Submit Quotation' }}
+          </button>
         }
       </footer>
     </div>

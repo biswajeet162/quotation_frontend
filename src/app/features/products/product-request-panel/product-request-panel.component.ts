@@ -12,6 +12,8 @@ import {
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { ConsumerDashboardService } from '../../../core/services/consumer/consumer-dashboard.service';
+import { AdminCompanyService } from '../../../core/services/admin/admin-company.service';
+import { AdminInquiryService } from '../../../core/services/admin/admin-inquiry.service';
 import { InquiryCartService } from '../../../core/services/inquiry/inquiry-cart.service';
 import { InquiryService } from '../../../core/services/inquiry/inquiry.service';
 import { ProductService } from '../../../core/services/product/product.service';
@@ -20,6 +22,10 @@ import { ProductQueryFormService } from '../../../core/services/product/product-
 import { ToastService } from '../../../core/services/toast/toast.service';
 import { ConsumerProfile } from '../../../core/models/consumer.model';
 import { ConsumerInquiryCreated } from '../../../core/models/inquiry.model';
+import {
+  AdminConsumerCompanySummary,
+  AdminConsumerEmployee,
+} from '../../../core/models/admin-company.model';
 import { ProductFormDraft, ProductFormRow, RowLocalAttachment } from '../../../core/models/product-form.model';
 import { InquiryTimelineAttachment, TimelineAttachmentMediaType } from '../../../core/models/inquiry-timeline.model';
 import { formatSpecificationsInline } from '../../../shared/utils/specifications-display.util';
@@ -59,6 +65,8 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
   private readonly inquiryService = inject(InquiryService);
   private readonly auth = inject(AuthService);
   private readonly consumerDashboard = inject(ConsumerDashboardService);
+  private readonly adminCompanies = inject(AdminCompanyService);
+  private readonly adminInquiryService = inject(AdminInquiryService);
   private readonly productService = inject(ProductService);
   private readonly catalog = inject(ProductCatalogLookupService);
   private readonly toast = inject(ToastService);
@@ -90,6 +98,14 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
   readonly adminContactPhone = signal('');
   readonly adminContactEmail = signal('');
   readonly adminPreviewErrors = signal<string[]>([]);
+  readonly adminSelectedCompanyId = signal<string | null>(null);
+  readonly adminSelectedUserId = signal<string | null>(null);
+  readonly adminCompanyCatalog = signal<AdminConsumerCompanySummary[]>([]);
+  readonly adminCompanyEmployees = signal<AdminConsumerEmployee[]>([]);
+  readonly adminCompanySuggestions = signal<AdminConsumerCompanySummary[]>([]);
+  readonly adminContactSuggestions = signal<AdminConsumerEmployee[]>([]);
+  readonly adminCompanyDropdownOpen = signal(false);
+  readonly adminContactDropdownOpen = signal(false);
 
   readonly attachmentPanelOpen = signal(false);
   readonly attachmentRow = signal<ProductFormRow | null>(null);
@@ -233,6 +249,8 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
     this.catalog.ensureConsumerBrandsLoaded();
     if (!this.isAdminMode()) {
       this.loadCompanyProfile(true);
+    } else {
+      this.loadAdminCompanyCatalog();
     }
   }
 
@@ -367,9 +385,18 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
     }
     const target = row.localAttachments.find((attachment) => attachment.localId === item.localId);
     if (target?.serverAttachmentId) {
-      this.inquiryService
-        .deleteDraftAttachment(target.serverAttachmentId, this.formState.draftSessionId())
-        .subscribe({ error: () => {} });
+      const delete$ =
+        this.isAdminMode() && this.adminSelectedCompanyId()
+          ? this.adminInquiryService.deleteDraftAttachment(
+              target.serverAttachmentId,
+              this.formState.draftSessionId(),
+              this.adminSelectedCompanyId()!,
+            )
+          : this.inquiryService.deleteDraftAttachment(
+              target.serverAttachmentId,
+              this.formState.draftSessionId(),
+            );
+      delete$.subscribe({ error: () => {} });
     }
     this.formState.removeLocalAttachment(row.rowId, item.localId);
     this.attachmentRow.set(this.rows().find((entry) => entry.rowId === row.rowId) ?? null);
@@ -490,8 +517,79 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
     if (!this.adminContactName().trim()) {
       errors.push('Contact person name is required.');
     }
+    if (!this.adminContactEmail().trim()) {
+      errors.push('Contact email is required.');
+    } else if (!this.isValidAdminEmail(this.adminContactEmail())) {
+      errors.push('Enter a valid contact email address.');
+    }
     this.adminPreviewErrors.set(errors);
     return errors.length === 0;
+  }
+
+  isValidAdminEmail(value: string): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+  }
+
+  onAdminCompanyNameInput(value: string): void {
+    this.adminCompanyName.set(value);
+    this.adminSelectedCompanyId.set(null);
+    this.adminCompanyEmployees.set([]);
+    this.filterAdminCompanySuggestions(value);
+    this.adminCompanyDropdownOpen.set(true);
+  }
+
+  onAdminCompanyNameFocus(): void {
+    this.filterAdminCompanySuggestions(this.adminCompanyName());
+    this.adminCompanyDropdownOpen.set(true);
+  }
+
+  closeAdminCompanyDropdown(): void {
+    this.adminCompanyDropdownOpen.set(false);
+  }
+
+  selectAdminCompany(company: AdminConsumerCompanySummary): void {
+    this.adminCompanyName.set(company.name);
+    this.adminSelectedCompanyId.set(company.id);
+    this.adminCompanyDropdownOpen.set(false);
+    this.adminCompanies.getById(company.id).subscribe({
+      next: (detail) => {
+        this.adminCompanyAddress.set(this.formatAdminCompanyAddress(detail));
+        this.adminCompanyGst.set(detail.gstNumber?.trim() ?? '');
+        this.adminCompanyPan.set(detail.panNumber?.trim() ?? '');
+        this.adminCompanyPhone.set(detail.phone?.trim() ?? '');
+        this.adminCompanyEmail.set(detail.email?.trim() ?? '');
+        this.adminCompanyEmployees.set(
+          (detail.employees ?? []).filter((employee) => employee.isActive !== false),
+        );
+      },
+      error: () => {
+        this.toast.warning('Could not load company details.');
+      },
+    });
+  }
+
+  onAdminContactNameInput(value: string): void {
+    this.adminContactName.set(value);
+    this.adminSelectedUserId.set(null);
+    this.filterAdminContactSuggestions(value);
+    this.adminContactDropdownOpen.set(true);
+  }
+
+  onAdminContactNameFocus(): void {
+    this.filterAdminContactSuggestions(this.adminContactName());
+    this.adminContactDropdownOpen.set(true);
+  }
+
+  closeAdminContactDropdown(): void {
+    this.adminContactDropdownOpen.set(false);
+  }
+
+  selectAdminContact(employee: AdminConsumerEmployee): void {
+    this.adminContactName.set(employee.name);
+    this.adminContactEmail.set(employee.email);
+    this.adminContactPhone.set(employee.phone?.trim() ?? '');
+    this.adminSelectedUserId.set(employee.id);
+    this.adminContactDropdownOpen.set(false);
   }
 
   closePreview(): void {
@@ -560,6 +658,13 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
     this.adminContactPhone.set('');
     this.adminContactEmail.set('');
     this.adminPreviewErrors.set([]);
+    this.adminSelectedCompanyId.set(null);
+    this.adminSelectedUserId.set(null);
+    this.adminCompanyEmployees.set([]);
+    this.adminCompanySuggestions.set([]);
+    this.adminContactSuggestions.set([]);
+    this.adminCompanyDropdownOpen.set(false);
+    this.adminContactDropdownOpen.set(false);
   }
 
   previewRows(): ProductFormRow[] {
@@ -582,6 +687,11 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
   }
 
   submitRequest(): void {
+    if (this.isAdminMode()) {
+      this.submitAdminRequest();
+      return;
+    }
+
     const user = this.auth.currentUser();
     if (!user || user.role !== 'CONSUMER') {
       const message = 'Only consumer accounts can create inquiries.';
@@ -624,6 +734,130 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
   closeVerifyModal(): void {
     this.verifyModalOpen.set(false);
     this.loadCompanyProfile(true);
+  }
+
+  submitAdminRequest(): void {
+    this.submitError.set(null);
+    if (!this.validateAdminPreviewDetails()) {
+      this.toast.warning('Fill in company name, contact person, and a valid email.');
+      return;
+    }
+    this.performAdminSubmit();
+  }
+
+  private performAdminSubmit(): void {
+    const valid = this.previewRows();
+    if (valid.length === 0) {
+      const message = 'Add at least one product row with some details.';
+      this.submitError.set(message);
+      this.toast.warning(message);
+      return;
+    }
+
+    const notSubmittable = valid.filter(
+      (r) => !r.catalogProductId && (!r.brand.trim() || !r.designation.trim()),
+    );
+    if (notSubmittable.length > 0) {
+      const message =
+        'Each product row needs brand and designation, or must be added from the catalog.';
+      this.submitError.set(message);
+      this.toast.warning(message);
+      return;
+    }
+
+    if (this.formState.hasUploadingAttachments(valid)) {
+      const message = 'Please wait until all image uploads finish.';
+      this.submitError.set(message);
+      this.toast.warning(message);
+      return;
+    }
+
+    if (this.formState.hasAttachmentErrors(valid)) {
+      const message = 'Fix or remove image uploads that failed before submitting.';
+      this.submitError.set(message);
+      this.toast.warning(message);
+      return;
+    }
+
+    this.submitting.set(true);
+    this.submitError.set(null);
+    const draftSessionId = this.formState.draftSessionId();
+
+    const productRequests = valid.map((row) =>
+      row.catalogProductId
+        ? of({ row, productId: row.catalogProductId })
+        : this.productService
+            .findOrCreate(this.formState.toFindOrCreateRequest(row))
+            .pipe(map((product) => ({ row, productId: product.id }))),
+    );
+
+    forkJoin(productRequests)
+      .pipe(
+        switchMap((resolved) => {
+          const title =
+            resolved.length === 1
+              ? `${resolved[0].row.brand.trim()} ${resolved[0].row.designation.trim()}`
+              : `Quotation request (${resolved.length} products)`;
+
+          const description =
+            resolved.length === 1 ? resolved[0].row.description.trim() || undefined : undefined;
+
+          return this.adminInquiryService.createOnBehalf({
+            companyName: this.adminCompanyName().trim(),
+            contactName: this.adminContactName().trim(),
+            contactEmail: this.adminContactEmail().trim(),
+            contactPhone: this.adminContactPhone().trim() || undefined,
+            companyAddress: this.adminCompanyAddress().trim() || undefined,
+            companyGst: this.adminCompanyGst().trim() || undefined,
+            companyPan: this.adminCompanyPan().trim() || undefined,
+            companyPhone: this.adminCompanyPhone().trim() || undefined,
+            companyEmail: this.adminCompanyEmail().trim() || undefined,
+            consumerCompanyId: this.adminSelectedCompanyId() ?? undefined,
+            consumerUserId: this.adminSelectedUserId() ?? undefined,
+            title,
+            description,
+            searchTerm: this.cart.searchTerm().trim() || undefined,
+            draftSessionId,
+            items: resolved.map(({ row, productId }) => ({
+              productId,
+              quantity: row.quantity,
+              notes: row.lineNotes.trim() || undefined,
+              expectedDeliveryDate: row.expectedDeliveryDate.trim() || undefined,
+              lineSource: row.lineSource,
+              rowClientId: row.rowId,
+              attachmentIds: this.formState.attachmentIdsForRow(row),
+            })),
+          });
+        }),
+      )
+      .subscribe({
+        next: (inquiry) => {
+          this.submitting.set(false);
+          this.cart.clear();
+          this.formState.resetRows();
+          this.closePreview();
+          this.closeAttachments();
+          this.lastSubmitted.set(inquiry);
+          if (inquiry.inquiryId) {
+            this.toast.success(`Quotation request ${inquiry.inquiryId} submitted successfully.`);
+          } else {
+            this.toast.success('Quotation request submitted successfully.');
+          }
+          if (inquiry.acknowledgementEmailMessage && inquiry.acknowledgementEmailSent === false) {
+            this.toast.warning(inquiry.acknowledgementEmailMessage);
+          }
+          if (inquiry.id) {
+            this.downloadSubmissionPdf(inquiry.id, inquiry.inquiryId);
+          }
+          this.submitted.emit(inquiry);
+        },
+        error: (error: unknown) => {
+          this.submitting.set(false);
+          const fallback = 'Could not submit the quotation request. Please try again.';
+          this.submitError.set(extractApiErrorMessage(error, fallback));
+          this.toast.fromApiError(error, fallback);
+        },
+      });
   }
 
   private performSubmit(): void {
@@ -750,9 +984,21 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
   }
 
   private uploadDraftAttachment(rowId: string, localId: string, file: File): void {
-    this.inquiryService
-      .uploadDraftAttachment(this.formState.draftSessionId(), rowId, file)
-      .subscribe({
+    const upload$ =
+      this.isAdminMode() && this.adminSelectedCompanyId()
+        ? this.adminInquiryService.uploadDraftAttachment(
+            this.formState.draftSessionId(),
+            rowId,
+            this.adminSelectedCompanyId()!,
+            file,
+          )
+        : this.inquiryService.uploadDraftAttachment(
+            this.formState.draftSessionId(),
+            rowId,
+            file,
+          );
+
+    upload$.subscribe({
         next: (uploaded) => {
           this.formState.updateLocalAttachment(rowId, localId, {
             serverAttachmentId: uploaded.id,
@@ -873,6 +1119,51 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
     };
 
     tick();
+  }
+
+  private loadAdminCompanyCatalog(): void {
+    this.adminCompanies.list().subscribe({
+      next: (companies) => this.adminCompanyCatalog.set(companies),
+      error: () => {},
+    });
+  }
+
+  private filterAdminCompanySuggestions(term: string): void {
+    const query = term.trim().toLowerCase();
+    const companies = this.adminCompanyCatalog();
+    const filtered = !query
+      ? companies.slice(0, 12)
+      : companies
+          .filter((company) => company.name.toLowerCase().includes(query))
+          .slice(0, 12);
+    this.adminCompanySuggestions.set(filtered);
+  }
+
+  private filterAdminContactSuggestions(term: string): void {
+    const query = term.trim().toLowerCase();
+    const employees = this.adminCompanyEmployees();
+    const filtered = !query
+      ? employees.slice(0, 12)
+      : employees
+          .filter((employee) => {
+            const haystack = `${employee.name} ${employee.email} ${employee.phone ?? ''}`.toLowerCase();
+            return haystack.includes(query);
+          })
+          .slice(0, 12);
+    this.adminContactSuggestions.set(filtered);
+  }
+
+  private formatAdminCompanyAddress(detail: {
+    address?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    pinCode?: string;
+  }): string {
+    return [detail.address, detail.city, detail.state, detail.country, detail.pinCode]
+      .map((part) => part?.trim())
+      .filter(Boolean)
+      .join(', ');
   }
 
   private loadCompanyProfile(force = false): void {

@@ -164,6 +164,25 @@ export interface CreateInquiryRequest {
   }[];
 }
 
+export interface CreateInquiryOnBehalfRequest {
+  companyName: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone?: string;
+  companyAddress?: string;
+  companyGst?: string;
+  companyPan?: string;
+  companyPhone?: string;
+  companyEmail?: string;
+  consumerCompanyId?: string;
+  consumerUserId?: string;
+  title: string;
+  description?: string;
+  searchTerm?: string;
+  draftSessionId?: string;
+  items: CreateInquiryRequest['items'];
+}
+
 export interface InquiryDraftAttachment {
   id: string;
   draftSessionId: string;
