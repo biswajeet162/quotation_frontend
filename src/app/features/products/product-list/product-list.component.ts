@@ -494,6 +494,72 @@ export class ProductListComponent implements OnInit, OnDestroy {
     void this.router.navigate([this.inquiryCreateRoute()]);
   }
 
+  useAdminProductInQuery(entry: DistributorProductEntry, event: Event): void {
+    this.useInQuery(this.toCatalogProduct(entry), event);
+  }
+
+  toCatalogProduct(entry: DistributorProductEntry): CatalogProduct {
+    return {
+      productId: entry.productId,
+      brand: entry.brand ?? '',
+      designation: entry.designation ?? '',
+      description: entry.description,
+      attachmentCount: entry.attachmentCount,
+    };
+  }
+
+  isAdminProductSelected(product: DistributorProductEntry): boolean {
+    return this.selectedProductIds().has(product.productId);
+  }
+
+  toggleAdminProductSelection(product: DistributorProductEntry, event: Event): void {
+    event.stopPropagation();
+    if (!this.canCreateInquiry()) {
+      return;
+    }
+
+    this.selectedProductIds.update((ids) => {
+      const next = new Set(ids);
+      if (next.has(product.productId)) {
+        next.delete(product.productId);
+      } else {
+        next.add(product.productId);
+      }
+      return next;
+    });
+  }
+
+  areAllAdminVisibleSelected(products: DistributorProductEntry[]): boolean {
+    return (
+      products.length > 0 && products.every((product) => this.isAdminProductSelected(product))
+    );
+  }
+
+  areSomeAdminVisibleSelected(products: DistributorProductEntry[]): boolean {
+    return products.some((product) => this.isAdminProductSelected(product));
+  }
+
+  toggleSelectAllAdminVisible(products: DistributorProductEntry[], event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!this.canCreateInquiry() || products.length === 0) {
+      return;
+    }
+
+    const selectAll = !this.areAllAdminVisibleSelected(products);
+    this.selectedProductIds.update((ids) => {
+      const next = new Set(ids);
+      for (const product of products) {
+        if (selectAll) {
+          next.add(product.productId);
+        } else {
+          next.delete(product.productId);
+        }
+      }
+      return next;
+    });
+  }
+
   isProductSelected(productId: string): boolean {
     return this.selectedProductIds().has(productId);
   }
@@ -559,16 +625,20 @@ export class ProductListComponent implements OnInit, OnDestroy {
     }
 
     const byId = new Map(this.catalogProducts().map((product) => [product.productId, product]));
-    const products = [...selectedIds]
-      .map((id) => byId.get(id))
-      .filter((product): product is CatalogProduct => !!product);
+    const adminByCatalogId = new Map(
+      this.adminDistributorProducts().map((product) => [product.productId, product]),
+    );
 
-    if (products.length === 0) {
-      return;
-    }
-
-    for (const product of products) {
-      this.queryForm.fillFromCatalogProduct(product, 'CATALOG_MATCH');
+    for (const id of selectedIds) {
+      const catalog = byId.get(id);
+      if (catalog) {
+        this.queryForm.fillFromCatalogProduct(catalog, 'CATALOG_MATCH');
+        continue;
+      }
+      const adminProduct = adminByCatalogId.get(id);
+      if (adminProduct) {
+        this.queryForm.fillFromCatalogProduct(this.toCatalogProduct(adminProduct), 'CATALOG_MATCH');
+      }
     }
     this.clearProductSelection();
     void this.router.navigate([this.inquiryCreateRoute()]);

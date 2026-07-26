@@ -26,7 +26,9 @@
       </div>
       @if (activeMainTab() === 'distributors') {
         <span class="result-count">{{ filteredAdminDistributorProducts().length }} distributor product(s)</span>
-      } @else if (!isAdmin()) {
+      } @else if (isAdmin()) {
+        <span class="result-count">{{ sortedFilteredAdminDistributorProducts().length }} distributor product(s)</span>
+      } @else {
         <span class="result-count">{{ sortedFilteredProducts().length }} product(s)</span>
       }
     </div>
@@ -55,6 +57,21 @@
           <table class="products-table">
             <thead>
               <tr>
+                @if (canCreateInquiry()) {
+                  <th class="col-select">
+                    <input
+                      type="checkbox"
+                      class="product-select-checkbox"
+                      [checked]="areAllAdminVisibleSelected(sortedFilteredAdminDistributorProducts())"
+                      [indeterminate]="
+                        areSomeAdminVisibleSelected(sortedFilteredAdminDistributorProducts()) &&
+                        !areAllAdminVisibleSelected(sortedFilteredAdminDistributorProducts())
+                      "
+                      (click)="toggleSelectAllAdminVisible(sortedFilteredAdminDistributorProducts(), $event)"
+                      aria-label="Select all visible products"
+                    />
+                  </th>
+                }
                 <th class="col-serial">S.No</th>
                 <th class="col-brand sort-col">
                   <button type="button" class="sort-btn" (click)="toggleSort('brand')">
@@ -91,6 +108,9 @@
                     Attachment <span>{{ sortIcon('attachmentCount') }}</span>
                   </button>
                 </th>
+                @if (canCreateInquiry()) {
+                  <th class="col-action"></th>
+                }
                 <th class="col-edit">Edit</th>
               </tr>
             </thead>
@@ -98,9 +118,21 @@
               @for (product of sortedFilteredAdminDistributorProducts(); track product.id; let index = $index) {
                 <tr
                   [class.inactive-row]="product.isActive === false"
+                  [class.selected-row]="isAdminProductSelected(product)"
                   class="product-row"
                   (click)="openAdminDetails(product)"
                 >
+                  @if (canCreateInquiry()) {
+                    <td class="select-cell" (click)="$event.stopPropagation()">
+                      <input
+                        type="checkbox"
+                        class="product-select-checkbox"
+                        [checked]="isAdminProductSelected(product)"
+                        (change)="toggleAdminProductSelection(product, $event)"
+                        [attr.aria-label]="'Select ' + product.brand + ' ' + product.designation"
+                      />
+                    </td>
+                  }
                   <td class="serial-cell">{{ index + 1 }}</td>
                   <td class="brand-cell" [title]="product.brand">
                     @let brandLogoUrl = getBrandLogoUrl(product.brand);
@@ -154,6 +186,13 @@
                       }
                     </button>
                   </td>
+                  @if (canCreateInquiry()) {
+                    <td class="actions-cell">
+                      <button type="button" class="btn-add" (click)="useAdminProductInQuery(product, $event)">
+                        Add to inquiry
+                      </button>
+                    </td>
+                  }
                   <td class="actions-cell">
                     <button type="button" class="btn-edit" (click)="openAdminEdit(product, $event)">
                       Edit
@@ -322,6 +361,21 @@
                   <table class="products-table">
                     <thead>
                       <tr>
+                        @if (canCreateInquiry()) {
+                          <th class="col-select">
+                            <input
+                              type="checkbox"
+                              class="product-select-checkbox"
+                              [checked]="areAllAdminVisibleSelected(selectedAdminBrandProducts())"
+                              [indeterminate]="
+                                areSomeAdminVisibleSelected(selectedAdminBrandProducts()) &&
+                                !areAllAdminVisibleSelected(selectedAdminBrandProducts())
+                              "
+                              (click)="toggleSelectAllAdminVisible(selectedAdminBrandProducts(), $event)"
+                              [attr.aria-label]="'Select all ' + (selectedBrand() || '') + ' products'"
+                            />
+                          </th>
+                        }
                         <th class="col-serial">S.No</th>
                         <th class="col-brand sort-col">
                           <button type="button" class="sort-btn" (click)="toggleSort('brand')">
@@ -358,6 +412,9 @@
                             Attachment <span>{{ sortIcon('attachmentCount') }}</span>
                           </button>
                         </th>
+                        @if (canCreateInquiry()) {
+                          <th class="col-action"></th>
+                        }
                         <th class="col-edit">Edit</th>
                       </tr>
                     </thead>
@@ -365,9 +422,23 @@
                       @for (product of selectedAdminBrandProducts(); track product.id; let index = $index) {
                         <tr
                           [class.inactive-row]="product.isActive === false"
+                          [class.selected-row]="isAdminProductSelected(product)"
                           class="product-row"
                           (click)="openAdminDetails(product)"
                         >
+                          @if (canCreateInquiry()) {
+                            <td class="select-cell" (click)="$event.stopPropagation()">
+                              <input
+                                type="checkbox"
+                                class="product-select-checkbox"
+                                [checked]="isAdminProductSelected(product)"
+                                (change)="toggleAdminProductSelection(product, $event)"
+                                [attr.aria-label]="
+                                  'Select ' + product.brand + ' ' + product.designation
+                                "
+                              />
+                            </td>
+                          }
                           <td class="serial-cell">{{ index + 1 }}</td>
                           <td class="brand-cell" [title]="product.brand">
                             @let brandLogoUrl = getBrandLogoUrl(product.brand);
@@ -421,6 +492,13 @@
                               }
                             </button>
                           </td>
+                          @if (canCreateInquiry()) {
+                            <td class="actions-cell">
+                              <button type="button" class="btn-add" (click)="useAdminProductInQuery(product, $event)">
+                                Add to inquiry
+                              </button>
+                            </td>
+                          }
                           <td class="actions-cell">
                             <button type="button" class="btn-edit" (click)="openAdminEdit(product, $event)">
                               Edit
@@ -559,7 +637,7 @@
           </div>
         </div>
       }
-    } @else {
+    } @else if (!isAdmin()) {
       <div class="table-wrap">
         <table class="products-table">
           <thead>
