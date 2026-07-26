@@ -948,6 +948,96 @@
   margin-top: 0.35rem;
 }
 
+.preview-admin-banner {
+  margin: 0 0 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.preview-company-name-top {
+  margin: 0 0 1rem;
+  font-size: 1.35rem;
+  color: #0f172a;
+}
+
+.preview-editable-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  width: 100%;
+}
+
+.preview-field-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.preview-field-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-family: inherit;
+  color: #0f172a;
+  background: #fff;
+}
+
+.preview-field-input-lg {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.preview-field-input:focus {
+  outline: 2px solid #0f766e;
+  outline-offset: 1px;
+  border-color: #0f766e;
+}
+
+.preview-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+
+.preview-admin-errors {
+  margin: 0.75rem 0 0;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
+.preview-admin-errors p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #b91c1c;
+}
+
+.preview-admin-errors p + p {
+  margin-top: 0.25rem;
+}
+
+.preview-admin-note {
+  flex: 1;
+  margin: 0 0 0 auto;
+  max-width: 28rem;
+  font-size: 0.78rem;
+  color: #64748b;
+  text-align: right;
+  line-height: 1.45;
+}
+
 .preview-footer {
   display: flex;
   align-items: center;

@@ -225,6 +225,11 @@ export class ProductListComponent implements OnInit, OnDestroy {
 
   readonly isConsumer = () => this.auth.currentUser()?.role === 'CONSUMER';
   readonly isAdmin = () => this.auth.currentUser()?.role === 'ADMIN';
+  readonly canCreateInquiry = () => this.isConsumer() || this.isAdmin();
+
+  inquiryCreateRoute(): string {
+    return this.isAdmin() ? '/admin/inquiries/create' : '/requests';
+  }
 
   readonly filteredAdminDistributorProducts = computed(() => {
     const query = this.searchQuery().trim().toLowerCase();
@@ -481,12 +486,12 @@ export class ProductListComponent implements OnInit, OnDestroy {
 
   useInQuery(entry: CatalogProduct, event: Event): void {
     event.stopPropagation();
-    if (!this.isConsumer()) {
+    if (!this.canCreateInquiry()) {
       return;
     }
 
     this.queryForm.fillFromCatalogProduct(entry, 'CATALOG_MATCH');
-    void this.router.navigate(['/requests']);
+    void this.router.navigate([this.inquiryCreateRoute()]);
   }
 
   isProductSelected(productId: string): boolean {
@@ -495,7 +500,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
 
   toggleProductSelection(product: CatalogProduct, event: Event): void {
     event.stopPropagation();
-    if (!this.isConsumer()) {
+    if (!this.canCreateInquiry()) {
       return;
     }
 
@@ -521,7 +526,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
   toggleSelectAllVisible(products: CatalogProduct[], event: Event): void {
     event.preventDefault();
     event.stopPropagation();
-    if (!this.isConsumer() || products.length === 0) {
+    if (!this.canCreateInquiry() || products.length === 0) {
       return;
     }
 
@@ -544,7 +549,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
   }
 
   addSelectedToInquiry(): void {
-    if (!this.isConsumer()) {
+    if (!this.canCreateInquiry()) {
       return;
     }
 
@@ -566,14 +571,14 @@ export class ProductListComponent implements OnInit, OnDestroy {
       this.queryForm.fillFromCatalogProduct(product, 'CATALOG_MATCH');
     }
     this.clearProductSelection();
-    void this.router.navigate(['/requests']);
+    void this.router.navigate([this.inquiryCreateRoute()]);
   }
 
   goToQueryFromSearch(): void {
     const term = this.searchQuery().trim();
     this.cart.setSearchTerm(term);
     this.queryForm.fillFromSearchTerm(term);
-    void this.router.navigate(['/requests']);
+    void this.router.navigate([this.inquiryCreateRoute()]);
   }
 
   displayValue(value: string | undefined): string {

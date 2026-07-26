@@ -1,4 +1,14 @@
-import { Component, computed, HostListener, inject, OnDestroy, OnInit, output, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  HostListener,
+  inject,
+  input,
+  OnDestroy,
+  OnInit,
+  output,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { ConsumerDashboardService } from '../../../core/services/consumer/consumer-dashboard.service';
@@ -30,6 +40,8 @@ interface QueryAttachmentItem {
   timelineAttachment: InquiryTimelineAttachment;
 }
 
+export type ProductRequestPanelMode = 'consumer' | 'admin';
+
 @Component({
   selector: 'app-product-request-panel',
   imports: [
@@ -52,6 +64,10 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
   private readonly toast = inject(ToastService);
   readonly formState = inject(ProductQueryFormService);
 
+  /** Consumer self-service vs admin raising an inquiry on behalf of a customer. */
+  readonly mode = input<ProductRequestPanelMode>('consumer');
+  readonly isAdminMode = computed(() => this.mode() === 'admin');
+
   readonly submitted = output<ConsumerInquiryCreated>();
 
   readonly submitting = signal(false);
@@ -62,6 +78,18 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
   readonly companyLogoUrl = signal<string | null>(null);
   readonly profileLoading = signal(false);
   readonly verifyModalOpen = signal(false);
+
+  /** Admin preview: customer company and contact (filled before submit). */
+  readonly adminCompanyName = signal('');
+  readonly adminCompanyAddress = signal('');
+  readonly adminCompanyGst = signal('');
+  readonly adminCompanyPan = signal('');
+  readonly adminCompanyPhone = signal('');
+  readonly adminCompanyEmail = signal('');
+  readonly adminContactName = signal('');
+  readonly adminContactPhone = signal('');
+  readonly adminContactEmail = signal('');
+  readonly adminPreviewErrors = signal<string[]>([]);
 
   readonly attachmentPanelOpen = signal(false);
   readonly attachmentRow = signal<ProductFormRow | null>(null);
@@ -104,33 +132,60 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
   );
 
   readonly previewCompanyName = computed(() => {
+    if (this.isAdminMode()) {
+      return this.adminCompanyName().trim() || 'Customer company';
+    }
     const profile = this.companyProfile();
     const user = this.auth.currentUser();
     return profile?.companyName?.trim() || user?.companyName?.trim() || 'Your company';
   });
 
-  readonly previewCompanyAddress = computed(() => this.formatAddress(this.companyProfile()));
+  readonly previewCompanyAddress = computed(() => {
+    if (this.isAdminMode()) {
+      return this.adminCompanyAddress().trim() || '—';
+    }
+    return this.formatAddress(this.companyProfile());
+  });
 
   /** Company phone — never the employee phone. */
   readonly previewCompanyPhone = computed(() => {
+    if (this.isAdminMode()) {
+      const phone = this.adminCompanyPhone().trim();
+      return phone || null;
+    }
     const phone = this.companyProfile()?.companyPhone?.trim();
     return phone || null;
   });
 
   /** Company email — never the employee/login email. */
   readonly previewCompanyEmail = computed(() => {
+    if (this.isAdminMode()) {
+      const email = this.adminCompanyEmail().trim();
+      return email || null;
+    }
     const email = this.companyProfile()?.companyEmail?.trim();
     return email || null;
   });
 
   readonly previewContactName = computed(() => {
+    if (this.isAdminMode()) {
+      return this.adminContactName().trim() || 'Contact person';
+    }
     const profile = this.companyProfile();
     return profile?.userName?.trim() || 'Contact Person';
   });
 
-  readonly previewCustomerAddress = computed(() => this.formatAddress(this.companyProfile()));
+  readonly previewCustomerAddress = computed(() => {
+    if (this.isAdminMode()) {
+      return this.adminCompanyAddress().trim() || '—';
+    }
+    return this.formatAddress(this.companyProfile());
+  });
 
   readonly previewContactPhone = computed(() => {
+    if (this.isAdminMode()) {
+      return this.adminContactPhone().trim() || '—';
+    }
     const profile = this.companyProfile();
     if (!profile) {
       return '—';
@@ -139,8 +194,25 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
   });
 
   readonly previewContactEmail = computed(() => {
+    if (this.isAdminMode()) {
+      return this.adminContactEmail().trim() || '—';
+    }
     const profile = this.companyProfile();
     return profile?.email?.trim() || '—';
+  });
+
+  readonly previewCompanyGst = computed(() => {
+    if (this.isAdminMode()) {
+      return this.adminCompanyGst().trim() || null;
+    }
+    return this.companyProfile()?.gstNumber?.trim() || null;
+  });
+
+  readonly previewCompanyPan = computed(() => {
+    if (this.isAdminMode()) {
+      return this.adminCompanyPan().trim() || null;
+    }
+    return this.companyProfile()?.panNumber?.trim() || null;
   });
 
   private logoObjectUrl: string | null = null;
@@ -159,7 +231,9 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.catalog.ensureLoaded();
     this.catalog.ensureConsumerBrandsLoaded();
-    this.loadCompanyProfile(true);
+    if (!this.isAdminMode()) {
+      this.loadCompanyProfile(true);
+    }
   }
 
   ngOnDestroy(): void {
@@ -399,10 +473,25 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
 
   openPreview(): void {
     this.submitError.set(null);
+    this.adminPreviewErrors.set([]);
     this.termsText.set(this.buildDefaultTermsText());
     this.previewOpen.set(true);
     document.body.style.overflow = 'hidden';
-    this.loadCompanyProfile();
+    if (!this.isAdminMode()) {
+      this.loadCompanyProfile();
+    }
+  }
+
+  validateAdminPreviewDetails(): boolean {
+    const errors: string[] = [];
+    if (!this.adminCompanyName().trim()) {
+      errors.push('Company name is required.');
+    }
+    if (!this.adminContactName().trim()) {
+      errors.push('Contact person name is required.');
+    }
+    this.adminPreviewErrors.set(errors);
+    return errors.length === 0;
   }
 
   closePreview(): void {
@@ -446,6 +535,7 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
     this.formState.resetRows();
     this.submitError.set(null);
     this.lastSubmitted.set(null);
+    this.resetAdminCustomerDetails();
     this.closePreview();
     this.closeAttachments();
   }
@@ -454,8 +544,22 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
     this.lastSubmitted.set(null);
     this.formState.resetRows();
     this.submitError.set(null);
+    this.resetAdminCustomerDetails();
     this.closePreview();
     this.closeAttachments();
+  }
+
+  private resetAdminCustomerDetails(): void {
+    this.adminCompanyName.set('');
+    this.adminCompanyAddress.set('');
+    this.adminCompanyGst.set('');
+    this.adminCompanyPan.set('');
+    this.adminCompanyPhone.set('');
+    this.adminCompanyEmail.set('');
+    this.adminContactName.set('');
+    this.adminContactPhone.set('');
+    this.adminContactEmail.set('');
+    this.adminPreviewErrors.set([]);
   }
 
   previewRows(): ProductFormRow[] {

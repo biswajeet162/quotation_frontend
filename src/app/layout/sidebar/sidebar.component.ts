@@ -73,6 +73,7 @@ export class SidebarComponent {
     { label: 'Create inquiry', path: '/requests', icon: '◎', roles: ['CONSUMER'] },
     { label: 'Tracking', path: '/tracking', icon: '◷', roles: ['CONSUMER'] },
     { label: 'Review queries', path: '/admin/queries', icon: '◉', roles: ['ADMIN'] },
+    { label: 'Create inquiry', path: '/admin/inquiries/create', icon: '◎', roles: ['ADMIN'] },
     { label: 'Companies', path: '/admin/companies', icon: '◆', roles: ['ADMIN'] },
     { label: 'Users', path: '/admin/users', icon: '◈', roles: ['ADMIN'] },
     { label: 'Company profile', path: '/profile', icon: '◇', roles: ['DISTRIBUTOR'] },

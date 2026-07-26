@@ -1,0 +1,23 @@
+<div class="queries-page">
+  <section class="page-card form-section">
+    <header class="page-header">
+      <div>
+        <h1>Create inquiry</h1>
+        <p class="page-subtitle">Raise a quotation request on behalf of a customer.</p>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="btn-clear" (click)="clearForm()">Clear form</button>
+        <button
+          type="button"
+          class="btn-preview-header"
+          (click)="openPreview()"
+          [disabled]="!canPreview()"
+        >
+          Preview
+        </button>
+      </div>
+    </header>
+
+    <app-product-request-panel #requestPanel mode="admin" />
+  </section>
+</div>

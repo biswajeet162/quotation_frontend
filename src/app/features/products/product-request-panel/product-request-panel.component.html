@@ -166,10 +166,20 @@
       </header>
 
       <main class="preview-body preview-document" id="quotation-preview-document">
+        @if (isAdminMode()) {
+          <p class="preview-admin-banner" role="note">
+            You are creating this inquiry on behalf of a customer. Fill in the customer company and
+            contact details below.
+          </p>
+          <h2 class="preview-company-name preview-company-name-top">
+            {{ previewCompanyName() }}
+          </h2>
+        }
+
         <section class="preview-parties">
           <div class="preview-company-block">
             <div class="preview-logo-wrap">
-              @if (companyLogoUrl(); as logoUrl) {
+              @if (!isAdminMode() && companyLogoUrl(); as logoUrl) {
                 <img [src]="logoUrl" alt="" class="preview-logo-image" />
               } @else {
                 <div class="preview-logo-fallback" aria-hidden="true">
@@ -177,34 +187,149 @@
                 </div>
               }
             </div>
-            <h2 class="preview-company-name">{{ previewCompanyName() }}</h2>
-            <ul class="preview-details-list">
-              <li>{{ previewCompanyAddress() }}</li>
-              @if (companyProfile()?.gstNumber; as gst) {
-                <li><span class="detail-label">GST:</span> {{ gst }}</li>
-              }
-              @if (companyProfile()?.panNumber; as pan) {
-                <li><span class="detail-label">PAN:</span> {{ pan }}</li>
-              }
-              @if (previewCompanyPhone(); as phone) {
-                <li><span class="detail-label">Phone:</span> {{ phone }}</li>
-              }
-              @if (previewCompanyEmail(); as email) {
-                <li><span class="detail-label">Email:</span> {{ email }}</li>
-              }
-            </ul>
+
+            @if (isAdminMode()) {
+              <div class="preview-editable-fields">
+                <label class="preview-field-label">
+                  Company name<span class="required-mark" aria-hidden="true">*</span>
+                  <input
+                    type="text"
+                    class="preview-field-input preview-field-input-lg"
+                    [ngModel]="adminCompanyName()"
+                    (ngModelChange)="adminCompanyName.set($event)"
+                    placeholder="Customer company name"
+                    aria-required="true"
+                  />
+                </label>
+                <label class="preview-field-label">
+                  Address
+                  <textarea
+                    rows="2"
+                    class="preview-field-input"
+                    [ngModel]="adminCompanyAddress()"
+                    (ngModelChange)="adminCompanyAddress.set($event)"
+                    placeholder="Street, city, state, pin code"
+                  ></textarea>
+                </label>
+                <div class="preview-field-row">
+                  <label class="preview-field-label">
+                    GST
+                    <input
+                      type="text"
+                      class="preview-field-input"
+                      [ngModel]="adminCompanyGst()"
+                      (ngModelChange)="adminCompanyGst.set($event)"
+                      placeholder="GST number"
+                    />
+                  </label>
+                  <label class="preview-field-label">
+                    PAN
+                    <input
+                      type="text"
+                      class="preview-field-input"
+                      [ngModel]="adminCompanyPan()"
+                      (ngModelChange)="adminCompanyPan.set($event)"
+                      placeholder="PAN number"
+                    />
+                  </label>
+                </div>
+                <div class="preview-field-row">
+                  <label class="preview-field-label">
+                    Company phone
+                    <input
+                      type="tel"
+                      class="preview-field-input"
+                      [ngModel]="adminCompanyPhone()"
+                      (ngModelChange)="adminCompanyPhone.set($event)"
+                      placeholder="Company phone"
+                    />
+                  </label>
+                  <label class="preview-field-label">
+                    Company email
+                    <input
+                      type="email"
+                      class="preview-field-input"
+                      [ngModel]="adminCompanyEmail()"
+                      (ngModelChange)="adminCompanyEmail.set($event)"
+                      placeholder="Company email"
+                    />
+                  </label>
+                </div>
+              </div>
+            } @else {
+              <h2 class="preview-company-name">{{ previewCompanyName() }}</h2>
+              <ul class="preview-details-list">
+                <li>{{ previewCompanyAddress() }}</li>
+                @if (companyProfile()?.gstNumber; as gst) {
+                  <li><span class="detail-label">GST:</span> {{ gst }}</li>
+                }
+                @if (companyProfile()?.panNumber; as pan) {
+                  <li><span class="detail-label">PAN:</span> {{ pan }}</li>
+                }
+                @if (previewCompanyPhone(); as phone) {
+                  <li><span class="detail-label">Phone:</span> {{ phone }}</li>
+                }
+                @if (previewCompanyEmail(); as email) {
+                  <li><span class="detail-label">Email:</span> {{ email }}</li>
+                }
+              </ul>
+            }
           </div>
 
           <div class="preview-customer-block">
             <h3 class="preview-section-title">Customer Details</h3>
-            <ul class="preview-details-list">
-              <li><span class="detail-label">Name:</span> {{ previewContactName() }}</li>
-              <li><span class="detail-label">Address:</span> {{ previewCustomerAddress() }}</li>
-              <li><span class="detail-label">Contact:</span> {{ previewContactPhone() }}</li>
-              <li><span class="detail-label">Email:</span> {{ previewContactEmail() }}</li>
-            </ul>
+            @if (isAdminMode()) {
+              <div class="preview-editable-fields">
+                <label class="preview-field-label">
+                  Contact person<span class="required-mark" aria-hidden="true">*</span>
+                  <input
+                    type="text"
+                    class="preview-field-input"
+                    [ngModel]="adminContactName()"
+                    (ngModelChange)="adminContactName.set($event)"
+                    placeholder="Contact person name"
+                    aria-required="true"
+                  />
+                </label>
+                <label class="preview-field-label">
+                  Contact phone
+                  <input
+                    type="tel"
+                    class="preview-field-input"
+                    [ngModel]="adminContactPhone()"
+                    (ngModelChange)="adminContactPhone.set($event)"
+                    placeholder="Contact phone"
+                  />
+                </label>
+                <label class="preview-field-label">
+                  Contact email
+                  <input
+                    type="email"
+                    class="preview-field-input"
+                    [ngModel]="adminContactEmail()"
+                    (ngModelChange)="adminContactEmail.set($event)"
+                    placeholder="Contact email"
+                  />
+                </label>
+              </div>
+            } @else {
+              <ul class="preview-details-list">
+                <li><span class="detail-label">Name:</span> {{ previewContactName() }}</li>
+                <li><span class="detail-label">Address:</span> {{ previewCustomerAddress() }}</li>
+                <li><span class="detail-label">Contact:</span> {{ previewContactPhone() }}</li>
+                <li><span class="detail-label">Email:</span> {{ previewContactEmail() }}</li>
+              </ul>
+            }
           </div>
         </section>
+
+        @if (isAdminMode() && adminPreviewErrors().length > 0) {
+          <div class="preview-admin-errors" role="alert">
+            @for (error of adminPreviewErrors(); track error) {
+              <p>{{ error }}</p>
+            }
+          </div>
+        }
 
         <section class="preview-meta">
           <p class="preview-meta-item">
@@ -280,17 +405,24 @@
         <button type="button" class="btn-secondary" (click)="closePreview()" [disabled]="submitting()">
           Back to form
         </button>
-        @if (submitError()) {
-          <p class="preview-submit-error" role="alert">{{ submitError() }}</p>
+        @if (!isAdminMode()) {
+          @if (submitError()) {
+            <p class="preview-submit-error" role="alert">{{ submitError() }}</p>
+          }
+          <button
+            type="button"
+            class="btn-submit-query"
+            (click)="submitRequest()"
+            [disabled]="submitting() || previewRows().length === 0"
+          >
+            {{ submitting() ? 'Submitting…' : 'Submit Quotation' }}
+          </button>
+        } @else {
+          <p class="preview-admin-note">
+            Review the quotation above. Submit will be enabled in a follow-up step once customer
+            details are confirmed.
+          </p>
         }
-        <button
-          type="button"
-          class="btn-submit-query"
-          (click)="submitRequest()"
-          [disabled]="submitting() || previewRows().length === 0"
-        >
-          {{ submitting() ? 'Submitting…' : 'Submit Quotation' }}
-        </button>
       </footer>
     </div>
   </div>

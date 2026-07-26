@@ -134,6 +134,14 @@ export const routes: Routes = [
         canActivate: [roleGuard(['ADMIN'])],
       },
       {
+        path: 'admin/inquiries/create',
+        loadComponent: () =>
+          import('./features/inquiries/admin-create-inquiry/admin-create-inquiry.component').then(
+            (m) => m.AdminCreateInquiryComponent,
+          ),
+        canActivate: [roleGuard(['ADMIN'])],
+      },
+      {
         path: 'admin/companies',
         loadComponent: () =>
           import('./features/admin/admin-companies/admin-companies.component').then(

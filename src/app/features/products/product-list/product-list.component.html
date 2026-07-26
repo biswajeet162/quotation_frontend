@@ -39,7 +39,7 @@
       <div class="no-match-card">
         <h2>No match for “{{ searchQuery() }}”</h2>
         <p>Nothing in the catalog matches your search.</p>
-        @if (isConsumer()) {
+        @if (canCreateInquiry()) {
           <button type="button" class="btn-primary" (click)="goToQueryFromSearch()">
             Create inquiry from search
           </button>
@@ -440,7 +440,7 @@
                 <table class="products-table">
                   <thead>
                     <tr>
-                      @if (isConsumer()) {
+                      @if (canCreateInquiry()) {
                         <th class="col-select">
                           <input
                             type="checkbox"
@@ -476,7 +476,7 @@
                           Attachment <span>{{ sortIcon('attachmentCount') }}</span>
                         </button>
                       </th>
-                      @if (isConsumer()) {
+                      @if (canCreateInquiry()) {
                         <th class="col-action"></th>
                       }
                     </tr>
@@ -490,7 +490,7 @@
                         (click)="openProductDetail(product, $event)"
                         (keydown.enter)="openProductDetail(product, $event)"
                       >
-                        @if (isConsumer()) {
+                        @if (canCreateInquiry()) {
                           <td class="select-cell" (click)="$event.stopPropagation()">
                             <input
                               type="checkbox"
@@ -541,7 +541,7 @@
                             }
                           </button>
                         </td>
-                        @if (isConsumer()) {
+                        @if (canCreateInquiry()) {
                           <td class="actions-cell">
                             <button type="button" class="btn-add" (click)="useInQuery(product, $event)">
                               Add to inquiry
@@ -564,7 +564,7 @@
         <table class="products-table">
           <thead>
             <tr>
-              @if (isConsumer()) {
+              @if (canCreateInquiry()) {
                 <th class="col-select">
                   <input
                     type="checkbox"
@@ -600,7 +600,7 @@
                   Attachment <span>{{ sortIcon('attachmentCount') }}</span>
                 </button>
               </th>
-              @if (isConsumer()) {
+              @if (canCreateInquiry()) {
                 <th class="col-action"></th>
               }
             </tr>
@@ -614,7 +614,7 @@
                 (click)="openProductDetail(product, $event)"
                 (keydown.enter)="openProductDetail(product, $event)"
               >
-                @if (isConsumer()) {
+                @if (canCreateInquiry()) {
                   <td class="select-cell" (click)="$event.stopPropagation()">
                     <input
                       type="checkbox"
@@ -663,7 +663,7 @@
                     }
                   </button>
                 </td>
-                @if (isConsumer()) {
+                @if (canCreateInquiry()) {
                   <td class="actions-cell">
                     <button type="button" class="btn-add" (click)="useInQuery(product, $event)">
                       Add to inquiry
@@ -679,7 +679,7 @@
   }
 </section>
 
-@if (isConsumer() && selectedCount() > 0) {
+@if (canCreateInquiry() && selectedCount() > 0) {
   <div class="selection-bar" role="status" aria-live="polite">
     <div class="selection-bar-text">
       <strong>{{ selectedCount() }}</strong>
@@ -1086,7 +1086,7 @@
       </dl>
     </div>
     <footer class="modal-footer">
-      @if (isConsumer()) {
+              @if (canCreateInquiry()) {
         <button type="button" class="btn-primary" (click)="useInQuery(product, $event); closeDetail()">
           Add to inquiry
         </button>

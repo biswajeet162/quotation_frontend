@@ -12,6 +12,7 @@
       <p class="muted">Full operational view across consumers, distributors, products, and quotation pipeline.</p>
     </div>
     <div class="header-actions">
+      <a routerLink="/admin/inquiries/create" class="btn-secondary">Create inquiry</a>
       <a routerLink="/admin/queries" class="btn-primary">Review queries</a>
       <button type="button" class="btn-secondary" (click)="load()" [disabled]="loading()">
         Refresh
