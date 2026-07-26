@@ -283,6 +283,45 @@ export class AdminGmailInboxComponent implements OnInit {
     });
   }
 
+  isSyncStatusWarn(status: GmailSyncStatus): boolean {
+    if (!status.enabled || !status.configured) {
+      return true;
+    }
+    const health = status.healthStatus;
+    return health === 'STALE' || health === 'ERROR' || health === 'NOT_CONFIGURED' || status.tokenHealthy === false;
+  }
+
+  formatHealthStatus(healthStatus?: string): string {
+    switch (healthStatus) {
+      case 'HEALTHY':
+        return 'Healthy';
+      case 'STALE':
+        return 'Stale';
+      case 'ERROR':
+        return 'Error';
+      case 'NOT_CONFIGURED':
+        return 'Not configured';
+      case 'DISABLED':
+        return 'Disabled';
+      default:
+        return healthStatus ?? '—';
+    }
+  }
+
+  healthStatusClass(healthStatus?: string): string {
+    switch (healthStatus) {
+      case 'HEALTHY':
+        return 'sync-health sync-health--ok';
+      case 'STALE':
+        return 'sync-health sync-health--warn';
+      case 'ERROR':
+      case 'NOT_CONFIGURED':
+        return 'sync-health sync-health--error';
+      default:
+        return 'sync-health';
+    }
+  }
+
   statusLabel(status: ExternalEmailStatus): string {
     switch (status) {
       case 'UNLINKED':

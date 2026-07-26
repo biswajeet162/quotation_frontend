@@ -26,7 +26,7 @@
   </header>
 
   @if (syncStatus(); as status) {
-    <div class="sync-status-panel" [class.sync-status-panel--warn]="!status.enabled || !status.configured">
+    <div class="sync-status-panel" [class.sync-status-panel--warn]="isSyncStatusWarn(status)">
       <div class="sync-status-grid">
         <div class="sync-status-item">
           <span class="sync-status-label">Sync</span>
@@ -38,6 +38,12 @@
             } @else {
               Disabled
             }
+          </span>
+        </div>
+        <div class="sync-status-item">
+          <span class="sync-status-label">Health</span>
+          <span class="sync-status-value" [class]="healthStatusClass(status.healthStatus)">
+            {{ formatHealthStatus(status.healthStatus) }}
           </span>
         </div>
         <div class="sync-status-item">
@@ -60,6 +66,10 @@
         </p>
       } @else if (status.lastError) {
         <p class="sync-status-error" role="alert">Last error: {{ status.lastError }}</p>
+      } @else if (status.healthStatus === 'STALE' && status.healthMessage) {
+        <p class="sync-status-warn" role="status">{{ status.healthMessage }}</p>
+      } @else if (!status.tokenHealthy && status.healthMessage) {
+        <p class="sync-status-error" role="alert">{{ status.healthMessage }}</p>
       }
     </div>
   }

@@ -26,6 +26,10 @@ export interface GmailSyncStatus {
   lastSuccessAt?: string;
   lastError?: string;
   unlinkedEmailCount: number;
+  healthStatus?: string;
+  healthMessage?: string;
+  minutesSinceLastSuccess?: number;
+  tokenHealthy?: boolean;
 }
 
 export interface GmailSyncRunResult {

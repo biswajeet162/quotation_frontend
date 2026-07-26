@@ -37,9 +37,26 @@
 }
 
 .sync-status-note,
-.sync-status-error {
+.sync-status-error,
+.sync-status-warn {
   margin: 0.75rem 0 0;
   font-size: 0.85rem;
+}
+
+.sync-status-warn {
+  color: #b45309;
+}
+
+.sync-health--ok {
+  color: #15803d;
+}
+
+.sync-health--warn {
+  color: #b45309;
+}
+
+.sync-health--error {
+  color: #b91c1c;
 }
 
 .sync-status-note {
