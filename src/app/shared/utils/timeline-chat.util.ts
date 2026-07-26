@@ -60,6 +60,10 @@ export function isAdminCustomerChannelEntry(entry: InquiryTimelineEntry): boolea
   return isTimelineNotice(entry);
 }
 
+export function isGmailSyncedMessage(entry: InquiryTimelineEntry): boolean {
+  return entry.messageChannel === 'GMAIL';
+}
+
 export function isTimelineNotice(entry: InquiryTimelineEntry): boolean {
   return (
     entry.kind === 'NOTICE' ||

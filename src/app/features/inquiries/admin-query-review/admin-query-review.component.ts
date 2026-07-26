@@ -51,6 +51,7 @@ import {
 import {
   buildAdminCustomerChatTimelineEntries,
   isFinalQuotationNotice,
+  isGmailSyncedMessage,
   isTimelineNotice,
   noticeDisplayDetail,
   noticeDisplayLabel,
@@ -259,6 +260,7 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   readonly replyTargetLabel = replyTargetLabel;
   readonly shouldShowBubbleReply = shouldShowBubbleReply;
   readonly isTimelineNotice = isTimelineNotice;
+  readonly isGmailSyncedMessage = isGmailSyncedMessage;
   readonly noticeDisplayLabel = (entry: InquiryTimelineEntry) =>
     noticeDisplayLabel(entry, 'ADMIN');
   readonly noticeDisplayDetail = (entry: InquiryTimelineEntry) =>

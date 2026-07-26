@@ -767,6 +767,9 @@
                         </div>
                       }
                       <div class="chat-bubble-footer">
+                        @if (isGmailSyncedMessage(entry)) {
+                          <span class="chat-gmail-badge" title="Synced from Gmail inbox">Via Gmail</span>
+                        }
                         <span class="chat-time">{{ formatChatTime(entry.occurredAt) }}</span>
                       </div>
                     </div>

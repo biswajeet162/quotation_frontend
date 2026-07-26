@@ -234,7 +234,20 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  gap: 0.45rem;
   margin-top: 0.35rem;
+}
+
+.chat-gmail-badge {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 0.12rem 0.42rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  white-space: nowrap;
 }
 
 .chat-bubble-footer .chat-time {

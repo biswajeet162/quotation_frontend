@@ -2,6 +2,8 @@ import { InquiryStatus } from './inquiry.model';
 
 export type TimelineEntryKind = 'MESSAGE' | 'MILESTONE' | 'STATUS' | 'DISTRIBUTOR' | 'NOTICE';
 
+export type TimelineMessageChannel = 'PORTAL' | 'EMAIL' | 'GMAIL' | 'SYSTEM';
+
 export type TimelineAttachmentMediaType = 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT';
 
 export interface InquiryTimelineAttachment {
@@ -38,6 +40,8 @@ export interface InquiryTimelineEntry {
   recipientEmail?: string;
   attachments?: InquiryTimelineAttachment[];
   replyTo?: InquiryTimelineReplyTo;
+  /** Admin-only: PORTAL vs Gmail-synced email. */
+  messageChannel?: TimelineMessageChannel;
 }
 
 export interface InquiryTimeline {
