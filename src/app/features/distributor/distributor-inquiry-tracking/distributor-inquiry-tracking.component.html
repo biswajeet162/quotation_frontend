@@ -102,15 +102,6 @@
                 </svg>
                 Chat
               </button>
-              @if (canMessage(inquiry) && canCreateOrReviseQuotation(inquiry)) {
-                <button type="button" class="btn-primary" (click)="openQuotationPanel()">
-                  {{
-                    inquiry.requotationRequested
-                      ? 'Revise your quotation'
-                      : 'Create your quotation'
-                  }}
-                </button>
-              }
             </div>
           </div>
 
@@ -529,6 +520,18 @@
                   audience="distributor"
                   (viewPdf)="openFinalDealPdf()"
                 />
+              }
+
+              @if (canMessage(inquiry) && canCreateOrReviseQuotation(inquiry)) {
+                <div class="detail-quotation-action">
+                  <button type="button" class="btn-quotation-action" (click)="openQuotationPanel()">
+                    {{
+                      inquiry.requotationRequested
+                        ? 'Revise your quotation'
+                        : 'Create your quotation'
+                    }}
+                  </button>
+                </div>
               }
 
           </div>

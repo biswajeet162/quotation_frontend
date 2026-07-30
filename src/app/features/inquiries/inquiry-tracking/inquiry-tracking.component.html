@@ -843,6 +843,14 @@
               }
             </div>
 
+            @if (canFollowUp(inquiry)) {
+              <div class="detail-follow-up-action">
+                <button type="button" class="btn-follow-up-action" (click)="openFollowUpModal()">
+                  Follow up
+                </button>
+              </div>
+            }
+
             </div>
 
             <button
@@ -1480,6 +1488,25 @@
       <h2 id="deal-celebration-title">Deal done!</h2>
       <p>Congratulations — your quotation is confirmed. Our team will follow up with next steps.</p>
       <button type="button" class="btn-deal-done" (click)="closeDealCelebration()">Continue</button>
+    </div>
+  </div>
+}
+
+@if (followUpModalOpen()) {
+  <div class="confirm-overlay" (click)="closeFollowUpModal()" role="presentation">
+    <div
+      class="confirm-dialog confirm-dialog--follow-up"
+      role="dialog"
+      aria-labelledby="follow-up-modal-title"
+      aria-modal="true"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="confirm-icon confirm-icon--success" aria-hidden="true">✓</div>
+      <h2 id="follow-up-modal-title">Follow up</h2>
+      <p class="confirm-lead">We have notified the company about your quotation.</p>
+      <div class="confirm-actions">
+        <button type="button" class="btn-primary" (click)="closeFollowUpModal()">OK</button>
+      </div>
     </div>
   </div>
 }

@@ -105,6 +105,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   readonly deleteLoading = signal(false);
   readonly deleteError = signal<string | null>(null);
   readonly deleteConfirmOpen = signal(false);
+  readonly followUpModalOpen = signal(false);
   readonly chatModalOpen = signal(false);
   readonly chatModalPosition = signal<{ x: number; y: number } | null>(null);
   readonly chatModalSize = signal<{ width: number; height: number } | null>(null);
@@ -360,6 +361,10 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     }
     if (this.chatModalOpen()) {
       this.closeChatModal();
+      return;
+    }
+    if (this.followUpModalOpen()) {
+      this.closeFollowUpModal();
       return;
     }
     if (this.deleteConfirmOpen()) {
@@ -1154,6 +1159,22 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
 
   canDelete(inquiry: ConsumerInquiry): boolean {
     return inquiry.status === 'NEW';
+  }
+
+  canFollowUp(inquiry: ConsumerInquiry): boolean {
+    return inquiry.status !== 'CLOSED' && !inquiryHasConsumerDealDone(inquiry);
+  }
+
+  openFollowUpModal(): void {
+    const inquiry = this.selectedInquiry();
+    if (!inquiry || !this.canFollowUp(inquiry)) {
+      return;
+    }
+    this.followUpModalOpen.set(true);
+  }
+
+  closeFollowUpModal(): void {
+    this.followUpModalOpen.set(false);
   }
 
   openDeleteConfirm(): void {
