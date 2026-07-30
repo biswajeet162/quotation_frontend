@@ -870,15 +870,15 @@
                     <button
                       type="button"
                       class="btn-secondary btn-requote"
-                      (click)="askForRequotation()"
-                      [disabled]="!canAskRequotation() || requoteLoading()"
+                      (click)="openRequoteModal()"
+                      [disabled]="!canAskRequotation()"
                       [title]="
                         canAskRequotation()
                           ? 'Ask this distributor to submit a revised quotation'
                           : requotationButtonLabel(distributor)
                       "
                     >
-                      {{ requoteLoading() ? 'Requesting…' : requotationButtonLabel(distributor) }}
+                      {{ requotationButtonLabel(distributor) }}
                     </button>
                   }
                 </div>
@@ -1862,6 +1862,95 @@
               <span class="pick-sep" aria-hidden="true">/</span>
               <span class="pick-den">{{ quotationPickRatio().total }}</span>
             </span>
+          }
+        </button>
+      </footer>
+    </div>
+  </div>
+}
+
+@if (requoteModalOpen() && selectedDistributor(); as distributor) {
+  <div class="requote-modal-overlay" (click)="closeRequoteModal()" role="presentation">
+    <div
+      class="requote-modal-dialog"
+      role="dialog"
+      aria-labelledby="admin-requote-modal-title"
+      aria-modal="true"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="requote-modal-header">
+        <div class="requote-modal-header-main">
+          <div class="requote-modal-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0 0 20 12c0-4.42-3.58-8-8-8Zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 0 0 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3Z"
+              />
+            </svg>
+          </div>
+          <div class="requote-modal-header-text">
+            <p class="requote-modal-eyebrow">Distributor action</p>
+            <h2 id="admin-requote-modal-title">Ask for re-quotation</h2>
+            <p class="requote-modal-subtitle">
+              Sending to
+              <strong>{{ distributorLabel(distributor) }}</strong>
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="requote-modal-close"
+          (click)="closeRequoteModal()"
+          [disabled]="requoteLoading()"
+          aria-label="Close"
+        >
+          ×
+        </button>
+      </header>
+
+      <div class="requote-modal-body">
+        <p class="requote-modal-intro">
+          Write a short note explaining what should be revised. The distributor will see this when
+          they update their quotation.
+        </p>
+        <label class="requote-modal-field">
+          <span class="requote-modal-field-label">Your message</span>
+          <textarea
+            class="requote-modal-textarea"
+            rows="5"
+            [ngModel]="requoteMessage()"
+            (ngModelChange)="requoteMessage.set($event)"
+            placeholder="Example: Please revise pricing on line items and confirm updated delivery dates."
+          ></textarea>
+        </label>
+        @if (requoteError()) {
+          <div class="alert alert-error requote-modal-alert" role="alert">{{ requoteError() }}</div>
+        }
+      </div>
+
+      <footer class="requote-modal-footer">
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="closeRequoteModal()"
+          [disabled]="requoteLoading()"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="btn-requote requote-modal-submit"
+          [disabled]="requoteLoading() || !requoteMessage().trim()"
+          (click)="submitRequotationRequest()"
+        >
+          @if (requoteLoading()) {
+            Sending…
+          } @else {
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z"
+              />
+            </svg>
+            Send request
           }
         </button>
       </footer>

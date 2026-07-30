@@ -172,6 +172,9 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   readonly quotationHistory = signal<DistributorQuotationHistoryEntry[]>([]);
   readonly quotationHistoryLoading = signal(false);
   readonly requoteLoading = signal(false);
+  readonly requoteModalOpen = signal(false);
+  readonly requoteMessage = signal('');
+  readonly requoteError = signal<string | null>(null);
   readonly comparisonModalOpen = signal(false);
   readonly finalizeModalOpen = signal(false);
   readonly mixFinalizeItems = signal<InquiryItem[]>([]);
@@ -1224,21 +1227,41 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
     return { items, pricedItems, mixDistributorByItemId, unavailableItemIds };
   }
 
-  askForRequotation(): void {
+  openRequoteModal(): void {
+    const distributor = this.selectedDistributor();
+    if (!this.canAskRequotation() || !distributor) {
+      return;
+    }
+    this.requoteMessage.set(this.defaultRequoteMessage(distributor));
+    this.requoteError.set(null);
+    this.requoteModalOpen.set(true);
+  }
+
+  closeRequoteModal(): void {
+    if (this.requoteLoading()) {
+      return;
+    }
+    this.requoteModalOpen.set(false);
+    this.requoteError.set(null);
+  }
+
+  submitRequotationRequest(): void {
     const inquiry = this.inquiry();
     const distributor = this.selectedDistributor();
-    if (!this.canAskRequotation() || !inquiry || !distributor) {
+    const note = this.requoteMessage().trim();
+    if (!this.canAskRequotation() || !inquiry || !distributor || !note) {
       return;
     }
 
-    const note = `Hi ${this.distributorLabel(distributor)}, please review your quotation and submit a revised quote with updated pricing and delivery dates.`;
     this.requoteLoading.set(true);
+    this.requoteError.set(null);
     this.messageError.set(null);
 
     this.inquiryService.requestRequotation(inquiry.id, distributor.companyId, note).subscribe({
       next: (updated) => {
         this.inquiry.set(updated);
         this.requoteLoading.set(false);
+        this.requoteModalOpen.set(false);
         this.loadTimeline({ silent: true, scrollToBottom: true });
         this.loadQuotationItems();
         this.loadQuotationHistory();
@@ -1247,12 +1270,17 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         this.requoteLoading.set(false);
-        this.messageError.set(
-          err?.error?.message ?? 'Could not request a re-quotation from this distributor.',
-        );
+        const message =
+          err?.error?.message ?? 'Could not request a re-quotation from this distributor.';
+        this.requoteError.set(message);
+        this.messageError.set(message);
         this.toast.fromApiError(err, 'Could not request a re-quotation from this distributor.');
       },
     });
+  }
+
+  private defaultRequoteMessage(distributor: InquiryDistributor): string {
+    return `Hi ${this.distributorLabel(distributor)}, please review your quotation and submit a revised quote with updated pricing and delivery dates.`;
   }
 
   selectDistributor(companyId: string): void {
