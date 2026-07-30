@@ -70,6 +70,28 @@
                 <span class="query-company">{{ inquiry.companyName || '—' }}</span>
                 <span class="query-posted">{{ formatPostedDate(inquiry.createdAt) }}</span>
               </span>
+              @if (consumerFollowUpCount(inquiry) > 0) {
+                <span
+                  class="follow-up-bell"
+                  [attr.title]="
+                    consumerFollowUpCount(inquiry) +
+                    ' consumer follow-up request' +
+                    (consumerFollowUpCount(inquiry) === 1 ? '' : 's')
+                  "
+                  [attr.aria-label]="
+                    consumerFollowUpCount(inquiry) +
+                    ' consumer follow-up request' +
+                    (consumerFollowUpCount(inquiry) === 1 ? '' : 's')
+                  "
+                >
+                  <svg class="follow-up-bell-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M12 22a2.2 2.2 0 0 0 2.15-1.75H9.85A2.2 2.2 0 0 0 12 22Zm7-6V11a7 7 0 0 0-5.25-6.77V3.5a.75.75 0 0 0-1.5 0v.73A7 7 0 0 0 7 11v5l-1.7 1.7a1 1 0 0 0 .7 1.7h14a1 1 0 0 0 .7-1.7L19 16Z"
+                    />
+                  </svg>
+                  <span class="follow-up-bell-count">{{ consumerFollowUpCount(inquiry) }}</span>
+                </span>
+              }
               @if (inquiryHasConsumerDealDone(inquiry)) {
                 <app-deal-done-seal [compact]="true" />
               }
@@ -102,6 +124,28 @@
               </p>
             </div>
             <div class="detail-header-actions">
+              @if (consumerFollowUpCount(inquiry) > 0) {
+                <span
+                  class="follow-up-bell follow-up-bell--header"
+                  [attr.title]="
+                    consumerFollowUpCount(inquiry) +
+                    ' consumer follow-up request' +
+                    (consumerFollowUpCount(inquiry) === 1 ? '' : 's')
+                  "
+                  [attr.aria-label]="
+                    consumerFollowUpCount(inquiry) +
+                    ' consumer follow-up request' +
+                    (consumerFollowUpCount(inquiry) === 1 ? '' : 's')
+                  "
+                >
+                  <svg class="follow-up-bell-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M12 22a2.2 2.2 0 0 0 2.15-1.75H9.85A2.2 2.2 0 0 0 12 22Zm7-6V11a7 7 0 0 0-5.25-6.77V3.5a.75.75 0 0 0-1.5 0v.73A7 7 0 0 0 7 11v5l-1.7 1.7a1 1 0 0 0 .7 1.7h14a1 1 0 0 0 .7-1.7L19 16Z"
+                    />
+                  </svg>
+                  <span class="follow-up-bell-count">{{ consumerFollowUpCount(inquiry) }}</span>
+                </span>
+              }
               <button
                 type="button"
                 class="btn-chat-open"

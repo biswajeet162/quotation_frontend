@@ -845,8 +845,8 @@
 
             @if (canFollowUp(inquiry)) {
               <div class="detail-follow-up-action">
-                <button type="button" class="btn-follow-up-action" (click)="openFollowUpModal()">
-                  Follow up
+                <button type="button" class="btn-follow-up-action" (click)="openFollowUpModal()" [disabled]="followUpLoading()">
+                  {{ followUpLoading() ? 'Sending…' : 'Follow up' }}
                 </button>
               </div>
             }

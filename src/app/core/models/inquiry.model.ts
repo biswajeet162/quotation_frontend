@@ -144,6 +144,7 @@ export interface Inquiry {
   items?: InquiryItem[];
   distributors?: InquiryDistributor[];
   finalResponses?: ConsumerFinalResponse[];
+  consumerFollowUpCount?: number;
   createdAt?: string;
   updatedAt?: string;
 }

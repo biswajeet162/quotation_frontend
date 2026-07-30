@@ -122,6 +122,48 @@
   min-width: 0;
 }
 
+.follow-up-bell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+  color: #c2410c;
+}
+
+.follow-up-bell--header {
+  width: 2.15rem;
+  height: 2.15rem;
+}
+
+.follow-up-bell-icon {
+  width: 1.05rem;
+  height: 1.05rem;
+  fill: currentColor;
+}
+
+.follow-up-bell-count {
+  position: absolute;
+  top: -0.35rem;
+  right: -0.35rem;
+  min-width: 1.05rem;
+  height: 1.05rem;
+  padding: 0 0.2rem;
+  border-radius: 999px;
+  background: #ea580c;
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1.05rem;
+  text-align: center;
+  border: 1.5px solid #fff;
+}
+
 .query-item.step-initiated {
   background: var(--inquiry-status-initiated-bg, #eff6ff);
 }

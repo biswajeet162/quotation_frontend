@@ -132,6 +132,10 @@ export class InquiryService {
     });
   }
 
+  requestFollowUp(id: string): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/${id}/follow-up`, {});
+  }
+
   getAll(): Observable<Inquiry[]> {
     return this.http.get<Inquiry[]>(this.baseUrl);
   }

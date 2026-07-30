@@ -106,6 +106,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   readonly deleteError = signal<string | null>(null);
   readonly deleteConfirmOpen = signal(false);
   readonly followUpModalOpen = signal(false);
+  readonly followUpLoading = signal(false);
   readonly chatModalOpen = signal(false);
   readonly chatModalPosition = signal<{ x: number; y: number } | null>(null);
   readonly chatModalSize = signal<{ width: number; height: number } | null>(null);
@@ -1170,7 +1171,18 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     if (!inquiry || !this.canFollowUp(inquiry)) {
       return;
     }
-    this.followUpModalOpen.set(true);
+
+    this.followUpLoading.set(true);
+    this.inquiryService.requestFollowUp(inquiry.id).subscribe({
+      next: () => {
+        this.followUpLoading.set(false);
+        this.followUpModalOpen.set(true);
+      },
+      error: (err: unknown) => {
+        this.followUpLoading.set(false);
+        this.toast.fromApiError(err, 'Could not send your follow-up request.');
+      },
+    });
   }
 
   closeFollowUpModal(): void {

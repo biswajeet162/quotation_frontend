@@ -268,6 +268,8 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   readonly formatExpectedDeliveryDate = formatExpectedDeliveryDate;
   readonly todayAsDateInputValue = todayAsDateInputValue;
   readonly inquiryHasConsumerDealDone = inquiryHasConsumerDealDone;
+  readonly consumerFollowUpCount = (inquiry: Inquiry): number =>
+    Math.max(0, inquiry.consumerFollowUpCount ?? 0);
   readonly getInquiryListStep = getInquiryListStep;
 
   assignedDistributorCount(inquiry: Inquiry): number {
