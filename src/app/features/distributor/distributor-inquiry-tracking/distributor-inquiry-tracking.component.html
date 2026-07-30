@@ -305,6 +305,12 @@
                       </div>
 
                       <div class="inquiry-event-content">
+                        @if (isRevisedQuotationHistoryEntry(entry)) {
+                          <p class="revised-quotation-hint" role="note">
+                            Values shown in <span class="revised-quotation-hint-sample">orange</span> were
+                            changed from your previous quotation.
+                          </p>
+                        }
                         @if ((entry.items ?? []).some(hasSubmittedLine)) {
                           <div class="preview-table-wrap pricing-table-wrap">
                             <table class="preview-table pricing-table">
@@ -329,7 +335,7 @@
                               <tbody>
                                 @for (item of entry.items ?? []; track item.id ?? item.productId) {
                                   @if (hasSubmittedLine(item)) {
-                                    @if (getSubmittedLineDraft(inquiry.id, item); as quoted) {
+                                    @if (getHistoryLineDraft(item); as quoted) {
                                       <tr>
                                         <td class="col-sno">{{ $index + 1 }}</td>
                                         <td
@@ -345,7 +351,12 @@
                                           {{ displayProductField(item.productBrand) }}
                                         </td>
                                         <td class="col-hsn-code">
-                                          <span class="line-input line-input-readonly request-readonly-value">
+                                          <span
+                                            class="line-input line-input-readonly request-readonly-value"
+                                            [class.line-value-changed]="
+                                              isHistoryFieldChanged(entry, item, 'hsnCode')
+                                            "
+                                          >
                                             {{ displayProductField(quoted.hsnCode) }}
                                           </span>
                                         </td>
@@ -360,35 +371,63 @@
                                           @if (isSubmittedLineUnavailable(item)) {
                                             <span class="line-unavailable-label">Unavailable</span>
                                           } @else {
-                                            <span class="line-input line-input-number line-input-readonly request-readonly-value">
+                                            <span
+                                              class="line-input line-input-number line-input-readonly request-readonly-value"
+                                              [class.line-value-changed]="
+                                                isHistoryFieldChanged(entry, item, 'mrp')
+                                              "
+                                            >
                                               {{ formatOptionalNumber(quoted.mrp) }}
                                             </span>
                                           }
                                         </td>
                                         <td class="col-discount">
-                                          <span class="line-input line-input-number line-input-readonly request-readonly-value">
+                                          <span
+                                            class="line-input line-input-number line-input-readonly request-readonly-value"
+                                            [class.line-value-changed]="
+                                              isHistoryFieldChanged(entry, item, 'discountPercentage')
+                                            "
+                                          >
                                             {{ formatOptionalPercent(quoted.discountPercentage) }}
                                           </span>
                                         </td>
                                         <td class="col-amount">
                                           <span class="line-input line-input-number line-input-readonly request-readonly-value">
-                                            {{ formatCurrency(submittedLineAmount(inquiry.id, item)) }}
+                                            {{
+                                              formatCurrency(
+                                                historyLineAmount(inquiry.id, item, quoted)
+                                              )
+                                            }}
                                           </span>
                                         </td>
                                         <td class="col-gst">
-                                          <span class="line-input line-input-number line-input-readonly request-readonly-value">
+                                          <span
+                                            class="line-input line-input-number line-input-readonly request-readonly-value"
+                                            [class.line-value-changed]="
+                                              isHistoryFieldChanged(entry, item, 'gstPercentage')
+                                            "
+                                          >
                                             {{ formatOptionalPercent(quoted.gstPercentage) }}
                                           </span>
                                         </td>
                                         <td class="col-net-value">
                                           <span class="line-input line-input-number line-input-readonly request-readonly-value">
-                                            {{ formatCurrency(submittedLineNetValue(inquiry.id, item)) }}
+                                            {{
+                                              formatCurrency(
+                                                historyLineNetValue(inquiry.id, item, quoted)
+                                              )
+                                            }}
                                           </span>
                                         </td>
                                         <td class="col-expected-delivery consumer-cell">
                                           {{ formatExpectedDeliveryDate(item.expectedDeliveryDate) }}
                                         </td>
-                                        <td class="col-our-delivery consumer-cell">
+                                        <td
+                                          class="col-our-delivery consumer-cell"
+                                          [class.line-value-changed]="
+                                            isHistoryFieldChanged(entry, item, 'ourDeliveryDate')
+                                          "
+                                        >
                                           {{ formatExpectedDeliveryDate(quoted.ourDeliveryDate) }}
                                         </td>
                                         <td class="col-attachment">
@@ -912,6 +951,12 @@
       </div>
 
       <div class="quotation-dialog-body">
+      @if (canShowReviseChangeHints(inquiry)) {
+        <p class="revised-quotation-hint revised-quotation-hint--dialog" role="note">
+          Fields you change from your last quotation (HSN, MRP, discount, GST, delivery date) will
+          appear in <span class="revised-quotation-hint-sample">orange</span>.
+        </p>
+      }
       @if (allLinesUnavailable(inquiry)) {
         <p class="quotation-all-unavailable-note" role="note">
           All products are marked unavailable. You can still send this response so the admin team knows
@@ -968,6 +1013,10 @@
                     <input
                       type="text"
                       class="line-input"
+                      [class.line-value-changed]="
+                        canShowReviseChangeHints(inquiry) &&
+                        isReviseFieldChanged(inquiry.id, item, 'hsnCode')
+                      "
                       [disabled]="!isLineAvailable(inquiry.id, item)"
                       [ngModel]="getLineDraft(inquiry.id, item).hsnCode ?? ''"
                       (ngModelChange)="updateLineTextField(inquiry.id, item, 'hsnCode', $event)"
@@ -992,6 +1041,10 @@
                         "
                         [class.line-input-valid]="
                           isRequiredNumberFilled(getLineDraft(inquiry.id, item).mrp)
+                        "
+                        [class.line-value-changed]="
+                          canShowReviseChangeHints(inquiry) &&
+                          isReviseFieldChanged(inquiry.id, item, 'mrp')
                         "
                         min="0"
                         step="0.01"
@@ -1029,6 +1082,10 @@
                           [class.line-input-valid]="
                             isLineAvailable(inquiry.id, item) &&
                             isPercentageFieldValid(getLineDraft(inquiry.id, item).discountPercentage)
+                          "
+                          [class.line-value-changed]="
+                            canShowReviseChangeHints(inquiry) &&
+                            isReviseFieldChanged(inquiry.id, item, 'discountPercentage')
                           "
                           min="0"
                           max="100"
@@ -1089,6 +1146,10 @@
                             [class.line-input-valid]="
                               isPercentageFieldValid(getLineDraft(inquiry.id, item).gstPercentage)
                             "
+                            [class.line-value-changed]="
+                              canShowReviseChangeHints(inquiry) &&
+                              isReviseFieldChanged(inquiry.id, item, 'gstPercentage')
+                            "
                             min="0"
                             max="100"
                             step="0.01"
@@ -1129,6 +1190,10 @@
                     <input
                       type="date"
                       class="line-input line-input-date"
+                      [class.line-value-changed]="
+                        canShowReviseChangeHints(inquiry) &&
+                        isReviseFieldChanged(inquiry.id, item, 'ourDeliveryDate')
+                      "
                       [min]="todayAsDateInputValue()"
                       [disabled]="!isLineAvailable(inquiry.id, item)"
                       [ngModel]="getLineDraft(inquiry.id, item).ourDeliveryDate ?? ''"

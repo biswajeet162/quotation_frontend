@@ -45,6 +45,12 @@ import { LoadingOverlayComponent } from '../../../shared/components/loading-over
 import { DealDoneSealComponent, DealSealVariant } from '../../../shared/components/deal-done-seal/deal-done-seal.component';
 import { ConfirmedDealSelectionPanelComponent } from '../../../shared/components/confirmed-deal-selection-panel/confirmed-deal-selection-panel.component';
 import { openPublicImages } from '../../../shared/utils/public-image.util';
+import {
+  getChangedQuotationLineFields,
+  isQuotationHighlightFieldChanged,
+  quotationLineSnapshotFromItem,
+  QuotationHighlightField,
+} from '../../../shared/utils/quotation-round-diff.util';
 
 type StatusFilter = 'all' | 'pending' | 'responded' | 'CLOSED';
 
@@ -530,6 +536,72 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
       (entry.round ?? 0) === this.latestQuotationHistoryRound() &&
       this.latestQuotationHistoryRound() > 0
     );
+  }
+
+  isRevisedQuotationHistoryEntry(entry: DistributorQuotationHistoryEntry): boolean {
+    return entry.type === 'QUOTATION' && (entry.round ?? 1) > 1;
+  }
+
+  getHistoryLineDraft(item: InquiryItem): DistributorInquiryLineDraft {
+    const snapshot = quotationLineSnapshotFromItem(item);
+    return {
+      available: item.distributorAvailable !== false,
+      hsnCode: snapshot.hsnCode,
+      mrp: snapshot.mrp,
+      discountPercentage: snapshot.discountPercentage,
+      gstPercentage: snapshot.gstPercentage,
+      ourDeliveryDate: snapshot.ourDeliveryDate,
+    };
+  }
+
+  historyLineAmount(
+    inquiryId: string,
+    item: InquiryItem,
+    draft: DistributorInquiryLineDraft,
+  ): number | null {
+    return this.lineAmount(inquiryId, item, draft);
+  }
+
+  historyLineNetValue(
+    inquiryId: string,
+    item: InquiryItem,
+    draft: DistributorInquiryLineDraft,
+  ): number | null {
+    return this.lineNetValue(inquiryId, item, draft);
+  }
+
+  isHistoryFieldChanged(
+    entry: DistributorQuotationHistoryEntry,
+    item: InquiryItem,
+    field: QuotationHighlightField,
+  ): boolean {
+    if (!this.isRevisedQuotationHistoryEntry(entry)) {
+      return false;
+    }
+    return isQuotationHighlightFieldChanged(field, this.changedFieldsForHistoryEntry(entry, item));
+  }
+
+  isReviseFieldChanged(
+    inquiryId: string,
+    item: InquiryItem,
+    field: QuotationHighlightField,
+  ): boolean {
+    if (this.latestQuotationHistoryRound() < 1) {
+      return false;
+    }
+    const previous = this.previousRoundSnapshotForItem(item);
+    if (!previous) {
+      return false;
+    }
+    const current = this.quotationLineSnapshotFromDraft(this.getLineDraft(inquiryId, item));
+    return isQuotationHighlightFieldChanged(
+      field,
+      getChangedQuotationLineFields(previous, current),
+    );
+  }
+
+  canShowReviseChangeHints(inquiry: DistributorInquiry): boolean {
+    return !!inquiry.requotationRequested && this.latestQuotationHistoryRound() >= 1;
   }
 
   historyQuotationTitle(entry: DistributorQuotationHistoryEntry, inquiry: DistributorInquiry): string {
@@ -1805,6 +1877,67 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     if (Object.keys(patch).length > 0) {
       this.patchLineDraft(inquiryId, item, patch);
     }
+  }
+
+  private changedFieldsForHistoryEntry(
+    entry: DistributorQuotationHistoryEntry,
+    item: InquiryItem,
+  ): Set<QuotationHighlightField> {
+    const previousItem = this.findMatchingHistoryItem(
+      this.previousRoundItemsForEntry(entry),
+      item,
+    );
+    if (!previousItem) {
+      return new Set();
+    }
+    return getChangedQuotationLineFields(
+      quotationLineSnapshotFromItem(previousItem),
+      quotationLineSnapshotFromItem(item),
+    );
+  }
+
+  private previousRoundItemsForEntry(entry: DistributorQuotationHistoryEntry): InquiryItem[] {
+    const previousRound = (entry.round ?? 1) - 1;
+    if (previousRound < 1) {
+      return [];
+    }
+    return (
+      this.quotationHistory().find(
+        (historyEntry) =>
+          historyEntry.type === 'QUOTATION' && historyEntry.round === previousRound,
+      )?.items ?? []
+    );
+  }
+
+  private previousRoundSnapshotForItem(item: InquiryItem): ReturnType<typeof quotationLineSnapshotFromItem> | null {
+    const latestRound = this.latestQuotationHistoryRound();
+    if (latestRound < 1) {
+      return null;
+    }
+    const previousItem = this.findMatchingHistoryItem(
+      this.quotationHistory().find(
+        (entry) => entry.type === 'QUOTATION' && entry.round === latestRound,
+      )?.items ?? [],
+      item,
+    );
+    return previousItem ? quotationLineSnapshotFromItem(previousItem) : null;
+  }
+
+  private findMatchingHistoryItem(items: InquiryItem[], item: InquiryItem): InquiryItem | undefined {
+    const itemKey = item.id ?? item.productId;
+    return items.find((candidate) => (candidate.id ?? candidate.productId) === itemKey);
+  }
+
+  private quotationLineSnapshotFromDraft(
+    draft: DistributorInquiryLineDraft,
+  ): ReturnType<typeof quotationLineSnapshotFromItem> {
+    return {
+      hsnCode: draft.hsnCode,
+      mrp: draft.mrp,
+      discountPercentage: draft.discountPercentage,
+      gstPercentage: draft.gstPercentage,
+      ourDeliveryDate: draft.ourDeliveryDate,
+    };
   }
 
   private parseOptionalNumber(value: string | number | null | undefined): number | null {
