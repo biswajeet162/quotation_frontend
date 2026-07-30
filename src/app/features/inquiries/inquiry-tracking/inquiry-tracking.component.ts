@@ -46,6 +46,7 @@ import {
   QuotationHighlightField,
 } from '../../../shared/utils/quotation-round-diff.util';
 import { inquiryHasConsumerDealDone } from '../../../shared/utils/inquiry-deal.util';
+import { scheduleDetailScrollToLatest } from '../../../shared/utils/scroll-container.util';
 import { DealDoneSealComponent } from '../../../shared/components/deal-done-seal/deal-done-seal.component';
 
 type StatusFilter = 'all' | InquiryStatus | 'ACTION_REQUIRED';
@@ -403,7 +404,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
             this.searchQuery.set('');
             this.statusFilter.set('all');
             this.selectedId.set(match.id);
-            this.loadTimeline();
+            this.loadTimeline({ scrollDetailToBottom: true });
             return;
           }
           this.selectedId.set(null);
@@ -420,7 +421,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
           this.selectedId.set(first?.id ?? null);
         }
         if (this.selectedId()) {
-          this.loadTimeline();
+          this.loadTimeline({ scrollDetailToBottom: true });
         }
       },
       error: (err: unknown) => {
@@ -458,7 +459,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     this.messageText.set('');
     this.clearReplyTarget();
     this.timelineEntries.set([]);
-    this.loadTimeline();
+    this.loadTimeline({ scrollDetailToBottom: true });
 
     const inquiry = this.inquiries().find((item) => item.id === id);
     void this.router.navigate([], {
@@ -478,7 +479,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     this.clearPendingAttachments();
     this.selectedId.set(visible[0]?.id ?? null);
     if (this.selectedId()) {
-      this.loadTimeline();
+      this.loadTimeline({ scrollDetailToBottom: true });
     }
   }
 
@@ -510,7 +511,12 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     });
   }
 
-  loadTimeline(options?: { silent?: boolean; scrollToBottom?: boolean; preserveScroll?: boolean }): void {
+  loadTimeline(options?: {
+    silent?: boolean;
+    scrollToBottom?: boolean;
+    scrollDetailToBottom?: boolean;
+    preserveScroll?: boolean;
+  }): void {
     const inquiry = this.selectedInquiry();
     if (!inquiry) {
       return;
@@ -557,6 +563,8 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
         if (options?.scrollToBottom) {
           this.scrollDetailToBottom();
           this.focusComposeInput();
+        } else if (options?.scrollDetailToBottom) {
+          this.scrollDetailPanelToLatest();
         } else if (options?.preserveScroll && scrollEl) {
           scrollEl.scrollTop = previousScrollTop;
         }
@@ -1794,6 +1802,10 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
       }
     }
     this.pendingAttachments.set([]);
+  }
+
+  private scrollDetailPanelToLatest(): void {
+    scheduleDetailScrollToLatest(() => this.detailScrollRef()?.nativeElement);
   }
 
   private scrollDetailToBottom(): void {

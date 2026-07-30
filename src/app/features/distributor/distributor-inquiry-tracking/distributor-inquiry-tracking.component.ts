@@ -51,6 +51,7 @@ import {
   quotationLineSnapshotFromItem,
   QuotationHighlightField,
 } from '../../../shared/utils/quotation-round-diff.util';
+import { scheduleDetailScrollToLatest, scrollToBottomAfterRender } from '../../../shared/utils/scroll-container.util';
 
 type StatusFilter = 'all' | 'pending' | 'responded' | 'CLOSED';
 
@@ -302,7 +303,7 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
             this.searchQuery.set('');
             this.statusFilter.set('all');
             this.selectedId.set(match.inquiryUuid);
-            this.loadSelectedInquiry(match.inquiryUuid);
+            this.loadSelectedInquiry(match.inquiryUuid, { scrollDetailToBottom: true });
             return;
           }
           this.selectedId.set(null);
@@ -318,7 +319,7 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
         if (!stillVisible) {
           this.syncSelection();
         } else if (this.selectedId()) {
-          this.loadSelectedInquiry(this.selectedId()!);
+          this.loadSelectedInquiry(this.selectedId()!, { scrollDetailToBottom: true });
         }
       },
       error: (err: unknown) => {
@@ -352,7 +353,7 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     this.messageText.set('');
     this.clearReplyTarget();
     this.timelineEntries.set([]);
-    this.loadSelectedInquiry(id);
+    this.loadSelectedInquiry(id, { scrollDetailToBottom: true });
 
     const summary = this.inquirySummaries().find((item) => item.inquiryUuid === id);
     void this.router.navigate([], {
@@ -889,13 +890,16 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     this.selectedId.set(nextId);
     this.selectedInquiry.set(null);
     if (nextId) {
-      this.loadSelectedInquiry(nextId);
+      this.loadSelectedInquiry(nextId, { scrollDetailToBottom: true });
     } else {
       this.timelineEntries.set([]);
     }
   }
 
-  private loadSelectedInquiry(id: string): void {
+  private loadSelectedInquiry(
+    id: string,
+    options?: { scrollDetailToBottom?: boolean },
+  ): void {
     this.closePdfViewer();
     this.pdfBlob = null;
     this.pdfAvailable.set(false);
@@ -924,13 +928,15 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
         );
         this.hydrateLineDraftsFromInquiry(inquiry, true);
         this.loadSubmissionPdf(id);
-        this.loadQuotationHistory(id);
+        this.loadQuotationHistory(id, { scrollDetailToBottom: options?.scrollDetailToBottom });
         this.responsePdfAvailable.set(!!inquiry.responsePdfAvailable);
         if (inquiry.responsePdfAvailable) {
           this.loadResponsePdf(id);
         }
         if (inquiry.consumerDealConfirmed) {
-          this.loadTimeline({ silent: true });
+          this.loadTimeline({ silent: true, scrollDetailToBottom: options?.scrollDetailToBottom });
+        } else if (options?.scrollDetailToBottom) {
+          this.scrollDetailPanelToLatest();
         }
       },
       error: (err: unknown) => {
@@ -941,12 +947,18 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     });
   }
 
-  private loadQuotationHistory(inquiryId: string): void {
+  private loadQuotationHistory(
+    inquiryId: string,
+    options?: { scrollDetailToBottom?: boolean },
+  ): void {
     this.quotationHistoryLoading.set(true);
     this.distributorInquiryService.getQuotationHistory(inquiryId).subscribe({
       next: (entries) => {
         this.quotationHistory.set(entries);
         this.quotationHistoryLoading.set(false);
+        if (options?.scrollDetailToBottom) {
+          this.scrollDetailPanelToLatest(false);
+        }
       },
       error: () => {
         this.quotationHistory.set([]);
@@ -1002,7 +1014,12 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     this.pdfSafeUrl.set(null);
   }
 
-  loadTimeline(options?: { silent?: boolean; scrollToBottom?: boolean; preserveScroll?: boolean }): void {
+  loadTimeline(options?: {
+    silent?: boolean;
+    scrollToBottom?: boolean;
+    scrollDetailToBottom?: boolean;
+    preserveScroll?: boolean;
+  }): void {
     const inquiry = this.selectedInquiry();
     if (!inquiry) {
       return;
@@ -1046,6 +1063,8 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
         if (options?.scrollToBottom) {
           this.scrollChatToBottom();
           this.focusComposeInput();
+        } else if (options?.scrollDetailToBottom) {
+          this.scrollDetailPanelToLatest();
         } else if (options?.preserveScroll && scrollEl) {
           scrollEl.scrollTop = previousScrollTop;
         }
@@ -1737,6 +1756,17 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
       }
     }
     this.pendingAttachments.set([]);
+  }
+
+  private scrollDetailPanelToLatest(animateFromTop = true): void {
+    if (animateFromTop) {
+      scheduleDetailScrollToLatest(() => this.detailScrollRef()?.nativeElement);
+      return;
+    }
+    scrollToBottomAfterRender(() => this.detailScrollRef()?.nativeElement, {
+      durationMs: 0,
+      fromTop: false,
+    });
   }
 
   private scrollChatToBottom(): void {

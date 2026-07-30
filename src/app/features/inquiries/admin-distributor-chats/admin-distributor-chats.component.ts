@@ -70,6 +70,7 @@ import {
   QuotationHighlightField,
 } from '../../../shared/utils/quotation-round-diff.util';
 import { inquiryHasConsumerDealDone } from '../../../shared/utils/inquiry-deal.util';
+import { scheduleDetailScrollToLatest } from '../../../shared/utils/scroll-container.util';
 import { DealDoneSealComponent, DealSealVariant } from '../../../shared/components/deal-done-seal/deal-done-seal.component';
 import { ConfirmedDealSelectionPanelComponent } from '../../../shared/components/confirmed-deal-selection-panel/confirmed-deal-selection-panel.component';
 import { QuotationComparisonModalComponent } from '../quotation-comparison-modal/quotation-comparison-modal.component';
@@ -1299,7 +1300,7 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
     this.timelineEntries.set([]);
     this.quotationItems.set([]);
     this.quotationHistory.set([]);
-    this.loadTimeline();
+    this.loadTimeline({ scrollDetailToBottom: true });
     this.loadQuotationItems();
     this.loadQuotationHistory();
   }
@@ -1314,7 +1315,7 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
     const nextId = visible[0]?.companyId ?? null;
     this.selectedDistributorCompanyId.set(nextId);
     if (nextId) {
-      this.loadTimeline();
+      this.loadTimeline({ scrollDetailToBottom: true });
       this.loadQuotationItems();
       this.loadQuotationHistory();
     } else {
@@ -1366,7 +1367,12 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
     });
   }
 
-  loadTimeline(options?: { silent?: boolean; scrollToBottom?: boolean; preserveScroll?: boolean }): void {
+  loadTimeline(options?: {
+    silent?: boolean;
+    scrollToBottom?: boolean;
+    scrollDetailToBottom?: boolean;
+    preserveScroll?: boolean;
+  }): void {
     const inquiry = this.inquiry();
     const distributorCompanyId = this.selectedDistributorCompanyId();
     if (!inquiry || !distributorCompanyId) {
@@ -1408,6 +1414,8 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
         if (options?.scrollToBottom) {
           this.scrollChatToBottom();
           this.focusComposeInput();
+        } else if (options?.scrollDetailToBottom) {
+          this.scrollDetailPanelToLatest();
         } else if (options?.preserveScroll && scrollEl) {
           scrollEl.scrollTop = previousScrollTop;
         }
@@ -2624,6 +2632,10 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
   private findMatchingHistoryItem(items: InquiryItem[], item: InquiryItem): InquiryItem | undefined {
     const itemKey = item.id ?? item.productId;
     return items.find((candidate) => (candidate.id ?? candidate.productId) === itemKey);
+  }
+
+  private scrollDetailPanelToLatest(): void {
+    scheduleDetailScrollToLatest(() => this.detailScrollRef()?.nativeElement);
   }
 
   private scrollChatToBottom(): void {

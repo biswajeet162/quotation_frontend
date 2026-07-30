@@ -58,6 +58,7 @@ import {
 } from '../../../shared/utils/timeline-chat.util';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 import { openPublicImages } from '../../../shared/utils/public-image.util';
+import { scheduleDetailScrollToLatest } from '../../../shared/utils/scroll-container.util';
 
 type StatusFilter = 'all' | InquiryStatus | 'ACTION_REQUIRED';
 
@@ -494,7 +495,7 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
             this.selectedId.set(match.id);
             this.hydrateLineDraftsFromInquiry(match);
             this.markAwaitingConsumer.set(match.status === 'NEW');
-            this.loadTimeline();
+            this.loadTimeline({ scrollDetailToBottom: true });
             return;
           }
           this.selectedId.set(null);
@@ -510,7 +511,7 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
         if (!stillVisible) {
           this.syncSelection();
         } else if (this.selectedId()) {
-          this.loadTimeline();
+          this.loadTimeline({ scrollDetailToBottom: true });
         }
       },
       error: (err) => {
@@ -542,7 +543,7 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
     if (this.selectedId()) {
       const inquiry = this.inquiries().find((q) => q.id === this.selectedId());
       this.markAwaitingConsumer.set(inquiry?.status === 'NEW');
-      this.loadTimeline();
+      this.loadTimeline({ scrollDetailToBottom: true });
     } else {
       this.timelineEntries.set([]);
     }
@@ -564,7 +565,7 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
       this.hydrateLineDraftsFromInquiry(inquiry);
     }
     this.markAwaitingConsumer.set(inquiry?.status === 'NEW');
-    this.loadTimeline();
+    this.loadTimeline({ scrollDetailToBottom: true });
 
     void this.router.navigate([], {
       relativeTo: this.route,
@@ -574,7 +575,12 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
     });
   }
 
-  loadTimeline(options?: { silent?: boolean; scrollToBottom?: boolean; preserveScroll?: boolean }): void {
+  loadTimeline(options?: {
+    silent?: boolean;
+    scrollToBottom?: boolean;
+    scrollDetailToBottom?: boolean;
+    preserveScroll?: boolean;
+  }): void {
     const inquiry = this.selectedInquiry();
     if (!inquiry) {
       return;
@@ -613,6 +619,8 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
         if (options?.scrollToBottom) {
           this.scrollChatToBottom();
           this.focusComposeInput();
+        } else if (options?.scrollDetailToBottom) {
+          this.scrollDetailPanelToLatest();
         } else if (options?.preserveScroll && scrollEl) {
           scrollEl.scrollTop = previousScrollTop;
         }
@@ -1734,6 +1742,10 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
       }
     }
     this.pendingAttachments.set([]);
+  }
+
+  private scrollDetailPanelToLatest(): void {
+    scheduleDetailScrollToLatest(() => this.detailScrollRef()?.nativeElement);
   }
 
   private scrollChatToBottom(): void {
