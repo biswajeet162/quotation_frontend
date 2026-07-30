@@ -357,10 +357,6 @@
   line-height: 1.45;
 }
 
-.revised-quotation-hint--dialog {
-  margin: 0 0 0.75rem;
-}
-
 .revised-quotation-hint-sample {
   color: #c2410c;
   font-weight: 700;
@@ -369,10 +365,6 @@
 .line-value-changed {
   color: #c2410c !important;
   font-weight: 600;
-}
-
-.line-input.line-value-changed {
-  -webkit-text-fill-color: #c2410c;
 }
 
 .quotation-pdf-section {

@@ -581,29 +581,6 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     return isQuotationHighlightFieldChanged(field, this.changedFieldsForHistoryEntry(entry, item));
   }
 
-  isReviseFieldChanged(
-    inquiryId: string,
-    item: InquiryItem,
-    field: QuotationHighlightField,
-  ): boolean {
-    if (this.latestQuotationHistoryRound() < 1) {
-      return false;
-    }
-    const previous = this.previousRoundSnapshotForItem(item);
-    if (!previous) {
-      return false;
-    }
-    const current = this.quotationLineSnapshotFromDraft(this.getLineDraft(inquiryId, item));
-    return isQuotationHighlightFieldChanged(
-      field,
-      getChangedQuotationLineFields(previous, current),
-    );
-  }
-
-  canShowReviseChangeHints(inquiry: DistributorInquiry): boolean {
-    return !!inquiry.requotationRequested && this.latestQuotationHistoryRound() >= 1;
-  }
-
   historyQuotationTitle(entry: DistributorQuotationHistoryEntry, inquiry: DistributorInquiry): string {
     if (inquiry.status === 'CLOSED') {
       return 'This request is closed.';
@@ -1909,35 +1886,9 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     );
   }
 
-  private previousRoundSnapshotForItem(item: InquiryItem): ReturnType<typeof quotationLineSnapshotFromItem> | null {
-    const latestRound = this.latestQuotationHistoryRound();
-    if (latestRound < 1) {
-      return null;
-    }
-    const previousItem = this.findMatchingHistoryItem(
-      this.quotationHistory().find(
-        (entry) => entry.type === 'QUOTATION' && entry.round === latestRound,
-      )?.items ?? [],
-      item,
-    );
-    return previousItem ? quotationLineSnapshotFromItem(previousItem) : null;
-  }
-
   private findMatchingHistoryItem(items: InquiryItem[], item: InquiryItem): InquiryItem | undefined {
     const itemKey = item.id ?? item.productId;
     return items.find((candidate) => (candidate.id ?? candidate.productId) === itemKey);
-  }
-
-  private quotationLineSnapshotFromDraft(
-    draft: DistributorInquiryLineDraft,
-  ): ReturnType<typeof quotationLineSnapshotFromItem> {
-    return {
-      hsnCode: draft.hsnCode,
-      mrp: draft.mrp,
-      discountPercentage: draft.discountPercentage,
-      gstPercentage: draft.gstPercentage,
-      ourDeliveryDate: draft.ourDeliveryDate,
-    };
   }
 
   private parseOptionalNumber(value: string | number | null | undefined): number | null {
