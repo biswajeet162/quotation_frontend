@@ -1,4 +1,4 @@
-import { InquiryItem } from '../../core/models/inquiry.model';
+import { InquiryFinalizationSnapshotLine, InquiryItem } from '../../core/models/inquiry.model';
 
 export type QuotationHighlightField =
   | 'hsnCode'
@@ -22,6 +22,18 @@ export function quotationLineSnapshotFromItem(item: InquiryItem): QuotationLineS
     discountPercentage: item.distributorDiscountPercentage,
     gstPercentage: item.distributorGstPercentage,
     ourDeliveryDate: item.distributorOurDeliveryDate,
+  };
+}
+
+export function finalizationLineSnapshotFromLine(
+  line: InquiryFinalizationSnapshotLine,
+): QuotationLineSnapshot {
+  return {
+    hsnCode: line.adminHsnCode,
+    mrp: line.adminMrp,
+    discountPercentage: line.adminDiscountPercentage,
+    gstPercentage: line.adminGstPercentage,
+    ourDeliveryDate: line.expectedDeliveryDate,
   };
 }
 

@@ -355,6 +355,12 @@
                   </div>
 
                   <div class="inquiry-event-content">
+                    @if (isRevisedFinalizationSnapshot(snapshot)) {
+                      <p class="revised-finalization-hint" role="note">
+                        Values shown in <span class="revised-finalization-hint-sample">green</span> were
+                        changed from your previous final quotation.
+                      </p>
+                    }
                     @if (snapshot.items.length > 0) {
                       <div class="chat-pricing-table-wrap final-quotation-table-wrap">
                         <table class="preview-table admin-pricing-table chat-pricing-table">
@@ -396,7 +402,12 @@
                                     @if (isSnapshotLineUnavailable(line)) {
                                       <span class="line-unavailable-label">Unavailable</span>
                                     } @else {
-                                      <span class="line-input line-input-readonly chat-readonly-value">
+                                      <span
+                                        class="line-input line-input-readonly chat-readonly-value"
+                                        [class.line-value-changed-consumer]="
+                                          isSnapshotFieldChanged(snapshot, line, 'hsnCode')
+                                        "
+                                      >
                                         {{ displayProductField(line.adminHsnCode) }}
                                       </span>
                                     }
@@ -414,12 +425,22 @@
                                     </td>
                                   } @else {
                                     <td class="col-mrp">
-                                      <span class="line-input line-input-number line-input-readonly chat-readonly-value">
+                                      <span
+                                        class="line-input line-input-number line-input-readonly chat-readonly-value"
+                                        [class.line-value-changed-consumer]="
+                                          isSnapshotFieldChanged(snapshot, line, 'mrp')
+                                        "
+                                      >
                                         {{ formatCurrency(line.adminMrp) }}
                                       </span>
                                     </td>
                                     <td class="col-discount">
-                                      <span class="line-input line-input-number line-input-readonly chat-readonly-value">
+                                      <span
+                                        class="line-input line-input-number line-input-readonly chat-readonly-value"
+                                        [class.line-value-changed-consumer]="
+                                          isSnapshotFieldChanged(snapshot, line, 'discountPercentage')
+                                        "
+                                      >
                                         {{ formatOptionalPercent(line.adminDiscountPercentage) }}
                                       </span>
                                     </td>
@@ -429,7 +450,12 @@
                                       </span>
                                     </td>
                                     <td class="col-gst">
-                                      <span class="line-input line-input-number line-input-readonly chat-readonly-value">
+                                      <span
+                                        class="line-input line-input-number line-input-readonly chat-readonly-value"
+                                        [class.line-value-changed-consumer]="
+                                          isSnapshotFieldChanged(snapshot, line, 'gstPercentage')
+                                        "
+                                      >
                                         {{ formatOptionalPercent(line.adminGstPercentage) }}
                                       </span>
                                     </td>
@@ -439,7 +465,12 @@
                                       </span>
                                     </td>
                                   }
-                                  <td class="col-expected-delivery consumer-cell">
+                                  <td
+                                    class="col-expected-delivery consumer-cell"
+                                    [class.line-value-changed-consumer]="
+                                      isSnapshotFieldChanged(snapshot, line, 'ourDeliveryDate')
+                                    "
+                                  >
                                     {{ formatExpectedDeliveryDate(line.expectedDeliveryDate) }}
                                   </td>
                                   <td class="col-attachment">

@@ -39,6 +39,12 @@ import { averageDiscountPercentage, quotationLinePricingFromAdmin } from '../../
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 import { formatSpecificationsInline } from '../../../shared/utils/specifications-display.util';
 import { openPublicImages } from '../../../shared/utils/public-image.util';
+import {
+  finalizationLineSnapshotFromLine,
+  getChangedQuotationLineFields,
+  isQuotationHighlightFieldChanged,
+  QuotationHighlightField,
+} from '../../../shared/utils/quotation-round-diff.util';
 import { inquiryHasConsumerDealDone } from '../../../shared/utils/inquiry-deal.util';
 import { DealDoneSealComponent } from '../../../shared/components/deal-done-seal/deal-done-seal.component';
 
@@ -1349,6 +1355,24 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     return (snapshot.revisionNumber ?? 1) <= 1 ? 'Final' : 'Updated';
   }
 
+  isRevisedFinalizationSnapshot(snapshot: InquiryFinalizationSnapshot): boolean {
+    return (snapshot.revisionNumber ?? 1) > 1;
+  }
+
+  isSnapshotFieldChanged(
+    snapshot: InquiryFinalizationSnapshot,
+    line: InquiryFinalizationSnapshotLine,
+    field: QuotationHighlightField,
+  ): boolean {
+    if (!this.isRevisedFinalizationSnapshot(snapshot)) {
+      return false;
+    }
+    return isQuotationHighlightFieldChanged(
+      field,
+      this.changedFieldsForFinalizationLine(snapshot, line),
+    );
+  }
+
   formatFinalizationDate(iso?: string): string {
     return this.formatPostedDate(iso);
   }
@@ -1758,5 +1782,44 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     requestAnimationFrame(() => {
       this.messageInputRef()?.nativeElement?.focus();
     });
+  }
+
+  private changedFieldsForFinalizationLine(
+    snapshot: InquiryFinalizationSnapshot,
+    line: InquiryFinalizationSnapshotLine,
+  ): Set<QuotationHighlightField> {
+    const previousLine = this.findMatchingFinalizationLine(
+      this.previousFinalizationSnapshot(snapshot)?.items ?? [],
+      line,
+    );
+    if (!previousLine) {
+      return new Set();
+    }
+    return getChangedQuotationLineFields(
+      finalizationLineSnapshotFromLine(previousLine),
+      finalizationLineSnapshotFromLine(line),
+    );
+  }
+
+  private previousFinalizationSnapshot(
+    snapshot: InquiryFinalizationSnapshot,
+  ): InquiryFinalizationSnapshot | null {
+    const previousRevision = (snapshot.revisionNumber ?? 1) - 1;
+    if (previousRevision < 1) {
+      return null;
+    }
+    return (
+      this.finalizationHistory().find(
+        (entry) => (entry.revisionNumber ?? 1) === previousRevision,
+      ) ?? null
+    );
+  }
+
+  private findMatchingFinalizationLine(
+    items: InquiryFinalizationSnapshotLine[],
+    line: InquiryFinalizationSnapshotLine,
+  ): InquiryFinalizationSnapshotLine | undefined {
+    const lineKey = line.inquiryItemId ?? line.productId;
+    return items.find((candidate) => (candidate.inquiryItemId ?? candidate.productId) === lineKey);
   }
 }

@@ -376,6 +376,27 @@
   margin-top: 0.15rem;
 }
 
+.revised-finalization-hint {
+  margin: 0.85rem 0.85rem 0;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #86efac;
+  border-radius: 8px;
+  background: #f0fdf4;
+  color: #166534;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.revised-finalization-hint-sample {
+  color: #15803d;
+  font-weight: 700;
+}
+
+.line-value-changed-consumer {
+  color: #15803d !important;
+  font-weight: 600;
+}
+
 .inquiry-event-content .final-quotation-table-wrap + .finalization-consumer-metrics {
   border-top: 1px solid #e2e8f0;
 }
