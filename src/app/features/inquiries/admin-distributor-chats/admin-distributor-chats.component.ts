@@ -63,6 +63,12 @@ import {
   QuoteChangeAlert,
 } from '../../../shared/utils/quote-change-alert.util';
 import { openPublicImages } from '../../../shared/utils/public-image.util';
+import {
+  getChangedQuotationLineFields,
+  isQuotationHighlightFieldChanged,
+  quotationLineSnapshotFromItem,
+  QuotationHighlightField,
+} from '../../../shared/utils/quotation-round-diff.util';
 import { inquiryHasConsumerDealDone } from '../../../shared/utils/inquiry-deal.util';
 import { DealDoneSealComponent, DealSealVariant } from '../../../shared/components/deal-done-seal/deal-done-seal.component';
 import { ConfirmedDealSelectionPanelComponent } from '../../../shared/components/confirmed-deal-selection-panel/confirmed-deal-selection-panel.component';
@@ -2196,6 +2202,21 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
     );
   }
 
+  isRevisedQuotationHistoryEntry(entry: DistributorQuotationHistoryEntry): boolean {
+    return entry.type === 'QUOTATION' && (entry.round ?? 1) > 1;
+  }
+
+  isHistoryFieldChanged(
+    entry: DistributorQuotationHistoryEntry,
+    item: InquiryItem,
+    field: QuotationHighlightField,
+  ): boolean {
+    if (!this.isRevisedQuotationHistoryEntry(entry)) {
+      return false;
+    }
+    return isQuotationHighlightFieldChanged(field, this.changedFieldsForHistoryEntry(entry, item));
+  }
+
   historyQuotationTitle(
     entry: DistributorQuotationHistoryEntry,
     distributor: InquiryDistributor,
@@ -2568,6 +2589,41 @@ export class AdminDistributorChatsComponent implements OnInit, OnDestroy {
       }
     }
     this.pendingAttachments.set([]);
+  }
+
+  private changedFieldsForHistoryEntry(
+    entry: DistributorQuotationHistoryEntry,
+    item: InquiryItem,
+  ): Set<QuotationHighlightField> {
+    const previousItem = this.findMatchingHistoryItem(
+      this.previousRoundItemsForEntry(entry),
+      item,
+    );
+    if (!previousItem) {
+      return new Set();
+    }
+    return getChangedQuotationLineFields(
+      quotationLineSnapshotFromItem(previousItem),
+      quotationLineSnapshotFromItem(item),
+    );
+  }
+
+  private previousRoundItemsForEntry(entry: DistributorQuotationHistoryEntry): InquiryItem[] {
+    const previousRound = (entry.round ?? 1) - 1;
+    if (previousRound < 1) {
+      return [];
+    }
+    return (
+      this.quotationHistory().find(
+        (historyEntry) =>
+          historyEntry.type === 'QUOTATION' && historyEntry.round === previousRound,
+      )?.items ?? []
+    );
+  }
+
+  private findMatchingHistoryItem(items: InquiryItem[], item: InquiryItem): InquiryItem | undefined {
+    const itemKey = item.id ?? item.productId;
+    return items.find((candidate) => (candidate.id ?? candidate.productId) === itemKey);
   }
 
   private scrollChatToBottom(): void {

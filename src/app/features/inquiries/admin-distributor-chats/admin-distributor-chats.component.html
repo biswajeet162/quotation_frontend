@@ -1069,6 +1069,12 @@
                             </div>
 
                             <div class="inquiry-event-content">
+                              @if (isRevisedQuotationHistoryEntry(entry)) {
+                                <p class="revised-quotation-hint" role="note">
+                                  Values shown in <span class="revised-quotation-hint-sample">orange</span> were
+                                  changed from the distributor's previous quotation.
+                                </p>
+                              }
                               @if (quotationEntryAllUnavailable(entry)) {
                                 <p class="distributor-unavailable-notice" role="note">
                                   This distributor marked every assigned product as unavailable.
@@ -1121,7 +1127,12 @@
                                                 {{ displayProductField(item.productBrand) }}
                                               </td>
                                               <td class="col-hsn-code">
-                                                <span class="line-input line-input-readonly chat-readonly-value">
+                                                <span
+                                                  class="line-input line-input-readonly chat-readonly-value"
+                                                  [class.line-value-changed]="
+                                                    isHistoryFieldChanged(entry, item, 'hsnCode')
+                                                  "
+                                                >
                                                   {{ displayProductField(quoted.hsnCode) }}
                                                 </span>
                                               </td>
@@ -1136,13 +1147,23 @@
                                                 @if (isLineUnavailable(item)) {
                                                   <span class="line-unavailable-label">Unavailable</span>
                                                 } @else {
-                                                  <span class="line-input line-input-number line-input-readonly chat-readonly-value">
+                                                  <span
+                                                    class="line-input line-input-number line-input-readonly chat-readonly-value"
+                                                    [class.line-value-changed]="
+                                                      isHistoryFieldChanged(entry, item, 'mrp')
+                                                    "
+                                                  >
                                                     {{ formatOptionalNumber(quoted.mrp) }}
                                                   </span>
                                                 }
                                               </td>
                                               <td class="col-discount">
-                                                <span class="line-input line-input-number line-input-readonly chat-readonly-value">
+                                                <span
+                                                  class="line-input line-input-number line-input-readonly chat-readonly-value"
+                                                  [class.line-value-changed]="
+                                                    isHistoryFieldChanged(entry, item, 'discountPercentage')
+                                                  "
+                                                >
                                                   {{ formatOptionalPercent(quoted.discountPercentage) }}
                                                 </span>
                                               </td>
@@ -1152,7 +1173,12 @@
                                                 </span>
                                               </td>
                                               <td class="col-gst">
-                                                <span class="line-input line-input-number line-input-readonly chat-readonly-value">
+                                                <span
+                                                  class="line-input line-input-number line-input-readonly chat-readonly-value"
+                                                  [class.line-value-changed]="
+                                                    isHistoryFieldChanged(entry, item, 'gstPercentage')
+                                                  "
+                                                >
                                                   {{ formatOptionalPercent(quoted.gstPercentage) }}
                                                 </span>
                                               </td>
@@ -1164,7 +1190,12 @@
                                               <td class="col-expected-delivery consumer-cell">
                                                 {{ formatExpectedDeliveryDate(item.expectedDeliveryDate) }}
                                               </td>
-                                              <td class="col-our-delivery consumer-cell">
+                                              <td
+                                                class="col-our-delivery consumer-cell"
+                                                [class.line-value-changed]="
+                                                  isHistoryFieldChanged(entry, item, 'ourDeliveryDate')
+                                                "
+                                              >
                                                 {{ formatExpectedDeliveryDate(quoted.ourDeliveryDate) }}
                                               </td>
                                               <td class="col-attachment">

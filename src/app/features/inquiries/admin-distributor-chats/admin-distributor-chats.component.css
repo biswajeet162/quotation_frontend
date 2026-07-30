@@ -1458,6 +1458,27 @@
   white-space: pre-wrap;
 }
 
+.revised-quotation-hint {
+  margin: 0.85rem 0.85rem 0;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #fdba74;
+  border-radius: 8px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.revised-quotation-hint-sample {
+  color: #c2410c;
+  font-weight: 700;
+}
+
+.line-value-changed {
+  color: #c2410c !important;
+  font-weight: 600;
+}
+
 .btn-attachment-link {
   padding: 0;
   border: 0;
