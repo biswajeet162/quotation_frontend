@@ -29,17 +29,12 @@
   transform: translateY(-1px);
 }
 
-.sidebar-reopen-mark {
+.sidebar-reopen-logo {
   width: 1.75rem;
   height: 1.75rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: #0f766e;
   border-radius: 6px;
-  font-weight: 700;
-  font-size: 0.9rem;
-  color: #fff;
+  object-fit: cover;
+  background: #000;
 }
 
 .sidebar-reopen-icon {

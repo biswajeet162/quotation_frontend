@@ -9,7 +9,14 @@
       aria-label="Show navigation"
       title="Show navigation"
     >
-      <span class="sidebar-reopen-mark" aria-hidden="true">Q</span>
+      <img
+        class="sidebar-reopen-logo"
+        src="/images/aps-logo.png"
+        alt=""
+        width="28"
+        height="28"
+        aria-hidden="true"
+      />
       <span class="sidebar-reopen-icon" aria-hidden="true">☰</span>
     </button>
   }
@@ -17,6 +24,10 @@
     <router-outlet />
   </main>
 </div>
+
+@if (showWelcomeSplash()) {
+  <app-welcome-splash (finished)="onWelcomeSplashFinished()" />
+}
 
 @if (showCompanySetup()) {
   <app-company-setup-modal (completed)="onCompanySetupCompleted()" />

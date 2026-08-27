@@ -50,6 +50,7 @@ export class LoginComponent implements AfterViewInit {
     this.auth.login(this.form.getRawValue()).subscribe({
       next: () => {
         this.loading.set(false);
+        this.auth.markWelcomeSplashPending();
         this.navigateAfterAuth();
       },
       error: (err: HttpErrorResponse) => this.handleError(err, 'Invalid email or password. Please try again.'),
@@ -82,6 +83,7 @@ export class LoginComponent implements AfterViewInit {
     this.auth.googleLogin({ idToken: credential }).subscribe({
       next: (response) => {
         this.loading.set(false);
+        this.auth.markWelcomeSplashPending();
         if (response.message) {
           this.infoMessage.set(response.message);
           this.toast.warning(response.message);

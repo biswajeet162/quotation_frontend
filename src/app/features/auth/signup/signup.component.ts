@@ -67,6 +67,7 @@ export class SignupComponent implements AfterViewInit {
         this.loading.set(false);
         this.registeredEmail.set(response.email);
         this.successMessage.set(response.message);
+        this.auth.markWelcomeSplashPending();
         this.toast.success(response.message || 'Signup successful. Please check your email.');
       },
       error: (err) => this.handleError(err, 'Signup failed. Please try again.'),
@@ -104,8 +105,9 @@ export class SignupComponent implements AfterViewInit {
     this.successMessage.set(null);
 
     this.auth.googleSignUp({ idToken: credential }).subscribe({
-      next: () => {
+      next: (response) => {
         this.loading.set(false);
+        this.auth.markWelcomeSplashPending();
         void this.router.navigate(['/dashboard']);
       },
       error: (err) => this.handleError(err, 'Google signup failed. Please try again.'),

@@ -34,8 +34,9 @@ export class VerifyEmailComponent implements OnInit {
     this.auth.clearSession();
 
     this.auth.verifyEmail(token).subscribe({
-      next: () => {
+      next: (response) => {
         this.loading.set(false);
+        this.auth.markWelcomeSplashPending();
         this.toast.success('Email verified successfully.');
         void this.router.navigate(['/dashboard']);
       },

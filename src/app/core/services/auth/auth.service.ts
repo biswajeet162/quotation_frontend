@@ -135,6 +135,28 @@ export class AuthService {
     return this.currentUserSignal()?.needsCompanySetup === true;
   }
 
+  /**
+   * Signal that the APS welcome splash should be shown the next time
+   * the app shell (main-layout) is loaded. Call this after every
+   * successful login or signup that navigates into the portal.
+   */
+  markWelcomeSplashPending(): void {
+    sessionStorage.setItem(STORAGE_KEYS.welcomeSplashPending, '1');
+  }
+
+  /**
+   * Returns true — and clears the flag — if a welcome splash should be
+   * displayed for this session. Safe to call multiple times; returns false
+   * after the first call.
+   */
+  consumeWelcomeSplashPending(): boolean {
+    if (sessionStorage.getItem(STORAGE_KEYS.welcomeSplashPending) !== '1') {
+      return false;
+    }
+    sessionStorage.removeItem(STORAGE_KEYS.welcomeSplashPending);
+    return true;
+  }
+
   private loadUserFromStorage(): AuthUser | null {
     const raw = localStorage.getItem(STORAGE_KEYS.user);
     if (!raw) {

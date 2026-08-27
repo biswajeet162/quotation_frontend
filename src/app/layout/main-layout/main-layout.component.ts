@@ -12,11 +12,18 @@ import { AuthService } from '../../core/services/auth/auth.service';
 import { ConsumerOnboardingService } from '../../core/services/consumer/consumer-onboarding.service';
 import { CompanySetupModalComponent } from '../../features/consumer/company-setup-modal/company-setup-modal.component';
 import { LoadingOverlayComponent } from '../../shared/components/loading-overlay/loading-overlay.component';
+import { WelcomeSplashComponent } from '../../shared/components/welcome-splash/welcome-splash.component';
 import { SidebarComponent } from '../sidebar/sidebar.component';
 
 @Component({
   selector: 'app-main-layout',
-  imports: [RouterOutlet, SidebarComponent, LoadingOverlayComponent, CompanySetupModalComponent],
+  imports: [
+    RouterOutlet,
+    SidebarComponent,
+    LoadingOverlayComponent,
+    CompanySetupModalComponent,
+    WelcomeSplashComponent,
+  ],
   templateUrl: './main-layout.component.html',
   styleUrl: './main-layout.component.css',
 })
@@ -28,12 +35,18 @@ export class MainLayoutComponent implements OnInit {
   readonly navigating = signal(false);
   readonly sidebarOpen = signal(true);
   readonly showCompanySetup = signal(false);
+  readonly showWelcomeSplash = signal(false);
+
+  private companySetupPending = false;
 
   toggleSidebar(): void {
     this.sidebarOpen.update((open) => !open);
   }
 
   ngOnInit(): void {
+    if (this.auth.consumeWelcomeSplashPending()) {
+      this.showWelcomeSplash.set(true);
+    }
     this.syncCompanySetupState();
     this.router.events.subscribe((event) => {
       if (event instanceof NavigationStart) {
@@ -49,6 +62,14 @@ export class MainLayoutComponent implements OnInit {
         }
       }
     });
+  }
+
+  onWelcomeSplashFinished(): void {
+    this.showWelcomeSplash.set(false);
+    if (this.companySetupPending) {
+      this.companySetupPending = false;
+      this.showCompanySetup.set(true);
+    }
   }
 
   onCompanySetupCompleted(): void {
@@ -86,6 +107,10 @@ export class MainLayoutComponent implements OnInit {
   }
 
   private openCompanySetup(): void {
+    if (this.showWelcomeSplash()) {
+      this.companySetupPending = true;
+      return;
+    }
     this.showCompanySetup.set(true);
   }
 
