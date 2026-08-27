@@ -46,8 +46,14 @@
 }
 
 .dot:nth-child(1) { animation-delay: 0s; }
-.dot:nth-child(2) { animation-delay: 0.2s; }
-.dot:nth-child(3) { animation-delay: 0.4s; }
+.dot:nth-child(2) { animation-delay: 0.13s; }
+.dot:nth-child(3) { animation-delay: 0.26s; }
+.dot:nth-child(4) { animation-delay: 0.39s; }
+.dot:nth-child(5) { animation-delay: 0.52s; }
+.dot:nth-child(6) { animation-delay: 0.65s; }
+.dot:nth-child(7) { animation-delay: 0.78s; }
+.dot:nth-child(8) { animation-delay: 0.91s; }
+.dot:nth-child(9) { animation-delay: 1.04s; }
 
 @keyframes dot-bounce {
   0%, 80%, 100% {
