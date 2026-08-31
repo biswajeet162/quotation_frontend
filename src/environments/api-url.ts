@@ -1,7 +1,7 @@
 const LOCAL_API_URL = 'http://localhost:8080';
-const PROD_API_URL = 'https://quotation-backend-production-305c.up.railway.app';
+const PROD_API_URL = 'https://api.asianproc.com';
 
-/** Local dev uses port 8080; deployed builds call the Railway backend. */
+/** Local dev uses port 8080; deployed builds call the Hostinger VPS API. */
 export function resolveApiUrl(): string {
   if (typeof window !== 'undefined') {
     const { hostname, port } = window.location;
