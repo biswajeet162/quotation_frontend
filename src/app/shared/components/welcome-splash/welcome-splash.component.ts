@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit, output, signal } from '@angular/core';
 
 /** Total time the splash is visible (ms). Change this to adjust duration. */
-export const SPLASH_DURATION_MS = 3_000;
+export const SPLASH_DURATION_MS = 4_000;
 
 /** Fade-out starts this many ms before the splash is removed. */
 const SPLASH_FADE_MS = 500;
