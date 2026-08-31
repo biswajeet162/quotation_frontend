@@ -1,7 +1,5 @@
-import { resolveApiUrl } from './api-url';
-
 export const environment = {
   production: true,
-  apiUrl: resolveApiUrl(),
+  apiUrl: 'https://api.asianproc.com',
   googleClientId: '',
 };
