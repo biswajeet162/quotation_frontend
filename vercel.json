@@ -23,7 +23,7 @@
   ],
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!branding/).*)",
       "destination": "/index.html"
     }
   ]

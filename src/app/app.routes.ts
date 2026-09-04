@@ -1,7 +1,15 @@
-import { Routes } from '@angular/router';
+import { CanMatchFn, Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { guestGuard } from './core/guards/guest.guard';
 import { roleGuard } from './core/guards/role.guard';
+
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const publicImageIdCanMatch: CanMatchFn = (_route, segments) => {
+  const imageId = segments.at(-1)?.path ?? '';
+  return UUID_PATTERN.test(imageId);
+};
 
 export const routes: Routes = [
   {
@@ -34,6 +42,7 @@ export const routes: Routes = [
   },
   {
     path: 'images/:imageId',
+    canMatch: [publicImageIdCanMatch],
     loadComponent: () =>
       import('./features/public-images/public-image-viewer/public-image-viewer.component').then(
         (m) => m.PublicImageViewerComponent,

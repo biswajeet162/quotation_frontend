@@ -64,6 +64,7 @@ Thumbs.db
 *.opus
 # Images
 *.png
+!public/branding/aps-logo.png
 *.jpg
 *.jpeg
 *.gif
