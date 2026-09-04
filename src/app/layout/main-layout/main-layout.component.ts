@@ -13,6 +13,7 @@ import { ConsumerOnboardingService } from '../../core/services/consumer/consumer
 import { CompanySetupModalComponent } from '../../features/consumer/company-setup-modal/company-setup-modal.component';
 import { LoadingOverlayComponent } from '../../shared/components/loading-overlay/loading-overlay.component';
 import { WelcomeSplashComponent } from '../../shared/components/welcome-splash/welcome-splash.component';
+import { APS_LOGO_DATA_URL } from '../../shared/branding/aps-logo';
 import { SidebarComponent } from '../sidebar/sidebar.component';
 
 @Component({
@@ -34,6 +35,7 @@ export class MainLayoutComponent implements OnInit {
 
   readonly navigating = signal(false);
   readonly sidebarOpen = signal(true);
+  readonly logoSrc = APS_LOGO_DATA_URL;
   readonly showCompanySetup = signal(false);
   readonly showWelcomeSplash = signal(false);
 

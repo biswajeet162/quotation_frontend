@@ -28,10 +28,10 @@
 }
 
 .brand-logo {
-  width: 40px;
-  height: 40px;
+  width: 56px;
+  height: 56px;
   flex-shrink: 0;
-  border-radius: 8px;
+  border-radius: 10px;
   object-fit: cover;
   background: #000;
 }

@@ -2,6 +2,7 @@ import { Component, computed, inject, input, output } from '@angular/core';
 import { IsActiveMatchOptions, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthUser } from '../../core/models/auth.model';
 import { AuthService } from '../../core/services/auth/auth.service';
+import { APS_LOGO_DATA_URL } from '../../shared/branding/aps-logo';
 
 // deploy probe 2026-07-11 — remove after confirming production picks this up
 
@@ -27,6 +28,7 @@ interface NavItem {
 })
 export class SidebarComponent {
   protected readonly auth = inject(AuthService);
+  readonly logoSrc = APS_LOGO_DATA_URL;
 
   readonly collapsed = input(false);
   readonly toggleSidebar = output<void>();

@@ -1,4 +1,5 @@
 import { Component, OnDestroy, OnInit, output, signal } from '@angular/core';
+import { APS_LOGO_DATA_URL } from '../../branding/aps-logo';
 
 /** Total time the splash is visible (ms). Change this to adjust duration. */
 export const SPLASH_DURATION_MS = 4_000;
@@ -14,6 +15,7 @@ const SPLASH_FADE_MS = 500;
 export class WelcomeSplashComponent implements OnInit, OnDestroy {
   readonly finished = output<void>();
   readonly visible = signal(true);
+  readonly logoSrc = APS_LOGO_DATA_URL;
 
   private timerId: ReturnType<typeof setTimeout> | null = null;
   private fadeTimerId: ReturnType<typeof setTimeout> | null = null;
