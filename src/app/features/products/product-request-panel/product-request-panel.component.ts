@@ -947,6 +947,9 @@ export class ProductRequestPanelComponent implements OnInit, OnDestroy {
           } else {
             this.toast.success('Quotation request submitted successfully.');
           }
+          if (inquiry.acknowledgementEmailMessage && inquiry.acknowledgementEmailSent === false) {
+            this.toast.warning(inquiry.acknowledgementEmailMessage);
+          }
           if (inquiry.id) {
             this.downloadSubmissionPdf(inquiry.id, inquiry.inquiryId);
           }
