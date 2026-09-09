@@ -34,18 +34,32 @@
 
   <nav class="sidebar-nav" aria-label="Main navigation">
     @for (item of navItems(); track item.path) {
-      <div class="nav-group">
-        <a
-          [routerLink]="item.path"
-          routerLinkActive="active"
-          [routerLinkActiveOptions]="item.children?.length ? prefixActiveOptions : exactActiveOptions"
-          class="nav-link"
-          [class.nav-group-parent]="item.children?.length"
-        >
-          <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
-          <span>{{ item.label }}</span>
-        </a>
-        @if (item.children?.length) {
+      <div class="nav-group" [class.nav-group-expanded]="showChildren(item)">
+        @if (isCollapsible(item)) {
+          <button
+            type="button"
+            class="nav-link nav-group-parent nav-group-toggle"
+            [class.active]="isGroupActive(item)"
+            [attr.aria-expanded]="isExpanded(item)"
+            (click)="toggleGroup(item, $event)"
+          >
+            <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
+            <span class="nav-label">{{ item.label }}</span>
+            <span class="nav-chevron" aria-hidden="true">›</span>
+          </button>
+        } @else {
+          <a
+            [routerLink]="item.path"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="item.children?.length ? prefixActiveOptions : exactActiveOptions"
+            class="nav-link"
+            [class.nav-group-parent]="item.children?.length"
+          >
+            <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
+            <span>{{ item.label }}</span>
+          </a>
+        }
+        @if (showChildren(item)) {
           <div class="nav-children">
             @for (child of item.children; track child.path) {
               <a

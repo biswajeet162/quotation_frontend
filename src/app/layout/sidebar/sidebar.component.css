@@ -159,6 +159,38 @@
   gap: 0.125rem;
 }
 
+.nav-group-toggle {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  width: 100%;
+}
+
+.nav-group-toggle .nav-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.nav-chevron {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 1rem;
+  line-height: 1;
+  color: #64748b;
+  transition: transform 0.18s ease, color 0.15s;
+}
+
+.nav-group-expanded .nav-chevron {
+  transform: rotate(90deg);
+  color: #94a3b8;
+}
+
+.nav-group-toggle:hover .nav-chevron {
+  color: #cbd5e1;
+}
+
 .nav-children {
   display: flex;
   flex-direction: column;
