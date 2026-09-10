@@ -64,7 +64,6 @@ export class SidebarComponent {
       children: [
         { label: 'Products', path: '/products/all' },
         { label: 'Brands', path: '/products/brands' },
-        { label: 'Distributors', path: '/products/distributors', roles: ['ADMIN'] },
       ],
     },
     {
@@ -82,7 +81,16 @@ export class SidebarComponent {
     { label: 'Tracking', path: '/tracking', icon: '◷', roles: ['CONSUMER'] },
     { label: 'Review queries', path: '/admin/queries', icon: '◉', roles: ['ADMIN'] },
     { label: 'Create inquiry', path: '/admin/inquiries/create', icon: '◎', roles: ['ADMIN'] },
-    { label: 'Companies', path: '/admin/companies', icon: '◆', roles: ['ADMIN'] },
+    {
+      label: 'Onboarding',
+      path: '/admin/onboarding',
+      icon: '◆',
+      roles: ['ADMIN'],
+      children: [
+        { label: 'Companies', path: '/admin/companies' },
+        { label: 'Distributors', path: '/products/distributors' },
+      ],
+    },
     { label: 'Users', path: '/admin/users', icon: '◈', roles: ['ADMIN'] },
     { label: 'Gmail inbox', path: '/admin/gmail-inbox', icon: '✉', roles: ['ADMIN'] },
     { label: 'Company profile', path: '/profile', icon: '◇', roles: ['DISTRIBUTOR'] },
@@ -122,12 +130,15 @@ export class SidebarComponent {
 
   isGroupActive(item: NavItem): boolean {
     const url = this.router.url.split('?')[0];
-    if (url === item.path || url.startsWith(`${item.path}/`)) {
-      return true;
+    if (item.children?.length) {
+      if (url === item.path) {
+        return true;
+      }
+      return item.children.some(
+        (child) => url === child.path || url.startsWith(`${child.path}/`),
+      );
     }
-    return !!item.children?.some(
-      (child) => url === child.path || url.startsWith(`${child.path}/`),
-    );
+    return url === item.path || url.startsWith(`${item.path}/`);
   }
 
   toggleGroup(item: NavItem, event?: Event): void {
@@ -194,8 +205,7 @@ export class SidebarComponent {
         const childActive = item.children.some(
           (child) => url === child.path || url.startsWith(`${child.path}/`),
         );
-        const parentActive = url === item.path || url.startsWith(`${item.path}/`);
-        if (childActive || parentActive) {
+        if (childActive || url === item.path) {
           next.add(item.path);
         }
       }
