@@ -116,7 +116,7 @@
             </div>
             <div class="detail-actions">
               <button type="button" class="btn-secondary" (click)="openEdit()">Edit</button>
-              @if (detail.isActive !== false) {
+              @if (canDeleteSelected()) {
                 <button
                   type="button"
                   class="btn-danger"

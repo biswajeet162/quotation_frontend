@@ -85,6 +85,17 @@ export class AdminUsersComponent implements OnInit {
   readonly formMode = signal<FormMode>('create');
   readonly form = signal<UserFormState>(emptyForm());
 
+  /** Delete only for active accounts — use list row + detail so soft-deleted users never show it. */
+  readonly canDeleteSelected = computed(() => {
+    const detail = this.selectedDetail();
+    if (!detail) {
+      return false;
+    }
+    const fromList = this.users().find((user) => user.id === detail.id);
+    const isActive = fromList?.isActive ?? detail.isActive;
+    return isActive !== false;
+  });
+
   readonly filteredUsers = computed(() => {
     const query = this.searchQuery().trim().toLowerCase();
     const includeInactive = this.showInactive();
@@ -153,6 +164,7 @@ export class AdminUsersComponent implements OnInit {
       return;
     }
     this.selectedId.set(user.id);
+    this.selectedDetail.set(null);
     this.loadDetail(user.id);
   }
 
@@ -162,7 +174,12 @@ export class AdminUsersComponent implements OnInit {
 
     this.userService.getById(id).subscribe({
       next: (detail) => {
-        this.selectedDetail.set(detail);
+        const fromList = this.users().find((user) => user.id === id);
+        this.selectedDetail.set({
+          ...detail,
+          // Prefer list status when detail omits/mis-maps isActive
+          isActive: detail.isActive ?? fromList?.isActive,
+        });
         this.detailLoading.set(false);
       },
       error: (err) => {
@@ -283,7 +300,7 @@ export class AdminUsersComponent implements OnInit {
 
   deleteSelected(): void {
     const detail = this.selectedDetail();
-    if (!detail) {
+    if (!detail || !this.canDeleteSelected()) {
       return;
     }
 
