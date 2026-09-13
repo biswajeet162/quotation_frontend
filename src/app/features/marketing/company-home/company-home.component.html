@@ -1,0 +1,274 @@
+<div class="site" [class.site--ready]="revealReady()">
+  <header class="nav" [class.nav--solid]="scrolled() || menuOpen()">
+    <div class="nav__inner">
+      <a class="nav__brand" href="#home" (click)="scrollTo('home', $event)">
+        <img [src]="logoSrc" [alt]="company.name" width="44" height="44" />
+        <span class="nav__brand-text">
+          <span class="nav__brand-name">{{ company.shortName }}</span>
+          <span class="nav__brand-sub">{{ company.name }}</span>
+        </span>
+      </a>
+
+      <button
+        type="button"
+        class="nav__burger"
+        [attr.aria-expanded]="menuOpen()"
+        aria-controls="site-menu"
+        aria-label="Toggle menu"
+        (click)="toggleMenu()"
+      >
+        <span></span>
+        <span></span>
+      </button>
+
+      <nav
+        id="site-menu"
+        class="nav__links"
+        [class.nav__links--open]="menuOpen()"
+        aria-label="Primary"
+      >
+        <a href="#home" (click)="scrollTo('home', $event)">Home</a>
+        <a href="#about" (click)="scrollTo('about', $event)">About</a>
+        <a href="#products" (click)="scrollTo('products', $event)">Products</a>
+        <a href="#brands" (click)="scrollTo('brands', $event)">Brands</a>
+        <a href="#contact" (click)="scrollTo('contact', $event)">Contact</a>
+
+        <div class="nav__auth">
+          @if (isAuthenticated) {
+            <a routerLink="/dashboard" class="btn btn--ghost" (click)="closeMenu()">Dashboard</a>
+          } @else {
+            <a routerLink="/login" class="btn btn--ghost" (click)="closeMenu()">Sign in</a>
+            <a routerLink="/signup" class="btn btn--solid" (click)="closeMenu()">Sign up</a>
+          }
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section id="home" class="hero">
+      <div class="hero__media" aria-hidden="true">
+        <div class="hero__wash"></div>
+        <div class="hero__orbit">
+          @for (item of heroFloats; track item.id; let i = $index) {
+            <div
+              class="hero__float"
+              [class]="'hero__float hero__float--' + (i + 1)"
+              [style.--i]="i"
+            >
+              <img [src]="item.src" [alt]="" loading="eager" />
+            </div>
+          }
+        </div>
+        <div class="hero__grain"></div>
+      </div>
+
+      <div class="hero__content">
+        <p class="hero__brand">{{ company.name }}</p>
+        <h1 class="hero__title">{{ company.tagline }}</h1>
+        <p class="hero__lead">{{ company.supporting }}</p>
+        <div class="hero__actions">
+          @if (isAuthenticated) {
+            <a routerLink="/dashboard" class="btn btn--solid btn--lg">Open portal</a>
+          } @else {
+            <a routerLink="/signup" class="btn btn--solid btn--lg">Create account</a>
+            <a routerLink="/login" class="btn btn--outline btn--lg">Sign in</a>
+          }
+          <a href="#products" class="hero__jump" (click)="scrollTo('products', $event)"
+            >Browse catalogue ↓</a
+          >
+        </div>
+      </div>
+    </section>
+
+    <section class="ribbon" aria-hidden="true">
+      <div class="ribbon__track">
+        @for (item of catalogRibbon; track $index) {
+          <div class="ribbon__item">
+            <img [src]="item.src" [alt]="" loading="lazy" />
+          </div>
+        }
+      </div>
+    </section>
+
+    <section class="strip" aria-label="Capabilities">
+      <div class="strip__track">
+        @for (item of capabilities; track item.label) {
+          <div class="strip__item">
+            <span class="strip__label">{{ item.label }}</span>
+            <span class="strip__detail">{{ item.detail }}</span>
+          </div>
+        }
+      </div>
+    </section>
+
+    <section id="about" class="section about">
+      <div class="section__grid">
+        <div class="section__intro reveal">
+          <p class="eyebrow">About</p>
+          <h2>Built for plants that run on precision parts</h2>
+          <p class="section__copy">
+            {{ company.name }} supplies industrial power-transmission and maintenance
+            components — helping production teams source the right part from the right brand,
+            without the runaround.
+          </p>
+        </div>
+
+        <ul class="about__list">
+          @for (point of aboutPoints; track point.title; let i = $index) {
+            <li class="about__card reveal" [style.--d]="i * 80 + 'ms'">
+              <span class="about__index">0{{ i + 1 }}</span>
+              <h3>{{ point.title }}</h3>
+              <p>{{ point.body }}</p>
+            </li>
+          }
+        </ul>
+      </div>
+    </section>
+
+    <section id="products" class="section products">
+      <div class="section__intro section__intro--center reveal">
+        <p class="eyebrow">Catalogue</p>
+        <h2>What we supply</h2>
+        <p class="section__copy">
+          Transparent cutouts from our Asia Catalog — belts, pulleys, couplings, chains,
+          gearboxes, and more.
+        </p>
+      </div>
+
+      <div class="catalog-filters reveal" role="tablist" aria-label="Product groups">
+        <button
+          type="button"
+          class="catalog-filters__btn"
+          [class.is-active]="activeGroup() === 'all'"
+          (click)="setGroup('all')"
+        >
+          All
+        </button>
+        @for (group of catalogGroups; track group.key) {
+          <button
+            type="button"
+            class="catalog-filters__btn"
+            [class.is-active]="activeGroup() === group.key"
+            (click)="setGroup(group.key)"
+          >
+            {{ group.title }}
+          </button>
+        }
+      </div>
+
+      <div class="catalog-grid">
+        @for (item of visibleCatalog(); track trackCatalog($index, item); let i = $index) {
+          <article class="catalog-card reveal" [style.--d]="(i % 6) * 45 + 'ms'">
+            <div class="catalog-card__stage">
+              <img [src]="item.src" [alt]="item.label" loading="lazy" />
+            </div>
+            <div class="catalog-card__meta">
+              <span class="catalog-card__group">{{ item.group }}</span>
+              <h3>{{ item.label }}</h3>
+            </div>
+          </article>
+        }
+      </div>
+
+      <div class="products__grid products__grid--compact">
+        @for (cat of categories; track cat.id; let i = $index) {
+          <article class="product reveal" [style.--d]="(i % 3) * 70 + 'ms'">
+            <div class="product__head">
+              <h3>{{ cat.title }}</h3>
+              <p>{{ cat.summary }}</p>
+            </div>
+            <ul>
+              @for (item of cat.items; track item) {
+                <li>{{ item }}</li>
+              }
+            </ul>
+          </article>
+        }
+      </div>
+    </section>
+
+    <section id="brands" class="section brands">
+      <div class="section__intro section__intro--center reveal">
+        <p class="eyebrow">Partners</p>
+        <h2>Brands we work with</h2>
+        <p class="section__copy">
+          Transmission leaders, bearing houses, pneumatics specialists, and lubricant makers —
+          sourced for industrial reliability.
+        </p>
+      </div>
+
+      <div class="marquee" aria-hidden="true">
+        <div class="marquee__track">
+          @for (brand of brandRow; track $index) {
+            <span class="marquee__item">{{ brand.name }}</span>
+          }
+        </div>
+      </div>
+
+      <ul class="brands__grid reveal">
+        @for (brand of brands; track brand.name) {
+          <li>{{ brand.name }}</li>
+        }
+      </ul>
+    </section>
+
+    <section id="contact" class="section contact">
+      <div class="contact__panel reveal">
+        <div class="contact__copy">
+          <p class="eyebrow eyebrow--light">Contact</p>
+          <h2>Talk to us about your next requirement</h2>
+          <p>
+            Reach the {{ company.shortName }} team for quotations, availability, and technical
+            matching across our industrial catalogue.
+          </p>
+          <div class="contact__actions">
+            <a class="btn btn--solid btn--lg" [href]="'mailto:' + company.email">Email us</a>
+            @if (!isAuthenticated) {
+              <a routerLink="/signup" class="btn btn--outline-light btn--lg">Sign up for portal</a>
+            }
+          </div>
+        </div>
+
+        <dl class="contact__details">
+          <div>
+            <dt>Visit</dt>
+            <dd>{{ company.address }}</dd>
+          </div>
+          <div>
+            <dt>Call</dt>
+            <dd>
+              @for (phone of company.phones; track phone) {
+                <a [href]="'tel:' + phone.replace(' ', '')">{{ phone }}</a>
+                @if (!$last) {
+                  <span class="sep">·</span>
+                }
+              }
+            </dd>
+          </div>
+          <div>
+            <dt>Email</dt>
+            <dd>
+              <a [href]="'mailto:' + company.email">{{ company.email }}</a>
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer__inner">
+      <div class="footer__brand">
+        <img [src]="logoSrc" [alt]="company.name" width="40" height="40" />
+        <div>
+          <strong>{{ company.name }}</strong>
+          <span>Rudrapur, Uttarakhand · India</span>
+        </div>
+      </div>
+      <p class="footer__note">
+        © {{ company.name }}. Industrial procurement &amp; supply.
+      </p>
+    </div>
+  </footer>
+</div>

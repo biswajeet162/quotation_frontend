@@ -28,6 +28,21 @@
   font-size: 0.9rem;
 }
 
+.auth-home-link {
+  margin: -0.75rem 0 1.25rem !important;
+}
+
+.auth-home-link a {
+  color: #0f766e;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.auth-home-link a:hover {
+  text-decoration: underline;
+}
+
 .auth-form {
   display: flex;
   flex-direction: column;
