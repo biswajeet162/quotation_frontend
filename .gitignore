@@ -65,12 +65,18 @@ Thumbs.db
 # Images
 *.png
 !public/branding/aps-logo.png
+!public/assets/**/*.png
 *.jpg
+!public/assets/**/*.jpg
 *.jpeg
+!public/assets/**/*.jpeg
 *.gif
 *.webp
+!public/assets/**/*.webp
 *.svg
+!public/assets/**/*.svg
 *.ico
+!public/favicon.ico
 *.bmp
 *.tiff
 *.tif
