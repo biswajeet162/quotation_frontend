@@ -85,8 +85,11 @@
     <section class="ribbon" aria-label="Product showcase">
       <div class="ribbon__track">
         @for (item of catalogRibbon; track $index) {
-          <div class="ribbon__item" [attr.title]="item.label">
-            <img [src]="item.src" [alt]="item.label" loading="lazy" />
+          <div class="ribbon__item">
+            <div class="ribbon__flip">
+              <img [src]="item.src" [alt]="item.label" loading="lazy" />
+            </div>
+            <span class="ribbon__label">{{ item.label }}</span>
           </div>
         }
       </div>
@@ -202,14 +205,20 @@
       <div class="marquee" aria-hidden="true">
         <div class="marquee__track">
           @for (brand of brandRow; track $index) {
-            <span class="marquee__item">{{ brand.name }}</span>
+            <span class="marquee__item">
+              <img [src]="brand.logo" [alt]="" loading="lazy" />
+              {{ brand.name }}
+            </span>
           }
         </div>
       </div>
 
       <ul class="brands__grid reveal">
         @for (brand of brands; track brand.name) {
-          <li>{{ brand.name }}</li>
+          <li>
+            <img [src]="brand.logo" [alt]="brand.name + ' logo'" loading="lazy" />
+            <span>{{ brand.name }}</span>
+          </li>
         }
       </ul>
     </section>

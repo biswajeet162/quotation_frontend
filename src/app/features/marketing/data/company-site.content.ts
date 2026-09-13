@@ -10,6 +10,8 @@ export interface ProductCategory {
 export interface PartnerBrand {
   name: string;
   group: 'transmission' | 'bearings' | 'pneumatics' | 'lubricants';
+  /** Path under public/ for brand mark. */
+  logo: string;
 }
 
 export const COMPANY = {
@@ -109,29 +111,29 @@ export const PRODUCT_CATEGORIES: ProductCategory[] = [
 ];
 
 export const PARTNER_BRANDS: PartnerBrand[] = [
-  { name: 'JK Fenner', group: 'transmission' },
-  { name: 'Gates', group: 'transmission' },
-  { name: 'Megadyne', group: 'transmission' },
-  { name: 'Lovejoy', group: 'transmission' },
-  { name: 'Dunlop', group: 'transmission' },
-  { name: 'Continental ContiTech', group: 'transmission' },
-  { name: 'Mitsuboshi', group: 'transmission' },
-  { name: 'Diamond Chain', group: 'transmission' },
-  { name: 'Bando', group: 'transmission' },
-  { name: 'KTR', group: 'transmission' },
-  { name: 'SKF', group: 'bearings' },
-  { name: 'FAG / Schaeffler', group: 'bearings' },
-  { name: 'Timken', group: 'bearings' },
-  { name: 'NSK', group: 'bearings' },
-  { name: 'NTN', group: 'bearings' },
-  { name: 'Koyo', group: 'bearings' },
-  { name: 'IKO', group: 'bearings' },
-  { name: 'RBC Bearings', group: 'bearings' },
-  { name: 'IMI Norgren', group: 'pneumatics' },
-  { name: 'IMI Herion', group: 'pneumatics' },
-  { name: 'Klüber', group: 'lubricants' },
-  { name: 'Mosil', group: 'lubricants' },
-  { name: 'THK', group: 'lubricants' },
+  { name: 'JK Fenner', group: 'transmission', logo: 'assets/brands/jk-fenner.webp' },
+  { name: 'Gates', group: 'transmission', logo: 'assets/brands/gates.webp' },
+  { name: 'Megadyne', group: 'transmission', logo: 'assets/brands/megadyne.webp' },
+  { name: 'Lovejoy', group: 'transmission', logo: 'assets/brands/lovejoy.webp' },
+  { name: 'Dunlop', group: 'transmission', logo: 'assets/brands/dunlop.webp' },
+  { name: 'Continental ContiTech', group: 'transmission', logo: 'assets/brands/contitech.webp' },
+  { name: 'Mitsuboshi', group: 'transmission', logo: 'assets/brands/mitsuboshi.webp' },
+  { name: 'Diamond Chain', group: 'transmission', logo: 'assets/brands/diamond-chain.webp' },
+  { name: 'Bando', group: 'transmission', logo: 'assets/brands/bando.webp' },
+  { name: 'KTR', group: 'transmission', logo: 'assets/brands/ktr.webp' },
+  { name: 'SKF', group: 'bearings', logo: 'assets/brands/skf.webp' },
+  { name: 'FAG / Schaeffler', group: 'bearings', logo: 'assets/brands/schaeffler.webp' },
+  { name: 'Timken', group: 'bearings', logo: 'assets/brands/timken.webp' },
+  { name: 'NSK', group: 'bearings', logo: 'assets/brands/nsk.webp' },
+  { name: 'NTN', group: 'bearings', logo: 'assets/brands/ntn.webp' },
+  { name: 'Koyo', group: 'bearings', logo: 'assets/brands/koyo.webp' },
+  { name: 'IKO', group: 'bearings', logo: 'assets/brands/iko.webp' },
+  { name: 'RBC Bearings', group: 'bearings', logo: 'assets/brands/rbc.webp' },
+  { name: 'IMI Norgren', group: 'pneumatics', logo: 'assets/brands/norgren.webp' },
+  { name: 'IMI Herion', group: 'pneumatics', logo: 'assets/brands/imi.webp' },
+  { name: 'Klüber', group: 'lubricants', logo: 'assets/brands/kluber.webp' },
+  { name: 'Mosil', group: 'lubricants', logo: 'assets/brands/mosil.webp' },
+  { name: 'THK', group: 'lubricants', logo: 'assets/brands/thk.webp' },
 ];
 
 export const CAPABILITIES = [
