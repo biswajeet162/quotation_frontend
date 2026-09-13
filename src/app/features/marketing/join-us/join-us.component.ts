@@ -20,6 +20,14 @@ interface JoinRequestResponse {
   message: string;
 }
 
+interface JoinReceipt {
+  contactName: string;
+  companyName: string;
+  email: string;
+  phone: string;
+  interestedAs: InterestedAs;
+}
+
 @Component({
   selector: 'app-join-us',
   imports: [ReactiveFormsModule, RouterLink],
@@ -34,6 +42,7 @@ export class JoinUsComponent {
   readonly submitted = signal(false);
   readonly successMessage = signal('');
   readonly errorMessage = signal('');
+  readonly receipt = signal<JoinReceipt | null>(null);
 
   readonly form = this.fb.nonNullable.group({
     interestedAs: this.fb.nonNullable.control<InterestedAs>('CUSTOMER', Validators.required),
@@ -43,6 +52,10 @@ export class JoinUsComponent {
     phone: ['', [Validators.required, Validators.maxLength(40)]],
     note: ['', [Validators.maxLength(2000)]],
   });
+
+  roleLabel(value: InterestedAs | null | undefined): string {
+    return value === 'DISTRIBUTOR' ? 'Distributor' : 'Customer';
+  }
 
   onSubmit(): void {
     this.errorMessage.set('');
@@ -65,11 +78,18 @@ export class JoinUsComponent {
     this.http.post<JoinRequestResponse>(`${environment.apiUrl}/public/join-requests`, payload).subscribe({
       next: (res) => {
         this.loading.set(false);
-        this.submitted.set(true);
+        this.receipt.set({
+          contactName: payload.contactName,
+          companyName: payload.companyName,
+          email: payload.email,
+          phone: payload.phone,
+          interestedAs: payload.interestedAs,
+        });
         this.successMessage.set(
           res.message ||
             'Thanks for your interest. Our team will review your request and get back to you.',
         );
+        this.submitted.set(true);
       },
       error: (err) => {
         this.loading.set(false);

@@ -1,69 +1,124 @@
-<div class="join-page">
-  <div class="join-card">
-    <div class="join-brand">
-      <p class="join-eyebrow">Partnership interest</p>
-      <h1>Join us</h1>
-      <p>
-        We onboard customers and distributors ourselves. Share your details and our team will
-        review your request — you cannot create a portal account from this page.
-      </p>
-      <p class="join-home-link"><a routerLink="/">← Back to website</a></p>
-    </div>
+@if (submitted()) {
+  <div class="join-page join-page--success">
+    <div class="success-shell" role="status" aria-live="polite">
+      <div class="success-glow" aria-hidden="true"></div>
 
-    @if (submitted()) {
-      <div class="success-panel" role="status">
-        <h2>Request received</h2>
-        <p>{{ successMessage() }}</p>
-        <div class="success-actions">
-          <a routerLink="/" class="btn-secondary">Back to website</a>
-          <a routerLink="/login" class="btn-primary-link">Already onboarded? Sign in</a>
+      <div class="success-mark" aria-hidden="true">
+        <svg viewBox="0 0 72 72" width="72" height="72">
+          <circle class="success-mark__ring" cx="36" cy="36" r="32" />
+          <path class="success-mark__check" d="M22 37.5 L31.5 47 L50 26" />
+        </svg>
+      </div>
+
+      <p class="success-eyebrow">Request submitted</p>
+      <h1>We’ll get back to you</h1>
+      <p class="success-lead">
+        Thanks{{ receipt()?.contactName ? ', ' + receipt()!.contactName.split(' ')[0] : '' }}.
+        Your interest to join as a
+        <strong>{{ roleLabel(receipt()?.interestedAs) }}</strong>
+        for
+        <strong>{{ receipt()?.companyName }}</strong>
+        is with our APS team.
+      </p>
+
+      <ol class="success-steps">
+        <li>
+          <span class="success-steps__n">1</span>
+          <div>
+            <strong>We review your request</strong>
+            <p>Our admin team checks company details and fit.</p>
+          </div>
+        </li>
+        <li>
+          <span class="success-steps__n">2</span>
+          <div>
+            <strong>We create your portal access</strong>
+            <p>Accounts are opened by APS — not self-signup.</p>
+          </div>
+        </li>
+        <li>
+          <span class="success-steps__n">3</span>
+          <div>
+            <strong>You hear from us</strong>
+            <p>We’ll contact you at {{ receipt()?.email }} / {{ receipt()?.phone }}.</p>
+          </div>
+        </li>
+      </ol>
+
+      <div class="success-summary">
+        <div>
+          <span>Role</span>
+          <strong>{{ roleLabel(receipt()?.interestedAs) }}</strong>
+        </div>
+        <div>
+          <span>Company</span>
+          <strong>{{ receipt()?.companyName }}</strong>
+        </div>
+        <div>
+          <span>Email</span>
+          <strong>{{ receipt()?.email }}</strong>
         </div>
       </div>
-    } @else {
+
+      <p class="success-note">{{ successMessage() }}</p>
+
+      <div class="success-actions">
+        <a routerLink="/" class="btn-primary-link">Back to website</a>
+        <a routerLink="/login" class="btn-secondary">Already onboarded? Sign in</a>
+      </div>
+    </div>
+  </div>
+} @else {
+  <div class="join-page">
+    <div class="join-card">
+      <div class="join-top">
+        <div class="join-brand">
+          <p class="join-eyebrow">Partnership interest</p>
+          <h1>Join us</h1>
+          <p>Share your details — we’ll review and onboard you. No self-serve accounts.</p>
+        </div>
+        <a routerLink="/" class="join-home-link">← Website</a>
+      </div>
+
       @if (errorMessage()) {
         <div class="alert alert-error" role="alert">{{ errorMessage() }}</div>
       }
 
       <form [formGroup]="form" (ngSubmit)="onSubmit()" class="join-form">
         <fieldset class="role-fieldset">
-          <legend>I want to join as</legend>
+          <legend>Join as</legend>
           <div class="role-options">
             <label class="role-option">
               <input type="radio" formControlName="interestedAs" value="CUSTOMER" />
-              <span>
-                <strong>Customer</strong>
-                <small>Source industrial parts through APS</small>
-              </span>
+              <strong>Customer</strong>
             </label>
             <label class="role-option">
               <input type="radio" formControlName="interestedAs" value="DISTRIBUTOR" />
-              <span>
-                <strong>Distributor</strong>
-                <small>Supply products and quote through the portal</small>
-              </span>
+              <strong>Distributor</strong>
             </label>
           </div>
         </fieldset>
 
-        <div class="field">
-          <label for="contactName">Your name</label>
-          <input id="contactName" type="text" formControlName="contactName" autocomplete="name" />
-          @if (form.controls.contactName.touched && form.controls.contactName.hasError('required')) {
-            <span class="field-error">Name is required</span>
-          }
-        </div>
-
-        <div class="field">
-          <label for="companyName">Company</label>
-          <input
-            id="companyName"
-            type="text"
-            formControlName="companyName"
-            autocomplete="organization"
-          />
-          @if (form.controls.companyName.touched && form.controls.companyName.hasError('required')) {
-            <span class="field-error">Company is required</span>
-          }
+        <div class="field-row">
+          <div class="field">
+            <label for="contactName">Your name</label>
+            <input id="contactName" type="text" formControlName="contactName" autocomplete="name" />
+            @if (form.controls.contactName.touched && form.controls.contactName.hasError('required')) {
+              <span class="field-error">Required</span>
+            }
+          </div>
+          <div class="field">
+            <label for="companyName">Company</label>
+            <input
+              id="companyName"
+              type="text"
+              formControlName="companyName"
+              autocomplete="organization"
+            />
+            @if (form.controls.companyName.touched && form.controls.companyName.hasError('required')) {
+              <span class="field-error">Required</span>
+            }
+          </div>
         </div>
 
         <div class="field-row">
@@ -71,18 +126,17 @@
             <label for="email">Email</label>
             <input id="email" type="email" formControlName="email" autocomplete="email" />
             @if (form.controls.email.touched && form.controls.email.hasError('required')) {
-              <span class="field-error">Email is required</span>
+              <span class="field-error">Required</span>
             }
             @if (form.controls.email.touched && form.controls.email.hasError('email')) {
-              <span class="field-error">Enter a valid email</span>
+              <span class="field-error">Invalid email</span>
             }
           </div>
-
           <div class="field">
             <label for="phone">Contact number</label>
             <input id="phone" type="tel" formControlName="phone" autocomplete="tel" />
             @if (form.controls.phone.touched && form.controls.phone.hasError('required')) {
-              <span class="field-error">Contact number is required</span>
+              <span class="field-error">Required</span>
             }
           </div>
         </div>
@@ -91,21 +145,22 @@
           <label for="note">Note <span class="optional">(optional)</span></label>
           <textarea
             id="note"
-            rows="4"
+            rows="2"
             formControlName="note"
-            placeholder="Tell us about your requirements, brands, or location…"
+            placeholder="Requirements, brands, location…"
           ></textarea>
         </div>
 
-        <button type="submit" class="btn-primary" [disabled]="loading()">
-          {{ loading() ? 'Submitting…' : 'Submit request' }}
-        </button>
+        <div class="join-actions">
+          <button type="submit" class="btn-primary" [disabled]="loading()">
+            {{ loading() ? 'Submitting…' : 'Submit request' }}
+          </button>
+          <p class="join-hint">
+            Already onboarded?
+            <a routerLink="/login">Sign in</a>
+          </p>
+        </div>
       </form>
-
-      <p class="join-hint">
-        Already have portal access?
-        <a routerLink="/login">Sign in</a>
-      </p>
-    }
+    </div>
   </div>
-</div>
+}
