@@ -27,10 +27,15 @@ export const routes: Routes = [
     canActivate: [guestGuard],
   },
   {
-    path: 'signup',
+    path: 'join-us',
     loadComponent: () =>
-      import('./features/auth/signup/signup.component').then((m) => m.SignupComponent),
+      import('./features/marketing/join-us/join-us.component').then((m) => m.JoinUsComponent),
     canActivate: [guestGuard],
+  },
+  {
+    path: 'signup',
+    redirectTo: 'join-us',
+    pathMatch: 'full',
   },
   {
     path: 'verify-email',

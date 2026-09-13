@@ -38,7 +38,7 @@
             <a routerLink="/dashboard" class="btn btn--ghost" (click)="closeMenu()">Dashboard</a>
           } @else {
             <a routerLink="/login" class="btn btn--ghost" (click)="closeMenu()">Sign in</a>
-            <a routerLink="/signup" class="btn btn--solid" (click)="closeMenu()">Sign up</a>
+            <a routerLink="/join-us" class="btn btn--solid" (click)="closeMenu()">Join us</a>
           }
         </div>
       </nav>
@@ -72,7 +72,7 @@
           @if (isAuthenticated) {
             <a routerLink="/dashboard" class="btn btn--solid btn--lg">Open portal</a>
           } @else {
-            <a routerLink="/signup" class="btn btn--solid btn--lg">Create account</a>
+            <a routerLink="/join-us" class="btn btn--solid btn--lg">Join us</a>
             <a routerLink="/login" class="btn btn--outline btn--lg">Sign in</a>
           }
           <a href="#products" class="hero__jump" (click)="scrollTo('products', $event)"
@@ -235,7 +235,7 @@
           <div class="contact__actions">
             <a class="btn btn--solid btn--lg" [href]="'mailto:' + company.email">Email us</a>
             @if (!isAuthenticated) {
-              <a routerLink="/signup" class="btn btn--outline-light btn--lg">Sign up for portal</a>
+              <a routerLink="/join-us" class="btn btn--outline-light btn--lg">Join us</a>
             }
           </div>
         </div>

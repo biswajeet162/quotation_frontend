@@ -1,0 +1,111 @@
+<div class="join-page">
+  <div class="join-card">
+    <div class="join-brand">
+      <p class="join-eyebrow">Partnership interest</p>
+      <h1>Join us</h1>
+      <p>
+        We onboard customers and distributors ourselves. Share your details and our team will
+        review your request — you cannot create a portal account from this page.
+      </p>
+      <p class="join-home-link"><a routerLink="/">← Back to website</a></p>
+    </div>
+
+    @if (submitted()) {
+      <div class="success-panel" role="status">
+        <h2>Request received</h2>
+        <p>{{ successMessage() }}</p>
+        <div class="success-actions">
+          <a routerLink="/" class="btn-secondary">Back to website</a>
+          <a routerLink="/login" class="btn-primary-link">Already onboarded? Sign in</a>
+        </div>
+      </div>
+    } @else {
+      @if (errorMessage()) {
+        <div class="alert alert-error" role="alert">{{ errorMessage() }}</div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="join-form">
+        <fieldset class="role-fieldset">
+          <legend>I want to join as</legend>
+          <div class="role-options">
+            <label class="role-option">
+              <input type="radio" formControlName="interestedAs" value="CUSTOMER" />
+              <span>
+                <strong>Customer</strong>
+                <small>Source industrial parts through APS</small>
+              </span>
+            </label>
+            <label class="role-option">
+              <input type="radio" formControlName="interestedAs" value="DISTRIBUTOR" />
+              <span>
+                <strong>Distributor</strong>
+                <small>Supply products and quote through the portal</small>
+              </span>
+            </label>
+          </div>
+        </fieldset>
+
+        <div class="field">
+          <label for="contactName">Your name</label>
+          <input id="contactName" type="text" formControlName="contactName" autocomplete="name" />
+          @if (form.controls.contactName.touched && form.controls.contactName.hasError('required')) {
+            <span class="field-error">Name is required</span>
+          }
+        </div>
+
+        <div class="field">
+          <label for="companyName">Company</label>
+          <input
+            id="companyName"
+            type="text"
+            formControlName="companyName"
+            autocomplete="organization"
+          />
+          @if (form.controls.companyName.touched && form.controls.companyName.hasError('required')) {
+            <span class="field-error">Company is required</span>
+          }
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" type="email" formControlName="email" autocomplete="email" />
+            @if (form.controls.email.touched && form.controls.email.hasError('required')) {
+              <span class="field-error">Email is required</span>
+            }
+            @if (form.controls.email.touched && form.controls.email.hasError('email')) {
+              <span class="field-error">Enter a valid email</span>
+            }
+          </div>
+
+          <div class="field">
+            <label for="phone">Contact number</label>
+            <input id="phone" type="tel" formControlName="phone" autocomplete="tel" />
+            @if (form.controls.phone.touched && form.controls.phone.hasError('required')) {
+              <span class="field-error">Contact number is required</span>
+            }
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="note">Note <span class="optional">(optional)</span></label>
+          <textarea
+            id="note"
+            rows="4"
+            formControlName="note"
+            placeholder="Tell us about your requirements, brands, or location…"
+          ></textarea>
+        </div>
+
+        <button type="submit" class="btn-primary" [disabled]="loading()">
+          {{ loading() ? 'Submitting…' : 'Submit request' }}
+        </button>
+      </form>
+
+      <p class="join-hint">
+        Already have portal access?
+        <a routerLink="/login">Sign in</a>
+      </p>
+    }
+  </div>
+</div>
