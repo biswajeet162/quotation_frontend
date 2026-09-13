@@ -2,9 +2,9 @@
   <header class="nav" [class.nav--solid]="scrolled() || menuOpen()">
     <div class="nav__inner">
       <a class="nav__brand" href="#home" (click)="scrollTo('home', $event)">
-        <img [src]="logoSrc" [alt]="company.name" width="44" height="44" />
+        <img class="nav__logo" [src]="logoSrc" [alt]="company.name" width="120" height="92" />
         <span class="nav__brand-text">
-          <span class="nav__brand-name">{{ company.shortName }}</span>
+          <span class="nav__brand-name">APS Asian</span>
           <span class="nav__brand-sub">{{ company.name }}</span>
         </span>
       </a>
@@ -64,6 +64,7 @@
       </div>
 
       <div class="hero__content">
+        <img class="hero__logo" [src]="logoSrc" [alt]="company.name" width="220" height="168" />
         <p class="hero__brand">{{ company.name }}</p>
         <h1 class="hero__title">{{ company.tagline }}</h1>
         <p class="hero__lead">{{ company.supporting }}</p>
@@ -81,11 +82,11 @@
       </div>
     </section>
 
-    <section class="ribbon" aria-hidden="true">
+    <section class="ribbon" aria-label="Product showcase">
       <div class="ribbon__track">
         @for (item of catalogRibbon; track $index) {
-          <div class="ribbon__item">
-            <img [src]="item.src" [alt]="" loading="lazy" />
+          <div class="ribbon__item" [attr.title]="item.label">
+            <img [src]="item.src" [alt]="item.label" loading="lazy" />
           </div>
         }
       </div>
@@ -260,7 +261,7 @@
   <footer class="footer">
     <div class="footer__inner">
       <div class="footer__brand">
-        <img [src]="logoSrc" [alt]="company.name" width="40" height="40" />
+        <img [src]="logoSrc" [alt]="company.name" width="72" height="55" />
         <div>
           <strong>{{ company.name }}</strong>
           <span>Rudrapur, Uttarakhand · India</span>

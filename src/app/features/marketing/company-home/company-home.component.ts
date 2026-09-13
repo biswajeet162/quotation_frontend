@@ -1,7 +1,6 @@
 import { Component, ElementRef, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth/auth.service';
-import { APS_LOGO_DATA_URL } from '../../../shared/branding/aps-logo';
 import {
   CATALOG_GROUPS,
   CATALOG_IMAGES,
@@ -29,7 +28,8 @@ export class CompanyHomeComponent implements OnInit, OnDestroy {
   private readonly auth = inject(AuthService);
   private readonly host = inject(ElementRef<HTMLElement>);
 
-  readonly logoSrc = APS_LOGO_DATA_URL;
+  /** Official APS Asian logo for the public marketing site. */
+  readonly logoSrc = 'assets/marketing/aps-logo.webp';
   readonly company = COMPANY;
   readonly aboutPoints = ABOUT_POINTS;
   readonly categories = PRODUCT_CATEGORIES;
@@ -38,7 +38,8 @@ export class CompanyHomeComponent implements OnInit, OnDestroy {
   readonly brandRow = [...PARTNER_BRANDS, ...PARTNER_BRANDS];
 
   readonly catalogGroups = CATALOG_GROUPS;
-  readonly heroFloats = HERO_FLOAT_IMAGES;
+  /** Fewer floats, kept mid/lower-right so they never cover the nav. */
+  readonly heroFloats = HERO_FLOAT_IMAGES.slice(0, 5);
   readonly catalogRibbon = [...CATALOG_IMAGES, ...CATALOG_IMAGES];
 
   readonly menuOpen = signal(false);
