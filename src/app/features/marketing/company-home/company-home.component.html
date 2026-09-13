@@ -86,7 +86,7 @@
       <div class="ribbon__track">
         @for (item of catalogRibbon; track $index) {
           <div class="ribbon__item">
-            <div class="ribbon__flip">
+            <div class="ribbon__stage">
               <img [src]="item.src" [alt]="item.label" loading="lazy" />
             </div>
             <span class="ribbon__label">{{ item.label }}</span>
