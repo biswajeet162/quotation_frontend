@@ -12,6 +12,7 @@ export interface CrmCustomerSummary {
 
 export interface CrmCustomer {
   id: string;
+  serialNumber?: number;
   industryName: string;
   sector?: string | null;
   location?: string | null;

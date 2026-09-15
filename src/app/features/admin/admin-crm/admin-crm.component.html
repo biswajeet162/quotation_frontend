@@ -4,58 +4,56 @@
     [message]="uploading() ? 'Uploading Excel…' : 'Loading CRM…'"
   />
 
-  <header class="page-header">
-    <div>
-      <h1>CRM</h1>
-      <p class="muted">
-        Table shows serial, industry, sector, coordinator, remarks, follow-up, then quarter ending.
-        Click a row for full details. Excel upload is admin-only.
-      </p>
-    </div>
-    <div class="header-actions">
-      @if (isAdmin()) {
-        <input
-          #excelInput
-          type="file"
-          class="visually-hidden"
-          accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
-          (change)="onExcelSelected($event)"
-        />
-        <label class="toggle-field upload-toggle">
-          <input
-            type="checkbox"
-            [ngModel]="replaceOnUpload()"
-            (ngModelChange)="replaceOnUpload.set($event)"
-          />
-          Replace all on upload
-        </label>
-        <button
-          type="button"
-          class="btn-secondary"
-          (click)="triggerExcelPicker()"
-          [disabled]="uploading()"
-        >
-          {{ uploading() ? 'Uploading…' : 'Upload Excel' }}
-        </button>
-      }
-      <button type="button" class="btn-primary" (click)="openCreate()">Add customer</button>
-      <button type="button" class="btn-secondary" (click)="load()" [disabled]="loading()">
-        Refresh
-      </button>
-    </div>
-  </header>
-
   <div class="toolbar">
+    <h1 class="toolbar-title">CRM</h1>
+
     <div class="search-field">
-      <label for="crm-search">Search customers</label>
+      <label class="visually-hidden" for="crm-search">Search customers</label>
       <input
         id="crm-search"
         type="search"
-        placeholder="Industry, sector, coordinator, remarks…"
+        placeholder="Search customers…"
         [ngModel]="searchQuery()"
         (ngModelChange)="searchQuery.set($event)"
       />
     </div>
+
+    @if (isAdmin()) {
+      <input
+        #excelInput
+        type="file"
+        class="visually-hidden"
+        accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+        (change)="onExcelSelected($event)"
+      />
+      <label class="toggle-field">
+        <input
+          type="checkbox"
+          [ngModel]="replaceOnUpload()"
+          (ngModelChange)="replaceOnUpload.set($event)"
+        />
+        Replace all
+      </label>
+      <button
+        type="button"
+        class="btn-secondary btn-compact"
+        (click)="triggerExcelPicker()"
+        [disabled]="uploading()"
+      >
+        {{ uploading() ? 'Uploading…' : 'Upload Excel' }}
+      </button>
+    }
+    <button type="button" class="btn-primary btn-compact" (click)="openCreate()">
+      Add customer
+    </button>
+    <button
+      type="button"
+      class="btn-secondary btn-compact"
+      (click)="load()"
+      [disabled]="loading()"
+    >
+      Refresh
+    </button>
     <label class="toggle-field">
       <input
         type="checkbox"
@@ -83,17 +81,37 @@
       </p>
     } @else {
       <div class="table-wrap">
-        <table class="crm-table">
+        <table class="crm-table" [class.crm-table-admin]="isAdmin()">
           <thead>
-            <tr>
-              <th class="col-serial">S.No</th>
-              <th>Industry</th>
-              <th>Sector</th>
-              <th>Coordinator</th>
-              <th>Remarks</th>
-              <th>Follow-up</th>
-              <th>Quarter ending</th>
-            </tr>
+            @if (isAdmin()) {
+              <tr>
+                <th class="col-serial">S.No</th>
+                <th>Industry name</th>
+                <th>Sector</th>
+                <th>Location</th>
+                <th>Purchaser name</th>
+                <th>Purchaser contact</th>
+                <th>Purchaser email</th>
+                <th>Maintenance name</th>
+                <th>Maintenance contact</th>
+                <th>Maintenance email</th>
+                <th>Follow-up date</th>
+                <th>Meeting date</th>
+                <th>Coordinator name</th>
+                <th>Remarks</th>
+                <th class="col-actions">Edit</th>
+              </tr>
+            } @else {
+              <tr>
+                <th class="col-serial">S.No</th>
+                <th>Industry</th>
+                <th>Sector</th>
+                <th>Coordinator</th>
+                <th>Remarks</th>
+                <th>Follow-up</th>
+                <th>Quarter ending</th>
+              </tr>
+            }
           </thead>
           <tbody>
             @for (customer of filteredCustomers(); track customer.id) {
@@ -103,13 +121,39 @@
                 [class.inactive-row]="customer.isActive === false"
                 (click)="selectCustomer(customer)"
               >
-                <td class="col-serial">{{ customer.serialNumber }}</td>
-                <td>{{ customer.industryName }}</td>
-                <td>{{ displayValue(customer.sector) }}</td>
-                <td>{{ displayValue(customer.coordinatorName) }}</td>
-                <td class="col-remark">{{ displayValue(customer.remark) }}</td>
-                <td>{{ formatDate(customer.followUpDate) }}</td>
-                <td>{{ formatDate(customer.quarterEnding) }}</td>
+                @if (isAdmin()) {
+                  <td class="col-serial">{{ customer.serialNumber }}</td>
+                  <td>{{ customer.industryName }}</td>
+                  <td>{{ displayValue(customer.sector) }}</td>
+                  <td>{{ displayValue(customer.location) }}</td>
+                  <td>{{ displayValue(customer.purchaserName) }}</td>
+                  <td>{{ displayValue(customer.purchaserPhone) }}</td>
+                  <td>{{ displayValue(customer.purchaserEmail) }}</td>
+                  <td>{{ displayValue(customer.maintenanceName) }}</td>
+                  <td>{{ displayValue(customer.maintenancePhone) }}</td>
+                  <td>{{ displayValue(customer.maintenanceEmail) }}</td>
+                  <td>{{ formatDate(customer.followUpDate) }}</td>
+                  <td>{{ formatDate(customer.meetingDate) }}</td>
+                  <td>{{ displayValue(customer.coordinatorName) }}</td>
+                  <td class="col-remark">{{ displayValue(customer.remark) }}</td>
+                  <td class="col-actions">
+                    <button
+                      type="button"
+                      class="btn-edit"
+                      (click)="editRow(customer, $event)"
+                    >
+                      Edit
+                    </button>
+                  </td>
+                } @else {
+                  <td class="col-serial">{{ customer.serialNumber }}</td>
+                  <td>{{ customer.industryName }}</td>
+                  <td>{{ displayValue(customer.sector) }}</td>
+                  <td>{{ displayValue(customer.coordinatorName) }}</td>
+                  <td class="col-remark">{{ displayValue(customer.remark) }}</td>
+                  <td>{{ formatDate(customer.followUpDate) }}</td>
+                  <td>{{ formatDate(customer.quarterEnding) }}</td>
+                }
               </tr>
             }
           </tbody>

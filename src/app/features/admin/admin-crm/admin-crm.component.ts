@@ -76,7 +76,7 @@ export class AdminCrmComponent implements OnInit {
   );
   readonly errorMessage = signal<string | null>(null);
   readonly actionError = signal<string | null>(null);
-  readonly customers = signal<CrmCustomerSummary[]>([]);
+  readonly customers = signal<CrmCustomer[]>([]);
   readonly searchQuery = signal('');
   readonly showInactive = signal(false);
   readonly replaceOnUpload = signal(false);
@@ -101,6 +101,7 @@ export class AdminCrmComponent implements OnInit {
   readonly filteredCustomers = computed(() => {
     const query = this.searchQuery().trim().toLowerCase();
     const includeInactive = this.showInactive();
+    const admin = this.isAdmin();
 
     return this.customers().filter((customer) => {
       if (!includeInactive && customer.isActive === false) {
@@ -109,16 +110,26 @@ export class AdminCrmComponent implements OnInit {
       if (!query) {
         return true;
       }
-      const haystack = [
-        customer.industryName,
-        customer.sector,
-        customer.coordinatorName,
-        customer.remark,
-      ]
+      const haystack = admin
+        ? [
+            customer.industryName,
+            customer.sector,
+            customer.location,
+            customer.purchaserName,
+            customer.purchaserPhone,
+            customer.purchaserEmail,
+            customer.maintenanceName,
+            customer.maintenancePhone,
+            customer.maintenanceEmail,
+            customer.coordinatorName,
+            customer.remark,
+          ]
+        : [customer.industryName, customer.sector, customer.coordinatorName, customer.remark];
+      return haystack
         .filter(Boolean)
         .join(' ')
-        .toLowerCase();
-      return haystack.includes(query);
+        .toLowerCase()
+        .includes(query);
     });
   });
 
@@ -130,31 +141,69 @@ export class AdminCrmComponent implements OnInit {
     this.loading.set(true);
     this.errorMessage.set(null);
 
-    this.crmService.list(true).subscribe({
-      next: (list) => {
-        this.customers.set(list);
-        this.loading.set(false);
+    if (this.isAdmin()) {
+      this.crmService.listFull(true).subscribe({
+        next: (list: CrmCustomer[]) => this.onListLoaded(list),
+        error: (err: unknown) => this.onListError(err),
+      });
+      return;
+    }
 
-        const selected = this.selectedId();
-        if (selected && list.some((customer) => customer.id === selected)) {
-          this.loadDetail(selected, false);
-        } else {
-          this.closeDetail();
-        }
-      },
-      error: (err) => {
-        this.loading.set(false);
-        this.errorMessage.set('Could not load CRM customers.');
-        this.toast.fromApiError(err, 'Could not load CRM customers.');
-      },
+    this.crmService.list(true).subscribe({
+      next: (list: CrmCustomerSummary[]) =>
+        this.onListLoaded(list.map((row) => this.summaryToRow(row))),
+      error: (err: unknown) => this.onListError(err),
     });
   }
 
-  selectCustomer(customer: CrmCustomerSummary): void {
+  private onListLoaded(rows: CrmCustomer[]): void {
+    this.customers.set(rows);
+    this.loading.set(false);
+
+    const selected = this.selectedId();
+    if (selected && rows.some((customer) => customer.id === selected)) {
+      this.loadDetail(selected, false);
+    } else {
+      this.closeDetail();
+    }
+  }
+
+  private onListError(err: unknown): void {
+    this.loading.set(false);
+    this.errorMessage.set('Could not load CRM customers.');
+    this.toast.fromApiError(err, 'Could not load CRM customers.');
+  }
+
+  selectCustomer(customer: CrmCustomer): void {
     this.selectedId.set(customer.id);
     this.selectedDetail.set(null);
     this.detailOpen.set(true);
     this.loadDetail(customer.id, true);
+  }
+
+  editRow(customer: CrmCustomer, event: Event): void {
+    event.stopPropagation();
+    this.selectedId.set(customer.id);
+    this.actionError.set(null);
+
+    if (this.isAdmin()) {
+      this.selectedDetail.set(customer);
+      this.openEditWith(customer);
+      return;
+    }
+
+    this.detailLoading.set(true);
+    this.crmService.getById(customer.id).subscribe({
+      next: (detail) => {
+        this.selectedDetail.set(detail);
+        this.detailLoading.set(false);
+        this.openEditWith(detail);
+      },
+      error: (err) => {
+        this.detailLoading.set(false);
+        this.toast.fromApiError(err, 'Could not load customer for edit.');
+      },
+    });
   }
 
   closeDetail(): void {
@@ -173,6 +222,7 @@ export class AdminCrmComponent implements OnInit {
         const fromList = this.customers().find((customer) => customer.id === id);
         this.selectedDetail.set({
           ...detail,
+          serialNumber: detail.serialNumber || fromList?.serialNumber,
           isActive: detail.isActive ?? fromList?.isActive,
         });
         this.detailLoading.set(false);
@@ -229,7 +279,10 @@ export class AdminCrmComponent implements OnInit {
     if (!detail) {
       return;
     }
+    this.openEditWith(detail);
+  }
 
+  private openEditWith(detail: CrmCustomer): void {
     this.formMode.set('edit');
     this.form.set({
       industryName: detail.industryName ?? '',
@@ -397,5 +450,19 @@ export class AdminCrmComponent implements OnInit {
 
   private extractError(err: { error?: { message?: string } }): string {
     return err?.error?.message ?? 'Something went wrong. Please try again.';
+  }
+
+  private summaryToRow(row: CrmCustomerSummary): CrmCustomer {
+    return {
+      id: row.id,
+      serialNumber: row.serialNumber,
+      industryName: row.industryName,
+      sector: row.sector,
+      coordinatorName: row.coordinatorName,
+      remark: row.remark,
+      followUpDate: row.followUpDate,
+      quarterEnding: row.quarterEnding,
+      isActive: row.isActive,
+    };
   }
 }

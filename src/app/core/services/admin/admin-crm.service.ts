@@ -20,6 +20,12 @@ export class AdminCrmService {
     return this.http.get<CrmCustomerSummary[]>(this.baseUrl, { params });
   }
 
+  /** Admin-only: all Excel columns. */
+  listFull(includeInactive = false): Observable<CrmCustomer[]> {
+    const params = new HttpParams().set('includeInactive', String(includeInactive));
+    return this.http.get<CrmCustomer[]>(`${this.baseUrl}/full`, { params });
+  }
+
   getById(id: string): Observable<CrmCustomer> {
     return this.http.get<CrmCustomer>(`${this.baseUrl}/${id}`);
   }
