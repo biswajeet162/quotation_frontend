@@ -3,10 +3,11 @@ export interface CrmCustomerSummary {
   serialNumber: number;
   industryName: string;
   sector?: string | null;
+  location?: string | null;
   coordinatorName?: string | null;
   remark?: string | null;
   followUpDate?: string | null;
-  quarterEnding?: string | null;
+  meetingDate?: string | null;
   isActive: boolean;
 }
 

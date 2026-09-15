@@ -72,6 +72,18 @@ const ADMIN_SEARCH_SCOPES: { value: CrmSearchScope; label: string }[] = [
   { value: 'createdByName', label: 'Created by' },
 ];
 
+const SALES_SEARCH_SCOPES: { value: CrmSearchScope; label: string }[] = [
+  { value: 'all', label: 'All columns' },
+  { value: 'serialNumber', label: 'S.No' },
+  { value: 'industryName', label: 'Industry name' },
+  { value: 'sector', label: 'Sector' },
+  { value: 'location', label: 'Location' },
+  { value: 'coordinatorName', label: 'Coordinator' },
+  { value: 'remark', label: 'Remarks' },
+  { value: 'followUpDate', label: 'Follow-up' },
+  { value: 'meetingDate', label: 'Meeting' },
+];
+
 interface CrmFormState {
   industryName: string;
   sector: string;
@@ -143,7 +155,7 @@ export class AdminCrmComponent implements OnInit {
   readonly actionError = signal<string | null>(null);
   readonly customers = signal<CrmCustomer[]>([]);
   readonly searchQuery = signal('');
-  readonly showInactive = signal(false);
+  readonly showInactive = signal(true);
   readonly replaceOnUpload = signal(true);
   readonly selectedId = signal<string | null>(null);
   readonly selectedDetail = signal<CrmCustomer | null>(null);
@@ -156,10 +168,18 @@ export class AdminCrmComponent implements OnInit {
   readonly sortDir = signal<SortDir>('asc');
   readonly searchScope = signal<CrmSearchScope>('all');
   readonly adminSearchScopes = ADMIN_SEARCH_SCOPES;
+  readonly salesSearchScopes = SALES_SEARCH_SCOPES;
 
   readonly isAdmin = computed(() => this.auth.currentUser()?.role === 'ADMIN');
 
+  readonly searchScopes = computed(() =>
+    this.isAdmin() ? this.adminSearchScopes : this.salesSearchScopes,
+  );
+
   readonly canDeleteSelected = computed(() => {
+    if (!this.isAdmin()) {
+      return false;
+    }
     const detail = this.selectedDetail();
     if (!detail) {
       return false;
@@ -183,7 +203,7 @@ export class AdminCrmComponent implements OnInit {
       if (!query) {
         return true;
       }
-      return this.matchesSearch(customer, query, admin ? scope : 'all', admin);
+      return this.matchesSearch(customer, query, scope, admin);
     });
 
     return [...filtered].sort((left, right) => {
@@ -251,10 +271,11 @@ export class AdminCrmComponent implements OnInit {
           String(customer.serialNumber ?? ''),
           customer.industryName,
           customer.sector,
+          customer.location,
           customer.coordinatorName,
           customer.remark,
           customer.followUpDate,
-          customer.quarterEnding,
+          customer.meetingDate,
         ];
     return haystack
       .filter(Boolean)
@@ -672,6 +693,9 @@ export class AdminCrmComponent implements OnInit {
   }
 
   deleteSelected(): void {
+    if (!this.isAdmin()) {
+      return;
+    }
     const detail = this.selectedDetail();
     if (!detail || !this.canDeleteSelected()) {
       return;
@@ -761,10 +785,11 @@ export class AdminCrmComponent implements OnInit {
       serialNumber: row.serialNumber,
       industryName: row.industryName,
       sector: row.sector,
+      location: row.location,
       coordinatorName: row.coordinatorName,
       remark: row.remark,
       followUpDate: row.followUpDate,
-      quarterEnding: row.quarterEnding,
+      meetingDate: row.meetingDate,
       isActive: row.isActive,
     };
   }

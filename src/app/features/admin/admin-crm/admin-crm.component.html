@@ -25,19 +25,17 @@
           [ngModel]="searchQuery()"
           (ngModelChange)="searchQuery.set($event)"
         />
-        @if (isAdmin()) {
-          <label class="visually-hidden" for="crm-search-scope">Search in</label>
-          <select
-            id="crm-search-scope"
-            class="search-scope"
-            [ngModel]="searchScope()"
-            (ngModelChange)="searchScope.set($event)"
-          >
-            @for (scope of adminSearchScopes; track scope.value) {
-              <option [ngValue]="scope.value">{{ scope.label }}</option>
-            }
-          </select>
-        }
+        <label class="visually-hidden" for="crm-search-scope">Search in</label>
+        <select
+          id="crm-search-scope"
+          class="search-scope"
+          [ngModel]="searchScope()"
+          (ngModelChange)="searchScope.set($event)"
+        >
+          @for (scope of searchScopes(); track scope.value) {
+            <option [ngValue]="scope.value">{{ scope.label }}</option>
+          }
+        </select>
       </div>
     </div>
 
@@ -204,12 +202,17 @@
                 </th>
                 <th [class.sort-active]="isSortedBy('industryName')">
                   <button type="button" class="sort-btn" (click)="toggleSort('industryName', $event)">
-                    <span>Industry</span><span class="sort-icon">{{ sortIndicator('industryName') }}</span>
+                    <span>Industry name</span><span class="sort-icon">{{ sortIndicator('industryName') }}</span>
                   </button>
                 </th>
                 <th [class.sort-active]="isSortedBy('sector')">
                   <button type="button" class="sort-btn" (click)="toggleSort('sector', $event)">
                     <span>Sector</span><span class="sort-icon">{{ sortIndicator('sector') }}</span>
+                  </button>
+                </th>
+                <th [class.sort-active]="isSortedBy('location')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('location', $event)">
+                    <span>Location</span><span class="sort-icon">{{ sortIndicator('location') }}</span>
                   </button>
                 </th>
                 <th [class.sort-active]="isSortedBy('coordinatorName')">
@@ -227,9 +230,9 @@
                     <span>Follow-up</span><span class="sort-icon">{{ sortIndicator('followUpDate') }}</span>
                   </button>
                 </th>
-                <th [class.sort-active]="isSortedBy('quarterEnding')">
-                  <button type="button" class="sort-btn" (click)="toggleSort('quarterEnding', $event)">
-                    <span>Quarter ending</span><span class="sort-icon">{{ sortIndicator('quarterEnding') }}</span>
+                <th [class.sort-active]="isSortedBy('meetingDate')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('meetingDate', $event)">
+                    <span>Meeting</span><span class="sort-icon">{{ sortIndicator('meetingDate') }}</span>
                   </button>
                 </th>
               </tr>
@@ -274,10 +277,11 @@
                   <td class="col-serial">{{ customer.serialNumber }}</td>
                   <td>{{ customer.industryName }}</td>
                   <td>{{ displayValue(customer.sector) }}</td>
+                  <td>{{ displayValue(customer.location) }}</td>
                   <td>{{ displayValue(customer.coordinatorName) }}</td>
                   <td class="col-remark">{{ displayValue(customer.remark) }}</td>
                   <td>{{ formatDate(customer.followUpDate) }}</td>
-                  <td>{{ formatDate(customer.quarterEnding) }}</td>
+                  <td>{{ formatDate(customer.meetingDate) }}</td>
                 }
               </tr>
             }
