@@ -61,9 +61,19 @@
 }
 
 .btn-danger {
-  background: #fff;
-  border: 1px solid #fecaca;
-  color: #b91c1c;
+  background: #dc2626;
+  border: 1px solid #dc2626;
+  color: #fff;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #b91c1c;
+  border-color: #b91c1c;
+}
+
+.btn-danger:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 .toolbar {
@@ -430,6 +440,7 @@ th.sort-active .sort-icon {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .detail-section {
