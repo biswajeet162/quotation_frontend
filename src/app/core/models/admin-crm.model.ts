@@ -90,8 +90,25 @@ export interface CrmChangeLogEntry {
   changedAt: string;
 }
 
+export interface CrmChangeEdit {
+  batchId: string;
+  customerId?: string | null;
+  industryName: string;
+  eventType: 'FIELD_CHANGE' | 'EXCEL_UPLOAD' | 'EXCEL_ACTIVATE' | string;
+  sourceFileName?: string | null;
+  changedByName?: string | null;
+  changedByRole?: string | null;
+  changedByRoleLabel?: string | null;
+  changedAt: string;
+  fieldCount: number;
+  summary: string;
+  oldValue?: string | null;
+  newValue?: string | null;
+  changes: CrmChangeLogEntry[];
+}
+
 export interface CrmChangeHistoryDay {
   date: string;
-  changeCount: number;
-  changes: CrmChangeLogEntry[];
+  editCount: number;
+  edits: CrmChangeEdit[];
 }

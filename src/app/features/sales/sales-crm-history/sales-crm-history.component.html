@@ -4,7 +4,9 @@
   <div class="toolbar">
     <div class="toolbar-copy">
       <h1 class="toolbar-title">History</h1>
-      <p class="toolbar-subtitle">CRM field edits only, grouped by day.</p>
+      <p class="toolbar-subtitle">
+        One row per edit or Excel update. Click a row for details. Who changed it is on the right.
+      </p>
     </div>
     <div class="toolbar-actions">
       <a routerLink="/admin/crm" class="btn-secondary btn-compact">Back to CRM</a>
@@ -19,7 +21,7 @@
       <div class="alert-error" role="alert">{{ errorMessage() }}</div>
     } @else if (days().length === 0) {
       <p class="state-message">
-        No edits recorded yet. Changes appear here after someone updates a CRM row.
+        No edits recorded yet. Field edits and Excel uploads appear here.
       </p>
     } @else {
       <div class="history-body">
@@ -28,28 +30,79 @@
             <header class="change-day-header">
               <h2>{{ formatDayHeading(day.date) }}</h2>
               <span class="change-day-count">
-                {{ day.changeCount }} change{{ day.changeCount === 1 ? '' : 's' }}
+                {{ day.editCount }} update{{ day.editCount === 1 ? '' : 's' }}
               </span>
             </header>
             <ul class="change-list">
-              @for (change of day.changes; track change.id) {
-                <li class="change-item">
-                  <div class="change-item-top">
-                    <strong class="change-industry">{{ change.industryName }}</strong>
-                    <span class="change-time">{{ formatDateTime(change.changedAt) }}</span>
-                  </div>
-                  <div class="change-field">{{ change.fieldLabel }}</div>
-                  <div class="change-values">
-                    <span class="change-old">{{ change.oldValue || '(empty)' }}</span>
-                    <span class="change-arrow" aria-hidden="true">→</span>
-                    <span class="change-new">{{ change.newValue || '(empty)' }}</span>
-                  </div>
-                  @if (change.changedByName) {
-                    <div class="change-actor">
-                      by {{ change.changedByName }}
-                      @if (change.changedByRole) {
-                        ({{ change.changedByRole }})
+              @for (edit of day.edits; track edit.batchId) {
+                <li
+                  class="change-item"
+                  [class.expanded]="isExpanded(edit.batchId)"
+                  [class.excel-item]="isExcelEvent(edit)"
+                >
+                  <button
+                    type="button"
+                    class="change-row"
+                    (click)="onRowClick(edit)"
+                    [attr.aria-expanded]="isExcelEvent(edit) ? undefined : isExpanded(edit.batchId)"
+                  >
+                    <div class="change-row-main">
+                      <strong class="change-industry">{{ edit.industryName }}</strong>
+                      @if (isExcelEvent(edit)) {
+                        <span class="change-summary">
+                          Excel sheet changed
+                          @if (edit.oldValue && edit.newValue) {
+                            from “{{ edit.oldValue }}” to “{{ edit.newValue }}”
+                          }
+                        </span>
+                      } @else {
+                        <span class="change-summary">
+                          {{ edit.fieldCount }} field{{ edit.fieldCount === 1 ? '' : 's' }} changed
+                          @if (edit.summary) {
+                            · {{ edit.summary }}
+                          }
+                        </span>
+                        @if (edit.sourceFileName) {
+                          <span class="change-file">File: {{ edit.sourceFileName }}</span>
+                        }
                       }
+                    </div>
+                    <div class="change-row-meta">
+                      <div class="change-actor-right">
+                        <span class="change-actor-name">{{ actorRightLabel(edit) }}</span>
+                        <span class="change-time">{{ formatDateTime(edit.changedAt) }}</span>
+                      </div>
+                      <span class="change-chevron" aria-hidden="true">
+                        @if (isExcelEvent(edit)) {
+                          ›
+                        } @else {
+                          {{ isExpanded(edit.batchId) ? '▾' : '▸' }}
+                        }
+                      </span>
+                    </div>
+                  </button>
+
+                  @if (!isExcelEvent(edit) && isExpanded(edit.batchId)) {
+                    <div class="change-detail">
+                      <p class="change-detail-title">What changed</p>
+                      @if (edit.sourceFileName) {
+                        <p class="change-detail-file">In file: {{ edit.sourceFileName }}</p>
+                      }
+                      <ul class="change-detail-list">
+                        @for (change of edit.changes; track change.id) {
+                          <li class="change-detail-item">
+                            <div class="change-detail-top">
+                              <span class="change-field">{{ change.fieldLabel }}</span>
+                              <span class="change-time">{{ formatDateTime(change.changedAt) }}</span>
+                            </div>
+                            <div class="change-values">
+                              <span class="change-old">{{ change.oldValue || '(empty)' }}</span>
+                              <span class="change-arrow" aria-hidden="true">→</span>
+                              <span class="change-new">{{ change.newValue || '(empty)' }}</span>
+                            </div>
+                          </li>
+                        }
+                      </ul>
                     </div>
                   }
                 </li>
@@ -61,3 +114,53 @@
     }
   }
 </section>
+
+@if (excelModalEdit(); as excel) {
+  <div class="modal-backdrop" (click)="closeExcelModal()">
+    <div
+      class="modal-panel"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="excel-history-title"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="modal-header">
+        <h2 id="excel-history-title">Excel sheet updated</h2>
+        <button type="button" class="modal-close" aria-label="Close" (click)="closeExcelModal()">
+          ×
+        </button>
+      </header>
+      <div class="modal-body">
+        <dl class="excel-meta">
+          <div>
+            <dt>Previous file</dt>
+            <dd>{{ excel.oldValue || '(none)' }}</dd>
+          </div>
+          <div>
+            <dt>New file</dt>
+            <dd>{{ excel.newValue || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Changed by</dt>
+            <dd>{{ actorRightLabel(excel) }}</dd>
+          </div>
+          <div>
+            <dt>When</dt>
+            <dd>{{ formatDateTime(excel.changedAt) }}</dd>
+          </div>
+          @if (excel.eventType === 'EXCEL_ACTIVATE') {
+            <div class="full">
+              <dt>Action</dt>
+              <dd>Admin switched the active CRM dataset to this Excel upload.</dd>
+            </div>
+          } @else {
+            <div class="full">
+              <dt>Action</dt>
+              <dd>Admin uploaded a new Excel sheet. This became the active CRM data.</dd>
+            </div>
+          }
+        </dl>
+      </div>
+    </div>
+  </div>
+}

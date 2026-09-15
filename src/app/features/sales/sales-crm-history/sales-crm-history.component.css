@@ -128,35 +128,149 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.55rem;
 }
 
 .change-item {
   background: #fff;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
-  padding: 0.85rem 1rem;
+  overflow: hidden;
 }
 
-.change-item-top {
+.change-item.expanded {
+  border-color: #99f6e4;
+  box-shadow: 0 0 0 1px rgba(15, 118, 110, 0.08);
+}
+
+.change-row {
+  width: 100%;
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 0.75rem;
-  align-items: baseline;
+  text-align: left;
+  padding: 0.85rem 1rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.change-row:hover {
+  background: #f8fafc;
+}
+
+.change-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
 }
 
 .change-industry {
   color: #0f172a;
 }
 
+.change-summary {
+  font-size: 0.85rem;
+  color: #475569;
+  word-break: break-word;
+}
+
+.change-file {
+  font-size: 0.78rem;
+  color: #0f766e;
+  font-weight: 600;
+}
+
+.change-row-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.change-actor-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
+}
+
+.change-actor-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #0f172a;
+  white-space: nowrap;
+}
+
 .change-time {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: #64748b;
   white-space: nowrap;
 }
 
+.change-chevron {
+  color: #0f766e;
+  font-size: 0.95rem;
+  width: 1rem;
+  text-align: center;
+}
+
+.excel-item {
+  border-color: #99f6e4;
+  background: #f0fdfa;
+}
+
+.change-detail {
+  padding: 0 1rem 0.95rem;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.change-detail-title {
+  margin: 0.75rem 0 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #64748b;
+}
+
+.change-detail-file {
+  margin: 0 0 0.55rem;
+  font-size: 0.82rem;
+  color: #0f766e;
+  font-weight: 600;
+}
+
+.change-detail-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.change-detail-item {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.7rem 0.85rem;
+}
+
+.change-detail-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: baseline;
+}
+
 .change-field {
-  margin-top: 0.35rem;
   font-size: 0.8rem;
   font-weight: 600;
   color: #0f766e;
@@ -187,8 +301,80 @@
   word-break: break-word;
 }
 
-.change-actor {
-  margin-top: 0.4rem;
-  font-size: 0.78rem;
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1200;
+}
+
+.modal-panel {
+  width: min(520px, 100%);
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.15);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.modal-close {
+  border: none;
+  background: #dc2626;
+  color: #fff;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.modal-body {
+  padding: 1.1rem 1.25rem 1.25rem;
+}
+
+.excel-meta {
+  margin: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.excel-meta div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.excel-meta .full {
+  grid-column: 1 / -1;
+}
+
+.excel-meta dt {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
   color: #64748b;
+}
+
+.excel-meta dd {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #0f172a;
+  word-break: break-word;
 }
