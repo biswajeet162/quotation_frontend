@@ -40,6 +40,13 @@ export class AdminCrmService {
     return this.http.put<CrmCustomer>(`${this.baseUrl}/${id}`, request);
   }
 
+  updateWorkflowStatus(
+    id: string,
+    status: 'NONE' | 'REVIEW' | 'DONE',
+  ): Observable<CrmCustomer> {
+    return this.http.put<CrmCustomer>(`${this.baseUrl}/${id}/workflow-status`, { status });
+  }
+
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }

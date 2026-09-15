@@ -8,7 +8,10 @@ export interface CrmCustomerSummary {
   remark?: string | null;
   followUpDate?: string | null;
   meetingDate?: string | null;
+  workflowStatus?: 'NONE' | 'REVIEW' | 'DONE' | string | null;
   isActive: boolean;
+  updatedAt?: string;
+  createdAt?: string;
 }
 
 export interface CrmCustomer {
@@ -28,6 +31,7 @@ export interface CrmCustomer {
   quarterEnding?: string | null;
   coordinatorName?: string | null;
   remark?: string | null;
+  workflowStatus?: 'NONE' | 'REVIEW' | 'DONE' | string | null;
   isActive: boolean;
   createdByUserId?: string | null;
   createdByName?: string | null;

@@ -137,6 +137,7 @@ export class AdminCrmComponent implements OnInit {
   readonly saving = signal(false);
   readonly deleting = signal(false);
   readonly uploading = signal(false);
+  readonly statusSaving = signal(false);
   readonly historyOpen = signal(false);
   readonly historyLoading = signal(false);
   readonly historyActivatingId = signal<string | null>(null);
@@ -148,6 +149,7 @@ export class AdminCrmComponent implements OnInit {
       this.saving() ||
       this.deleting() ||
       this.uploading() ||
+      this.statusSaving() ||
       this.historyLoading() ||
       this.historyActivatingId() !== null,
   );
@@ -606,6 +608,52 @@ export class AdminCrmComponent implements OnInit {
     this.openEditWith(detail);
   }
 
+  workflowStatus(customer: { workflowStatus?: string | null }): 'NONE' | 'REVIEW' | 'DONE' {
+    const value = customer.workflowStatus?.trim().toUpperCase();
+    if (value === 'REVIEW' || value === 'DONE') {
+      return value;
+    }
+    return 'NONE';
+  }
+
+  setWorkflowStatus(status: 'REVIEW' | 'DONE', event?: Event): void {
+    event?.preventDefault();
+    event?.stopPropagation();
+    const detail = this.selectedDetail();
+    if (!detail?.id || this.statusSaving()) {
+      return;
+    }
+    const next = this.workflowStatus(detail) === status ? 'NONE' : status;
+    this.statusSaving.set(true);
+    this.actionError.set(null);
+    this.crmService.updateWorkflowStatus(detail.id, next).subscribe({
+      next: (updated) => {
+        this.statusSaving.set(false);
+        this.selectedDetail.set(updated);
+        this.customers.update((rows) =>
+          rows.map((row) =>
+            row.id === updated.id
+              ? {
+                  ...row,
+                  workflowStatus: updated.workflowStatus,
+                  updatedAt: updated.updatedAt,
+                  updatedByName: updated.updatedByName,
+                  updatedByRole: updated.updatedByRole,
+                }
+              : row,
+          ),
+        );
+        const label = next === 'NONE' ? 'cleared' : next === 'DONE' ? 'Done' : 'Review';
+        this.toast.success(next === 'NONE' ? 'Status cleared.' : `Marked as ${label}.`);
+      },
+      error: (err) => {
+        this.statusSaving.set(false);
+        this.actionError.set(this.extractError(err));
+        this.toast.fromApiError(err, 'Could not update status.');
+      },
+    });
+  }
+
   private openEditWith(detail: CrmCustomer): void {
     this.formMode.set('edit');
     this.form.set({
@@ -790,7 +838,10 @@ export class AdminCrmComponent implements OnInit {
       remark: row.remark,
       followUpDate: row.followUpDate,
       meetingDate: row.meetingDate,
+      workflowStatus: row.workflowStatus,
       isActive: row.isActive,
+      updatedAt: row.updatedAt,
+      createdAt: row.createdAt,
     };
   }
 }

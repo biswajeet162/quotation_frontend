@@ -106,6 +106,7 @@
           <thead>
             @if (isAdmin()) {
               <tr>
+                <th class="col-status" aria-label="Status"></th>
                 <th class="col-serial" [class.sort-active]="isSortedBy('serialNumber')">
                   <button type="button" class="sort-btn" (click)="toggleSort('serialNumber', $event)">
                     <span>S.No</span><span class="sort-icon">{{ sortIndicator('serialNumber') }}</span>
@@ -183,7 +184,7 @@
                 </th>
                 <th [class.sort-active]="isSortedBy('updatedAt')">
                   <button type="button" class="sort-btn" (click)="toggleSort('updatedAt', $event)">
-                    <span>Updated at</span><span class="sort-icon">{{ sortIndicator('updatedAt') }}</span>
+                    <span>Updated date</span><span class="sort-icon">{{ sortIndicator('updatedAt') }}</span>
                   </button>
                 </th>
                 <th [class.sort-active]="isSortedBy('createdAt')">
@@ -195,6 +196,7 @@
               </tr>
             } @else {
               <tr>
+                <th class="col-status" aria-label="Status"></th>
                 <th class="col-serial" [class.sort-active]="isSortedBy('serialNumber')">
                   <button type="button" class="sort-btn" (click)="toggleSort('serialNumber', $event)">
                     <span>S.No</span><span class="sort-icon">{{ sortIndicator('serialNumber') }}</span>
@@ -235,6 +237,11 @@
                     <span>Meeting</span><span class="sort-icon">{{ sortIndicator('meetingDate') }}</span>
                   </button>
                 </th>
+                <th [class.sort-active]="isSortedBy('updatedAt')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('updatedAt', $event)">
+                    <span>Updated date</span><span class="sort-icon">{{ sortIndicator('updatedAt') }}</span>
+                  </button>
+                </th>
               </tr>
             }
           </thead>
@@ -247,6 +254,13 @@
                 (click)="selectCustomer(customer)"
               >
                 @if (isAdmin()) {
+                  <td class="col-status">
+                    @if (workflowStatus(customer) === 'DONE') {
+                      <span class="status-mark status-done" title="Done">✓</span>
+                    } @else if (workflowStatus(customer) === 'REVIEW') {
+                      <span class="status-mark status-review" title="Review">●</span>
+                    }
+                  </td>
                   <td class="col-serial">{{ customer.serialNumber }}</td>
                   <td>{{ customer.industryName }}</td>
                   <td>{{ displayValue(customer.sector) }}</td>
@@ -262,7 +276,7 @@
                   <td>{{ displayValue(customer.coordinatorName) }}</td>
                   <td class="col-remark">{{ displayValue(customer.remark) }}</td>
                   <td>{{ actorLabel(customer.updatedByName, customer.updatedByRole) }}</td>
-                  <td>{{ formatDateTime(customer.updatedAt) }}</td>
+                  <td>{{ formatDate(customer.updatedAt || customer.createdAt) }}</td>
                   <td>{{ formatDateTime(customer.createdAt) }}</td>
                   <td class="col-actions">
                     <button
@@ -274,6 +288,13 @@
                     </button>
                   </td>
                 } @else {
+                  <td class="col-status">
+                    @if (workflowStatus(customer) === 'DONE') {
+                      <span class="status-mark status-done" title="Done">✓</span>
+                    } @else if (workflowStatus(customer) === 'REVIEW') {
+                      <span class="status-mark status-review" title="Review">●</span>
+                    }
+                  </td>
                   <td class="col-serial">{{ customer.serialNumber }}</td>
                   <td>{{ customer.industryName }}</td>
                   <td>{{ displayValue(customer.sector) }}</td>
@@ -282,6 +303,7 @@
                   <td class="col-remark">{{ displayValue(customer.remark) }}</td>
                   <td>{{ formatDate(customer.followUpDate) }}</td>
                   <td>{{ formatDate(customer.meetingDate) }}</td>
+                  <td>{{ formatDate(customer.updatedAt || customer.createdAt) }}</td>
                 }
               </tr>
             }
@@ -320,17 +342,39 @@
           }
 
           <div class="detail-actions">
-            <button type="button" class="btn-danger" (click)="openEdit()">Edit</button>
-            @if (canDeleteSelected()) {
+            <div class="detail-actions-left">
               <button
                 type="button"
-                class="btn-danger"
-                [disabled]="deleting()"
-                (click)="deleteSelected()"
+                class="btn-review"
+                [class.active]="workflowStatus(detail) === 'REVIEW'"
+                [disabled]="statusSaving()"
+                (click)="setWorkflowStatus('REVIEW', $event)"
               >
-                {{ deleting() ? 'Deleting…' : 'Delete' }}
+                Review
               </button>
-            }
+              <button
+                type="button"
+                class="btn-done"
+                [class.active]="workflowStatus(detail) === 'DONE'"
+                [disabled]="statusSaving()"
+                (click)="setWorkflowStatus('DONE', $event)"
+              >
+                Done
+              </button>
+            </div>
+            <div class="detail-actions-right">
+              <button type="button" class="btn-danger" (click)="openEdit()">Edit</button>
+              @if (canDeleteSelected()) {
+                <button
+                  type="button"
+                  class="btn-danger"
+                  [disabled]="deleting()"
+                  (click)="deleteSelected()"
+                >
+                  {{ deleting() ? 'Deleting…' : 'Delete' }}
+                </button>
+              }
+            </div>
           </div>
 
           <div class="detail-section">
