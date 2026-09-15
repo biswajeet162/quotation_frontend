@@ -15,7 +15,7 @@
 
       @if (companyProfile(); as profile) {
         <form class="profile-form" (ngSubmit)="saveProfile()">
-          @if (!isAdmin()) {
+          @if (!usesAdminPortalProfile()) {
           <section class="company-banner" aria-labelledby="company-banner-title">
             <div class="logo-panel">
               <input
@@ -141,7 +141,7 @@
 
           <section class="profile-panel" aria-labelledby="company-details-title">
             <div class="panel-head panel-head-row">
-              <h2 id="company-details-title">{{ isAdmin() ? 'Portal company details' : (isConsumer() ? 'Company details' : 'Company details') }}</h2>
+              <h2 id="company-details-title">{{ isAdmin() ? 'Portal company details' : 'Company details' }}</h2>
               @if (!isConsumer() && !editDetailsMode()) {
                 <button
                   type="button"
@@ -272,7 +272,7 @@
                     }
                   </dd>
                 </div>
-                @if (isAdmin()) {
+                @if (usesAdminPortalProfile()) {
                   <div class="info-item">
                     <dt>Company phone (2)</dt>
                     <dd>

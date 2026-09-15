@@ -51,6 +51,7 @@ const emptyForm = (): UserFormState => ({
 const ROLE_TABS: { role: RoleTab; label: string }[] = [
   { role: 'CONSUMER', label: 'Consumers' },
   { role: 'ADMIN', label: 'Admins' },
+  { role: 'SALES', label: 'Sales' },
   { role: 'DISTRIBUTOR', label: 'Distributors' },
 ];
 
@@ -347,7 +348,18 @@ export class AdminUsersComponent implements OnInit {
   }
 
   roleLabel(role: UserRole): string {
-    return this.roleTabs.find((tab) => tab.role === role)?.label.slice(0, -1) ?? role;
+    switch (role) {
+      case 'CONSUMER':
+        return 'Consumer';
+      case 'ADMIN':
+        return 'Admin';
+      case 'SALES':
+        return 'Sales';
+      case 'DISTRIBUTOR':
+        return 'Distributor';
+      default:
+        return role;
+    }
   }
 
   private toCreateRequest(state: UserFormState): CreateAdminUserRequest {

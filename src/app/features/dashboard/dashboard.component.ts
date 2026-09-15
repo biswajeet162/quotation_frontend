@@ -3,14 +3,23 @@ import { AuthService } from '../../core/services/auth/auth.service';
 import { AdminDashboardComponent } from './admin-dashboard/admin-dashboard.component';
 import { ConsumerDashboardComponent } from './consumer-dashboard/consumer-dashboard.component';
 import { DistributorDashboardComponent } from './distributor-dashboard/distributor-dashboard.component';
+import { SalesDashboardComponent } from './sales-dashboard/sales-dashboard.component';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [AdminDashboardComponent, ConsumerDashboardComponent, DistributorDashboardComponent],
+  imports: [
+    AdminDashboardComponent,
+    ConsumerDashboardComponent,
+    DistributorDashboardComponent,
+    SalesDashboardComponent,
+  ],
   template: `
     @switch (role()) {
       @case ('ADMIN') {
         <app-admin-dashboard />
+      }
+      @case ('SALES') {
+        <app-sales-dashboard />
       }
       @case ('CONSUMER') {
         <app-consumer-dashboard />

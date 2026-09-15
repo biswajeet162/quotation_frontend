@@ -1,0 +1,61 @@
+<section class="dashboard">
+  <app-loading-overlay [loading]="loading()" message="Loading sales metrics…" />
+
+  <header class="dashboard-header">
+    <div>
+      <h1>Sales dashboard</h1>
+      @if (auth.currentUser(); as user) {
+        <p class="subtitle">{{ user.companyName || 'APS Sales' }} · {{ user.email }}</p>
+      }
+      <p class="muted">CRM overview for the sales team. Limited to customers, CRM, and profile.</p>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/admin/crm" class="btn-primary">Open CRM</a>
+      <a routerLink="/profile" class="btn-secondary">Profile</a>
+      <button type="button" class="btn-secondary" (click)="load()" [disabled]="loading()">
+        Refresh
+      </button>
+    </div>
+  </header>
+
+  @if (!loading()) {
+    @if (errorMessage()) {
+      <div class="alert-error" role="alert">{{ errorMessage() }}</div>
+    } @else {
+      <div class="kpi-grid">
+        <article class="kpi-card kpi-highlight">
+          <span class="kpi-label">Total CRM customers</span>
+          <span class="kpi-value">{{ totalCustomers() }}</span>
+        </article>
+        <article class="kpi-card">
+          <span class="kpi-label">Active customers</span>
+          <span class="kpi-value">{{ activeCustomers() }}</span>
+        </article>
+        <article class="kpi-card">
+          <span class="kpi-label">Inactive customers</span>
+          <span class="kpi-value">{{ inactiveCustomers() }}</span>
+        </article>
+        <article class="kpi-card">
+          <span class="kpi-label">Active share</span>
+          <span class="kpi-value">{{ activePercent() }}%</span>
+          <div class="percent-track" aria-hidden="true">
+            <div class="percent-fill" [style.width.%]="activePercent()"></div>
+          </div>
+        </article>
+      </div>
+
+      <nav class="quick-nav" aria-label="Sales shortcuts">
+        <a routerLink="/admin/crm" class="quick-card">
+          <span class="quick-icon">▤</span>
+          <span class="quick-title">CRM</span>
+          <span class="quick-desc">Manage customers and follow-ups</span>
+        </a>
+        <a routerLink="/profile" class="quick-card">
+          <span class="quick-icon">◇</span>
+          <span class="quick-title">Profile</span>
+          <span class="quick-desc">Update your sales account details</span>
+        </a>
+      </nav>
+    }
+  }
+</section>

@@ -92,10 +92,10 @@ export class SidebarComponent {
       ],
     },
     { label: 'Users', path: '/admin/users', icon: '◈', roles: ['ADMIN'] },
-    { label: 'CRM', path: '/admin/crm', icon: '▤', roles: ['ADMIN'] },
+    { label: 'CRM', path: '/admin/crm', icon: '▤', roles: ['ADMIN', 'SALES'] },
     { label: 'Gmail inbox', path: '/admin/gmail-inbox', icon: '✉', roles: ['ADMIN'] },
     { label: 'Company profile', path: '/profile', icon: '◇', roles: ['DISTRIBUTOR'] },
-    { label: 'Profile', path: '/profile', icon: '◇', roles: ['ADMIN', 'CONSUMER'] },
+    { label: 'Profile', path: '/profile', icon: '◇', roles: ['ADMIN', 'CONSUMER', 'SALES'] },
   ];
 
   readonly navItems = computed(() => {
@@ -178,6 +178,8 @@ export class SidebarComponent {
         return 'Customer';
       case 'DISTRIBUTOR':
         return 'Distributor';
+      case 'SALES':
+        return 'Sales';
       default:
         return role?.trim() || '';
     }

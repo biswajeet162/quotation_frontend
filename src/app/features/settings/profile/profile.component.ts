@@ -21,6 +21,7 @@ const ROLE_LABELS: Record<string, string> = {
   ADMIN: 'Administrator',
   CONSUMER: 'Consumer',
   DISTRIBUTOR: 'Distributor',
+  SALES: 'Sales',
 };
 
 interface ProfileFormState {
@@ -83,7 +84,11 @@ export class ProfileComponent implements OnInit {
   readonly isDistributor = computed(() => this.auth.currentUser()?.role === 'DISTRIBUTOR');
   readonly isConsumer = computed(() => this.auth.currentUser()?.role === 'CONSUMER');
   readonly isAdmin = computed(() => this.auth.currentUser()?.role === 'ADMIN');
-  readonly hasCompanyProfile = computed(() => this.isDistributor() || this.isConsumer() || this.isAdmin());
+  readonly isSales = computed(() => this.auth.currentUser()?.role === 'SALES');
+  readonly usesAdminPortalProfile = computed(() => this.isAdmin() || this.isSales());
+  readonly hasCompanyProfile = computed(
+    () => this.isDistributor() || this.isConsumer() || this.usesAdminPortalProfile(),
+  );
   readonly isBusy = computed(() => this.loading() || this.saving());
 
   private serverLogoObjectUrl: string | null = null;
@@ -119,7 +124,7 @@ export class ProfileComponent implements OnInit {
       return;
     }
 
-    if (this.isAdmin()) {
+    if (this.usesAdminPortalProfile()) {
       this.adminPortalProfileService.getProfile().subscribe({
         next: (profile) => {
           this.applyProfile(profile);
@@ -253,7 +258,7 @@ export class ProfileComponent implements OnInit {
       return;
     }
 
-    if (this.isAdmin()) {
+    if (this.usesAdminPortalProfile()) {
       this.saveAdminProfile(form).subscribe({
         next: (updated) => this.onProfileSaved(updated),
         error: (error: unknown) => this.onProfileSaveError(error),
@@ -363,7 +368,7 @@ export class ProfileComponent implements OnInit {
   }
 
   showExtendedCompanyFields(): boolean {
-    return this.isConsumer() || this.isAdmin();
+    return this.isConsumer() || this.usesAdminPortalProfile();
   }
 
   private saveConsumerProfile(form: ProfileFormState): Observable<ConsumerProfile> {
