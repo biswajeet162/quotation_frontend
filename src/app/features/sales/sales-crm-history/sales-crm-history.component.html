@@ -1,0 +1,63 @@
+<section class="page-card history-page">
+  <app-loading-overlay [loading]="loading()" message="Loading history…" />
+
+  <div class="toolbar">
+    <div class="toolbar-copy">
+      <h1 class="toolbar-title">History</h1>
+      <p class="toolbar-subtitle">CRM field edits only, grouped by day.</p>
+    </div>
+    <div class="toolbar-actions">
+      <a routerLink="/admin/crm" class="btn-secondary btn-compact">Back to CRM</a>
+      <button type="button" class="btn-primary btn-compact" (click)="load()" [disabled]="loading()">
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  @if (!loading()) {
+    @if (errorMessage()) {
+      <div class="alert-error" role="alert">{{ errorMessage() }}</div>
+    } @else if (days().length === 0) {
+      <p class="state-message">
+        No edits recorded yet. Changes appear here after someone updates a CRM row.
+      </p>
+    } @else {
+      <div class="history-body">
+        @for (day of days(); track day.date) {
+          <section class="change-day">
+            <header class="change-day-header">
+              <h2>{{ formatDayHeading(day.date) }}</h2>
+              <span class="change-day-count">
+                {{ day.changeCount }} change{{ day.changeCount === 1 ? '' : 's' }}
+              </span>
+            </header>
+            <ul class="change-list">
+              @for (change of day.changes; track change.id) {
+                <li class="change-item">
+                  <div class="change-item-top">
+                    <strong class="change-industry">{{ change.industryName }}</strong>
+                    <span class="change-time">{{ formatDateTime(change.changedAt) }}</span>
+                  </div>
+                  <div class="change-field">{{ change.fieldLabel }}</div>
+                  <div class="change-values">
+                    <span class="change-old">{{ change.oldValue || '(empty)' }}</span>
+                    <span class="change-arrow" aria-hidden="true">→</span>
+                    <span class="change-new">{{ change.newValue || '(empty)' }}</span>
+                  </div>
+                  @if (change.changedByName) {
+                    <div class="change-actor">
+                      by {{ change.changedByName }}
+                      @if (change.changedByRole) {
+                        ({{ change.changedByRole }})
+                      }
+                    </div>
+                  }
+                </li>
+              }
+            </ul>
+          </section>
+        }
+      </div>
+    }
+  }
+</section>

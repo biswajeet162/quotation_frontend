@@ -93,6 +93,7 @@ export class SidebarComponent {
     },
     { label: 'Users', path: '/admin/users', icon: '◈', roles: ['ADMIN'] },
     { label: 'CRM', path: '/admin/crm', icon: '▤', roles: ['ADMIN', 'SALES'] },
+    { label: 'History', path: '/sales/history', icon: '◷', roles: ['SALES'] },
     { label: 'Gmail inbox', path: '/admin/gmail-inbox', icon: '✉', roles: ['ADMIN'] },
     { label: 'Company profile', path: '/profile', icon: '◇', roles: ['DISTRIBUTOR'] },
     { label: 'Profile', path: '/profile', icon: '◇', roles: ['ADMIN', 'CONSUMER', 'SALES'] },

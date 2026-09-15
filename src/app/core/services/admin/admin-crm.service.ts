@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import {
   CreateCrmCustomerRequest,
+  CrmChangeHistoryDay,
   CrmCustomer,
   CrmCustomerSummary,
   CrmExcelUploadResult,
@@ -59,5 +60,10 @@ export class AdminCrmService {
   /** Admin-only: load a past upload as the active CRM dataset. */
   activateImportBatch(batchId: string): Observable<CrmCustomer[]> {
     return this.http.post<CrmCustomer[]>(`${this.baseUrl}/imports/${batchId}/activate`, {});
+  }
+
+  /** Field-level edit history (sales + admin). */
+  listChangeHistory(): Observable<CrmChangeHistoryDay[]> {
+    return this.http.get<CrmChangeHistoryDay[]>(`${this.baseUrl}/change-history`);
   }
 }

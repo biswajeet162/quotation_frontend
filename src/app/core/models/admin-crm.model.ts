@@ -76,3 +76,22 @@ export interface CrmImportBatch {
   isActive: boolean;
   createdAt: string;
 }
+
+export interface CrmChangeLogEntry {
+  id: string;
+  customerId: string;
+  industryName: string;
+  fieldName: string;
+  fieldLabel: string;
+  oldValue?: string | null;
+  newValue?: string | null;
+  changedByName?: string | null;
+  changedByRole?: string | null;
+  changedAt: string;
+}
+
+export interface CrmChangeHistoryDay {
+  date: string;
+  changeCount: number;
+  changes: CrmChangeLogEntry[];
+}

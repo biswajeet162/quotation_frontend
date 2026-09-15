@@ -11,6 +11,7 @@
     </div>
     <div class="header-actions">
       <a routerLink="/admin/crm" class="btn-primary">Open CRM</a>
+      <a routerLink="/sales/history" class="btn-secondary">History</a>
       <a routerLink="/profile" class="btn-secondary">Profile</a>
       <button type="button" class="btn-secondary" (click)="load()" [disabled]="loading()">
         Refresh
@@ -49,6 +50,11 @@
           <span class="quick-icon">▤</span>
           <span class="quick-title">CRM</span>
           <span class="quick-desc">Manage customers and follow-ups</span>
+        </a>
+        <a routerLink="/sales/history" class="quick-card">
+          <span class="quick-icon">◷</span>
+          <span class="quick-title">History</span>
+          <span class="quick-desc">See CRM edits grouped by day</span>
         </a>
         <a routerLink="/profile" class="quick-card">
           <span class="quick-icon">◇</span>
