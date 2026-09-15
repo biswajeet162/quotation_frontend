@@ -28,6 +28,12 @@ export interface CrmCustomer {
   coordinatorName?: string | null;
   remark?: string | null;
   isActive: boolean;
+  createdByUserId?: string | null;
+  createdByName?: string | null;
+  createdByRole?: string | null;
+  updatedByUserId?: string | null;
+  updatedByName?: string | null;
+  updatedByRole?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }

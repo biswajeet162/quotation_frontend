@@ -9,13 +9,28 @@
 
     <div class="search-field">
       <label class="visually-hidden" for="crm-search">Search customers</label>
-      <input
-        id="crm-search"
-        type="search"
-        placeholder="Search customers…"
-        [ngModel]="searchQuery()"
-        (ngModelChange)="searchQuery.set($event)"
-      />
+      <div class="search-control">
+        <input
+          id="crm-search"
+          type="search"
+          placeholder="Search customers…"
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+        />
+        @if (isAdmin()) {
+          <label class="visually-hidden" for="crm-search-scope">Search in</label>
+          <select
+            id="crm-search-scope"
+            class="search-scope"
+            [ngModel]="searchScope()"
+            (ngModelChange)="searchScope.set($event)"
+          >
+            @for (scope of adminSearchScopes; track scope.value) {
+              <option [ngValue]="scope.value">{{ scope.label }}</option>
+            }
+          </select>
+        }
+      </div>
     </div>
 
     @if (isAdmin()) {
@@ -155,6 +170,21 @@
                     <span>Remarks</span><span class="sort-icon">{{ sortIndicator('remark') }}</span>
                   </button>
                 </th>
+                <th [class.sort-active]="isSortedBy('updatedByName')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('updatedByName', $event)">
+                    <span>Updated by</span><span class="sort-icon">{{ sortIndicator('updatedByName') }}</span>
+                  </button>
+                </th>
+                <th [class.sort-active]="isSortedBy('updatedAt')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('updatedAt', $event)">
+                    <span>Updated at</span><span class="sort-icon">{{ sortIndicator('updatedAt') }}</span>
+                  </button>
+                </th>
+                <th [class.sort-active]="isSortedBy('createdAt')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('createdAt', $event)">
+                    <span>Created at</span><span class="sort-icon">{{ sortIndicator('createdAt') }}</span>
+                  </button>
+                </th>
                 <th class="col-actions">Edit</th>
               </tr>
             } @else {
@@ -220,6 +250,9 @@
                   <td>{{ formatDate(customer.meetingDate) }}</td>
                   <td>{{ displayValue(customer.coordinatorName) }}</td>
                   <td class="col-remark">{{ displayValue(customer.remark) }}</td>
+                  <td>{{ actorLabel(customer.updatedByName, customer.updatedByRole) }}</td>
+                  <td>{{ formatDateTime(customer.updatedAt) }}</td>
+                  <td>{{ formatDateTime(customer.createdAt) }}</td>
                   <td class="col-actions">
                     <button
                       type="button"

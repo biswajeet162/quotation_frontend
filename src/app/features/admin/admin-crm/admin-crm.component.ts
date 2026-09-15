@@ -13,6 +13,24 @@ import { LoadingOverlayComponent } from '../../../shared/components/loading-over
 
 type FormMode = 'create' | 'edit';
 type SortDir = 'asc' | 'desc';
+type CrmSearchScope =
+  | 'all'
+  | 'serialNumber'
+  | 'industryName'
+  | 'sector'
+  | 'location'
+  | 'purchaserName'
+  | 'purchaserPhone'
+  | 'purchaserEmail'
+  | 'maintenanceName'
+  | 'maintenancePhone'
+  | 'maintenanceEmail'
+  | 'followUpDate'
+  | 'meetingDate'
+  | 'coordinatorName'
+  | 'remark'
+  | 'updatedByName'
+  | 'createdByName';
 type CrmSortKey =
   | 'serialNumber'
   | 'industryName'
@@ -28,7 +46,30 @@ type CrmSortKey =
   | 'meetingDate'
   | 'coordinatorName'
   | 'remark'
-  | 'quarterEnding';
+  | 'quarterEnding'
+  | 'updatedByName'
+  | 'updatedAt'
+  | 'createdAt';
+
+const ADMIN_SEARCH_SCOPES: { value: CrmSearchScope; label: string }[] = [
+  { value: 'all', label: 'All columns' },
+  { value: 'serialNumber', label: 'S.No' },
+  { value: 'industryName', label: 'Industry name' },
+  { value: 'sector', label: 'Sector' },
+  { value: 'location', label: 'Location' },
+  { value: 'purchaserName', label: 'Purchaser name' },
+  { value: 'purchaserPhone', label: 'Purchaser contact' },
+  { value: 'purchaserEmail', label: 'Purchaser email' },
+  { value: 'maintenanceName', label: 'Maintenance name' },
+  { value: 'maintenancePhone', label: 'Maintenance contact' },
+  { value: 'maintenanceEmail', label: 'Maintenance email' },
+  { value: 'followUpDate', label: 'Follow-up date' },
+  { value: 'meetingDate', label: 'Meeting date' },
+  { value: 'coordinatorName', label: 'Coordinator name' },
+  { value: 'remark', label: 'Remarks' },
+  { value: 'updatedByName', label: 'Updated by' },
+  { value: 'createdByName', label: 'Created by' },
+];
 
 interface CrmFormState {
   industryName: string;
@@ -106,6 +147,8 @@ export class AdminCrmComponent implements OnInit {
   readonly form = signal<CrmFormState>(emptyForm());
   readonly sortKey = signal<CrmSortKey>('serialNumber');
   readonly sortDir = signal<SortDir>('asc');
+  readonly searchScope = signal<CrmSearchScope>('all');
+  readonly adminSearchScopes = ADMIN_SEARCH_SCOPES;
 
   readonly isAdmin = computed(() => this.auth.currentUser()?.role === 'ADMIN');
 
@@ -121,6 +164,7 @@ export class AdminCrmComponent implements OnInit {
     const query = this.searchQuery().trim().toLowerCase();
     const includeInactive = this.showInactive();
     const admin = this.isAdmin();
+    const scope = this.searchScope();
     const key = this.sortKey();
     const dir = this.sortDir();
     const multiplier = dir === 'asc' ? 1 : -1;
@@ -132,26 +176,7 @@ export class AdminCrmComponent implements OnInit {
       if (!query) {
         return true;
       }
-      const haystack = admin
-        ? [
-            customer.industryName,
-            customer.sector,
-            customer.location,
-            customer.purchaserName,
-            customer.purchaserPhone,
-            customer.purchaserEmail,
-            customer.maintenanceName,
-            customer.maintenancePhone,
-            customer.maintenanceEmail,
-            customer.coordinatorName,
-            customer.remark,
-          ]
-        : [customer.industryName, customer.sector, customer.coordinatorName, customer.remark];
-      return haystack
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase()
-        .includes(query);
+      return this.matchesSearch(customer, query, admin ? scope : 'all', admin);
     });
 
     return [...filtered].sort((left, right) => {
@@ -183,6 +208,109 @@ export class AdminCrmComponent implements OnInit {
       return ((left.serialNumber ?? 0) - (right.serialNumber ?? 0)) * multiplier;
     });
   });
+
+  private matchesSearch(
+    customer: CrmCustomer,
+    query: string,
+    scope: CrmSearchScope,
+    admin: boolean,
+  ): boolean {
+    if (scope !== 'all') {
+      return this.readSearchText(customer, scope).includes(query);
+    }
+
+    const haystack = admin
+      ? [
+          String(customer.serialNumber ?? ''),
+          customer.industryName,
+          customer.sector,
+          customer.location,
+          customer.purchaserName,
+          customer.purchaserPhone,
+          customer.purchaserEmail,
+          customer.maintenanceName,
+          customer.maintenancePhone,
+          customer.maintenanceEmail,
+          customer.followUpDate,
+          customer.meetingDate,
+          customer.coordinatorName,
+          customer.remark,
+          customer.updatedByName,
+          customer.updatedByRole,
+          customer.createdByName,
+          customer.createdByRole,
+        ]
+      : [
+          String(customer.serialNumber ?? ''),
+          customer.industryName,
+          customer.sector,
+          customer.coordinatorName,
+          customer.remark,
+          customer.followUpDate,
+          customer.quarterEnding,
+        ];
+    return haystack
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+      .includes(query);
+  }
+
+  private readSearchText(customer: CrmCustomer, scope: CrmSearchScope): string {
+    switch (scope) {
+      case 'serialNumber':
+        return String(customer.serialNumber ?? '').toLowerCase();
+      case 'industryName':
+        return String(customer.industryName ?? '').toLowerCase();
+      case 'sector':
+        return String(customer.sector ?? '').toLowerCase();
+      case 'location':
+        return String(customer.location ?? '').toLowerCase();
+      case 'purchaserName':
+        return String(customer.purchaserName ?? '').toLowerCase();
+      case 'purchaserPhone':
+        return String(customer.purchaserPhone ?? '').toLowerCase();
+      case 'purchaserEmail':
+        return String(customer.purchaserEmail ?? '').toLowerCase();
+      case 'maintenanceName':
+        return String(customer.maintenanceName ?? '').toLowerCase();
+      case 'maintenancePhone':
+        return String(customer.maintenancePhone ?? '').toLowerCase();
+      case 'maintenanceEmail':
+        return String(customer.maintenanceEmail ?? '').toLowerCase();
+      case 'followUpDate':
+        return String(customer.followUpDate ?? '').toLowerCase();
+      case 'meetingDate':
+        return String(customer.meetingDate ?? '').toLowerCase();
+      case 'coordinatorName':
+        return String(customer.coordinatorName ?? '').toLowerCase();
+      case 'remark':
+        return String(customer.remark ?? '').toLowerCase();
+      case 'updatedByName':
+        return `${customer.updatedByName ?? ''} ${customer.updatedByRole ?? ''}`.toLowerCase();
+      case 'createdByName':
+        return `${customer.createdByName ?? ''} ${customer.createdByRole ?? ''}`.toLowerCase();
+      default:
+        return '';
+    }
+  }
+
+  actorLabel(name?: string | null, role?: string | null): string {
+    const trimmedName = name?.trim();
+    const trimmedRole = role?.trim();
+    if (trimmedName && trimmedRole) {
+      return `${trimmedName} (${trimmedRole})`;
+    }
+    return trimmedName || trimmedRole || '—';
+  }
+
+  formatDateTime(value?: string | null): string {
+    if (!value) {
+      return '—';
+    }
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString();
+  }
 
   toggleSort(key: CrmSortKey, event?: Event): void {
     event?.preventDefault();
@@ -216,9 +344,23 @@ export class AdminCrmComponent implements OnInit {
     if (key === 'followUpDate' || key === 'meetingDate' || key === 'quarterEnding') {
       return this.toSortableDate(row[key]);
     }
+    if (key === 'updatedAt' || key === 'createdAt') {
+      return this.toSortableDateTime(row[key]);
+    }
+    if (key === 'updatedByName') {
+      return `${row.updatedByName ?? ''} ${row.updatedByRole ?? ''}`.trim().toLowerCase();
+    }
     return String(row[key] ?? '')
       .trim()
       .toLowerCase();
+  }
+
+  private toSortableDateTime(value?: string | null): number {
+    if (!value) {
+      return Number.POSITIVE_INFINITY;
+    }
+    const parsed = Date.parse(value);
+    return Number.isNaN(parsed) ? Number.POSITIVE_INFINITY : parsed;
   }
 
   private toSortableDate(value?: string | null): number {
