@@ -1,3 +1,15 @@
+export interface CrmCustomerSummary {
+  id: string;
+  serialNumber: number;
+  industryName: string;
+  sector?: string | null;
+  coordinatorName?: string | null;
+  remark?: string | null;
+  followUpDate?: string | null;
+  quarterEnding?: string | null;
+  isActive: boolean;
+}
+
 export interface CrmCustomer {
   id: string;
   industryName: string;
@@ -11,6 +23,7 @@ export interface CrmCustomer {
   maintenanceEmail?: string | null;
   meetingDate?: string | null;
   followUpDate?: string | null;
+  quarterEnding?: string | null;
   coordinatorName?: string | null;
   remark?: string | null;
   isActive: boolean;
@@ -30,10 +43,18 @@ export interface CreateCrmCustomerRequest {
   maintenanceEmail?: string;
   meetingDate?: string | null;
   followUpDate?: string | null;
+  quarterEnding?: string | null;
   coordinatorName?: string;
   remark?: string;
 }
 
 export interface UpdateCrmCustomerRequest extends CreateCrmCustomerRequest {
   isActive: boolean;
+}
+
+export interface CrmExcelUploadResult {
+  imported: number;
+  skipped: number;
+  replacedExisting: boolean;
+  message: string;
 }

@@ -1,11 +1,13 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, ElementRef, inject, OnInit, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   CreateCrmCustomerRequest,
   CrmCustomer,
+  CrmCustomerSummary,
   UpdateCrmCustomerRequest,
 } from '../../../core/models/admin-crm.model';
 import { AdminCrmService } from '../../../core/services/admin/admin-crm.service';
+import { AuthService } from '../../../core/services/auth/auth.service';
 import { ToastService } from '../../../core/services/toast/toast.service';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 
@@ -23,6 +25,7 @@ interface CrmFormState {
   maintenanceEmail: string;
   meetingDate: string;
   followUpDate: string;
+  quarterEnding: string;
   coordinatorName: string;
   remark: string;
   isActive: boolean;
@@ -40,6 +43,7 @@ const emptyForm = (): CrmFormState => ({
   maintenanceEmail: '',
   meetingDate: '',
   followUpDate: '',
+  quarterEnding: '',
   coordinatorName: '',
   remark: '',
   isActive: true,
@@ -54,25 +58,37 @@ const emptyForm = (): CrmFormState => ({
 export class AdminCrmComponent implements OnInit {
   private readonly crmService = inject(AdminCrmService);
   private readonly toast = inject(ToastService);
+  private readonly auth = inject(AuthService);
+  private readonly fileInput = viewChild<ElementRef<HTMLInputElement>>('excelInput');
 
   readonly loading = signal(true);
   readonly detailLoading = signal(false);
   readonly saving = signal(false);
   readonly deleting = signal(false);
+  readonly uploading = signal(false);
   readonly overlayLoading = computed(
-    () => this.loading() || this.detailLoading() || this.saving() || this.deleting(),
+    () =>
+      this.loading() ||
+      this.detailLoading() ||
+      this.saving() ||
+      this.deleting() ||
+      this.uploading(),
   );
   readonly errorMessage = signal<string | null>(null);
   readonly actionError = signal<string | null>(null);
-  readonly customers = signal<CrmCustomer[]>([]);
+  readonly customers = signal<CrmCustomerSummary[]>([]);
   readonly searchQuery = signal('');
   readonly showInactive = signal(false);
+  readonly replaceOnUpload = signal(false);
   readonly selectedId = signal<string | null>(null);
   readonly selectedDetail = signal<CrmCustomer | null>(null);
+  readonly detailOpen = signal(false);
 
   readonly formOpen = signal(false);
   readonly formMode = signal<FormMode>('create');
   readonly form = signal<CrmFormState>(emptyForm());
+
+  readonly isAdmin = computed(() => this.auth.currentUser()?.role === 'ADMIN');
 
   readonly canDeleteSelected = computed(() => {
     const detail = this.selectedDetail();
@@ -96,11 +112,6 @@ export class AdminCrmComponent implements OnInit {
       const haystack = [
         customer.industryName,
         customer.sector,
-        customer.location,
-        customer.purchaserName,
-        customer.purchaserPhone,
-        customer.purchaserEmail,
-        customer.maintenanceName,
         customer.coordinatorName,
         customer.remark,
       ]
@@ -126,10 +137,9 @@ export class AdminCrmComponent implements OnInit {
 
         const selected = this.selectedId();
         if (selected && list.some((customer) => customer.id === selected)) {
-          this.loadDetail(selected);
+          this.loadDetail(selected, false);
         } else {
-          this.selectedId.set(null);
-          this.selectedDetail.set(null);
+          this.closeDetail();
         }
       },
       error: (err) => {
@@ -140,16 +150,21 @@ export class AdminCrmComponent implements OnInit {
     });
   }
 
-  selectCustomer(customer: CrmCustomer): void {
-    if (this.selectedId() === customer.id) {
-      return;
-    }
+  selectCustomer(customer: CrmCustomerSummary): void {
     this.selectedId.set(customer.id);
     this.selectedDetail.set(null);
-    this.loadDetail(customer.id);
+    this.detailOpen.set(true);
+    this.loadDetail(customer.id, true);
   }
 
-  loadDetail(id: string): void {
+  closeDetail(): void {
+    this.detailOpen.set(false);
+    this.selectedId.set(null);
+    this.selectedDetail.set(null);
+    this.actionError.set(null);
+  }
+
+  loadDetail(id: string, showErrors = true): void {
     this.detailLoading.set(true);
     this.actionError.set(null);
 
@@ -164,8 +179,40 @@ export class AdminCrmComponent implements OnInit {
       },
       error: (err) => {
         this.detailLoading.set(false);
-        this.actionError.set('Could not load customer details.');
-        this.toast.fromApiError(err, 'Could not load customer details.');
+        if (showErrors) {
+          this.actionError.set('Could not load customer details.');
+          this.toast.fromApiError(err, 'Could not load customer details.');
+        }
+      },
+    });
+  }
+
+  triggerExcelPicker(): void {
+    this.fileInput()?.nativeElement.click();
+  }
+
+  onExcelSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file || !this.isAdmin()) {
+      return;
+    }
+
+    this.uploading.set(true);
+    this.actionError.set(null);
+
+    this.crmService.uploadExcel(file, this.replaceOnUpload()).subscribe({
+      next: (result) => {
+        this.uploading.set(false);
+        this.toast.success(result.message || `Imported ${result.imported} row(s).`);
+        this.closeDetail();
+        this.load();
+      },
+      error: (err) => {
+        this.uploading.set(false);
+        this.actionError.set(this.extractError(err));
+        this.toast.fromApiError(err, 'Could not upload Excel file.');
       },
     });
   }
@@ -196,6 +243,7 @@ export class AdminCrmComponent implements OnInit {
       maintenanceEmail: detail.maintenanceEmail ?? '',
       meetingDate: detail.meetingDate ?? '',
       followUpDate: detail.followUpDate ?? '',
+      quarterEnding: detail.quarterEnding ?? '',
       coordinatorName: detail.coordinatorName ?? '',
       remark: detail.remark ?? '',
       isActive: detail.isActive !== false,
@@ -227,12 +275,13 @@ export class AdminCrmComponent implements OnInit {
       const request = this.toCreateRequest(state);
       this.crmService.create(request).subscribe({
         next: (created) => {
-          this.customers.update((list) => [created, ...list]);
           this.saving.set(false);
           this.formOpen.set(false);
+          this.toast.success('CRM customer created.');
           this.selectedId.set(created.id);
           this.selectedDetail.set(created);
-          this.toast.success('CRM customer created.');
+          this.detailOpen.set(true);
+          this.load();
         },
         error: (err) => {
           this.saving.set(false);
@@ -252,13 +301,11 @@ export class AdminCrmComponent implements OnInit {
     const request = this.toUpdateRequest(state);
     this.crmService.update(selectedId, request).subscribe({
       next: (updated) => {
-        this.customers.update((list) =>
-          list.map((item) => (item.id === updated.id ? updated : item)),
-        );
         this.selectedDetail.set(updated);
         this.saving.set(false);
         this.formOpen.set(false);
         this.toast.success('CRM customer updated.');
+        this.load();
       },
       error: (err) => {
         this.saving.set(false);
@@ -286,15 +333,10 @@ export class AdminCrmComponent implements OnInit {
 
     this.crmService.delete(detail.id).subscribe({
       next: () => {
-        this.customers.update((list) =>
-          list.map((item) =>
-            item.id === detail.id ? { ...item, isActive: false } : item,
-          ),
-        );
-        this.selectedId.set(null);
-        this.selectedDetail.set(null);
         this.deleting.set(false);
         this.toast.success('CRM customer deleted.');
+        this.closeDetail();
+        this.load();
       },
       error: (err) => {
         this.deleting.set(false);
@@ -340,6 +382,7 @@ export class AdminCrmComponent implements OnInit {
       maintenanceEmail: state.maintenanceEmail.trim() || undefined,
       meetingDate: state.meetingDate || null,
       followUpDate: state.followUpDate || null,
+      quarterEnding: state.quarterEnding || null,
       coordinatorName: state.coordinatorName.trim() || undefined,
       remark: state.remark.trim() || undefined,
     };

@@ -5,6 +5,8 @@ import { environment } from '../../../../environments/environment';
 import {
   CreateCrmCustomerRequest,
   CrmCustomer,
+  CrmCustomerSummary,
+  CrmExcelUploadResult,
   UpdateCrmCustomerRequest,
 } from '../../models/admin-crm.model';
 
@@ -13,9 +15,9 @@ export class AdminCrmService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${environment.apiUrl}/admin/crm`;
 
-  list(includeInactive = false): Observable<CrmCustomer[]> {
+  list(includeInactive = false): Observable<CrmCustomerSummary[]> {
     const params = new HttpParams().set('includeInactive', String(includeInactive));
-    return this.http.get<CrmCustomer[]>(this.baseUrl, { params });
+    return this.http.get<CrmCustomerSummary[]>(this.baseUrl, { params });
   }
 
   getById(id: string): Observable<CrmCustomer> {
@@ -32,5 +34,13 @@ export class AdminCrmService {
 
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  }
+
+  /** Admin-only Excel bulk upload. */
+  uploadExcel(file: File, replaceExisting = false): Observable<CrmExcelUploadResult> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const params = new HttpParams().set('replaceExisting', String(replaceExisting));
+    return this.http.post<CrmExcelUploadResult>(`${this.baseUrl}/upload`, formData, { params });
   }
 }

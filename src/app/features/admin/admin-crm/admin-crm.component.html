@@ -1,14 +1,43 @@
 <section class="page-card">
-  <app-loading-overlay [loading]="overlayLoading()" message="Loading CRM…" />
+  <app-loading-overlay
+    [loading]="overlayLoading()"
+    [message]="uploading() ? 'Uploading Excel…' : 'Loading CRM…'"
+  />
 
   <header class="page-header">
     <div>
       <h1>CRM</h1>
       <p class="muted">
-        Manage industry prospects — contacts, meeting and follow-up dates, and coordinator notes.
+        Table shows serial, industry, sector, coordinator, remarks, follow-up, then quarter ending.
+        Click a row for full details. Excel upload is admin-only.
       </p>
     </div>
     <div class="header-actions">
+      @if (isAdmin()) {
+        <input
+          #excelInput
+          type="file"
+          class="visually-hidden"
+          accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+          (change)="onExcelSelected($event)"
+        />
+        <label class="toggle-field upload-toggle">
+          <input
+            type="checkbox"
+            [ngModel]="replaceOnUpload()"
+            (ngModelChange)="replaceOnUpload.set($event)"
+          />
+          Replace all on upload
+        </label>
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="triggerExcelPicker()"
+          [disabled]="uploading()"
+        >
+          {{ uploading() ? 'Uploading…' : 'Upload Excel' }}
+        </button>
+      }
       <button type="button" class="btn-primary" (click)="openCreate()">Add customer</button>
       <button type="button" class="btn-secondary" (click)="load()" [disabled]="loading()">
         Refresh
@@ -22,7 +51,7 @@
       <input
         id="crm-search"
         type="search"
-        placeholder="Industry, sector, location, purchaser, coordinator…"
+        placeholder="Industry, sector, coordinator, remarks…"
         [ngModel]="searchQuery()"
         (ngModelChange)="searchQuery.set($event)"
       />
@@ -43,168 +72,179 @@
     } @else if (filteredCustomers().length === 0) {
       <p class="state-message">
         @if (customers().length === 0) {
-          No CRM customers yet. Add your first industry record.
+          No CRM customers yet. @if (isAdmin()) {
+            Upload an Excel file or add a record.
+          } @else {
+            Ask an admin to import Excel data.
+          }
         } @else {
           No customers match your search.
         }
       </p>
     } @else {
-      <div class="crm-layout">
-        <div class="table-wrap">
-          <table class="crm-table">
-            <thead>
-              <tr>
-                <th>Industry</th>
-                <th>Sector</th>
-                <th>Location</th>
-                <th>Purchaser</th>
-                <th>Follow-up</th>
-                <th>Coordinator</th>
-                <th>Status</th>
+      <div class="table-wrap">
+        <table class="crm-table">
+          <thead>
+            <tr>
+              <th class="col-serial">S.No</th>
+              <th>Industry</th>
+              <th>Sector</th>
+              <th>Coordinator</th>
+              <th>Remarks</th>
+              <th>Follow-up</th>
+              <th>Quarter ending</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (customer of filteredCustomers(); track customer.id) {
+              <tr
+                class="crm-row"
+                [class.selected]="selectedId() === customer.id"
+                [class.inactive-row]="customer.isActive === false"
+                (click)="selectCustomer(customer)"
+              >
+                <td class="col-serial">{{ customer.serialNumber }}</td>
+                <td>{{ customer.industryName }}</td>
+                <td>{{ displayValue(customer.sector) }}</td>
+                <td>{{ displayValue(customer.coordinatorName) }}</td>
+                <td class="col-remark">{{ displayValue(customer.remark) }}</td>
+                <td>{{ formatDate(customer.followUpDate) }}</td>
+                <td>{{ formatDate(customer.quarterEnding) }}</td>
               </tr>
-            </thead>
-            <tbody>
-              @for (customer of filteredCustomers(); track customer.id) {
-                <tr
-                  class="crm-row"
-                  [class.selected]="selectedId() === customer.id"
-                  [class.inactive-row]="customer.isActive === false"
-                  (click)="selectCustomer(customer)"
-                >
-                  <td>{{ customer.industryName }}</td>
-                  <td>{{ displayValue(customer.sector) }}</td>
-                  <td>{{ displayValue(customer.location) }}</td>
-                  <td>{{ displayValue(customer.purchaserName) }}</td>
-                  <td>{{ formatDate(customer.followUpDate) }}</td>
-                  <td>{{ displayValue(customer.coordinatorName) }}</td>
-                  <td>
-                    <span class="status-chip" [class.inactive]="customer.isActive === false">
-                      {{ customer.isActive === false ? 'Deleted' : 'Active' }}
-                    </span>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-
-        <aside class="crm-detail" aria-live="polite">
-          @if (!selectedId()) {
-            <div class="detail-empty">
-              <p>Select a customer to view full details.</p>
-            </div>
-          } @else if (detailLoading()) {
-            <p class="state-message">Loading details…</p>
-          } @else {
-            @if (selectedDetail(); as detail) {
-            <div class="detail-header">
-              <div>
-                <h2>{{ detail.industryName }}</h2>
-                <p class="detail-meta">
-                  {{ displayValue(detail.sector) }} · {{ displayValue(detail.location) }}
-                </p>
-              </div>
-              <div class="detail-actions">
-                <button type="button" class="btn-secondary" (click)="openEdit()">Edit</button>
-                @if (canDeleteSelected()) {
-                  <button
-                    type="button"
-                    class="btn-danger"
-                    [disabled]="deleting()"
-                    (click)="deleteSelected()"
-                  >
-                    {{ deleting() ? 'Deleting…' : 'Delete' }}
-                  </button>
-                }
-              </div>
-            </div>
-
-            @if (actionError()) {
-              <div class="alert-error" role="alert">{{ actionError() }}</div>
             }
-
-            <div class="detail-section">
-              <h3>Industry</h3>
-              <dl class="detail-grid">
-                <div>
-                  <dt>Industry name</dt>
-                  <dd>{{ detail.industryName }}</dd>
-                </div>
-                <div>
-                  <dt>Sector</dt>
-                  <dd>{{ displayValue(detail.sector) }}</dd>
-                </div>
-                <div class="full-width">
-                  <dt>Location</dt>
-                  <dd>{{ displayValue(detail.location) }}</dd>
-                </div>
-              </dl>
-            </div>
-
-            <div class="detail-section">
-              <h3>Purchaser</h3>
-              <dl class="detail-grid">
-                <div>
-                  <dt>Name</dt>
-                  <dd>{{ displayValue(detail.purchaserName) }}</dd>
-                </div>
-                <div>
-                  <dt>Contact</dt>
-                  <dd>{{ displayValue(detail.purchaserPhone) }}</dd>
-                </div>
-                <div class="full-width">
-                  <dt>Email</dt>
-                  <dd>{{ displayValue(detail.purchaserEmail) }}</dd>
-                </div>
-              </dl>
-            </div>
-
-            <div class="detail-section">
-              <h3>Maintenance</h3>
-              <dl class="detail-grid">
-                <div>
-                  <dt>Name</dt>
-                  <dd>{{ displayValue(detail.maintenanceName) }}</dd>
-                </div>
-                <div>
-                  <dt>Contact</dt>
-                  <dd>{{ displayValue(detail.maintenancePhone) }}</dd>
-                </div>
-                <div class="full-width">
-                  <dt>Email</dt>
-                  <dd>{{ displayValue(detail.maintenanceEmail) }}</dd>
-                </div>
-              </dl>
-            </div>
-
-            <div class="detail-section">
-              <h3>Follow-up</h3>
-              <dl class="detail-grid">
-                <div>
-                  <dt>Meeting date</dt>
-                  <dd>{{ formatDate(detail.meetingDate) }}</dd>
-                </div>
-                <div>
-                  <dt>Follow-up date</dt>
-                  <dd>{{ formatDate(detail.followUpDate) }}</dd>
-                </div>
-                <div>
-                  <dt>Coordinator</dt>
-                  <dd>{{ displayValue(detail.coordinatorName) }}</dd>
-                </div>
-                <div class="full-width">
-                  <dt>Remark</dt>
-                  <dd>{{ displayValue(detail.remark) }}</dd>
-                </div>
-              </dl>
-            </div>
-            }
-          }
-        </aside>
+          </tbody>
+        </table>
       </div>
     }
   }
 </section>
+
+@if (detailOpen()) {
+  <div class="modal-backdrop" (click)="closeDetail()">
+    <div
+      class="modal-panel detail-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="crm-detail-title"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="modal-header">
+        <h2 id="crm-detail-title">
+          {{ selectedDetail()?.industryName || 'Customer details' }}
+        </h2>
+        <button type="button" class="modal-close" aria-label="Close" (click)="closeDetail()">
+          ×
+        </button>
+      </header>
+
+      @if (detailLoading()) {
+        <p class="state-message modal-body">Loading details…</p>
+      } @else {
+        @if (selectedDetail(); as detail) {
+        <div class="modal-body detail-body">
+          @if (actionError()) {
+            <div class="alert-error" role="alert">{{ actionError() }}</div>
+          }
+
+          <div class="detail-actions">
+            <button type="button" class="btn-secondary" (click)="openEdit()">Edit</button>
+            @if (canDeleteSelected()) {
+              <button
+                type="button"
+                class="btn-danger"
+                [disabled]="deleting()"
+                (click)="deleteSelected()"
+              >
+                {{ deleting() ? 'Deleting…' : 'Delete' }}
+              </button>
+            }
+          </div>
+
+          <div class="detail-section">
+            <h3>Industry</h3>
+            <dl class="detail-grid">
+              <div>
+                <dt>Industry name</dt>
+                <dd>{{ detail.industryName }}</dd>
+              </div>
+              <div>
+                <dt>Sector</dt>
+                <dd>{{ displayValue(detail.sector) }}</dd>
+              </div>
+              <div class="full-width">
+                <dt>Location</dt>
+                <dd>{{ displayValue(detail.location) }}</dd>
+              </div>
+            </dl>
+          </div>
+
+          <div class="detail-section">
+            <h3>Purchaser</h3>
+            <dl class="detail-grid">
+              <div>
+                <dt>Name</dt>
+                <dd>{{ displayValue(detail.purchaserName) }}</dd>
+              </div>
+              <div>
+                <dt>Contact</dt>
+                <dd>{{ displayValue(detail.purchaserPhone) }}</dd>
+              </div>
+              <div class="full-width">
+                <dt>Email</dt>
+                <dd>{{ displayValue(detail.purchaserEmail) }}</dd>
+              </div>
+            </dl>
+          </div>
+
+          <div class="detail-section">
+            <h3>Maintenance</h3>
+            <dl class="detail-grid">
+              <div>
+                <dt>Name</dt>
+                <dd>{{ displayValue(detail.maintenanceName) }}</dd>
+              </div>
+              <div>
+                <dt>Contact</dt>
+                <dd>{{ displayValue(detail.maintenancePhone) }}</dd>
+              </div>
+              <div class="full-width">
+                <dt>Email</dt>
+                <dd>{{ displayValue(detail.maintenanceEmail) }}</dd>
+              </div>
+            </dl>
+          </div>
+
+          <div class="detail-section">
+            <h3>Follow-up</h3>
+            <dl class="detail-grid">
+              <div>
+                <dt>Meeting date</dt>
+                <dd>{{ formatDate(detail.meetingDate) }}</dd>
+              </div>
+              <div>
+                <dt>Follow-up date</dt>
+                <dd>{{ formatDate(detail.followUpDate) }}</dd>
+              </div>
+              <div>
+                <dt>Quarter ending</dt>
+                <dd>{{ formatDate(detail.quarterEnding) }}</dd>
+              </div>
+              <div>
+                <dt>Coordinator</dt>
+                <dd>{{ displayValue(detail.coordinatorName) }}</dd>
+              </div>
+              <div class="full-width">
+                <dt>Remark</dt>
+                <dd>{{ displayValue(detail.remark) }}</dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+        }
+      }
+    </div>
+  </div>
+}
 
 @if (formOpen()) {
   <div class="modal-backdrop" (click)="closeForm()">
@@ -328,6 +368,16 @@
               [ngModel]="form().followUpDate"
               (ngModelChange)="updateFormField('followUpDate', $event)"
               name="followUpDate"
+            />
+          </div>
+          <div class="form-field">
+            <label for="quarter-ending">Quarter ending</label>
+            <input
+              id="quarter-ending"
+              type="date"
+              [ngModel]="form().quarterEnding"
+              (ngModelChange)="updateFormField('quarterEnding', $event)"
+              name="quarterEnding"
             />
           </div>
           <div class="form-field">

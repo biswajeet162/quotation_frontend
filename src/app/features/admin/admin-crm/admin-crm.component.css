@@ -1,4 +1,17 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .page-card {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
   background: #fff;
   border-radius: 12px;
   padding: 1.5rem;
@@ -6,6 +19,7 @@
 }
 
 .page-header {
+  flex-shrink: 0;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -60,6 +74,7 @@
 }
 
 .toolbar {
+  flex-shrink: 0;
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
@@ -101,6 +116,7 @@
 }
 
 .alert-error {
+  flex-shrink: 0;
   background: #fef2f2;
   border: 1px solid #fecaca;
   color: #b91c1c;
@@ -117,9 +133,58 @@
 }
 
 .table-wrap {
+  flex: 1;
+  min-height: 0;
   overflow: auto;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.col-serial {
+  width: 4rem;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.col-remark {
+  max-width: 18rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.upload-toggle {
+  padding-bottom: 0;
+  align-self: center;
+}
+
+.detail-modal {
+  width: min(820px, 100%);
+}
+
+.detail-body {
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+.detail-body .detail-actions {
+  margin-bottom: 1rem;
+}
+
+.modal-body {
+  padding: 1rem 1.25rem;
 }
 
 .crm-table {
@@ -137,6 +202,9 @@
 }
 
 .crm-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   background: #f8fafc;
   color: #64748b;
   font-size: 0.75rem;

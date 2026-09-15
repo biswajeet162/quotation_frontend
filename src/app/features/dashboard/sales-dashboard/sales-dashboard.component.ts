@@ -1,6 +1,6 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { CrmCustomer } from '../../../core/models/admin-crm.model';
+import { CrmCustomerSummary } from '../../../core/models/admin-crm.model';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { AdminCrmService } from '../../../core/services/admin/admin-crm.service';
 import { ToastService } from '../../../core/services/toast/toast.service';
@@ -19,7 +19,7 @@ export class SalesDashboardComponent implements OnInit {
 
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
-  readonly customers = signal<CrmCustomer[]>([]);
+  readonly customers = signal<CrmCustomerSummary[]>([]);
 
   readonly totalCustomers = computed(() => this.customers().length);
   readonly activeCustomers = computed(
