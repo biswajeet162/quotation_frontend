@@ -29,9 +29,10 @@ interface UserFormState {
   country: string;
   isActive: boolean;
   emailVerified: boolean;
+  role: UserRole;
 }
 
-const emptyForm = (): UserFormState => ({
+const emptyForm = (role: UserRole = 'CONSUMER'): UserFormState => ({
   name: '',
   email: '',
   password: '',
@@ -46,6 +47,7 @@ const emptyForm = (): UserFormState => ({
   country: '',
   isActive: true,
   emailVerified: true,
+  role,
 });
 
 const ROLE_TABS: { role: RoleTab; label: string }[] = [
@@ -54,6 +56,8 @@ const ROLE_TABS: { role: RoleTab; label: string }[] = [
   { role: 'SALES', label: 'Sales' },
   { role: 'DISTRIBUTOR', label: 'Distributors' },
 ];
+
+const ASSIGNABLE_ROLES: UserRole[] = ['CONSUMER', 'DISTRIBUTOR', 'SALES', 'ADMIN'];
 
 @Component({
   selector: 'app-admin-users',
@@ -66,13 +70,20 @@ export class AdminUsersComponent implements OnInit {
   private readonly toast = inject(ToastService);
 
   readonly roleTabs = ROLE_TABS;
+  readonly assignableRoles = ASSIGNABLE_ROLES;
   readonly activeRole = signal<RoleTab>('CONSUMER');
   readonly loading = signal(true);
   readonly detailLoading = signal(false);
   readonly saving = signal(false);
   readonly deleting = signal(false);
+  readonly changingRole = signal(false);
   readonly overlayLoading = computed(
-    () => this.loading() || this.detailLoading() || this.saving() || this.deleting(),
+    () =>
+      this.loading() ||
+      this.detailLoading() ||
+      this.saving() ||
+      this.deleting() ||
+      this.changingRole(),
   );
   readonly errorMessage = signal<string | null>(null);
   readonly actionError = signal<string | null>(null);
@@ -86,15 +97,31 @@ export class AdminUsersComponent implements OnInit {
   readonly formMode = signal<FormMode>('create');
   readonly form = signal<UserFormState>(emptyForm());
 
-  /** Delete only for active accounts — use list row + detail so soft-deleted users never show it. */
-  readonly canDeleteSelected = computed(() => {
+  /** Soft-delete only for active non-admin accounts. */
+  readonly canSoftDeleteSelected = computed(() => {
     const detail = this.selectedDetail();
-    if (!detail) {
+    if (!detail || detail.role === 'ADMIN') {
       return false;
     }
     const fromList = this.users().find((user) => user.id === detail.id);
     const isActive = fromList?.isActive ?? detail.isActive;
     return isActive !== false;
+  });
+
+  /** Permanent delete only after soft-delete, never for Admins. */
+  readonly canHardDeleteSelected = computed(() => {
+    const detail = this.selectedDetail();
+    if (!detail || detail.role === 'ADMIN') {
+      return false;
+    }
+    const fromList = this.users().find((user) => user.id === detail.id);
+    const isActive = fromList?.isActive ?? detail.isActive;
+    return isActive === false;
+  });
+
+  readonly canChangeRoleSelected = computed(() => {
+    const detail = this.selectedDetail();
+    return !!detail && detail.role !== 'ADMIN';
   });
 
   readonly filteredUsers = computed(() => {
@@ -178,7 +205,6 @@ export class AdminUsersComponent implements OnInit {
         const fromList = this.users().find((user) => user.id === id);
         this.selectedDetail.set({
           ...detail,
-          // Prefer list status when detail omits/mis-maps isActive
           isActive: detail.isActive ?? fromList?.isActive,
         });
         this.detailLoading.set(false);
@@ -193,7 +219,7 @@ export class AdminUsersComponent implements OnInit {
 
   openCreate(): void {
     this.formMode.set('create');
-    this.form.set(emptyForm());
+    this.form.set(emptyForm(this.activeRole()));
     this.actionError.set(null);
     this.formOpen.set(true);
   }
@@ -220,13 +246,14 @@ export class AdminUsersComponent implements OnInit {
       country: detail.company?.country ?? '',
       isActive: detail.isActive !== false,
       emailVerified: detail.emailVerified === true,
+      role: detail.role,
     });
     this.actionError.set(null);
     this.formOpen.set(true);
   }
 
   closeForm(): void {
-    if (this.saving()) {
+    if (this.saving() || this.changingRole()) {
       return;
     }
     this.formOpen.set(false);
@@ -275,14 +302,41 @@ export class AdminUsersComponent implements OnInit {
     }
 
     const selectedId = this.selectedId();
-    if (!selectedId) {
+    const detail = this.selectedDetail();
+    if (!selectedId || !detail) {
       this.saving.set(false);
       return;
     }
 
+    const roleChanged = this.canChangeRoleSelected() && state.role !== detail.role;
+
     const request: UpdateAdminUserRequest = this.toUpdateRequest(state);
     this.userService.update(selectedId, request).subscribe({
       next: (updated) => {
+        if (roleChanged) {
+          this.changingRole.set(true);
+          this.userService.changeRole(selectedId, { role: state.role }).subscribe({
+            next: (withRole) => {
+              this.afterRoleChange(withRole);
+              this.saving.set(false);
+              this.changingRole.set(false);
+              this.formOpen.set(false);
+              this.toast.success(`User updated and role set to ${this.roleLabel(withRole.role)}.`);
+            },
+            error: (err) => {
+              this.users.update((list) =>
+                list.map((item) => (item.id === updated.id ? this.toSummary(updated) : item)),
+              );
+              this.selectedDetail.set(updated);
+              this.saving.set(false);
+              this.changingRole.set(false);
+              this.actionError.set(this.extractError(err));
+              this.toast.fromApiError(err, 'Profile saved, but role could not be changed.');
+            },
+          });
+          return;
+        }
+
         this.users.update((list) =>
           list.map((item) => (item.id === updated.id ? this.toSummary(updated) : item)),
         );
@@ -299,14 +353,14 @@ export class AdminUsersComponent implements OnInit {
     });
   }
 
-  deleteSelected(): void {
+  softDeleteSelected(): void {
     const detail = this.selectedDetail();
-    if (!detail || !this.canDeleteSelected()) {
+    if (!detail || !this.canSoftDeleteSelected()) {
       return;
     }
 
     const confirmed = window.confirm(
-      `Delete ${detail.name} (${detail.email})? They will no longer be able to sign in.`,
+      `Soft-delete ${detail.name} (${detail.email})?\n\nThey will no longer be able to sign in. You can permanently delete them afterward.`,
     );
     if (!confirmed) {
       return;
@@ -322,15 +376,49 @@ export class AdminUsersComponent implements OnInit {
             item.id === detail.id ? { ...item, isActive: false } : item,
           ),
         );
-        this.selectedId.set(null);
-        this.selectedDetail.set(null);
+        this.selectedDetail.update((current) =>
+          current && current.id === detail.id ? { ...current, isActive: false } : current,
+        );
         this.deleting.set(false);
-        this.toast.success('User deactivated.');
+        this.showInactive.set(true);
+        this.toast.success('User soft-deleted. You can permanently delete them now.');
       },
       error: (err) => {
         this.deleting.set(false);
         this.actionError.set(this.extractError(err));
-        this.toast.fromApiError(err, 'Could not deactivate user.');
+        this.toast.fromApiError(err, 'Could not soft-delete user.');
+      },
+    });
+  }
+
+  hardDeleteSelected(): void {
+    const detail = this.selectedDetail();
+    if (!detail || !this.canHardDeleteSelected()) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Permanently delete ${detail.name} (${detail.email})?\n\nThis cannot be undone.`,
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    this.deleting.set(true);
+    this.actionError.set(null);
+
+    this.userService.hardDelete(detail.id).subscribe({
+      next: () => {
+        this.users.update((list) => list.filter((item) => item.id !== detail.id));
+        this.selectedId.set(null);
+        this.selectedDetail.set(null);
+        this.deleting.set(false);
+        this.toast.success('User permanently deleted.');
+      },
+      error: (err) => {
+        this.deleting.set(false);
+        this.actionError.set(this.extractError(err));
+        this.toast.fromApiError(err, 'Could not permanently delete user.');
       },
     });
   }
@@ -360,6 +448,21 @@ export class AdminUsersComponent implements OnInit {
       default:
         return role;
     }
+  }
+
+  private afterRoleChange(withRole: AdminUserDetail): void {
+    if (withRole.role !== this.activeRole()) {
+      this.users.update((list) => list.filter((item) => item.id !== withRole.id));
+      this.selectedId.set(null);
+      this.selectedDetail.set(null);
+      this.activeRole.set(withRole.role);
+      this.load();
+      return;
+    }
+    this.users.update((list) =>
+      list.map((item) => (item.id === withRole.id ? this.toSummary(withRole) : item)),
+    );
+    this.selectedDetail.set(withRole);
   }
 
   private toCreateRequest(state: UserFormState): CreateAdminUserRequest {

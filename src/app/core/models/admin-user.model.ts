@@ -75,3 +75,7 @@ export interface UpdateAdminUserRequest {
   isActive?: boolean;
   emailVerified?: boolean;
 }
+
+export interface ChangeUserRoleRequest {
+  role: UserRole;
+}

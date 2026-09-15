@@ -113,17 +113,30 @@
             <div>
               <h2>{{ detail.name }}</h2>
               <p class="detail-meta">{{ detail.email }} · {{ roleLabel(detail.role) }}</p>
+              @if (detail.role === 'ADMIN') {
+                <p class="admin-protect-note">Admin accounts cannot be deleted or have their role changed.</p>
+              }
             </div>
             <div class="detail-actions">
               <button type="button" class="btn-secondary" (click)="openEdit()">Edit</button>
-              @if (canDeleteSelected()) {
+              @if (canSoftDeleteSelected()) {
                 <button
                   type="button"
                   class="btn-danger"
                   [disabled]="deleting()"
-                  (click)="deleteSelected()"
+                  (click)="softDeleteSelected()"
                 >
-                  {{ deleting() ? 'Deleting…' : 'Delete' }}
+                  {{ deleting() ? 'Deleting…' : 'Soft delete' }}
+                </button>
+              }
+              @if (canHardDeleteSelected()) {
+                <button
+                  type="button"
+                  class="btn-danger-solid"
+                  [disabled]="deleting()"
+                  (click)="hardDeleteSelected()"
+                >
+                  {{ deleting() ? 'Deleting…' : 'Delete permanently' }}
                 </button>
               }
             </div>
@@ -272,6 +285,22 @@
               name="password"
             />
           </div>
+          @if (formMode() === 'edit' && canChangeRoleSelected()) {
+            <div class="form-field">
+              <label for="user-role">Role</label>
+              <select
+                id="user-role"
+                [ngModel]="form().role"
+                (ngModelChange)="updateFormField('role', $event)"
+                name="role"
+              >
+                @for (role of assignableRoles; track role) {
+                  <option [ngValue]="role">{{ roleLabel(role) }}</option>
+                }
+              </select>
+              <p class="field-hint">Upgrade or change access (Consumer, Distributor, Sales, Admin).</p>
+            </div>
+          }
           <div class="form-field">
             <label for="company-name">Company name</label>
             <input

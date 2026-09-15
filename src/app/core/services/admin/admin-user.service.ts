@@ -5,6 +5,7 @@ import { environment } from '../../../../environments/environment';
 import {
   AdminUserDetail,
   AdminUserSummary,
+  ChangeUserRoleRequest,
   CreateAdminUserRequest,
   UpdateAdminUserRequest,
   UserRole,
@@ -34,7 +35,17 @@ export class AdminUserService {
     return this.http.put<AdminUserDetail>(`${this.baseUrl}/${id}`, request);
   }
 
+  changeRole(id: string, request: ChangeUserRoleRequest): Observable<AdminUserDetail> {
+    return this.http.put<AdminUserDetail>(`${this.baseUrl}/${id}/role`, request);
+  }
+
+  /** Soft-delete (deactivate). */
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  }
+
+  /** Permanent delete after soft-delete. */
+  hardDelete(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${id}/permanent`);
   }
 }
