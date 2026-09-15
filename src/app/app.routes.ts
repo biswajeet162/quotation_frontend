@@ -179,6 +179,14 @@ export const routes: Routes = [
         canActivate: [roleGuard(['ADMIN'])],
       },
       {
+        path: 'admin/crm',
+        loadComponent: () =>
+          import('./features/admin/admin-crm/admin-crm.component').then(
+            (m) => m.AdminCrmComponent,
+          ),
+        canActivate: [roleGuard(['ADMIN'])],
+      },
+      {
         path: 'admin/gmail-inbox',
         loadComponent: () =>
           import('./features/admin/admin-gmail-inbox/admin-gmail-inbox.component').then(

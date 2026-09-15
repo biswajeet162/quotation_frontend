@@ -1,0 +1,382 @@
+<section class="page-card">
+  <app-loading-overlay [loading]="overlayLoading()" message="Loading CRM…" />
+
+  <header class="page-header">
+    <div>
+      <h1>CRM</h1>
+      <p class="muted">
+        Manage industry prospects — contacts, meeting and follow-up dates, and coordinator notes.
+      </p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn-primary" (click)="openCreate()">Add customer</button>
+      <button type="button" class="btn-secondary" (click)="load()" [disabled]="loading()">
+        Refresh
+      </button>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="search-field">
+      <label for="crm-search">Search customers</label>
+      <input
+        id="crm-search"
+        type="search"
+        placeholder="Industry, sector, location, purchaser, coordinator…"
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)"
+      />
+    </div>
+    <label class="toggle-field">
+      <input
+        type="checkbox"
+        [ngModel]="showInactive()"
+        (ngModelChange)="showInactive.set($event)"
+      />
+      Show deleted
+    </label>
+  </div>
+
+  @if (!loading()) {
+    @if (errorMessage()) {
+      <div class="alert-error" role="alert">{{ errorMessage() }}</div>
+    } @else if (filteredCustomers().length === 0) {
+      <p class="state-message">
+        @if (customers().length === 0) {
+          No CRM customers yet. Add your first industry record.
+        } @else {
+          No customers match your search.
+        }
+      </p>
+    } @else {
+      <div class="crm-layout">
+        <div class="table-wrap">
+          <table class="crm-table">
+            <thead>
+              <tr>
+                <th>Industry</th>
+                <th>Sector</th>
+                <th>Location</th>
+                <th>Purchaser</th>
+                <th>Follow-up</th>
+                <th>Coordinator</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (customer of filteredCustomers(); track customer.id) {
+                <tr
+                  class="crm-row"
+                  [class.selected]="selectedId() === customer.id"
+                  [class.inactive-row]="customer.isActive === false"
+                  (click)="selectCustomer(customer)"
+                >
+                  <td>{{ customer.industryName }}</td>
+                  <td>{{ displayValue(customer.sector) }}</td>
+                  <td>{{ displayValue(customer.location) }}</td>
+                  <td>{{ displayValue(customer.purchaserName) }}</td>
+                  <td>{{ formatDate(customer.followUpDate) }}</td>
+                  <td>{{ displayValue(customer.coordinatorName) }}</td>
+                  <td>
+                    <span class="status-chip" [class.inactive]="customer.isActive === false">
+                      {{ customer.isActive === false ? 'Deleted' : 'Active' }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <aside class="crm-detail" aria-live="polite">
+          @if (!selectedId()) {
+            <div class="detail-empty">
+              <p>Select a customer to view full details.</p>
+            </div>
+          } @else if (detailLoading()) {
+            <p class="state-message">Loading details…</p>
+          } @else {
+            @if (selectedDetail(); as detail) {
+            <div class="detail-header">
+              <div>
+                <h2>{{ detail.industryName }}</h2>
+                <p class="detail-meta">
+                  {{ displayValue(detail.sector) }} · {{ displayValue(detail.location) }}
+                </p>
+              </div>
+              <div class="detail-actions">
+                <button type="button" class="btn-secondary" (click)="openEdit()">Edit</button>
+                @if (canDeleteSelected()) {
+                  <button
+                    type="button"
+                    class="btn-danger"
+                    [disabled]="deleting()"
+                    (click)="deleteSelected()"
+                  >
+                    {{ deleting() ? 'Deleting…' : 'Delete' }}
+                  </button>
+                }
+              </div>
+            </div>
+
+            @if (actionError()) {
+              <div class="alert-error" role="alert">{{ actionError() }}</div>
+            }
+
+            <div class="detail-section">
+              <h3>Industry</h3>
+              <dl class="detail-grid">
+                <div>
+                  <dt>Industry name</dt>
+                  <dd>{{ detail.industryName }}</dd>
+                </div>
+                <div>
+                  <dt>Sector</dt>
+                  <dd>{{ displayValue(detail.sector) }}</dd>
+                </div>
+                <div class="full-width">
+                  <dt>Location</dt>
+                  <dd>{{ displayValue(detail.location) }}</dd>
+                </div>
+              </dl>
+            </div>
+
+            <div class="detail-section">
+              <h3>Purchaser</h3>
+              <dl class="detail-grid">
+                <div>
+                  <dt>Name</dt>
+                  <dd>{{ displayValue(detail.purchaserName) }}</dd>
+                </div>
+                <div>
+                  <dt>Contact</dt>
+                  <dd>{{ displayValue(detail.purchaserPhone) }}</dd>
+                </div>
+                <div class="full-width">
+                  <dt>Email</dt>
+                  <dd>{{ displayValue(detail.purchaserEmail) }}</dd>
+                </div>
+              </dl>
+            </div>
+
+            <div class="detail-section">
+              <h3>Maintenance</h3>
+              <dl class="detail-grid">
+                <div>
+                  <dt>Name</dt>
+                  <dd>{{ displayValue(detail.maintenanceName) }}</dd>
+                </div>
+                <div>
+                  <dt>Contact</dt>
+                  <dd>{{ displayValue(detail.maintenancePhone) }}</dd>
+                </div>
+                <div class="full-width">
+                  <dt>Email</dt>
+                  <dd>{{ displayValue(detail.maintenanceEmail) }}</dd>
+                </div>
+              </dl>
+            </div>
+
+            <div class="detail-section">
+              <h3>Follow-up</h3>
+              <dl class="detail-grid">
+                <div>
+                  <dt>Meeting date</dt>
+                  <dd>{{ formatDate(detail.meetingDate) }}</dd>
+                </div>
+                <div>
+                  <dt>Follow-up date</dt>
+                  <dd>{{ formatDate(detail.followUpDate) }}</dd>
+                </div>
+                <div>
+                  <dt>Coordinator</dt>
+                  <dd>{{ displayValue(detail.coordinatorName) }}</dd>
+                </div>
+                <div class="full-width">
+                  <dt>Remark</dt>
+                  <dd>{{ displayValue(detail.remark) }}</dd>
+                </div>
+              </dl>
+            </div>
+            }
+          }
+        </aside>
+      </div>
+    }
+  }
+</section>
+
+@if (formOpen()) {
+  <div class="modal-backdrop" (click)="closeForm()">
+    <div class="modal-panel" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2>{{ formMode() === 'create' ? 'Add CRM customer' : 'Edit CRM customer' }}</h2>
+        <button type="button" class="modal-close" aria-label="Close" (click)="closeForm()">×</button>
+      </header>
+
+      <form class="modal-form" (ngSubmit)="saveForm()">
+        <div class="form-grid">
+          <div class="form-field full-width">
+            <label for="industry-name">Industry name</label>
+            <input
+              id="industry-name"
+              type="text"
+              required
+              [ngModel]="form().industryName"
+              (ngModelChange)="updateFormField('industryName', $event)"
+              name="industryName"
+            />
+          </div>
+          <div class="form-field">
+            <label for="sector">Sector</label>
+            <input
+              id="sector"
+              type="text"
+              [ngModel]="form().sector"
+              (ngModelChange)="updateFormField('sector', $event)"
+              name="sector"
+            />
+          </div>
+          <div class="form-field">
+            <label for="location">Location</label>
+            <input
+              id="location"
+              type="text"
+              [ngModel]="form().location"
+              (ngModelChange)="updateFormField('location', $event)"
+              name="location"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="purchaser-name">Purchaser name</label>
+            <input
+              id="purchaser-name"
+              type="text"
+              [ngModel]="form().purchaserName"
+              (ngModelChange)="updateFormField('purchaserName', $event)"
+              name="purchaserName"
+            />
+          </div>
+          <div class="form-field">
+            <label for="purchaser-phone">Purchaser contact</label>
+            <input
+              id="purchaser-phone"
+              type="text"
+              [ngModel]="form().purchaserPhone"
+              (ngModelChange)="updateFormField('purchaserPhone', $event)"
+              name="purchaserPhone"
+            />
+          </div>
+          <div class="form-field full-width">
+            <label for="purchaser-email">Purchaser email</label>
+            <input
+              id="purchaser-email"
+              type="email"
+              [ngModel]="form().purchaserEmail"
+              (ngModelChange)="updateFormField('purchaserEmail', $event)"
+              name="purchaserEmail"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="maintenance-name">Maintenance name</label>
+            <input
+              id="maintenance-name"
+              type="text"
+              [ngModel]="form().maintenanceName"
+              (ngModelChange)="updateFormField('maintenanceName', $event)"
+              name="maintenanceName"
+            />
+          </div>
+          <div class="form-field">
+            <label for="maintenance-phone">Maintenance contact</label>
+            <input
+              id="maintenance-phone"
+              type="text"
+              [ngModel]="form().maintenancePhone"
+              (ngModelChange)="updateFormField('maintenancePhone', $event)"
+              name="maintenancePhone"
+            />
+          </div>
+          <div class="form-field full-width">
+            <label for="maintenance-email">Maintenance email</label>
+            <input
+              id="maintenance-email"
+              type="email"
+              [ngModel]="form().maintenanceEmail"
+              (ngModelChange)="updateFormField('maintenanceEmail', $event)"
+              name="maintenanceEmail"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="meeting-date">Meeting date</label>
+            <input
+              id="meeting-date"
+              type="date"
+              [ngModel]="form().meetingDate"
+              (ngModelChange)="updateFormField('meetingDate', $event)"
+              name="meetingDate"
+            />
+          </div>
+          <div class="form-field">
+            <label for="follow-up-date">Follow-up date</label>
+            <input
+              id="follow-up-date"
+              type="date"
+              [ngModel]="form().followUpDate"
+              (ngModelChange)="updateFormField('followUpDate', $event)"
+              name="followUpDate"
+            />
+          </div>
+          <div class="form-field">
+            <label for="coordinator-name">Coordinator name</label>
+            <input
+              id="coordinator-name"
+              type="text"
+              [ngModel]="form().coordinatorName"
+              (ngModelChange)="updateFormField('coordinatorName', $event)"
+              name="coordinatorName"
+            />
+          </div>
+          <div class="form-field full-width">
+            <label for="remark">Remark</label>
+            <textarea
+              id="remark"
+              rows="3"
+              [ngModel]="form().remark"
+              (ngModelChange)="updateFormField('remark', $event)"
+              name="remark"
+            ></textarea>
+          </div>
+
+          @if (formMode() === 'edit') {
+            <label class="checkbox-field">
+              <input
+                type="checkbox"
+                [ngModel]="form().isActive"
+                (ngModelChange)="updateFormField('isActive', $event)"
+                name="isActive"
+              />
+              Active record
+            </label>
+          }
+        </div>
+
+        @if (actionError()) {
+          <div class="alert-error" role="alert">{{ actionError() }}</div>
+        }
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeForm()" [disabled]="saving()">
+            Cancel
+          </button>
+          <button type="submit" class="btn-primary" [disabled]="saving()">
+            {{ saving() ? 'Saving…' : formMode() === 'create' ? 'Create customer' : 'Save changes' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
