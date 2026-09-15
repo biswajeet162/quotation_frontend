@@ -4,6 +4,7 @@ import {
   CreateCrmCustomerRequest,
   CrmCustomer,
   CrmCustomerSummary,
+  CrmImportBatch,
   UpdateCrmCustomerRequest,
 } from '../../../core/models/admin-crm.model';
 import { AdminCrmService } from '../../../core/services/admin/admin-crm.service';
@@ -124,20 +125,26 @@ export class AdminCrmComponent implements OnInit {
   readonly saving = signal(false);
   readonly deleting = signal(false);
   readonly uploading = signal(false);
+  readonly historyOpen = signal(false);
+  readonly historyLoading = signal(false);
+  readonly historyActivatingId = signal<string | null>(null);
+  readonly importHistory = signal<CrmImportBatch[]>([]);
   readonly overlayLoading = computed(
     () =>
       this.loading() ||
       this.detailLoading() ||
       this.saving() ||
       this.deleting() ||
-      this.uploading(),
+      this.uploading() ||
+      this.historyLoading() ||
+      this.historyActivatingId() !== null,
   );
   readonly errorMessage = signal<string | null>(null);
   readonly actionError = signal<string | null>(null);
   readonly customers = signal<CrmCustomer[]>([]);
   readonly searchQuery = signal('');
   readonly showInactive = signal(false);
-  readonly replaceOnUpload = signal(false);
+  readonly replaceOnUpload = signal(true);
   readonly selectedId = signal<string | null>(null);
   readonly selectedDetail = signal<CrmCustomer | null>(null);
   readonly detailOpen = signal(false);
@@ -505,6 +512,60 @@ export class AdminCrmComponent implements OnInit {
         this.uploading.set(false);
         this.actionError.set(this.extractError(err));
         this.toast.fromApiError(err, 'Could not upload Excel file.');
+      },
+    });
+  }
+
+  openHistory(): void {
+    if (!this.isAdmin()) {
+      return;
+    }
+    this.historyOpen.set(true);
+    this.actionError.set(null);
+    this.historyLoading.set(true);
+    this.crmService.listImportHistory().subscribe({
+      next: (batches) => {
+        this.importHistory.set(batches);
+        this.historyLoading.set(false);
+      },
+      error: (err) => {
+        this.historyLoading.set(false);
+        this.actionError.set(this.extractError(err));
+        this.toast.fromApiError(err, 'Could not load upload history.');
+      },
+    });
+  }
+
+  closeHistory(): void {
+    if (this.historyActivatingId()) {
+      return;
+    }
+    this.historyOpen.set(false);
+    this.actionError.set(null);
+  }
+
+  loadHistoryBatch(batch: CrmImportBatch): void {
+    if (!this.isAdmin() || this.historyActivatingId()) {
+      return;
+    }
+    this.historyActivatingId.set(batch.id);
+    this.actionError.set(null);
+    this.crmService.activateImportBatch(batch.id).subscribe({
+      next: (rows) => {
+        this.customers.set(rows);
+        this.historyActivatingId.set(null);
+        this.historyOpen.set(false);
+        this.closeDetail();
+        this.toast.success(`Loaded “${batch.fileName}” (${batch.recordCount} record(s)).`);
+        this.crmService.listImportHistory().subscribe({
+          next: (batches) => this.importHistory.set(batches),
+          error: () => undefined,
+        });
+      },
+      error: (err) => {
+        this.historyActivatingId.set(null);
+        this.actionError.set(this.extractError(err));
+        this.toast.fromApiError(err, 'Could not load that upload.');
       },
     });
   }

@@ -1,7 +1,15 @@
 <section class="page-card">
   <app-loading-overlay
     [loading]="overlayLoading()"
-    [message]="uploading() ? 'Uploading Excel…' : 'Loading CRM…'"
+    [message]="
+      uploading()
+        ? 'Uploading Excel…'
+        : historyActivatingId()
+          ? 'Loading upload…'
+          : historyLoading()
+            ? 'Loading history…'
+            : 'Loading CRM…'
+    "
   />
 
   <div class="toolbar">
@@ -41,14 +49,6 @@
         accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
         (change)="onExcelSelected($event)"
       />
-      <label class="toggle-field">
-        <input
-          type="checkbox"
-          [ngModel]="replaceOnUpload()"
-          (ngModelChange)="replaceOnUpload.set($event)"
-        />
-        Replace all
-      </label>
       <button
         type="button"
         class="btn-secondary btn-compact"
@@ -56,6 +56,14 @@
         [disabled]="uploading()"
       >
         {{ uploading() ? 'Uploading…' : 'Upload Excel' }}
+      </button>
+      <button
+        type="button"
+        class="btn-secondary btn-compact"
+        (click)="openHistory()"
+        [disabled]="historyLoading()"
+      >
+        History
       </button>
     }
     <button type="button" class="btn-primary btn-compact" (click)="openCreate()">
@@ -588,6 +596,73 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+}
+
+@if (historyOpen()) {
+  <div class="modal-backdrop" (click)="closeHistory()">
+    <div
+      class="modal-panel history-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="crm-history-title"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="modal-header">
+        <h2 id="crm-history-title">Excel upload history</h2>
+        <button type="button" class="modal-close" aria-label="Close" (click)="closeHistory()">
+          ×
+        </button>
+      </header>
+
+      <div class="modal-body history-body">
+        @if (actionError()) {
+          <div class="alert-error" role="alert">{{ actionError() }}</div>
+        }
+
+        @if (historyLoading()) {
+          <p class="state-message">Loading history…</p>
+        } @else if (importHistory().length === 0) {
+          <p class="state-message">No Excel uploads yet.</p>
+        } @else {
+          <p class="history-hint">Click a row to load that upload into CRM (also shown on Sales).</p>
+          <ul class="history-list">
+            @for (batch of importHistory(); track batch.id) {
+              <li>
+                <button
+                  type="button"
+                  class="history-item"
+                  [class.active]="batch.isActive"
+                  [disabled]="historyActivatingId() !== null"
+                  (click)="loadHistoryBatch(batch)"
+                >
+                  <span class="history-file">{{ batch.fileName }}</span>
+                  <span class="history-meta">
+                    {{ batch.recordCount }} record{{ batch.recordCount === 1 ? '' : 's' }}
+                    · {{ formatDateTime(batch.createdAt) }}
+                    @if (batch.uploadedByName) {
+                      · {{ batch.uploadedByName }}
+                    }
+                    @if (batch.isActive) {
+                      · Active
+                    }
+                  </span>
+                  <span class="history-action">
+                    @if (historyActivatingId() === batch.id) {
+                      Loading…
+                    } @else if (batch.isActive) {
+                      Current
+                    } @else {
+                      Load
+                    }
+                  </span>
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </div>
     </div>
   </div>
 }

@@ -7,6 +7,7 @@ import {
   CrmCustomer,
   CrmCustomerSummary,
   CrmExcelUploadResult,
+  CrmImportBatch,
   UpdateCrmCustomerRequest,
 } from '../../models/admin-crm.model';
 
@@ -48,5 +49,15 @@ export class AdminCrmService {
     formData.append('file', file);
     const params = new HttpParams().set('replaceExisting', String(replaceExisting));
     return this.http.post<CrmExcelUploadResult>(`${this.baseUrl}/upload`, formData, { params });
+  }
+
+  /** Admin-only: Excel upload history. */
+  listImportHistory(): Observable<CrmImportBatch[]> {
+    return this.http.get<CrmImportBatch[]>(`${this.baseUrl}/imports`);
+  }
+
+  /** Admin-only: load a past upload as the active CRM dataset. */
+  activateImportBatch(batchId: string): Observable<CrmCustomer[]> {
+    return this.http.post<CrmCustomer[]>(`${this.baseUrl}/imports/${batchId}/activate`, {});
   }
 }

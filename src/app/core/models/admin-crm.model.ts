@@ -65,3 +65,13 @@ export interface CrmExcelUploadResult {
   replacedExisting: boolean;
   message: string;
 }
+
+export interface CrmImportBatch {
+  id: string;
+  fileName: string;
+  recordCount: number;
+  uploadedByName?: string | null;
+  uploadedByRole?: string | null;
+  isActive: boolean;
+  createdAt: string;
+}
