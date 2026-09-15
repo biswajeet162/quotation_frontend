@@ -12,6 +12,23 @@ import { ToastService } from '../../../core/services/toast/toast.service';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 
 type FormMode = 'create' | 'edit';
+type SortDir = 'asc' | 'desc';
+type CrmSortKey =
+  | 'serialNumber'
+  | 'industryName'
+  | 'sector'
+  | 'location'
+  | 'purchaserName'
+  | 'purchaserPhone'
+  | 'purchaserEmail'
+  | 'maintenanceName'
+  | 'maintenancePhone'
+  | 'maintenanceEmail'
+  | 'followUpDate'
+  | 'meetingDate'
+  | 'coordinatorName'
+  | 'remark'
+  | 'quarterEnding';
 
 interface CrmFormState {
   industryName: string;
@@ -87,6 +104,8 @@ export class AdminCrmComponent implements OnInit {
   readonly formOpen = signal(false);
   readonly formMode = signal<FormMode>('create');
   readonly form = signal<CrmFormState>(emptyForm());
+  readonly sortKey = signal<CrmSortKey>('serialNumber');
+  readonly sortDir = signal<SortDir>('asc');
 
   readonly isAdmin = computed(() => this.auth.currentUser()?.role === 'ADMIN');
 
@@ -102,8 +121,11 @@ export class AdminCrmComponent implements OnInit {
     const query = this.searchQuery().trim().toLowerCase();
     const includeInactive = this.showInactive();
     const admin = this.isAdmin();
+    const key = this.sortKey();
+    const dir = this.sortDir();
+    const multiplier = dir === 'asc' ? 1 : -1;
 
-    return this.customers().filter((customer) => {
+    const filtered = this.customers().filter((customer) => {
       if (!includeInactive && customer.isActive === false) {
         return false;
       }
@@ -131,7 +153,85 @@ export class AdminCrmComponent implements OnInit {
         .toLowerCase()
         .includes(query);
     });
+
+    return [...filtered].sort((left, right) => {
+      const leftValue = this.readSortValue(left, key);
+      const rightValue = this.readSortValue(right, key);
+
+      if (typeof leftValue === 'number' && typeof rightValue === 'number') {
+        if (leftValue === rightValue) {
+          return ((left.serialNumber ?? 0) - (right.serialNumber ?? 0)) * multiplier;
+        }
+        return (leftValue - rightValue) * multiplier;
+      }
+
+      const leftText = String(leftValue);
+      const rightText = String(rightValue);
+      if (!leftText && rightText) {
+        return 1 * multiplier;
+      }
+      if (leftText && !rightText) {
+        return -1 * multiplier;
+      }
+      const compared = leftText.localeCompare(rightText, undefined, {
+        numeric: true,
+        sensitivity: 'base',
+      });
+      if (compared !== 0) {
+        return compared * multiplier;
+      }
+      return ((left.serialNumber ?? 0) - (right.serialNumber ?? 0)) * multiplier;
+    });
   });
+
+  toggleSort(key: CrmSortKey, event?: Event): void {
+    event?.preventDefault();
+    event?.stopPropagation();
+    if (this.sortKey() === key) {
+      this.sortDir.update((current) => (current === 'asc' ? 'desc' : 'asc'));
+      return;
+    }
+    this.sortKey.set(key);
+    this.sortDir.set('asc');
+  }
+
+  isSortedBy(key: CrmSortKey): boolean {
+    return this.sortKey() === key;
+  }
+
+  sortIndicator(key: CrmSortKey): string {
+    if (this.sortKey() !== key) {
+      return '↕';
+    }
+    return this.sortDir() === 'asc' ? '▲' : '▼';
+  }
+
+  private readSortValue(
+    row: CrmCustomer,
+    key: CrmSortKey,
+  ): string | number {
+    if (key === 'serialNumber') {
+      return row.serialNumber ?? 0;
+    }
+    if (key === 'followUpDate' || key === 'meetingDate' || key === 'quarterEnding') {
+      return this.toSortableDate(row[key]);
+    }
+    return String(row[key] ?? '')
+      .trim()
+      .toLowerCase();
+  }
+
+  private toSortableDate(value?: string | null): number {
+    if (!value) {
+      return Number.POSITIVE_INFINITY;
+    }
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) {
+      return Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+    }
+    const parsed = Date.parse(value);
+    return Number.isNaN(parsed) ? Number.POSITIVE_INFINITY : parsed;
+  }
 
   ngOnInit(): void {
     this.load();

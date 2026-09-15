@@ -85,31 +85,115 @@
           <thead>
             @if (isAdmin()) {
               <tr>
-                <th class="col-serial">S.No</th>
-                <th>Industry name</th>
-                <th>Sector</th>
-                <th>Location</th>
-                <th>Purchaser name</th>
-                <th>Purchaser contact</th>
-                <th>Purchaser email</th>
-                <th>Maintenance name</th>
-                <th>Maintenance contact</th>
-                <th>Maintenance email</th>
-                <th>Follow-up date</th>
-                <th>Meeting date</th>
-                <th>Coordinator name</th>
-                <th>Remarks</th>
+                <th class="col-serial" [class.sort-active]="isSortedBy('serialNumber')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('serialNumber', $event)">
+                    <span>S.No</span><span class="sort-icon">{{ sortIndicator('serialNumber') }}</span>
+                  </button>
+                </th>
+                <th [class.sort-active]="isSortedBy('industryName')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('industryName', $event)">
+                    <span>Industry name</span><span class="sort-icon">{{ sortIndicator('industryName') }}</span>
+                  </button>
+                </th>
+                <th [class.sort-active]="isSortedBy('sector')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('sector', $event)">
+                    <span>Sector</span><span class="sort-icon">{{ sortIndicator('sector') }}</span>
+                  </button>
+                </th>
+                <th [class.sort-active]="isSortedBy('location')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('location', $event)">
+                    <span>Location</span><span class="sort-icon">{{ sortIndicator('location') }}</span>
+                  </button>
+                </th>
+                <th [class.sort-active]="isSortedBy('purchaserName')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('purchaserName', $event)">
+                    <span>Purchaser name</span><span class="sort-icon">{{ sortIndicator('purchaserName') }}</span>
+                  </button>
+                </th>
+                <th [class.sort-active]="isSortedBy('purchaserPhone')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('purchaserPhone', $event)">
+                    <span>Purchaser contact</span><span class="sort-icon">{{ sortIndicator('purchaserPhone') }}</span>
+                  </button>
+                </th>
+                <th [class.sort-active]="isSortedBy('purchaserEmail')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('purchaserEmail', $event)">
+                    <span>Purchaser email</span><span class="sort-icon">{{ sortIndicator('purchaserEmail') }}</span>
+                  </button>
+                </th>
+                <th [class.sort-active]="isSortedBy('maintenanceName')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('maintenanceName', $event)">
+                    <span>Maintenance name</span><span class="sort-icon">{{ sortIndicator('maintenanceName') }}</span>
+                  </button>
+                </th>
+                <th [class.sort-active]="isSortedBy('maintenancePhone')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('maintenancePhone', $event)">
+                    <span>Maintenance contact</span><span class="sort-icon">{{ sortIndicator('maintenancePhone') }}</span>
+                  </button>
+                </th>
+                <th [class.sort-active]="isSortedBy('maintenanceEmail')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('maintenanceEmail', $event)">
+                    <span>Maintenance email</span><span class="sort-icon">{{ sortIndicator('maintenanceEmail') }}</span>
+                  </button>
+                </th>
+                <th [class.sort-active]="isSortedBy('followUpDate')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('followUpDate', $event)">
+                    <span>Follow-up date</span><span class="sort-icon">{{ sortIndicator('followUpDate') }}</span>
+                  </button>
+                </th>
+                <th [class.sort-active]="isSortedBy('meetingDate')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('meetingDate', $event)">
+                    <span>Meeting date</span><span class="sort-icon">{{ sortIndicator('meetingDate') }}</span>
+                  </button>
+                </th>
+                <th [class.sort-active]="isSortedBy('coordinatorName')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('coordinatorName', $event)">
+                    <span>Coordinator name</span><span class="sort-icon">{{ sortIndicator('coordinatorName') }}</span>
+                  </button>
+                </th>
+                <th [class.sort-active]="isSortedBy('remark')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('remark', $event)">
+                    <span>Remarks</span><span class="sort-icon">{{ sortIndicator('remark') }}</span>
+                  </button>
+                </th>
                 <th class="col-actions">Edit</th>
               </tr>
             } @else {
               <tr>
-                <th class="col-serial">S.No</th>
-                <th>Industry</th>
-                <th>Sector</th>
-                <th>Coordinator</th>
-                <th>Remarks</th>
-                <th>Follow-up</th>
-                <th>Quarter ending</th>
+                <th class="col-serial" [class.sort-active]="isSortedBy('serialNumber')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('serialNumber', $event)">
+                    <span>S.No</span><span class="sort-icon">{{ sortIndicator('serialNumber') }}</span>
+                  </button>
+                </th>
+                <th [class.sort-active]="isSortedBy('industryName')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('industryName', $event)">
+                    <span>Industry</span><span class="sort-icon">{{ sortIndicator('industryName') }}</span>
+                  </button>
+                </th>
+                <th [class.sort-active]="isSortedBy('sector')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('sector', $event)">
+                    <span>Sector</span><span class="sort-icon">{{ sortIndicator('sector') }}</span>
+                  </button>
+                </th>
+                <th [class.sort-active]="isSortedBy('coordinatorName')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('coordinatorName', $event)">
+                    <span>Coordinator</span><span class="sort-icon">{{ sortIndicator('coordinatorName') }}</span>
+                  </button>
+                </th>
+                <th [class.sort-active]="isSortedBy('remark')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('remark', $event)">
+                    <span>Remarks</span><span class="sort-icon">{{ sortIndicator('remark') }}</span>
+                  </button>
+                </th>
+                <th [class.sort-active]="isSortedBy('followUpDate')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('followUpDate', $event)">
+                    <span>Follow-up</span><span class="sort-icon">{{ sortIndicator('followUpDate') }}</span>
+                  </button>
+                </th>
+                <th [class.sort-active]="isSortedBy('quarterEnding')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('quarterEnding', $event)">
+                    <span>Quarter ending</span><span class="sort-icon">{{ sortIndicator('quarterEnding') }}</span>
+                  </button>
+                </th>
               </tr>
             }
           </thead>
