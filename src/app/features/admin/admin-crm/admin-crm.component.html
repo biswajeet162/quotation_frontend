@@ -106,7 +106,7 @@
           <thead>
             @if (isAdmin()) {
               <tr>
-                <th class="col-status" aria-label="Status"></th>
+                <th class="col-status">Status</th>
                 <th class="col-serial" [class.sort-active]="isSortedBy('serialNumber')">
                   <button type="button" class="sort-btn" (click)="toggleSort('serialNumber', $event)">
                     <span>S.No</span><span class="sort-icon">{{ sortIndicator('serialNumber') }}</span>
@@ -196,7 +196,7 @@
               </tr>
             } @else {
               <tr>
-                <th class="col-status" aria-label="Status"></th>
+                <th class="col-status">Status</th>
                 <th class="col-serial" [class.sort-active]="isSortedBy('serialNumber')">
                   <button type="button" class="sort-btn" (click)="toggleSort('serialNumber', $event)">
                     <span>S.No</span><span class="sort-icon">{{ sortIndicator('serialNumber') }}</span>
@@ -256,9 +256,9 @@
                 @if (isAdmin()) {
                   <td class="col-status">
                     @if (workflowStatus(customer) === 'DONE') {
-                      <span class="status-mark status-done" title="Done">✓</span>
+                      <span class="status-badge status-done" title="Done" aria-label="Done">✓</span>
                     } @else if (workflowStatus(customer) === 'REVIEW') {
-                      <span class="status-mark status-review" title="Review">●</span>
+                      <span class="status-badge status-review" title="Review" aria-label="Review">●</span>
                     }
                   </td>
                   <td class="col-serial">{{ customer.serialNumber }}</td>
@@ -290,9 +290,9 @@
                 } @else {
                   <td class="col-status">
                     @if (workflowStatus(customer) === 'DONE') {
-                      <span class="status-mark status-done" title="Done">✓</span>
+                      <span class="status-badge status-done" title="Done" aria-label="Done">✓</span>
                     } @else if (workflowStatus(customer) === 'REVIEW') {
-                      <span class="status-mark status-review" title="Review">●</span>
+                      <span class="status-badge status-review" title="Review" aria-label="Review">●</span>
                     }
                   </td>
                   <td class="col-serial">{{ customer.serialNumber }}</td>
@@ -350,6 +350,7 @@
                 [disabled]="statusSaving()"
                 (click)="setWorkflowStatus('REVIEW', $event)"
               >
+                <span class="btn-status-dot" aria-hidden="true">●</span>
                 Review
               </button>
               <button
@@ -359,6 +360,7 @@
                 [disabled]="statusSaving()"
                 (click)="setWorkflowStatus('DONE', $event)"
               >
+                <span class="btn-status-tick" aria-hidden="true">✓</span>
                 Done
               </button>
             </div>
