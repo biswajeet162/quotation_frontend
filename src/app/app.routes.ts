@@ -184,7 +184,21 @@ export const routes: Routes = [
           import('./features/admin/admin-crm/admin-crm.component').then(
             (m) => m.AdminCrmComponent,
           ),
-        canActivate: [roleGuard(['ADMIN', 'SALES'])],
+        canActivate: [roleGuard(['ADMIN'])],
+      },
+      {
+        path: 'sales/crm',
+        loadComponent: () =>
+          import('./features/sales/sales-crm/sales-crm.component').then((m) => m.SalesCrmComponent),
+        canActivate: [roleGuard(['SALES'])],
+      },
+      {
+        path: 'sales/follow-up',
+        loadComponent: () =>
+          import('./features/sales/sales-follow-up/sales-follow-up.component').then(
+            (m) => m.SalesFollowUpComponent,
+          ),
+        canActivate: [roleGuard(['SALES'])],
       },
       {
         path: 'sales/history',

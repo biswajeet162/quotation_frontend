@@ -10,7 +10,8 @@
       <p class="muted">CRM overview for the sales team. Limited to customers, CRM, and profile.</p>
     </div>
     <div class="header-actions">
-      <a routerLink="/admin/crm" class="btn-primary">Open CRM</a>
+      <a routerLink="/sales/crm" class="btn-primary">Open CRM</a>
+      <a routerLink="/sales/follow-up" class="btn-secondary">Follow-up</a>
       <a routerLink="/sales/history" class="btn-secondary">History</a>
       <a routerLink="/profile" class="btn-secondary">Profile</a>
       <button type="button" class="btn-secondary" (click)="load()" [disabled]="loading()">
@@ -46,10 +47,15 @@
       </div>
 
       <nav class="quick-nav" aria-label="Sales shortcuts">
-        <a routerLink="/admin/crm" class="quick-card">
+        <a routerLink="/sales/crm" class="quick-card">
           <span class="quick-icon">▤</span>
           <span class="quick-title">CRM</span>
           <span class="quick-desc">Manage customers and follow-ups</span>
+        </a>
+        <a routerLink="/sales/follow-up" class="quick-card">
+          <span class="quick-icon">◷</span>
+          <span class="quick-title">Follow-up</span>
+          <span class="quick-desc">Contacts, Follow, and Meeting lists</span>
         </a>
         <a routerLink="/sales/history" class="quick-card">
           <span class="quick-icon">◷</span>

@@ -1,0 +1,194 @@
+<section class="sales-follow page-card">
+  <app-loading-overlay [loading]="loading() || statusSaving() || saving()" [message]="statusSaving() ? 'Updating status…' : saving() ? 'Saving…' : 'Loading follow-ups…'" />
+
+  <header class="page-header">
+    <div>
+      <h1>Follow-up</h1>
+      <p class="muted">Contacts, Follow, and Meeting — matching the mobile Follow-up tab.</p>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <input
+      class="search"
+      type="search"
+      placeholder="Search…"
+      [ngModel]="query()"
+      (ngModelChange)="query.set($event)"
+    />
+    <select class="filter-select" [ngModel]="quickFilter()" (ngModelChange)="onFilterChange($event)">
+      <option value="all">All</option>
+      <option value="done">Done</option>
+      <option value="review">Review</option>
+      <option value="emptyContacts">Empty contacts</option>
+      <option value="filledContacts">Filled contacts</option>
+      <option value="custom">Custom…</option>
+      <option value="sortBy">Sort by…</option>
+    </select>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button type="button" role="tab" [class.active]="activeTab() === 'contacts'" (click)="setTab('contacts')">Contacts</button>
+    <button type="button" role="tab" [class.active]="activeTab() === 'follow'" (click)="setTab('follow')">Follow</button>
+    <button type="button" role="tab" [class.active]="activeTab() === 'meeting'" (click)="setTab('meeting')">Meeting</button>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="alert-error" role="alert">{{ errorMessage() }}</div>
+  }
+
+  @if (!loading() && !errorMessage() && filteredRows().length === 0) {
+    <p class="empty">{{ emptyMessage() }}</p>
+  }
+
+  <ul class="crm-list">
+    @for (row of filteredRows(); track row.id) {
+      <li>
+        <button type="button" class="crm-row" (click)="openRow(row)">
+          <div class="crm-row-main">
+            <div class="crm-title">
+              <span class="serial">#{{ row.serialNumber }}</span>
+              <span class="name">{{ row.industryName }}</span>
+            </div>
+            <div class="crm-sub">
+              <span>{{ row.location?.trim() || '—' }}</span>
+              <span class="dot">·</span>
+              <span class="meta">{{ dateHint(row) }}</span>
+            </div>
+          </div>
+          <span class="status-tick" aria-hidden="true">
+            @if (workflowStatus(row) === 'DONE') {
+              <span class="tick done">✓</span>
+            } @else if (workflowStatus(row) === 'REVIEW') {
+              <span class="tick review">●</span>
+            }
+          </span>
+        </button>
+      </li>
+    }
+  </ul>
+</section>
+
+@if (detailOpen()) {
+  <div class="modal-backdrop" (click)="closeDetail()">
+    <div class="modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+      @if (selectedDetail(); as detail) {
+        <header class="modal-header">
+          <h2>{{ detail.industryName }}</h2>
+          <button type="button" class="btn-secondary" (click)="closeDetail()">Close</button>
+        </header>
+
+        <div class="action-row">
+          @if (!editOnly()) {
+            <button type="button" class="btn-review" [class.active]="workflowStatus(detail) === 'REVIEW'" (click)="setWorkflowStatus('REVIEW')" [disabled]="statusSaving()">
+              {{ workflowStatus(detail) === 'REVIEW' ? '● Review ✓' : '● Review' }}
+            </button>
+            <button type="button" class="btn-done" [class.active]="workflowStatus(detail) === 'DONE'" (click)="setWorkflowStatus('DONE')" [disabled]="statusSaving()">
+              {{ workflowStatus(detail) === 'DONE' ? '✓ Done' : 'Done' }}
+            </button>
+          }
+          <button type="button" class="btn-edit" (click)="openEdit()">Edit</button>
+        </div>
+
+        <section class="detail-section">
+          <h3>Purchaser / Maintenance</h3>
+          <dl>
+            <div><dt>Purchaser contact</dt><dd>{{ detail.purchaserPhone || '—' }}</dd></div>
+            <div><dt>Maintenance contact</dt><dd>{{ detail.maintenancePhone || '—' }}</dd></div>
+            <div><dt>Follow-up date</dt><dd>{{ formatDate(detail.followUpDate) }}</dd></div>
+            <div><dt>Meeting date</dt><dd>{{ formatDate(detail.meetingDate) }}</dd></div>
+            <div class="full"><dt>Remarks</dt><dd>{{ detail.remark || '—' }}</dd></div>
+          </dl>
+        </section>
+
+        @if (followUps().length > 0) {
+          <section class="detail-section">
+            <h3>Follow-up history ({{ followUps().length }})</h3>
+            <ul class="history-list">
+              @for (entry of followUps(); track entry.id) {
+                <li>
+                  <div class="history-date">{{ formatDate(entry.followUpDate) }}</div>
+                  <div class="history-remark">{{ entry.remark?.trim() || '—' }}</div>
+                  <div class="history-meta">{{ formatDateTime(entry.createdAt) }}@if (entry.createdByName?.trim()) { · {{ entry.createdByName }} }</div>
+                </li>
+              }
+            </ul>
+          </section>
+        }
+      } @else {
+        <p class="muted">Loading details…</p>
+      }
+    </div>
+  </div>
+}
+
+@if (formOpen() && form(); as state) {
+  <div class="modal-backdrop" (click)="closeForm()">
+    <div class="modal form-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+      <header class="modal-header">
+        <h2>Edit customer</h2>
+        <button type="button" class="btn-secondary" (click)="closeForm()">Close</button>
+      </header>
+      <div class="form-grid">
+        <label>Industry name *<input [ngModel]="state.industryName" (ngModelChange)="updateFormField('industryName', $event)" /></label>
+        <label>Location<input [ngModel]="state.location" (ngModelChange)="updateFormField('location', $event)" /></label>
+        <label>Purchaser contact<input [ngModel]="state.purchaserPhone" (ngModelChange)="updateFormField('purchaserPhone', $event)" /></label>
+        <label>Maintenance contact<input [ngModel]="state.maintenancePhone" (ngModelChange)="updateFormField('maintenancePhone', $event)" /></label>
+        <label>Follow-up date<input type="date" [ngModel]="state.followUpDate" (ngModelChange)="updateFormField('followUpDate', $event)" /></label>
+        <label>Meeting date<input type="date" [ngModel]="state.meetingDate" (ngModelChange)="updateFormField('meetingDate', $event)" /></label>
+        <label class="full">Remarks<textarea rows="3" [ngModel]="state.remark" (ngModelChange)="updateFormField('remark', $event)"></textarea></label>
+      </div>
+      <footer class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="closeForm()">Cancel</button>
+        <button type="button" class="btn-primary" (click)="save()" [disabled]="saving()">Save changes</button>
+      </footer>
+    </div>
+  </div>
+}
+
+@if (customOpen()) {
+  <div class="modal-backdrop" (click)="customOpen.set(false)">
+    <div class="modal form-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+      <header class="modal-header">
+        <h2>Custom filter</h2>
+        <button type="button" class="btn-secondary" (click)="customOpen.set(false)">Close</button>
+      </header>
+      <div class="custom-body">
+        <label class="checkbox"><input type="checkbox" [ngModel]="customDraft().requireFollowUpDate" (ngModelChange)="patchCustomDraft('requireFollowUpDate', $event)" /> Has follow-up date</label>
+        <label class="checkbox"><input type="checkbox" [ngModel]="customDraft().requireMeetingDate" (ngModelChange)="patchCustomDraft('requireMeetingDate', $event)" /> Has meeting date</label>
+        <label class="checkbox"><input type="checkbox" [ngModel]="customDraft().requireCoordinator" (ngModelChange)="patchCustomDraft('requireCoordinator', $event)" /> Has coordinator</label>
+        <label>Address contains<input [ngModel]="customDraft().locationQuery" (ngModelChange)="patchCustomDraft('locationQuery', $event)" /></label>
+      </div>
+      <footer class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="resetCustom()">Reset</button>
+        <button type="button" class="btn-primary" (click)="applyCustom()">Apply</button>
+      </footer>
+    </div>
+  </div>
+}
+
+@if (sortOpen()) {
+  <div class="modal-backdrop" (click)="sortOpen.set(false)">
+    <div class="modal form-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+      <header class="modal-header">
+        <h2>Sort by</h2>
+        <button type="button" class="btn-secondary" (click)="sortOpen.set(false)">Close</button>
+      </header>
+      <div class="custom-body">
+        @for (option of sortOptions; track option.value) {
+          <label class="radio">
+            <input type="radio" name="follow-sort" [checked]="sortDraft().sortBy === option.value" (change)="setSortBy(option.value)" />
+            {{ option.label }}
+          </label>
+        }
+        <label class="checkbox">
+          <input type="checkbox" [ngModel]="sortDraft().ascending" (ngModelChange)="patchSortAscending($event)" />
+          Ascending
+        </label>
+      </div>
+      <footer class="modal-footer">
+        <button type="button" class="btn-primary" (click)="applySort()">Apply sort</button>
+      </footer>
+    </div>
+  </div>
+}

@@ -6,6 +6,7 @@ import {
   CrmCustomerSummary,
   CrmImportBatch,
   UpdateCrmCustomerRequest,
+  crmHasContactPhone,
 } from '../../../core/models/admin-crm.model';
 import { AdminCrmService } from '../../../core/services/admin/admin-crm.service';
 import { AuthService } from '../../../core/services/auth/auth.service';
@@ -621,6 +622,10 @@ export class AdminCrmComponent implements OnInit {
       return;
     }
     const next = this.workflowStatus(detail) === status ? 'NONE' : status;
+    if (next === 'DONE' && !crmHasContactPhone(detail)) {
+      this.toast.warning('Add at least one purchaser or maintenance contact before marking Done.');
+      return;
+    }
     this.statusSaving.set(true);
     this.actionError.set(null);
     this.crmService.updateWorkflowStatus(detail.id, next).subscribe({

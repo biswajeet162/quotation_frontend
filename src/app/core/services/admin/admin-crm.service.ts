@@ -8,6 +8,7 @@ import {
   CrmCustomer,
   CrmCustomerSummary,
   CrmExcelUploadResult,
+  CrmFollowUpEntry,
   CrmImportBatch,
   UpdateCrmCustomerRequest,
 } from '../../models/admin-crm.model';
@@ -30,6 +31,10 @@ export class AdminCrmService {
 
   getById(id: string): Observable<CrmCustomer> {
     return this.http.get<CrmCustomer>(`${this.baseUrl}/${id}`);
+  }
+
+  listFollowUps(id: string): Observable<CrmFollowUpEntry[]> {
+    return this.http.get<CrmFollowUpEntry[]>(`${this.baseUrl}/${id}/follow-ups`);
   }
 
   create(request: CreateCrmCustomerRequest): Observable<CrmCustomer> {
