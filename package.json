@@ -6,7 +6,11 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "sync:flutter-web": "node ./scripts/sync-flutter-web.mjs",
+    "sync:flutter-web:copy": "node ./scripts/sync-flutter-web.mjs --skip-build",
+    "predeploy": "npm run sync:flutter-web",
+    "build:with-mobile": "npm run sync:flutter-web && npm run build"
   },
   "private": true,
   "dependencies": {
