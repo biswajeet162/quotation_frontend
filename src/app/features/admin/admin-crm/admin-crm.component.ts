@@ -47,7 +47,6 @@ type CrmSortKey =
   | 'meetingDate'
   | 'coordinatorName'
   | 'remark'
-  | 'quarterEnding'
   | 'updatedByName'
   | 'updatedAt'
   | 'createdAt';
@@ -96,7 +95,6 @@ interface CrmFormState {
   maintenanceEmail: string;
   meetingDate: string;
   followUpDate: string;
-  quarterEnding: string;
   coordinatorName: string;
   remark: string;
   isActive: boolean;
@@ -114,7 +112,6 @@ const emptyForm = (): CrmFormState => ({
   maintenanceEmail: '',
   meetingDate: '',
   followUpDate: '',
-  quarterEnding: '',
   coordinatorName: '',
   remark: '',
   isActive: true,
@@ -371,7 +368,7 @@ export class AdminCrmComponent implements OnInit {
     if (key === 'serialNumber') {
       return row.serialNumber ?? 0;
     }
-    if (key === 'followUpDate' || key === 'meetingDate' || key === 'quarterEnding') {
+    if (key === 'followUpDate' || key === 'meetingDate') {
       return this.toSortableDate(row[key]);
     }
     if (key === 'updatedAt' || key === 'createdAt') {
@@ -668,7 +665,6 @@ export class AdminCrmComponent implements OnInit {
       maintenanceEmail: detail.maintenanceEmail ?? '',
       meetingDate: detail.meetingDate ?? '',
       followUpDate: detail.followUpDate ?? '',
-      quarterEnding: detail.quarterEnding ?? '',
       coordinatorName: detail.coordinatorName ?? '',
       remark: detail.remark ?? '',
       isActive: detail.isActive !== false,
@@ -810,7 +806,6 @@ export class AdminCrmComponent implements OnInit {
       maintenanceEmail: state.maintenanceEmail.trim() || undefined,
       meetingDate: state.meetingDate || null,
       followUpDate: state.followUpDate || null,
-      quarterEnding: state.quarterEnding || null,
       coordinatorName: state.coordinatorName.trim() || undefined,
       remark: state.remark.trim() || undefined,
     };

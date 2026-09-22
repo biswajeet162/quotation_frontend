@@ -445,10 +445,6 @@
                 <dd>{{ formatDate(detail.followUpDate) }}</dd>
               </div>
               <div>
-                <dt>Quarter ending</dt>
-                <dd>{{ formatDate(detail.quarterEnding) }}</dd>
-              </div>
-              <div>
                 <dt>Coordinator</dt>
                 <dd>{{ displayValue(detail.coordinatorName) }}</dd>
               </div>
@@ -587,16 +583,6 @@
               [ngModel]="form().followUpDate"
               (ngModelChange)="updateFormField('followUpDate', $event)"
               name="followUpDate"
-            />
-          </div>
-          <div class="form-field">
-            <label for="quarter-ending">Quarter ending</label>
-            <input
-              id="quarter-ending"
-              type="date"
-              [ngModel]="form().quarterEnding"
-              (ngModelChange)="updateFormField('quarterEnding', $event)"
-              name="quarterEnding"
             />
           </div>
           <div class="form-field">
