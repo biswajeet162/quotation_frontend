@@ -4,6 +4,9 @@
  * Mobile / tablet  → Flutter Web at /m/
  * Desktop          → Angular (quotation_frontend)
  *
+ * Invite / verify / reset open under /m/... on phones. Flutter treats those
+ * routes as public (no login). Deploy a fresh `public/m/` after Flutter changes.
+ *
  * Overrides for testing:
  *   ?force_mobile=1   — treat as mobile
  *   ?force_desktop=1  — treat as desktop
@@ -25,7 +28,6 @@ function isStaticAssetPath(pathname) {
   ) {
     return true;
   }
-  // Root-level hashed bundles / files (Angular or otherwise)
   const last = pathname.split('/').pop() || '';
   return last.includes('.');
 }
@@ -50,6 +52,13 @@ function mapAngularPathToFlutter(pathname) {
   return '/m' + (pathname.startsWith('/') ? pathname : `/${pathname}`);
 }
 
+function copySearchParams(fromUrl, toUrl, skipKeys = []) {
+  const skip = new Set(skipKeys);
+  for (const [key, value] of fromUrl.searchParams.entries()) {
+    if (!skip.has(key)) toUrl.searchParams.set(key, value);
+  }
+}
+
 export default function middleware(request) {
   const url = new URL(request.url);
   const { pathname } = url;
@@ -64,18 +73,14 @@ export default function middleware(request) {
   // Desktop opened /m → Angular home (use ?force_mobile=1 to preview Flutter on desktop)
   if (onFlutter && !mobile) {
     const dest = new URL('/', request.url);
-    for (const [key, value] of url.searchParams.entries()) {
-      if (key !== 'force_desktop') dest.searchParams.set(key, value);
-    }
+    copySearchParams(url, dest, ['force_desktop']);
     return Response.redirect(dest, 302);
   }
 
-  // Mobile on Angular routes → Flutter Web
+  // Mobile on Angular routes → Flutter Web (incl. /accept-distributor-invite)
   if (!onFlutter && mobile) {
     const dest = new URL(mapAngularPathToFlutter(pathname), request.url);
-    for (const [key, value] of url.searchParams.entries()) {
-      if (key !== 'force_mobile') dest.searchParams.set(key, value);
-    }
+    copySearchParams(url, dest, ['force_mobile']);
     return Response.redirect(dest, 302);
   }
 }
