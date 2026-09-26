@@ -1,0 +1,95 @@
+@import '../signup/signup.component.css';
+
+.invite-page .invite-card {
+  max-width: 560px;
+}
+
+.brand-eyebrow {
+  margin: 0 0 0.35rem !important;
+  font-size: 0.75rem !important;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #0f766e !important;
+}
+
+.invite-summary {
+  margin: 0 0 1.25rem;
+  padding: 0.9rem 1rem;
+  border-radius: 10px;
+  background: #f0fdfa;
+  border: 1px solid #99f6e4;
+}
+
+.invite-summary .summary-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 0.2rem;
+}
+
+.invite-summary strong {
+  color: #0f172a;
+  word-break: break-all;
+}
+
+.summary-note {
+  margin: 0.65rem 0 0;
+  font-size: 0.85rem;
+  color: #0f766e;
+  line-height: 1.45;
+}
+
+.invite-form .field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
+
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.35rem 0 0.15rem;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.section-divider::before,
+.section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e2e8f0;
+}
+
+.field-hint-inline {
+  margin: 0 0 0.25rem;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.checkbox-field {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  font-size: 0.88rem;
+  color: #334155;
+  line-height: 1.45;
+  cursor: pointer;
+}
+
+.checkbox-field input {
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+}
+
+@media (max-width: 560px) {
+  .invite-form .field-row {
+    grid-template-columns: 1fr;
+  }
+}

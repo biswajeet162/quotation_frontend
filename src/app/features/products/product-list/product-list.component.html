@@ -3,10 +3,41 @@
 
   <header class="page-header">
     <h1 class="page-title">{{ pageTitle() }}</h1>
-    <button type="button" class="btn-secondary" (click)="loadProducts()" [disabled]="loading()">
-      Refresh
-    </button>
+    <div class="page-header-actions">
+      @if (activeMainTab() === 'distributors' && isAdmin()) {
+        <button
+          type="button"
+          class="btn-icon-add"
+          (click)="openInviteModal()"
+          [disabled]="loading()"
+          title="Add distributor"
+          aria-label="Add distributor"
+        >
+          <span aria-hidden="true">+</span>
+        </button>
+      }
+      <button type="button" class="btn-secondary" (click)="loadProducts()" [disabled]="loading()">
+        Refresh
+      </button>
+    </div>
   </header>
+
+  @if (lastInviteLink()) {
+    <div class="invite-banner" role="status">
+      <div class="invite-banner-text">
+        <strong>Invite ready for {{ lastInviteEmail() }}</strong>
+        <p>
+          Mail can be slow or land in spam locally. Use this link now:
+          <a [href]="lastInviteLink()!" target="_blank" rel="noopener">Open invite</a>
+        </p>
+        <code class="invite-link-code">{{ lastInviteLink() }}</code>
+      </div>
+      <div class="invite-banner-actions">
+        <button type="button" class="btn-secondary" (click)="copyInviteLink()">Copy link</button>
+        <button type="button" class="btn-secondary" (click)="dismissInviteBanner()">Dismiss</button>
+      </div>
+    </div>
+  }
 
   @if (activeMainTab() === 'products' || activeMainTab() === 'distributors') {
     <div class="toolbar">
@@ -1380,6 +1411,97 @@
           </ul>
         }
       </div>
+    </div>
+  </div>
+}
+
+@if (inviteModalOpen()) {
+  <div class="invite-backdrop" (click)="closeInviteModal()">
+    <div
+      class="modal-panel invite-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="invite-modal-title"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="modal-header">
+        <div>
+          <h2 id="invite-modal-title">Invite distributor</h2>
+          <p class="modal-subtitle">Create their account and email a secure join link. They cannot self-sign up.</p>
+        </div>
+        <button type="button" class="modal-close" aria-label="Close" (click)="closeInviteModal()">×</button>
+      </header>
+
+      <form class="modal-form" (ngSubmit)="submitDistributorInvite()">
+        <div class="form-grid">
+          <div class="form-field full-width">
+            <label for="invite-name">Distributor name</label>
+            <input
+              id="invite-name"
+              type="text"
+              required
+              autocomplete="organization"
+              [ngModel]="inviteForm().name"
+              (ngModelChange)="updateInviteField('name', $event)"
+              name="inviteName"
+              placeholder="Company or contact name"
+            />
+          </div>
+          <div class="form-field">
+            <label for="invite-email">Email</label>
+            <input
+              id="invite-email"
+              type="email"
+              required
+              autocomplete="email"
+              [ngModel]="inviteForm().email"
+              (ngModelChange)="updateInviteField('email', $event)"
+              name="inviteEmail"
+              placeholder="distributor@company.com"
+            />
+          </div>
+          <div class="form-field">
+            <label for="invite-phone">Phone</label>
+            <input
+              id="invite-phone"
+              type="tel"
+              required
+              autocomplete="tel"
+              [ngModel]="inviteForm().phone"
+              (ngModelChange)="updateInviteField('phone', $event)"
+              name="invitePhone"
+              placeholder="+91…"
+            />
+          </div>
+          <div class="form-field full-width">
+            <label for="invite-password">Temporary password</label>
+            <input
+              id="invite-password"
+              type="password"
+              required
+              autocomplete="new-password"
+              [ngModel]="inviteForm().password"
+              (ngModelChange)="updateInviteField('password', $event)"
+              name="invitePassword"
+              placeholder="At least 6 characters"
+            />
+            <p class="field-hint">They can keep this or set a new password when accepting the invite.</p>
+          </div>
+        </div>
+
+        @if (inviteError()) {
+          <div class="alert alert-error" role="alert">{{ inviteError() }}</div>
+        }
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeInviteModal()" [disabled]="inviteSaving()">
+            Cancel
+          </button>
+          <button type="submit" class="btn-primary" [disabled]="inviteSaving()">
+            {{ inviteSaving() ? 'Sending…' : 'Send invite' }}
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 }

@@ -54,6 +54,13 @@ export const routes: Routes = [
       import('./features/auth/reset-password/reset-password.component').then((m) => m.ResetPasswordComponent),
   },
   {
+    path: 'accept-distributor-invite',
+    loadComponent: () =>
+      import('./features/auth/accept-distributor-invite/accept-distributor-invite.component').then(
+        (m) => m.AcceptDistributorInviteComponent,
+      ),
+  },
+  {
     path: 'images/:imageId',
     canMatch: [publicImageIdCanMatch],
     loadComponent: () =>

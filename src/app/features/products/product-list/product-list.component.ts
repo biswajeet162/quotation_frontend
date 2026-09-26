@@ -27,7 +27,9 @@ import { AuthService } from '../../../core/services/auth/auth.service';
 import { InquiryCartService } from '../../../core/services/inquiry/inquiry-cart.service';
 import { ProductQueryFormService } from '../../../core/services/product/product-query-form.service';
 import { AdminDistributorProductService } from '../../../core/services/admin/admin-distributor-product.service';
+import { AdminDistributorInviteService } from '../../../core/services/admin/admin-distributor-invite.service';
 import { ToastService } from '../../../core/services/toast/toast.service';
+import { extractApiErrorMessage } from '../../../core/utils/api-error.util';
 import {
   DistributorBrand,
   DistributorProductAttachment,
@@ -65,6 +67,13 @@ interface AdminProductFormState {
   stockQuantity: string | number;
 }
 
+interface DistributorInviteFormState {
+  name: string;
+  email: string;
+  phone: string;
+  password: string;
+}
+
 const emptyAdminProductForm = (): AdminProductFormState => ({
   brand: '',
   designation: '',
@@ -72,6 +81,13 @@ const emptyAdminProductForm = (): AdminProductFormState => ({
   specifications: '',
   rsp: '',
   stockQuantity: '0',
+});
+
+const emptyDistributorInviteForm = (): DistributorInviteFormState => ({
+  name: '',
+  email: '',
+  phone: '',
+  password: '',
 });
 
 @Component({
@@ -89,6 +105,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
   private readonly cart = inject(InquiryCartService);
   private readonly queryForm = inject(ProductQueryFormService);
   private readonly adminProducts = inject(AdminDistributorProductService);
+  private readonly adminInvites = inject(AdminDistributorInviteService);
   private readonly toast = inject(ToastService);
 
   readonly loading = signal(true);
@@ -155,6 +172,13 @@ export class ProductListComponent implements OnInit, OnDestroy {
   readonly adminAuditLogs = signal<DistributorProductAuditLog[]>([]);
   readonly adminAuditLogsLoading = signal(false);
   readonly adminAuditLogsError = signal<string | null>(null);
+
+  readonly inviteModalOpen = signal(false);
+  readonly inviteSaving = signal(false);
+  readonly inviteError = signal<string | null>(null);
+  readonly inviteForm = signal<DistributorInviteFormState>(emptyDistributorInviteForm());
+  readonly lastInviteLink = signal<string | null>(null);
+  readonly lastInviteEmail = signal<string | null>(null);
 
   readonly attachmentTabOptions: { type: TimelineAttachmentMediaType; label: string }[] = [
     { type: 'IMAGE', label: 'Images' },
@@ -1386,6 +1410,86 @@ export class ProductListComponent implements OnInit, OnDestroy {
       return url;
     }
     return `${url}${url.includes('?') ? '&' : '?'}v=${Date.now()}`;
+  }
+
+  openInviteModal(): void {
+    this.inviteForm.set(emptyDistributorInviteForm());
+    this.inviteError.set(null);
+    this.inviteModalOpen.set(true);
+  }
+
+  closeInviteModal(): void {
+    if (this.inviteSaving()) {
+      return;
+    }
+    this.inviteModalOpen.set(false);
+    this.inviteError.set(null);
+  }
+
+  updateInviteField<K extends keyof DistributorInviteFormState>(
+    key: K,
+    value: DistributorInviteFormState[K],
+  ): void {
+    this.inviteForm.update((current) => ({ ...current, [key]: value }));
+  }
+
+  submitDistributorInvite(): void {
+    const form = this.inviteForm();
+    const name = form.name.trim();
+    const email = form.email.trim();
+    const phone = form.phone.trim();
+    const password = form.password;
+
+    if (!name || !email || !phone || !password) {
+      this.inviteError.set('Please fill in all fields.');
+      return;
+    }
+    if (password.length < 6) {
+      this.inviteError.set('Password must be at least 6 characters.');
+      return;
+    }
+
+    this.inviteSaving.set(true);
+    this.inviteError.set(null);
+
+    this.adminInvites
+      .createInvite({ name, email, phone, password })
+      .subscribe({
+        next: (response) => {
+          this.inviteSaving.set(false);
+          this.inviteModalOpen.set(false);
+          this.lastInviteLink.set(response.inviteLink || null);
+          this.lastInviteEmail.set(response.email || email);
+          this.toast.success(response.message || `Invite sent to ${email}`);
+          if (response.inviteLink) {
+            void this.copyInviteLink(response.inviteLink);
+          }
+        },
+        error: (err) => {
+          this.inviteSaving.set(false);
+          const message = extractApiErrorMessage(err, 'Could not send invite. Please try again.');
+          this.inviteError.set(message);
+          this.toast.fromApiError(err, message);
+        },
+      });
+  }
+
+  async copyInviteLink(link?: string): Promise<void> {
+    const value = (link ?? this.lastInviteLink() ?? '').trim();
+    if (!value) {
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(value);
+      this.toast.success('Invite link copied — paste it or open it if mail is delayed.');
+    } catch {
+      this.toast.error('Could not copy link. Use the invite link shown below.');
+    }
+  }
+
+  dismissInviteBanner(): void {
+    this.lastInviteLink.set(null);
+    this.lastInviteEmail.set(null);
   }
 
   private clearBrandLogoObjectUrls(): void {

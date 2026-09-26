@@ -5,6 +5,7 @@ import { Observable, tap } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { STORAGE_KEYS } from '../../constants/storage.constants';
 import { AuthResponse, AuthUser, ForgotPasswordRequest, GoogleSignUpRequest, LoginRequest, MessageResponse, ResetPasswordRequest, SignUpRequest, SignUpResponse } from '../../models/auth.model';
+import { AcceptDistributorInviteRequest, DistributorInvitePreview } from '../../models/distributor-invite.model';
 import { ConsumerCompanyOption } from '../../models/admin-company.model';
 
 @Injectable({ providedIn: 'root' })
@@ -54,6 +55,19 @@ export class AuthService {
 
   resetPassword(request: ResetPasswordRequest): Observable<MessageResponse> {
     return this.http.post<MessageResponse>(`${environment.apiUrl}/auth/reset-password`, request);
+  }
+
+  previewDistributorInvite(token: string): Observable<DistributorInvitePreview> {
+    return this.http.get<DistributorInvitePreview>(
+      `${environment.apiUrl}/public/distributor-invites`,
+      { params: { token } },
+    );
+  }
+
+  acceptDistributorInvite(request: AcceptDistributorInviteRequest): Observable<AuthResponse> {
+    return this.http
+      .post<AuthResponse>(`${environment.apiUrl}/public/distributor-invites/accept`, request)
+      .pipe(tap((response) => this.applyAuthResponse(response)));
   }
 
   applyAuthResponse(response: AuthResponse): void {
