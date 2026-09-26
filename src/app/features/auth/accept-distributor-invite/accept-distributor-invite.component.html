@@ -1,120 +1,160 @@
-<div class="auth-page invite-page">
+<div class="invite-shell">
   <app-auth-loading-overlay
     [loading]="loadingPreview() || submitting()"
-    [message]="loadingPreview() ? 'Loading invitation…' : 'Activating your account…'"
+    [message]="loadingPreview() ? 'Opening your invitation…' : 'Welcome aboard — activating your account…'"
   />
 
-  <div class="auth-card invite-card">
-    <div class="auth-brand">
-      <p class="brand-eyebrow">Asian Procurement Service</p>
-      <h1>Join as a distributor</h1>
-      <p>Confirm the details we prepared for you, then activate your account.</p>
-    </div>
+  <div class="invite-atmosphere" aria-hidden="true"></div>
 
-    @if (errorMessage() && !canAccept() && !loadingPreview()) {
-      <div class="alert alert-error" role="alert">{{ errorMessage() }}</div>
-      <p class="auth-footer">
-        <a routerLink="/login">Go to sign in</a>
+  <div class="invite-layout">
+    <aside class="invite-hero">
+      <img
+        class="invite-logo"
+        [src]="logoSrc"
+        width="56"
+        height="56"
+        alt="Asian Procurement Service"
+      />
+      <p class="invite-eyebrow">Partner invitation</p>
+      <h1 class="invite-title">
+        @if (preview()?.name) {
+          Welcome, {{ preview()!.name }}
+        } @else {
+          You're invited
+        }
+      </h1>
+      <p class="invite-lead">
+        Join Asian Procurement Service as a distributor partner — list products, respond to RFQs,
+        and grow with us on one platform.
       </p>
-    } @else if (canAccept()) {
-      <div class="invite-summary">
-        <div>
-          <span class="summary-label">Email</span>
+      <ul class="invite-perks">
+        <li>Manage your brands and catalogue online</li>
+        <li>Receive and quote customer inquiries faster</li>
+        <li>Track every conversation in one place</li>
+      </ul>
+    </aside>
+
+    <section class="invite-panel">
+      @if (errorMessage() && !canAccept() && !loadingPreview()) {
+        <div class="invite-state invite-state--error">
+          <h2>Invitation unavailable</h2>
+          <p>{{ errorMessage() }}</p>
+          <a routerLink="/login" class="btn-secondary-link">Go to sign in</a>
+        </div>
+      } @else if (canAccept()) {
+        <header class="panel-header">
+          <h2>Confirm & activate</h2>
+          <p>A few details, then you’re in. Takes about a minute.</p>
+        </header>
+
+        <div class="invite-chip">
+          <span class="invite-chip-label">Invited as</span>
           <strong>{{ preview()?.email }}</strong>
         </div>
-        <p class="summary-note">{{ preview()?.message }}</p>
-      </div>
 
-      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="auth-form invite-form">
-        @if (errorMessage()) {
-          <div class="alert alert-error" role="alert">{{ errorMessage() }}</div>
-        }
-
-        <div class="field">
-          <label for="name">Distributor name</label>
-          <input id="name" type="text" formControlName="name" autocomplete="organization" />
-          @if (form.controls.name.touched && form.controls.name.invalid) {
-            <span class="field-error">Name is required</span>
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="invite-form">
+          @if (errorMessage()) {
+            <div class="alert alert-error" role="alert">{{ errorMessage() }}</div>
           }
-        </div>
 
-        <div class="field">
-          <label for="phone">Phone</label>
-          <input id="phone" type="tel" formControlName="phone" autocomplete="tel" />
-          @if (form.controls.phone.touched && form.controls.phone.invalid) {
-            <span class="field-error">Phone is required</span>
+          <div class="field">
+            <label for="name">Business / distributor name</label>
+            <input id="name" type="text" formControlName="name" autocomplete="organization" />
+            @if (form.controls.name.touched && form.controls.name.invalid) {
+              <span class="field-error">Name is required</span>
+            }
+          </div>
+
+          <div class="field">
+            <label for="phone">Phone</label>
+            <input id="phone" type="tel" formControlName="phone" autocomplete="tel" />
+            @if (form.controls.phone.touched && form.controls.phone.invalid) {
+              <span class="field-error">Phone is required</span>
+            }
+          </div>
+
+          <button
+            type="button"
+            class="details-toggle"
+            (click)="toggleExtraDetails()"
+            [attr.aria-expanded]="showExtraDetails()"
+          >
+            {{ showExtraDetails() ? 'Hide optional details' : 'Add company details (optional)' }}
+          </button>
+
+          @if (showExtraDetails()) {
+            <div class="extra-details">
+              <div class="field-row">
+                <div class="field">
+                  <label for="gstNumber">GST</label>
+                  <input id="gstNumber" type="text" formControlName="gstNumber" />
+                </div>
+                <div class="field">
+                  <label for="panNumber">PAN</label>
+                  <input id="panNumber" type="text" formControlName="panNumber" />
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="address">Address</label>
+                <input id="address" type="text" formControlName="address" autocomplete="street-address" />
+              </div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label for="city">City</label>
+                  <input id="city" type="text" formControlName="city" />
+                </div>
+                <div class="field">
+                  <label for="state">State</label>
+                  <input id="state" type="text" formControlName="state" />
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="country">Country</label>
+                <input id="country" type="text" formControlName="country" />
+              </div>
+
+              <p class="field-hint-inline">
+                Prefer your own password? Set one below — or leave blank to keep the temporary password.
+              </p>
+              <div class="field-row">
+                <div class="field">
+                  <label for="password">New password</label>
+                  <input id="password" type="password" formControlName="password" autocomplete="new-password" />
+                </div>
+                <div class="field">
+                  <label for="confirmPassword">Confirm</label>
+                  <input
+                    id="confirmPassword"
+                    type="password"
+                    formControlName="confirmPassword"
+                    autocomplete="new-password"
+                  />
+                </div>
+              </div>
+            </div>
           }
+
+          <label class="checkbox-field">
+            <input type="checkbox" formControlName="acceptedInvite" />
+            <span>Yes — I’m ready to join Asian Procurement Service as a distributor.</span>
+          </label>
+          @if (form.controls.acceptedInvite.touched && form.controls.acceptedInvite.invalid) {
+            <span class="field-error">Please confirm to continue</span>
+          }
+
+          <button type="submit" class="btn-activate" [disabled]="submitting()">
+            {{ submitting() ? 'Activating…' : 'Accept invitation & enter' }}
+          </button>
+        </form>
+      } @else if (!loadingPreview()) {
+        <div class="invite-state">
+          <h2>Opening invitation…</h2>
+          <p>One moment while we verify your link.</p>
         </div>
-
-        <div class="section-divider">
-          <span>Optional company details</span>
-        </div>
-
-        <div class="field-row">
-          <div class="field">
-            <label for="gstNumber">GST</label>
-            <input id="gstNumber" type="text" formControlName="gstNumber" />
-          </div>
-          <div class="field">
-            <label for="panNumber">PAN</label>
-            <input id="panNumber" type="text" formControlName="panNumber" />
-          </div>
-        </div>
-
-        <div class="field">
-          <label for="address">Address</label>
-          <input id="address" type="text" formControlName="address" autocomplete="street-address" />
-        </div>
-
-        <div class="field-row">
-          <div class="field">
-            <label for="city">City</label>
-            <input id="city" type="text" formControlName="city" />
-          </div>
-          <div class="field">
-            <label for="state">State</label>
-            <input id="state" type="text" formControlName="state" />
-          </div>
-        </div>
-
-        <div class="field">
-          <label for="country">Country</label>
-          <input id="country" type="text" formControlName="country" />
-        </div>
-
-        <div class="section-divider">
-          <span>Password (optional)</span>
-        </div>
-        <p class="field-hint-inline">Leave blank to keep the temporary password from your invite.</p>
-
-        <div class="field-row">
-          <div class="field">
-            <label for="password">New password</label>
-            <input id="password" type="password" formControlName="password" autocomplete="new-password" />
-          </div>
-          <div class="field">
-            <label for="confirmPassword">Confirm</label>
-            <input
-              id="confirmPassword"
-              type="password"
-              formControlName="confirmPassword"
-              autocomplete="new-password"
-            />
-          </div>
-        </div>
-
-        <label class="checkbox-field">
-          <input type="checkbox" formControlName="acceptedInvite" />
-          <span>I confirm these details and accept the invitation to join as a distributor.</span>
-        </label>
-        @if (form.controls.acceptedInvite.touched && form.controls.acceptedInvite.invalid) {
-          <span class="field-error">Please confirm to continue</span>
-        }
-
-        <button type="submit" class="btn-primary" [disabled]="submitting()">
-          {{ submitting() ? 'Activating…' : 'Accept & enter platform' }}
-        </button>
-      </form>
-    }
+      }
+    </section>
   </div>
 </div>

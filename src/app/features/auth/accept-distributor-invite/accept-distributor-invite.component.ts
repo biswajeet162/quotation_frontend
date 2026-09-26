@@ -6,6 +6,7 @@ import { ToastService } from '../../../core/services/toast/toast.service';
 import { AuthLoadingOverlayComponent } from '../../../shared/components/auth-loading-overlay/auth-loading-overlay.component';
 import { extractApiErrorMessage } from '../../../core/utils/api-error.util';
 import { DistributorInvitePreview } from '../../../core/models/distributor-invite.model';
+import { APS_LOGO_DATA_URL } from '../../../shared/branding/aps-logo';
 
 @Component({
   selector: 'app-accept-distributor-invite',
@@ -20,12 +21,14 @@ export class AcceptDistributorInviteComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
 
+  readonly logoSrc = APS_LOGO_DATA_URL;
   readonly loadingPreview = signal(true);
   readonly submitting = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly token = signal<string | null>(null);
   readonly preview = signal<DistributorInvitePreview | null>(null);
   readonly canAccept = signal(false);
+  readonly showExtraDetails = signal(false);
 
   readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.maxLength(200)]],
@@ -73,6 +76,10 @@ export class AcceptDistributorInviteComponent implements OnInit {
         this.toast.fromApiError(err, fallback);
       },
     });
+  }
+
+  toggleExtraDetails(): void {
+    this.showExtraDetails.update((open) => !open);
   }
 
   onSubmit(): void {
