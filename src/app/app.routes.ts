@@ -61,6 +61,22 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'invite/distributor',
+    redirectTo: 'accept-distributor-invite',
+    pathMatch: 'full',
+  },
+  {
+    // Reserved public customer-invite path (no auth). Flow TBD → join-us for now.
+    path: 'accept-customer-invite',
+    redirectTo: 'join-us',
+    pathMatch: 'prefix',
+  },
+  {
+    path: 'invite/customer',
+    redirectTo: 'join-us',
+    pathMatch: 'full',
+  },
+  {
     path: 'images/:imageId',
     canMatch: [publicImageIdCanMatch],
     loadComponent: () =>

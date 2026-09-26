@@ -4,10 +4,15 @@
  * Mobile / tablet  → Flutter Web at /m/
  * Desktop          → Angular (quotation_frontend)
  *
- * Invite / verify / reset open under /m/... on phones. Flutter treats those
- * routes as public (no login). Deploy a fresh `public/m/` after Flutter changes.
+ * Invite / verify / reset links are PUBLIC (no login) on every device:
+ *   /accept-distributor-invite
+ *   /accept-customer-invite   (reserved)
+ *   /verify-email, /reset-password, /forgot-password
  *
- * Overrides for testing:
+ * Phone:  /accept-…  →  /m/accept-…  (Flutter public screen)
+ * Desktop on /m/accept-…  →  /accept-…  (Angular public screen, never home)
+ *
+ * Overrides:
  *   ?force_mobile=1   — treat as mobile
  *   ?force_desktop=1  — treat as desktop
  */
@@ -15,8 +20,35 @@
 const MOBILE_UA =
   /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i;
 
+/** Paths that must never require login (email / invite deep links). */
+const PUBLIC_NO_AUTH_PATHS = new Set([
+  '/accept-distributor-invite',
+  '/accept-customer-invite',
+  '/invite/distributor',
+  '/invite/customer',
+  '/verify-email',
+  '/reset-password',
+  '/forgot-password',
+]);
+
 function isFlutterPath(pathname) {
   return pathname === '/m' || pathname.startsWith('/m/');
+}
+
+function stripMobilePrefix(pathname) {
+  if (pathname === '/m' || pathname === '/m/') return '/';
+  if (pathname.startsWith('/m/')) return pathname.slice(2); // '/m/foo' → '/foo'
+  return pathname;
+}
+
+function isPublicNoAuthPath(pathname) {
+  const p = stripMobilePrefix(pathname);
+  if (PUBLIC_NO_AUTH_PATHS.has(p)) return true;
+  return (
+    p.startsWith('/accept-distributor-invite') ||
+    p.startsWith('/accept-customer-invite') ||
+    p.startsWith('/invite/')
+  );
 }
 
 function isStaticAssetPath(pathname) {
@@ -70,14 +102,20 @@ export default function middleware(request) {
   const mobile = isMobileRequest(request, url);
   const onFlutter = isFlutterPath(pathname);
 
-  // Desktop opened /m → Angular home (use ?force_mobile=1 to preview Flutter on desktop)
+  // Desktop opened /m/... — public invite/auth links go to Angular (keep token).
+  // Other /m pages go to Angular home.
   if (onFlutter && !mobile) {
+    if (isPublicNoAuthPath(pathname)) {
+      const dest = new URL(stripMobilePrefix(pathname), request.url);
+      copySearchParams(url, dest, ['force_desktop', 'force_mobile']);
+      return Response.redirect(dest, 302);
+    }
     const dest = new URL('/', request.url);
     copySearchParams(url, dest, ['force_desktop']);
     return Response.redirect(dest, 302);
   }
 
-  // Mobile on Angular routes → Flutter Web (incl. /accept-distributor-invite)
+  // Mobile on Angular routes → Flutter Web (public invite stays public under /m/)
   if (!onFlutter && mobile) {
     const dest = new URL(mapAngularPathToFlutter(pathname), request.url);
     copySearchParams(url, dest, ['force_mobile']);
