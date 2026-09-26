@@ -7,6 +7,7 @@ import { AuthLoadingOverlayComponent } from '../../../shared/components/auth-loa
 import { extractApiErrorMessage } from '../../../core/utils/api-error.util';
 import { DistributorInvitePreview } from '../../../core/models/distributor-invite.model';
 import { APS_LOGO_DATA_URL } from '../../../shared/branding/aps-logo';
+import { enterAppAfterAuth } from '../../../core/utils/enter-app-after-auth.util';
 
 @Component({
   selector: 'app-accept-distributor-invite',
@@ -131,7 +132,8 @@ export class AcceptDistributorInviteComponent implements OnInit {
           this.submitting.set(false);
           this.auth.markWelcomeSplashPending();
           this.toast.success('Welcome! Your distributor account is ready.');
-          void this.router.navigate(['/distributor/products/my-products']);
+          // Phone: hard-load Flutter /m/… (SPA navigate would stay on Angular).
+          enterAppAfterAuth(this.router, '/distributor/products/my-products');
         },
         error: (err) => {
           this.submitting.set(false);

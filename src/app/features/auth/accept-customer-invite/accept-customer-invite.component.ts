@@ -7,6 +7,7 @@ import { AuthLoadingOverlayComponent } from '../../../shared/components/auth-loa
 import { extractApiErrorMessage } from '../../../core/utils/api-error.util';
 import { CustomerInvitePreview } from '../../../core/models/customer-invite.model';
 import { APS_LOGO_DATA_URL } from '../../../shared/branding/aps-logo';
+import { enterAppAfterAuth } from '../../../core/utils/enter-app-after-auth.util';
 
 @Component({
   selector: 'app-accept-customer-invite',
@@ -131,7 +132,8 @@ export class AcceptCustomerInviteComponent implements OnInit {
           this.submitting.set(false);
           this.auth.markWelcomeSplashPending();
           this.toast.success('Welcome! Your customer account is ready.');
-          void this.router.navigate(['/products/all']);
+          // Phone: hard-load Flutter /m/… (SPA navigate would stay on Angular).
+          enterAppAfterAuth(this.router, '/products/all');
         },
         error: (err) => {
           this.submitting.set(false);
