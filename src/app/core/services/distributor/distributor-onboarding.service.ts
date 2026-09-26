@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
-import { Observable, of, tap } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import {
   CompleteDistributorOnboardingRequest,
@@ -36,12 +36,8 @@ export class DistributorOnboardingService {
       .pipe(tap((status) => this.completed.set(status.completed)));
   }
 
-  /** Use cached value when known; otherwise hit API. */
+  /** Always revalidate with the API so empty catalogs force onboarding again. */
   ensureStatus(): Observable<DistributorOnboardingStatus> {
-    const cached = this.completed();
-    if (cached !== null) {
-      return of({ completed: cached });
-    }
     return this.getStatus();
   }
 
