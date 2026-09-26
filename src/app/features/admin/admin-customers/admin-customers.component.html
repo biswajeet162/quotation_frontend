@@ -1,0 +1,140 @@
+<section class="page-card">
+  <header class="page-header">
+    <div>
+      <h1 class="page-title">Customers</h1>
+      <p class="muted">
+        Invite customers to the portal. They get an email with a secure link — no self-signup.
+      </p>
+    </div>
+    <div class="page-header-actions">
+      <button
+        type="button"
+        class="btn-icon-add"
+        (click)="openInviteModal()"
+        title="Add customer"
+        aria-label="Add customer"
+      >
+        <span aria-hidden="true">+</span>
+      </button>
+    </div>
+  </header>
+
+  @if (lastInviteLink()) {
+    <div class="invite-banner" role="status">
+      <div class="invite-banner-text">
+        <strong>Invite ready for {{ lastInviteEmail() }}</strong>
+        <p>
+          Mail can be slow or land in spam locally. Use this link now:
+          <a [href]="lastInviteLink()!" target="_blank" rel="noopener">Open invite</a>
+        </p>
+        <code class="invite-link-code">{{ lastInviteLink() }}</code>
+      </div>
+      <div class="invite-banner-actions">
+        <button type="button" class="btn-secondary" (click)="copyInviteLink()">Copy link</button>
+        <button type="button" class="btn-secondary" (click)="dismissInviteBanner()">Dismiss</button>
+      </div>
+    </div>
+  }
+
+  <div class="empty-hint">
+    <p>
+      Click <strong>+</strong> to onboard a customer with name, email, phone, and a temporary
+      password. They activate their account from the invite link, then can sign in as a customer.
+    </p>
+  </div>
+</section>
+
+@if (inviteModalOpen()) {
+  <div class="invite-backdrop" (click)="closeInviteModal()">
+    <div
+      class="modal-panel invite-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="invite-modal-title"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="modal-header">
+        <div>
+          <h2 id="invite-modal-title">Invite customer</h2>
+          <p class="modal-subtitle">
+            Create their account and email a secure join link. They cannot self-sign up.
+          </p>
+        </div>
+        <button type="button" class="modal-close" aria-label="Close" (click)="closeInviteModal()">
+          ×
+        </button>
+      </header>
+
+      <form class="modal-form" (ngSubmit)="submitCustomerInvite()">
+        <div class="form-grid">
+          <div class="form-field full-width">
+            <label for="invite-name">Customer name</label>
+            <input
+              id="invite-name"
+              type="text"
+              required
+              autocomplete="organization"
+              [ngModel]="inviteForm().name"
+              (ngModelChange)="updateInviteField('name', $event)"
+              name="inviteName"
+              placeholder="Company or contact name"
+            />
+          </div>
+          <div class="form-field">
+            <label for="invite-email">Email</label>
+            <input
+              id="invite-email"
+              type="email"
+              required
+              autocomplete="email"
+              [ngModel]="inviteForm().email"
+              (ngModelChange)="updateInviteField('email', $event)"
+              name="inviteEmail"
+              placeholder="customer@company.com"
+            />
+          </div>
+          <div class="form-field">
+            <label for="invite-phone">Phone</label>
+            <input
+              id="invite-phone"
+              type="tel"
+              required
+              autocomplete="tel"
+              [ngModel]="inviteForm().phone"
+              (ngModelChange)="updateInviteField('phone', $event)"
+              name="invitePhone"
+              placeholder="+91…"
+            />
+          </div>
+          <div class="form-field full-width">
+            <label for="invite-password">Temporary password</label>
+            <input
+              id="invite-password"
+              type="password"
+              required
+              autocomplete="new-password"
+              [ngModel]="inviteForm().password"
+              (ngModelChange)="updateInviteField('password', $event)"
+              name="invitePassword"
+              placeholder="At least 6 characters"
+            />
+            <p class="field-hint">They can keep this or set a new password when accepting the invite.</p>
+          </div>
+        </div>
+
+        @if (inviteError()) {
+          <div class="alert alert-error" role="alert">{{ inviteError() }}</div>
+        }
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeInviteModal()" [disabled]="inviteSaving()">
+            Cancel
+          </button>
+          <button type="submit" class="btn-primary" [disabled]="inviteSaving()">
+            {{ inviteSaving() ? 'Sending…' : 'Send invite' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

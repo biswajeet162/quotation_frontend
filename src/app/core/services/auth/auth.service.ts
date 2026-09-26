@@ -6,6 +6,7 @@ import { environment } from '../../../../environments/environment';
 import { STORAGE_KEYS } from '../../constants/storage.constants';
 import { AuthResponse, AuthUser, ForgotPasswordRequest, GoogleSignUpRequest, LoginRequest, MessageResponse, ResetPasswordRequest, SignUpRequest, SignUpResponse } from '../../models/auth.model';
 import { AcceptDistributorInviteRequest, DistributorInvitePreview } from '../../models/distributor-invite.model';
+import { AcceptCustomerInviteRequest, CustomerInvitePreview } from '../../models/customer-invite.model';
 import { ConsumerCompanyOption } from '../../models/admin-company.model';
 
 @Injectable({ providedIn: 'root' })
@@ -67,6 +68,19 @@ export class AuthService {
   acceptDistributorInvite(request: AcceptDistributorInviteRequest): Observable<AuthResponse> {
     return this.http
       .post<AuthResponse>(`${environment.apiUrl}/public/distributor-invites/accept`, request)
+      .pipe(tap((response) => this.applyAuthResponse(response)));
+  }
+
+  previewCustomerInvite(token: string): Observable<CustomerInvitePreview> {
+    return this.http.get<CustomerInvitePreview>(
+      `${environment.apiUrl}/public/customer-invites`,
+      { params: { token } },
+    );
+  }
+
+  acceptCustomerInvite(request: AcceptCustomerInviteRequest): Observable<AuthResponse> {
+    return this.http
+      .post<AuthResponse>(`${environment.apiUrl}/public/customer-invites/accept`, request)
       .pipe(tap((response) => this.applyAuthResponse(response)));
   }
 

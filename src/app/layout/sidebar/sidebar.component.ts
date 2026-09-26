@@ -88,6 +88,7 @@ export class SidebarComponent {
       roles: ['ADMIN'],
       children: [
         { label: 'Companies', path: '/admin/companies' },
+        { label: 'Customers', path: '/admin/customers' },
         { label: 'Distributors', path: '/products/distributors' },
       ],
     },
