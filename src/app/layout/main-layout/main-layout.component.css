@@ -79,3 +79,11 @@
 .app-content > router-outlet + app-distributor-products {
   overflow: hidden;
 }
+
+/* Onboarding must keep page scroll (brand/category lists grow past viewport). */
+.app-content > router-outlet + app-distributor-onboarding {
+  display: block;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}

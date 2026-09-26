@@ -133,7 +133,7 @@ export class AcceptDistributorInviteComponent implements OnInit {
           this.auth.markWelcomeSplashPending();
           this.toast.success('Welcome! Your distributor account is ready.');
           // Phone: hard-load Flutter /m/… (SPA navigate would stay on Angular).
-          enterAppAfterAuth(this.router, '/distributor/products/my-products');
+          enterAppAfterAuth(this.router, '/distributor/onboarding');
         },
         error: (err) => {
           this.submitting.set(false);

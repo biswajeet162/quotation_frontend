@@ -1,0 +1,120 @@
+<section class="onboard-page">
+  <app-loading-overlay
+    [loading]="overlayLoading()"
+    [message]="saving() ? 'Saving your catalog…' : 'Loading options…'"
+  />
+
+  <header class="onboard-header">
+    <p class="eyebrow">Distributor setup</p>
+    <h1>What do you supply?</h1>
+    <p class="lead">
+      Tell us your brands and product ranges. We’ll seed your catalog so inquiries can reach you.
+    </p>
+    <div class="steps" aria-label="Onboarding progress">
+      <span class="step" [class.active]="step() === 1" [class.done]="step() === 2">1 · Brands</span>
+      <span class="step" [class.active]="step() === 2">2 · Products</span>
+    </div>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="alert" role="alert">{{ errorMessage() }}</div>
+  }
+
+  @if (step() === 1) {
+    <section class="panel">
+      <h2>Select brands</h2>
+      <p class="hint">Most distributors carry a handful of brands. Add Non-brand for generic items.</p>
+
+      <div class="chip-grid">
+        @for (brand of brandOptions(); track brand.name) {
+          <button
+            type="button"
+            class="chip"
+            [class.selected]="isBrandSelected(brand.name)"
+            (click)="toggleBrand(brand.name)"
+          >
+            {{ brand.name }}
+          </button>
+        }
+      </div>
+
+      <div class="custom-row">
+        <label for="custom-brand">Other brand</label>
+        <div class="custom-inputs">
+          <input
+            id="custom-brand"
+            type="text"
+            [ngModel]="customBrand()"
+            (ngModelChange)="customBrand.set($event)"
+            placeholder="Type a brand name"
+            (keydown.enter)="$event.preventDefault(); addCustomBrand()"
+          />
+          <button type="button" class="btn-secondary" (click)="addCustomBrand()">Add</button>
+        </div>
+      </div>
+
+      @if (selectedBrands().length) {
+        <p class="selected-summary">
+          Selected ({{ selectedBrands().length }}):
+          <strong>{{ selectedBrands().join(', ') }}</strong>
+        </p>
+      }
+
+      <div class="actions">
+        <button
+          type="button"
+          class="btn-primary"
+          [disabled]="!canContinueToCategories()"
+          (click)="goToCategories()"
+        >
+          Continue to products
+        </button>
+      </div>
+    </section>
+  } @else {
+    <section class="panel">
+      <h2>Product ranges per brand</h2>
+      <p class="hint">For each brand, choose the categories you can supply.</p>
+
+      <div class="brand-tabs" role="tablist">
+        @for (brand of selectedBrands(); track brand) {
+          <button
+            type="button"
+            class="brand-tab"
+            role="tab"
+            [class.active]="activeBrandForCategories() === brand"
+            [class.ready]="categoryCount(brand) > 0"
+            (click)="setActiveBrand(brand)"
+          >
+            {{ brand }}
+            <span class="count">{{ categoryCount(brand) }}</span>
+          </button>
+        }
+      </div>
+
+      @if (activeBrandForCategories(); as brand) {
+        <div class="category-list">
+          <p class="active-brand-label">Categories for <strong>{{ brand }}</strong></p>
+          @for (category of categoryOptions(); track category.id) {
+            <button
+              type="button"
+              class="category-card"
+              [class.selected]="isCategorySelected(brand, category.id)"
+              (click)="toggleCategory(brand, category.id)"
+            >
+              <span class="category-title">{{ category.title }}</span>
+              <span class="category-summary">{{ category.summary }}</span>
+            </button>
+          }
+        </div>
+      }
+
+      <div class="actions split">
+        <button type="button" class="btn-secondary" (click)="goToBrands()">Back</button>
+        <button type="button" class="btn-primary" [disabled]="!canSubmit()" (click)="submit()">
+          Finish & open catalog
+        </button>
+      </div>
+    </section>
+  }
+</section>

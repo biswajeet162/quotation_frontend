@@ -8,11 +8,13 @@ import { AuthResponse, AuthUser, ForgotPasswordRequest, GoogleSignUpRequest, Log
 import { AcceptDistributorInviteRequest, DistributorInvitePreview } from '../../models/distributor-invite.model';
 import { AcceptCustomerInviteRequest, CustomerInvitePreview } from '../../models/customer-invite.model';
 import { ConsumerCompanyOption } from '../../models/admin-company.model';
+import { DistributorOnboardingService } from '../distributor/distributor-onboarding.service';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
+  private readonly distributorOnboarding = inject(DistributorOnboardingService);
 
   private readonly currentUserSignal = signal<AuthUser | null>(this.loadUserFromStorage());
 
@@ -100,6 +102,7 @@ export class AuthService {
     localStorage.removeItem(STORAGE_KEYS.token);
     localStorage.removeItem(STORAGE_KEYS.user);
     this.currentUserSignal.set(null);
+    this.distributorOnboarding.clearCache();
   }
 
   getToken(): string | null {

@@ -2,6 +2,10 @@ import { CanMatchFn, Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { guestGuard } from './core/guards/guest.guard';
 import { roleGuard } from './core/guards/role.guard';
+import {
+  distributorOnboardingCompletedRedirectGuard,
+  distributorOnboardingGuard,
+} from './core/guards/distributor-onboarding.guard';
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -126,12 +130,20 @@ export const routes: Routes = [
         canActivate: [roleGuard(['ADMIN'])],
       },
       {
+        path: 'distributor/onboarding',
+        loadComponent: () =>
+          import(
+            './features/distributor/distributor-onboarding/distributor-onboarding.component'
+          ).then((m) => m.DistributorOnboardingComponent),
+        canActivate: [roleGuard(['DISTRIBUTOR']), distributorOnboardingCompletedRedirectGuard],
+      },
+      {
         path: 'distributor/tracking',
         loadComponent: () =>
           import(
             './features/distributor/distributor-inquiry-tracking/distributor-inquiry-tracking.component'
           ).then((m) => m.DistributorInquiryTrackingComponent),
-        canActivate: [roleGuard(['DISTRIBUTOR'])],
+        canActivate: [roleGuard(['DISTRIBUTOR']), distributorOnboardingGuard],
       },
       {
         path: 'distributor/products',
@@ -144,7 +156,7 @@ export const routes: Routes = [
           import('./features/distributor/distributor-products/distributor-products.component').then(
             (m) => m.DistributorProductsComponent,
           ),
-        canActivate: [roleGuard(['DISTRIBUTOR'])],
+        canActivate: [roleGuard(['DISTRIBUTOR']), distributorOnboardingGuard],
       },
       {
         path: 'distributor/products/brands',
@@ -152,7 +164,7 @@ export const routes: Routes = [
           import('./features/distributor/distributor-products/distributor-products.component').then(
             (m) => m.DistributorProductsComponent,
           ),
-        canActivate: [roleGuard(['DISTRIBUTOR'])],
+        canActivate: [roleGuard(['DISTRIBUTOR']), distributorOnboardingGuard],
       },
       {
         path: 'requests',

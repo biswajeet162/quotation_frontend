@@ -4,9 +4,11 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { GoogleSignInService } from '../../../core/services/auth/google-sign-in.service';
+import { DistributorOnboardingService } from '../../../core/services/distributor/distributor-onboarding.service';
 import { ToastService } from '../../../core/services/toast/toast.service';
 import { AuthLoadingOverlayComponent } from '../../../shared/components/auth-loading-overlay/auth-loading-overlay.component';
 import { extractApiErrorMessage } from '../../../core/utils/api-error.util';
+import { enterAppAfterAuth } from '../../../core/utils/enter-app-after-auth.util';
 
 @Component({
   selector: 'app-login',
@@ -21,6 +23,7 @@ export class LoginComponent implements AfterViewInit {
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly distributorOnboarding = inject(DistributorOnboardingService);
 
   @ViewChild('googleButtonHost') googleButtonHost?: ElementRef<HTMLDivElement>;
 
@@ -108,6 +111,21 @@ export class LoginComponent implements AfterViewInit {
       void this.router.navigateByUrl(returnUrl);
       return;
     }
+
+    if (this.auth.currentUser()?.role === 'DISTRIBUTOR') {
+      this.distributorOnboarding.clearCache();
+      this.distributorOnboarding.getStatus().subscribe({
+        next: (status) => {
+          enterAppAfterAuth(
+            this.router,
+            status.completed ? '/distributor/products/my-products' : '/distributor/onboarding',
+          );
+        },
+        error: () => enterAppAfterAuth(this.router, '/distributor/onboarding'),
+      });
+      return;
+    }
+
     void this.router.navigate(['/dashboard']);
   }
 }
