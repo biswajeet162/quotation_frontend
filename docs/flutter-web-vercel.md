@@ -89,4 +89,5 @@ Phone preview of Angular:
 
 - Do **not** run the sync on Vercel’s build machine unless you install Flutter there; the intended flow is sync locally (or CI with Flutter) → commit `public/m/` → Vercel builds Angular only.
 - Deep links: `/login` on mobile becomes `/m/login` when Flutter has that route.
+- Distributor invite: `/accept-distributor-invite?token=…` → `/m/accept-distributor-invite?token=…` (Flutter accept screen).
 - CORS already allows `https://asianproc.com`; no VPS change required for same-origin browser calls.
