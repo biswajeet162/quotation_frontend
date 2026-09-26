@@ -4,13 +4,13 @@
  * Mobile / tablet  → Flutter Web at /m/
  * Desktop          → Angular (quotation_frontend)
  *
- * Invite / verify / reset links are PUBLIC (no login) on every device:
+ * EXCEPTION — invite / email token links are ALWAYS Angular (no /m/, no login):
  *   /accept-distributor-invite
- *   /accept-customer-invite   (reserved)
+ *   /accept-customer-invite
+ *   /invite/distributor, /invite/customer
  *   /verify-email, /reset-password, /forgot-password
  *
- * Phone:  /accept-…  →  /m/accept-…  (Flutter public screen)
- * Desktop on /m/accept-…  →  /accept-…  (Angular public screen, never home)
+ * Phones must not open these under Flutter (/m/…#/login was breaking invites).
  *
  * Overrides:
  *   ?force_mobile=1   — treat as mobile
@@ -20,7 +20,7 @@
 const MOBILE_UA =
   /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i;
 
-/** Paths that must never require login (email / invite deep links). */
+/** Public token / invite paths — never require login, never use Flutter /m/. */
 const PUBLIC_NO_AUTH_PATHS = new Set([
   '/accept-distributor-invite',
   '/accept-customer-invite',
@@ -102,20 +102,25 @@ export default function middleware(request) {
   const mobile = isMobileRequest(request, url);
   const onFlutter = isFlutterPath(pathname);
 
-  // Desktop opened /m/... — public invite/auth links go to Angular (keep token).
-  // Other /m pages go to Angular home.
-  if (onFlutter && !mobile) {
-    if (isPublicNoAuthPath(pathname)) {
-      const dest = new URL(stripMobilePrefix(pathname), request.url);
-      copySearchParams(url, dest, ['force_desktop', 'force_mobile']);
+  // Invite / verify / reset: always Angular web (phone + laptop). No /m/, no login.
+  if (isPublicNoAuthPath(pathname)) {
+    const angularPath = stripMobilePrefix(pathname);
+    if (onFlutter || pathname !== angularPath) {
+      const dest = new URL(angularPath, request.url);
+      copySearchParams(url, dest, ['force_mobile', 'force_desktop']);
       return Response.redirect(dest, 302);
     }
+    return;
+  }
+
+  // Desktop opened /m → Angular home
+  if (onFlutter && !mobile) {
     const dest = new URL('/', request.url);
     copySearchParams(url, dest, ['force_desktop']);
     return Response.redirect(dest, 302);
   }
 
-  // Mobile on Angular routes → Flutter Web (public invite stays public under /m/)
+  // Mobile on other Angular routes → Flutter Web
   if (!onFlutter && mobile) {
     const dest = new URL(mapAngularPathToFlutter(pathname), request.url);
     copySearchParams(url, dest, ['force_mobile']);

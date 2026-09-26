@@ -66,14 +66,15 @@ export const routes: Routes = [
     pathMatch: 'full',
   },
   {
-    // Reserved public customer-invite path (no auth). Flow TBD → join-us for now.
     path: 'accept-customer-invite',
-    redirectTo: 'join-us',
-    pathMatch: 'prefix',
+    loadComponent: () =>
+      import('./features/auth/accept-customer-invite/accept-customer-invite.component').then(
+        (m) => m.AcceptCustomerInviteComponent,
+      ),
   },
   {
     path: 'invite/customer',
-    redirectTo: 'join-us',
+    redirectTo: 'accept-customer-invite',
     pathMatch: 'full',
   },
   {
