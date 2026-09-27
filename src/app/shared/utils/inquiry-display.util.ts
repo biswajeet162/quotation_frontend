@@ -15,6 +15,46 @@ export function displayProductField(value?: string | null): string {
   return trimmed ? trimmed : '—';
 }
 
+/** Newest first. Invalid/missing dates sink to the bottom. */
+export function compareIsoDateDesc(a?: string | null, b?: string | null): number {
+  const aTime = a ? Date.parse(a) : NaN;
+  const bTime = b ? Date.parse(b) : NaN;
+  const aValid = !Number.isNaN(aTime);
+  const bValid = !Number.isNaN(bTime);
+
+  if (aValid && bValid) {
+    return bTime - aTime;
+  }
+  if (aValid) {
+    return -1;
+  }
+  if (bValid) {
+    return 1;
+  }
+  return 0;
+}
+
+/** Stable newest-first sort by an ISO date field (optional string tie-breaker). */
+export function sortByNewestDate<T>(
+  items: readonly T[],
+  getDate: (item: T) => string | null | undefined,
+  getTieBreaker?: (item: T) => string | null | undefined,
+): T[] {
+  return [...items].sort((a, b) => {
+    const byDate = compareIsoDateDesc(getDate(a), getDate(b));
+    if (byDate !== 0) {
+      return byDate;
+    }
+    if (!getTieBreaker) {
+      return 0;
+    }
+    return (getTieBreaker(a) ?? '').localeCompare(getTieBreaker(b) ?? '', undefined, {
+      numeric: true,
+      sensitivity: 'base',
+    });
+  });
+}
+
 export function formatExpectedDeliveryDate(iso?: string | number[] | Date | null): string {
   if (iso == null) {
     return '—';

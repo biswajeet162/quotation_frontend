@@ -23,7 +23,12 @@ import { DistributorInquiryService } from '../../../core/services/distributor/di
 import { ToastService } from '../../../core/services/toast/toast.service';
 import { InquiryChatAttachmentComponent } from '../../../shared/components/inquiry-chat-attachment/inquiry-chat-attachment.component';
 import { ChatAudioPlayerComponent } from '../../../shared/components/chat-audio-player/chat-audio-player.component';
-import { formatExpectedDeliveryDate, getRequestSourceLabel, distributorInquiryDisplayTitle } from '../../../shared/utils/inquiry-display.util';
+import {
+  formatExpectedDeliveryDate,
+  getRequestSourceLabel,
+  distributorInquiryDisplayTitle,
+  sortByNewestDate,
+} from '../../../shared/utils/inquiry-display.util';
 import { isDateInputBefore, todayAsDateInputValue } from '../../../shared/utils/date-input.util';
 import {
   canReplyToTimelineEntry,
@@ -175,7 +180,7 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     const query = this.searchQuery().trim().toLowerCase();
     const status = this.statusFilter();
 
-    return this.inquirySummaries().filter((summary) => {
+    const filtered = this.inquirySummaries().filter((summary) => {
       if (status === 'pending') {
         if ((summary.responseReceived && !summary.requotationRequested) || summary.status === 'CLOSED') {
           return false;
@@ -200,6 +205,12 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
         .toLowerCase();
       return haystack.includes(query);
     });
+
+    return sortByNewestDate(
+      filtered,
+      (summary) => summary.receivedAt,
+      (summary) => summary.reference,
+    );
   });
 
   readonly chatTimelineEntries = computed(() => buildChatTimelineEntries(this.timelineEntries()));
@@ -294,7 +305,9 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
 
     this.distributorInquiryService.list().subscribe({
       next: (list) => {
-        this.inquirySummaries.set(list);
+        this.inquirySummaries.set(
+          sortByNewestDate(list, (summary) => summary.receivedAt, (summary) => summary.reference),
+        );
         this.loading.set(false);
 
         if (requestedInquiryRef) {

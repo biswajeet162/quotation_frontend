@@ -34,6 +34,7 @@ import { ChatAudioPlayerComponent } from '../../../shared/components/chat-audio-
 import {
   formatExpectedDeliveryDate,
   getInquiryListStep,
+  sortByNewestDate,
 } from '../../../shared/utils/inquiry-display.util';
 import { isDateInputBefore, todayAsDateInputValue } from '../../../shared/utils/date-input.util';
 import { inquiryHasConsumerDealDone } from '../../../shared/utils/inquiry-deal.util';
@@ -197,7 +198,7 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
     const query = this.searchQuery().trim().toLowerCase();
     const status = this.statusFilter();
 
-    return this.inquiries().filter((inquiry) => {
+    const filtered = this.inquiries().filter((inquiry) => {
       if (status === 'ACTION_REQUIRED') {
         if (!inquiry.needsClarification) {
           return false;
@@ -229,6 +230,8 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
 
       return haystack.includes(query);
     });
+
+    return sortByNewestDate(filtered, (inquiry) => inquiry.createdAt, (inquiry) => inquiry.inquiryId);
   });
 
   readonly selectedInquiry = computed(() => {
@@ -484,7 +487,9 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
 
     this.inquiryService.getAll().subscribe({
       next: (list) => {
-        this.inquiries.set(list);
+        this.inquiries.set(
+          sortByNewestDate(list, (inquiry) => inquiry.createdAt, (inquiry) => inquiry.inquiryId),
+        );
         this.loading.set(false);
 
         if (requestedInquiryRef) {

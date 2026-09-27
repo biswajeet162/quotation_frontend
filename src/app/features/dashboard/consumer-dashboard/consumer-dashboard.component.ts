@@ -8,6 +8,7 @@ import {
   getConsumerInquiryDisplay,
   getInquiryListStep,
   getRequestSourceLabel,
+  sortByNewestDate,
 } from '../../../shared/utils/inquiry-display.util';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 
@@ -65,7 +66,9 @@ export class ConsumerDashboardComponent implements OnInit {
 
     this.inquiryService.getMyInquiries().subscribe({
       next: (list) => {
-        this.inquiries.set(list);
+        this.inquiries.set(
+          sortByNewestDate(list, (inquiry) => inquiry.createdAt, (inquiry) => inquiry.inquiryId),
+        );
         this.loading.set(false);
       },
       error: (err: unknown) => {

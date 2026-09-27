@@ -17,6 +17,8 @@ import {
   getConsumerInquiryDisplay,
   formatExpectedDeliveryDate,
   getInquiryListStep,
+  compareIsoDateDesc,
+  sortByNewestDate,
 } from '../../../shared/utils/inquiry-display.util';
 import {
   buildReplyPreview,
@@ -227,11 +229,14 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
 
     if (sort === 'productCount') {
       return items.sort(
-        (a, b) => (b.items?.length ?? 0) - (a.items?.length ?? 0) || this.compareInquiryDate(b, a),
+        (a, b) =>
+          (b.items?.length ?? 0) - (a.items?.length ?? 0) ||
+          compareIsoDateDesc(a.createdAt, b.createdAt) ||
+          a.inquiryId.localeCompare(b.inquiryId, undefined, { numeric: true, sensitivity: 'base' }),
       );
     }
 
-    return items.sort((a, b) => this.compareInquiryDate(b, a));
+    return sortByNewestDate(items, (inquiry) => inquiry.createdAt, (inquiry) => inquiry.inquiryId);
   });
 
   readonly selectedInquiry = computed(() => {
@@ -395,7 +400,9 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
 
     this.inquiryService.getMyInquiries().subscribe({
       next: (list) => {
-        this.inquiries.set(list);
+        this.inquiries.set(
+          sortByNewestDate(list, (inquiry) => inquiry.createdAt, (inquiry) => inquiry.inquiryId),
+        );
         this.loading.set(false);
 
         if (requestedInquiryRef) {
@@ -1243,24 +1250,6 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
         this.deleteConfirmOpen.set(false);
       },
     });
-  }
-
-  private compareInquiryDate(a: ConsumerInquiry, b: ConsumerInquiry): number {
-    const aTime = a.createdAt ? Date.parse(a.createdAt) : 0;
-    const bTime = b.createdAt ? Date.parse(b.createdAt) : 0;
-    const aValid = !Number.isNaN(aTime);
-    const bValid = !Number.isNaN(bTime);
-
-    if (aValid && bValid) {
-      return aTime - bTime;
-    }
-    if (aValid) {
-      return 1;
-    }
-    if (bValid) {
-      return -1;
-    }
-    return a.inquiryId.localeCompare(b.inquiryId, undefined, { numeric: true, sensitivity: 'base' });
   }
 
   displayProductField(value?: string): string {
