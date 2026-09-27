@@ -3,9 +3,31 @@
 
   <header class="page-header">
     <h1>Review consumer queries</h1>
-    <button type="button" class="btn-secondary" (click)="load()" [disabled]="loading()">
-      Refresh
-    </button>
+    <div class="page-header-actions">
+      <div class="view-toggle" role="group" aria-label="Query list view">
+        <button
+          type="button"
+          class="view-toggle-btn"
+          [class.active]="viewMode() === 'tabular'"
+          (click)="setViewMode('tabular')"
+          [attr.aria-pressed]="viewMode() === 'tabular'"
+        >
+          Tabular view
+        </button>
+        <button
+          type="button"
+          class="view-toggle-btn"
+          [class.active]="viewMode() === 'simpler'"
+          (click)="setViewMode('simpler')"
+          [attr.aria-pressed]="viewMode() === 'simpler'"
+        >
+          Simpler view
+        </button>
+      </div>
+      <button type="button" class="btn-secondary" (click)="load()" [disabled]="loading()">
+        Refresh
+      </button>
+    </div>
   </header>
 
   <div class="toolbar">
@@ -44,64 +66,143 @@
   } @else if (filteredInquiries().length === 0) {
     <p class="state-message">No queries match your search or status filter.</p>
   } @else {
-    <div class="review-layout">
-      <ul class="query-list">
+    <div
+      class="review-layout"
+      [class.review-layout--tabular]="viewMode() === 'tabular'"
+      [class.review-layout--simpler-list]="viewMode() === 'simpler' && !selectedInquiry()"
+      [class.review-layout--simpler-detail]="viewMode() === 'simpler' && !!selectedInquiry()"
+    >
+      <ul
+        class="query-list"
+        [class.mail-list]="viewMode() === 'simpler'"
+        [hidden]="viewMode() === 'simpler' && !!selectedInquiry()"
+      >
         @for (inquiry of filteredInquiries(); track inquiry.id) {
           <li>
-            <button
-              type="button"
-              class="query-item"
-              [class.selected]="selectedId() === inquiry.id"
-              [class.step-initiated]="getInquiryListStep(inquiry) === 'initiated'"
-              [class.step-in-progress]="getInquiryListStep(inquiry) === 'in-progress'"
-              [class.step-green]="getInquiryListStep(inquiry) === 'green'"
-              [attr.aria-label]="
-                inquiry.inquiryId +
-                ' — ' +
-                inquiry.title +
-                ' — ' +
-                (inquiry.companyName ?? 'Company')
-              "
-              (click)="selectInquiry(inquiry.id)"
-            >
-              <span class="query-item-content">
-                <span class="query-id">{{ inquiry.inquiryId }}</span>
-                <span class="query-title">{{ inquiry.title }}</span>
-                <span class="query-company">{{ inquiry.companyName || '—' }}</span>
-                <span class="query-posted">{{ formatPostedDate(inquiry.createdAt) }}</span>
-              </span>
-              @if (consumerFollowUpCount(inquiry) > 0) {
-                <span
-                  class="follow-up-bell"
-                  [attr.title]="
-                    consumerFollowUpCount(inquiry) +
-                    ' consumer follow-up request' +
-                    (consumerFollowUpCount(inquiry) === 1 ? '' : 's')
-                  "
-                  [attr.aria-label]="
-                    consumerFollowUpCount(inquiry) +
-                    ' consumer follow-up request' +
-                    (consumerFollowUpCount(inquiry) === 1 ? '' : 's')
-                  "
-                >
-                  <svg class="follow-up-bell-icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <path
-                      d="M12 22a2.2 2.2 0 0 0 2.15-1.75H9.85A2.2 2.2 0 0 0 12 22Zm7-6V11a7 7 0 0 0-5.25-6.77V3.5a.75.75 0 0 0-1.5 0v.73A7 7 0 0 0 7 11v5l-1.7 1.7a1 1 0 0 0 .7 1.7h14a1 1 0 0 0 .7-1.7L19 16Z"
-                    />
-                  </svg>
-                  <span class="follow-up-bell-count">{{ consumerFollowUpCount(inquiry) }}</span>
+            @if (viewMode() === 'tabular') {
+              <button
+                type="button"
+                class="query-item"
+                [class.selected]="selectedId() === inquiry.id"
+                [class.step-initiated]="getInquiryListStep(inquiry) === 'initiated'"
+                [class.step-in-progress]="getInquiryListStep(inquiry) === 'in-progress'"
+                [class.step-green]="getInquiryListStep(inquiry) === 'green'"
+                [attr.aria-label]="
+                  inquiry.inquiryId +
+                  ' — ' +
+                  inquiry.title +
+                  ' — ' +
+                  (inquiry.companyName ?? 'Company')
+                "
+                (click)="selectInquiry(inquiry.id)"
+              >
+                <span class="query-item-content">
+                  <span class="query-id">{{ inquiry.inquiryId }}</span>
+                  <span class="query-title">{{ inquiry.title }}</span>
+                  <span class="query-company">{{ inquiry.companyName || '—' }}</span>
+                  <span class="query-posted">{{ formatPostedDate(inquiry.createdAt) }}</span>
                 </span>
-              }
-              @if (inquiryHasConsumerDealDone(inquiry)) {
-                <app-deal-done-seal [compact]="true" />
-              }
-            </button>
+                @if (consumerFollowUpCount(inquiry) > 0) {
+                  <span
+                    class="follow-up-bell"
+                    [attr.title]="
+                      consumerFollowUpCount(inquiry) +
+                      ' consumer follow-up request' +
+                      (consumerFollowUpCount(inquiry) === 1 ? '' : 's')
+                    "
+                    [attr.aria-label]="
+                      consumerFollowUpCount(inquiry) +
+                      ' consumer follow-up request' +
+                      (consumerFollowUpCount(inquiry) === 1 ? '' : 's')
+                    "
+                  >
+                    <svg class="follow-up-bell-icon" viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        d="M12 22a2.2 2.2 0 0 0 2.15-1.75H9.85A2.2 2.2 0 0 0 12 22Zm7-6V11a7 7 0 0 0-5.25-6.77V3.5a.75.75 0 0 0-1.5 0v.73A7 7 0 0 0 7 11v5l-1.7 1.7a1 1 0 0 0 .7 1.7h14a1 1 0 0 0 .7-1.7L19 16Z"
+                      />
+                    </svg>
+                    <span class="follow-up-bell-count">{{ consumerFollowUpCount(inquiry) }}</span>
+                  </span>
+                }
+                @if (inquiryHasConsumerDealDone(inquiry)) {
+                  <app-deal-done-seal [compact]="true" />
+                }
+              </button>
+            } @else {
+              <button
+                type="button"
+                class="mail-row"
+                [class.mail-row--unread]="isUnreadInquiry(inquiry)"
+                [class.step-initiated]="getInquiryListStep(inquiry) === 'initiated'"
+                [class.step-in-progress]="getInquiryListStep(inquiry) === 'in-progress'"
+                [class.step-green]="getInquiryListStep(inquiry) === 'green'"
+                [attr.aria-label]="
+                  inquiry.inquiryId +
+                  ' — ' +
+                  (inquiry.companyName || 'Company') +
+                  ' — ' +
+                  productCountLabel(inquiry.items)
+                "
+                (click)="selectInquiry(inquiry.id)"
+              >
+                <span class="mail-row-ref" [title]="inquiry.inquiryId">{{ inquiry.inquiryId }}</span>
+                <span class="mail-row-body">
+                  <span class="mail-row-company" [title]="inquiry.companyName || '—'">
+                    {{ inquiry.companyName || '—' }}
+                  </span>
+                  <span class="mail-row-products">({{ productCountLabel(inquiry.items) }})</span>
+                </span>
+                <span class="mail-row-end">
+                  @if (consumerFollowUpCount(inquiry) > 0) {
+                    <span
+                      class="follow-up-bell follow-up-bell--mail"
+                      [attr.title]="
+                        consumerFollowUpCount(inquiry) +
+                        ' consumer follow-up request' +
+                        (consumerFollowUpCount(inquiry) === 1 ? '' : 's')
+                      "
+                      [attr.aria-label]="
+                        consumerFollowUpCount(inquiry) +
+                        ' consumer follow-up request' +
+                        (consumerFollowUpCount(inquiry) === 1 ? '' : 's')
+                      "
+                    >
+                      <svg class="follow-up-bell-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path
+                          d="M12 22a2.2 2.2 0 0 0 2.15-1.75H9.85A2.2 2.2 0 0 0 12 22Zm7-6V11a7 7 0 0 0-5.25-6.77V3.5a.75.75 0 0 0-1.5 0v.73A7 7 0 0 0 7 11v5l-1.7 1.7a1 1 0 0 0 .7 1.7h14a1 1 0 0 0 .7-1.7L19 16Z"
+                        />
+                      </svg>
+                      <span class="follow-up-bell-count">{{ consumerFollowUpCount(inquiry) }}</span>
+                    </span>
+                  }
+                  @if (inquiryHasConsumerDealDone(inquiry)) {
+                    <app-deal-done-seal [compact]="true" />
+                  }
+                  <span class="mail-row-date">{{ formatPostedDate(inquiry.createdAt) }}</span>
+                </span>
+              </button>
+            }
           </li>
         }
       </ul>
 
       @if (selectedInquiry(); as inquiry) {
         <div class="query-detail">
+          @if (viewMode() === 'simpler') {
+            <div class="simpler-back-bar">
+              <button
+                type="button"
+                class="btn-back"
+                (click)="backToSimplerList()"
+                aria-label="Back to query list"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2Z" />
+                </svg>
+                Back
+              </button>
+            </div>
+          }
           <div class="detail-header">
             <div>
               <h2>{{ inquiry.title }}</h2>

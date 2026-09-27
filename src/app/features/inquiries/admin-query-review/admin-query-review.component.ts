@@ -62,6 +62,9 @@ import { openPublicImages } from '../../../shared/utils/public-image.util';
 import { scheduleDetailScrollToLatest } from '../../../shared/utils/scroll-container.util';
 
 type StatusFilter = 'all' | InquiryStatus | 'ACTION_REQUIRED';
+type ReviewViewMode = 'tabular' | 'simpler';
+
+const REVIEW_VIEW_MODE_KEY = 'admin-query-review-view-mode';
 
 interface PendingAttachment {
   id: string;
@@ -109,6 +112,7 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   readonly inquiries = signal<Inquiry[]>([]);
   readonly searchQuery = signal('');
   readonly statusFilter = signal<StatusFilter>('all');
+  readonly viewMode = signal<ReviewViewMode>(this.readStoredViewMode());
   readonly selectedId = signal<string | null>(null);
   readonly actionLoading = signal(false);
   readonly actionError = signal<string | null>(null);
@@ -448,6 +452,65 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
     }
     if (this.distributorPickerOpen()) {
       this.closeDistributorPicker();
+      return;
+    }
+    if (this.viewMode() === 'simpler' && this.selectedId()) {
+      this.backToSimplerList();
+    }
+  }
+
+  setViewMode(mode: ReviewViewMode): void {
+    if (this.viewMode() === mode) {
+      return;
+    }
+    this.viewMode.set(mode);
+    this.persistViewMode(mode);
+    if (mode === 'simpler') {
+      // Always land on the inbox list; open a query only after the admin clicks it.
+      this.backToSimplerList();
+      return;
+    }
+    if (!this.selectedId()) {
+      this.syncSelection();
+    }
+  }
+
+  backToSimplerList(): void {
+    this.cancelVoiceRecording();
+    this.clearPendingAttachments();
+    this.closeChatModal();
+    this.selectedId.set(null);
+    this.timelineEntries.set([]);
+    this.actionError.set(null);
+    this.messageError.set(null);
+    this.messageText.set('');
+    this.clearReplyTarget();
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { inq: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
+  isUnreadInquiry(inquiry: Inquiry): boolean {
+    return inquiry.status === 'NEW';
+  }
+
+  private readStoredViewMode(): ReviewViewMode {
+    try {
+      const stored = localStorage.getItem(REVIEW_VIEW_MODE_KEY);
+      return stored === 'simpler' ? 'simpler' : 'tabular';
+    } catch {
+      return 'tabular';
+    }
+  }
+
+  private persistViewMode(mode: ReviewViewMode): void {
+    try {
+      localStorage.setItem(REVIEW_VIEW_MODE_KEY, mode);
+    } catch {
+      // Ignore storage failures (private mode, quota, etc.).
     }
   }
 
@@ -544,6 +607,14 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
       return;
     }
     this.clearPendingAttachments();
+
+    // Simpler (inbox) view: stay on the list until the admin opens a query.
+    if (this.viewMode() === 'simpler') {
+      this.selectedId.set(null);
+      this.timelineEntries.set([]);
+      return;
+    }
+
     this.selectedId.set(visible[0]?.id ?? null);
     if (this.selectedId()) {
       const inquiry = this.inquiries().find((q) => q.id === this.selectedId());
