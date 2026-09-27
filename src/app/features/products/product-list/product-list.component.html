@@ -4,7 +4,7 @@
   <header class="page-header">
     <h1 class="page-title">{{ pageTitle() }}</h1>
     <div class="page-header-actions">
-      @if (activeMainTab() === 'distributors' && isAdmin()) {
+      @if (activeMainTab() === 'distributors' && canManageOnboarding()) {
         <button
           type="button"
           class="btn-icon-add"
@@ -314,7 +314,7 @@
                             <input
                               type="checkbox"
                               [checked]="product.isActive !== false"
-                              [disabled]="isStatusUpdating(product.id)"
+                              [disabled]="!isAdmin() || isStatusUpdating(product.id)"
                               (change)="toggleAdminProductStatus(product, $event)"
                             />
                             <span class="active-toggle-slider" aria-hidden="true"></span>

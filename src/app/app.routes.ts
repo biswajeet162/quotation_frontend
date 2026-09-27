@@ -128,7 +128,7 @@ export const routes: Routes = [
           import('./features/products/product-list/product-list.component').then(
             (m) => m.ProductListComponent,
           ),
-        canActivate: [roleGuard(['ADMIN'])],
+        canActivate: [roleGuard(['ADMIN', 'SALES'])],
       },
       {
         path: 'distributor/onboarding',
@@ -205,7 +205,7 @@ export const routes: Routes = [
           import('./features/admin/admin-companies/admin-companies.component').then(
             (m) => m.AdminCompaniesComponent,
           ),
-        canActivate: [roleGuard(['ADMIN'])],
+        canActivate: [roleGuard(['ADMIN', 'SALES'])],
       },
       {
         path: 'admin/customers',
@@ -213,7 +213,7 @@ export const routes: Routes = [
           import('./features/admin/admin-customers/admin-customers.component').then(
             (m) => m.AdminCustomersComponent,
           ),
-        canActivate: [roleGuard(['ADMIN'])],
+        canActivate: [roleGuard(['ADMIN', 'SALES'])],
       },
       {
         path: 'admin/users',

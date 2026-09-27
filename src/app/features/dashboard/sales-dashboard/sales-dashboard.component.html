@@ -7,7 +7,7 @@
       @if (auth.currentUser(); as user) {
         <p class="subtitle">{{ user.companyName || 'APS Sales' }} · {{ user.email }}</p>
       }
-      <p class="muted">CRM overview for the sales team. Limited to customers, CRM, and profile.</p>
+      <p class="muted">CRM and onboarding for the sales team — customers, distributors, follow-ups, and profile.</p>
     </div>
     <div class="header-actions">
       <a routerLink="/sales/crm" class="btn-primary">Open CRM</a>
@@ -47,6 +47,11 @@
       </div>
 
       <nav class="quick-nav" aria-label="Sales shortcuts">
+        <a routerLink="/admin/customers" class="quick-card">
+          <span class="quick-icon">◆</span>
+          <span class="quick-title">Onboarding</span>
+          <span class="quick-desc">Invite customers and distributors</span>
+        </a>
         <a routerLink="/sales/crm" class="quick-card">
           <span class="quick-icon">▤</span>
           <span class="quick-title">CRM</span>

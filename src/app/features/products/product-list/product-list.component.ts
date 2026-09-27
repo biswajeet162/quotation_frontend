@@ -249,6 +249,11 @@ export class ProductListComponent implements OnInit, OnDestroy {
 
   readonly isConsumer = () => this.auth.currentUser()?.role === 'CONSUMER';
   readonly isAdmin = () => this.auth.currentUser()?.role === 'ADMIN';
+  /** Admin or Sales — can run customer/distributor onboarding flows. */
+  readonly canManageOnboarding = () => {
+    const role = this.auth.currentUser()?.role;
+    return role === 'ADMIN' || role === 'SALES';
+  };
   readonly canCreateInquiry = () => this.isConsumer() || this.isAdmin();
 
   inquiryCreateRoute(): string {
@@ -349,6 +354,12 @@ export class ProductListComponent implements OnInit, OnDestroy {
   loadProducts(): void {
     this.loading.set(true);
     this.errorMessage.set(null);
+
+    // Sales only uses the distributors onboarding tab — skip consumer catalog APIs.
+    if (this.auth.currentUser()?.role === 'SALES') {
+      this.loadAdminDistributorProducts(() => this.loading.set(false));
+      return;
+    }
 
     this.catalogService.list().subscribe({
       next: (products) => {
@@ -1083,7 +1094,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
 
   private syncTabFromRoute(): void {
     const lastSegment = this.route.snapshot.url.at(-1)?.path;
-    if (lastSegment === 'distributors' && this.isAdmin()) {
+    if (lastSegment === 'distributors' && this.canManageOnboarding()) {
       this.activeMainTab.set('distributors');
       return;
     }
@@ -1097,9 +1108,10 @@ export class ProductListComponent implements OnInit, OnDestroy {
     this.activeMainTab.set('products');
   }
 
-  private loadAdminDistributorProducts(): void {
-    if (!this.isAdmin()) {
+  private loadAdminDistributorProducts(onDone?: () => void): void {
+    if (!this.canManageOnboarding()) {
       this.adminDistributorProducts.set([]);
+      onDone?.();
       return;
     }
     this.adminProducts.listAll().subscribe({
@@ -1111,9 +1123,14 @@ export class ProductListComponent implements OnInit, OnDestroy {
         if (!stillExists) {
           this.selectedDistributorCompany.set(null);
         }
+        onDone?.();
       },
       error: () => {
         this.adminDistributorProducts.set([]);
+        if (this.auth.currentUser()?.role === 'SALES') {
+          this.errorMessage.set('Failed to load distributors. Please try again.');
+        }
+        onDone?.();
       },
     });
   }

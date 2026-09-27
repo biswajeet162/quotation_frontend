@@ -36,7 +36,7 @@ export class SidebarComponent {
   readonly collapsed = input(false);
   readonly toggleSidebar = output<void>();
 
-  /** Admin-only: which nav groups with children are expanded. */
+  /** Roles with collapsible nav groups: which groups with children are expanded. */
   private readonly expandedGroups = signal<Set<string>>(new Set());
 
   /** Keep nav active when the path matches, even with ?inq= or other query params. */
@@ -85,7 +85,7 @@ export class SidebarComponent {
       label: 'Onboarding',
       path: '/admin/onboarding',
       icon: '◆',
-      roles: ['ADMIN'],
+      roles: ['ADMIN', 'SALES'],
       children: [
         { label: 'Companies', path: '/admin/companies' },
         { label: 'Customers', path: '/admin/customers' },
@@ -115,18 +115,19 @@ export class SidebarComponent {
   });
 
   constructor() {
-    this.expandActiveAdminGroups();
+    this.expandActiveNavGroups();
     this.router.events
       .pipe(
         filter((event): event is NavigationEnd => event instanceof NavigationEnd),
         takeUntilDestroyed(),
       )
-      .subscribe(() => this.expandActiveAdminGroups());
+      .subscribe(() => this.expandActiveNavGroups());
   }
 
-  /** Collapsible dropdown only for admin groups that have children. */
+  /** Collapsible dropdown for admin/sales groups that have children. */
   isCollapsible(item: NavItem): boolean {
-    return this.auth.currentUser()?.role === 'ADMIN' && !!item.children?.length;
+    const role = this.auth.currentUser()?.role;
+    return (role === 'ADMIN' || role === 'SALES') && !!item.children?.length;
   }
 
   isExpanded(item: NavItem): boolean {
@@ -198,8 +199,9 @@ export class SidebarComponent {
     this.auth.logout();
   }
 
-  private expandActiveAdminGroups(): void {
-    if (this.auth.currentUser()?.role !== 'ADMIN') {
+  private expandActiveNavGroups(): void {
+    const role = this.auth.currentUser()?.role;
+    if (role !== 'ADMIN' && role !== 'SALES') {
       return;
     }
     const url = this.router.url.split('?')[0];
@@ -207,6 +209,9 @@ export class SidebarComponent {
       const next = new Set(current);
       for (const item of this.allNavItems) {
         if (!item.children?.length) {
+          continue;
+        }
+        if (item.roles && !item.roles.includes(role)) {
           continue;
         }
         const childActive = item.children.some(
