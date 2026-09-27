@@ -203,11 +203,18 @@
                 <p class="detail-note"><strong>Search term:</strong> {{ inquiry.searchTerm }}</p>
               }
 
+              <div class="inquiry-events-stack">
               <section
                 class="inquiry-event-card inquiry-event-card--initiated"
+                [class.is-collapsed]="!isEventExpanded('initiated')"
                 aria-label="Quotation request received"
               >
-                <div class="inquiry-event-header">
+                <button
+                  type="button"
+                  class="inquiry-event-header inquiry-event-toggle"
+                  (click)="toggleEvent('initiated', $event)"
+                  [attr.aria-expanded]="isEventExpanded('initiated')"
+                >
                   <h3 class="inquiry-event-title">
                     A new quotation request has been sent.
                   </h3>
@@ -217,8 +224,9 @@
                       {{ formatPostedDate(inquiry.receivedAt ?? inquiry.createdAt) }}
                     </span>
                   </div>
-                </div>
+                </button>
 
+                @if (isEventExpanded('initiated')) {
                 <div class="inquiry-event-content">
                   @if ((inquiry.items ?? []).length > 0) {
                     <div class="preview-table-wrap pricing-table-wrap">
@@ -342,20 +350,45 @@
                     }
                   </div>
                 </div>
+                }
+
+                <button
+                  type="button"
+                  class="event-expand-arrow"
+                  (click)="toggleEvent('initiated', $event)"
+                  [attr.aria-expanded]="isEventExpanded('initiated')"
+                  [attr.aria-label]="
+                    isEventExpanded('initiated') ? 'Collapse initiated details' : 'Expand initiated details'
+                  "
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    @if (isEventExpanded('initiated')) {
+                      <path d="M7.41 15.41 12 10.83l4.59 4.58L18 14l-6-6-6 6z" />
+                    } @else {
+                      <path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z" />
+                    }
+                  </svg>
+                </button>
               </section>
 
               @if (quotationHistoryLoading()) {
                 <p class="products-empty">Loading quotation history…</p>
               } @else {
-                @for (entry of quotationHistory(); track $index) {
+                @for (entry of quotationHistory(); track $index; let historyIndex = $index) {
                   @if (entry.type === 'QUOTATION') {
                     <section
                       class="inquiry-event-card"
                       [class.inquiry-event-card--in-progress]="inquiry.status !== 'CLOSED'"
                       [class.inquiry-event-card--final]="inquiry.status === 'CLOSED'"
+                      [class.is-collapsed]="!isEventExpanded('history-' + historyIndex)"
                       aria-label="Your quotation"
                     >
-                      <div class="inquiry-event-header">
+                      <button
+                        type="button"
+                        class="inquiry-event-header inquiry-event-toggle"
+                        (click)="toggleEvent('history-' + historyIndex, $event)"
+                        [attr.aria-expanded]="isEventExpanded('history-' + historyIndex)"
+                      >
                         <h3 class="inquiry-event-title">
                           {{ historyQuotationTitle(entry, inquiry) }}
                         </h3>
@@ -372,8 +405,9 @@
                             </span>
                           }
                         </div>
-                      </div>
+                      </button>
 
+                      @if (isEventExpanded('history-' + historyIndex)) {
                       <div class="inquiry-event-content">
                         @if (isRevisedQuotationHistoryEntry(entry)) {
                           <p class="revised-quotation-hint" role="note">
@@ -555,13 +589,40 @@
                           </div>
                         }
                       </div>
+                      }
+
+                      <button
+                        type="button"
+                        class="event-expand-arrow"
+                        (click)="toggleEvent('history-' + historyIndex, $event)"
+                        [attr.aria-expanded]="isEventExpanded('history-' + historyIndex)"
+                        [attr.aria-label]="
+                          isEventExpanded('history-' + historyIndex)
+                            ? 'Collapse quotation details'
+                            : 'Expand quotation details'
+                        "
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          @if (isEventExpanded('history-' + historyIndex)) {
+                            <path d="M7.41 15.41 12 10.83l4.59 4.58L18 14l-6-6-6 6z" />
+                          } @else {
+                            <path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z" />
+                          }
+                        </svg>
+                      </button>
                     </section>
                   } @else if (entry.type === 'REQUOTE_REQUEST') {
                     <section
                       class="inquiry-event-card inquiry-event-card--in-progress"
+                      [class.is-collapsed]="!isEventExpanded('history-' + historyIndex)"
                       aria-label="Re-quotation requested"
                     >
-                      <div class="inquiry-event-header">
+                      <button
+                        type="button"
+                        class="inquiry-event-header inquiry-event-toggle"
+                        (click)="toggleEvent('history-' + historyIndex, $event)"
+                        [attr.aria-expanded]="isEventExpanded('history-' + historyIndex)"
+                      >
                         <h3 class="inquiry-event-title">
                           Admin asked for a re-quotation.
                         </h3>
@@ -571,7 +632,8 @@
                             {{ formatPostedDate(entry.occurredAt) }}
                           </span>
                         </div>
-                      </div>
+                      </button>
+                      @if (isEventExpanded('history-' + historyIndex)) {
                       <div class="inquiry-event-content">
                         <div class="requote-note-panel" role="note">
                           <p class="requote-note-label">Note</p>
@@ -583,10 +645,32 @@
                           </p>
                         </div>
                       </div>
+                      }
+
+                      <button
+                        type="button"
+                        class="event-expand-arrow"
+                        (click)="toggleEvent('history-' + historyIndex, $event)"
+                        [attr.aria-expanded]="isEventExpanded('history-' + historyIndex)"
+                        [attr.aria-label]="
+                          isEventExpanded('history-' + historyIndex)
+                            ? 'Collapse re-quotation details'
+                            : 'Expand re-quotation details'
+                        "
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          @if (isEventExpanded('history-' + historyIndex)) {
+                            <path d="M7.41 15.41 12 10.83l4.59 4.58L18 14l-6-6-6 6z" />
+                          } @else {
+                            <path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z" />
+                          }
+                        </svg>
+                      </button>
                     </section>
                   }
                 }
               }
+              </div>
             </div>
 
               @if (showDealOutcome(inquiry)) {

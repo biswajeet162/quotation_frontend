@@ -59,10 +59,10 @@ import {
 } from '../../../shared/utils/timeline-chat.util';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 import { openPublicImages } from '../../../shared/utils/public-image.util';
-import { scheduleDetailScrollToLatest } from '../../../shared/utils/scroll-container.util';
 
 type StatusFilter = 'all' | InquiryStatus | 'ACTION_REQUIRED';
 type ReviewViewMode = 'tabular' | 'simpler';
+type InquiryEventKey = 'initiated' | 'in-progress' | 'final';
 
 const REVIEW_VIEW_MODE_KEY = 'admin-query-review-view-mode';
 
@@ -114,6 +114,7 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   readonly statusFilter = signal<StatusFilter>('all');
   readonly viewMode = signal<ReviewViewMode>(this.readStoredViewMode());
   readonly selectedId = signal<string | null>(null);
+  readonly expandedEvents = signal<ReadonlySet<InquiryEventKey>>(new Set(['initiated']));
   readonly actionLoading = signal(false);
   readonly actionError = signal<string | null>(null);
   readonly markAwaitingConsumer = signal(true);
@@ -286,6 +287,41 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
 
   hasSentToDistributors(inquiry: Inquiry): boolean {
     return this.assignedDistributorCount(inquiry) > 0;
+  }
+
+  latestEventKey(inquiry: Inquiry): InquiryEventKey {
+    if (this.hasFinalQuotationSharedWithConsumer(inquiry)) {
+      return 'final';
+    }
+    if (this.hasSentToDistributors(inquiry)) {
+      return 'in-progress';
+    }
+    return 'initiated';
+  }
+
+  isEventExpanded(key: InquiryEventKey): boolean {
+    return this.expandedEvents().has(key);
+  }
+
+  toggleEvent(key: InquiryEventKey, event?: Event): void {
+    event?.stopPropagation();
+    this.expandedEvents.update((current) => {
+      const next = new Set(current);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  }
+
+  private resetExpandedEvents(inquiry: Inquiry | null | undefined): void {
+    if (!inquiry) {
+      this.expandedEvents.set(new Set());
+      return;
+    }
+    this.expandedEvents.set(new Set<InquiryEventKey>([this.latestEventKey(inquiry)]));
   }
 
   sentToDistributorsTitle(inquiry: Inquiry): string {
@@ -563,6 +599,7 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
             this.selectedId.set(match.id);
             this.hydrateLineDraftsFromInquiry(match);
             this.markAwaitingConsumer.set(match.status === 'NEW');
+            this.resetExpandedEvents(match);
             this.loadTimeline({ scrollDetailToBottom: true });
             return;
           }
@@ -612,6 +649,7 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
     if (this.viewMode() === 'simpler') {
       this.selectedId.set(null);
       this.timelineEntries.set([]);
+      this.resetExpandedEvents(null);
       return;
     }
 
@@ -619,9 +657,11 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
     if (this.selectedId()) {
       const inquiry = this.inquiries().find((q) => q.id === this.selectedId());
       this.markAwaitingConsumer.set(inquiry?.status === 'NEW');
+      this.resetExpandedEvents(inquiry);
       this.loadTimeline({ scrollDetailToBottom: true });
     } else {
       this.timelineEntries.set([]);
+      this.resetExpandedEvents(null);
     }
   }
 
@@ -641,6 +681,7 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
       this.hydrateLineDraftsFromInquiry(inquiry);
     }
     this.markAwaitingConsumer.set(inquiry?.status === 'NEW');
+    this.resetExpandedEvents(inquiry);
     this.loadTimeline({ scrollDetailToBottom: true });
 
     void this.router.navigate([], {
@@ -691,6 +732,10 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
               : q,
           ),
         );
+
+        if (options?.scrollDetailToBottom) {
+          this.resetExpandedEvents(this.selectedInquiry() ?? inquiry);
+        }
 
         if (options?.scrollToBottom) {
           this.scrollChatToBottom();
@@ -1821,7 +1866,15 @@ export class AdminQueryReviewComponent implements OnInit, OnDestroy {
   }
 
   private scrollDetailPanelToLatest(): void {
-    scheduleDetailScrollToLatest(() => this.detailScrollRef()?.nativeElement);
+    // Newest event cards are on top — keep the latest stage in view.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const scrollEl = this.detailScrollRef()?.nativeElement;
+        if (scrollEl) {
+          scrollEl.scrollTop = 0;
+        }
+      });
+    });
   }
 
   private scrollChatToBottom(): void {

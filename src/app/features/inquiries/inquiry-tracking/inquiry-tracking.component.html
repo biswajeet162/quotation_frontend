@@ -214,8 +214,18 @@
                 <p class="detail-note"><strong>Search term:</strong> {{ inquiry.searchTerm }}</p>
               }
 
-              <section class="inquiry-event-card inquiry-event-card--initiated" aria-label="Quotation request submitted">
-                  <div class="inquiry-event-header">
+              <div class="inquiry-events-stack">
+              <section
+                class="inquiry-event-card inquiry-event-card--initiated"
+                [class.is-collapsed]="!isEventExpanded('initiated')"
+                aria-label="Quotation request submitted"
+              >
+                  <button
+                    type="button"
+                    class="inquiry-event-header inquiry-event-toggle"
+                    (click)="toggleEvent('initiated', $event)"
+                    [attr.aria-expanded]="isEventExpanded('initiated')"
+                  >
                     <h3 class="inquiry-event-title">
                       A new quotation request has been sent.
                     </h3>
@@ -225,8 +235,9 @@
                         {{ formatPostedDate(inquiry.createdAt) }}
                       </span>
                     </div>
-                  </div>
+                  </button>
 
+                  @if (isEventExpanded('initiated')) {
                   <div class="inquiry-event-content">
                     @if ((inquiry.items ?? []).length > 0) {
                       <div class="products-table-wrap" [id]="'inquiry-products-' + inquiry.id">
@@ -307,14 +318,39 @@
                       </div>
                     </div>
                   </div>
+                  }
+
+                  <button
+                    type="button"
+                    class="event-expand-arrow"
+                    (click)="toggleEvent('initiated', $event)"
+                    [attr.aria-expanded]="isEventExpanded('initiated')"
+                    [attr.aria-label]="
+                      isEventExpanded('initiated') ? 'Collapse initiated details' : 'Expand initiated details'
+                    "
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      @if (isEventExpanded('initiated')) {
+                        <path d="M7.41 15.41 12 10.83l4.59 4.58L18 14l-6-6-6 6z" />
+                      } @else {
+                        <path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z" />
+                      }
+                    </svg>
+                  </button>
                 </section>
 
               @if (isInReview(inquiry)) {
                 <section
                   class="inquiry-event-card inquiry-event-card--in-progress"
+                  [class.is-collapsed]="!isEventExpanded('in-progress')"
                   aria-label="Quotation request in review"
                 >
-                  <div class="inquiry-event-header">
+                  <button
+                    type="button"
+                    class="inquiry-event-header inquiry-event-toggle"
+                    (click)="toggleEvent('in-progress', $event)"
+                    [attr.aria-expanded]="isEventExpanded('in-progress')"
+                  >
                     <h3 class="inquiry-event-title">
                       The quotation request is in review.
                     </h3>
@@ -324,8 +360,9 @@
                         {{ formatPostedDate(inReviewOccurredAt(inquiry)) }}
                       </span>
                     </div>
-                  </div>
+                  </button>
 
+                  @if (isEventExpanded('in-progress')) {
                   <div class="inquiry-event-content">
                     @if ((inquiry.items ?? []).length > 0) {
                       <div class="products-table-wrap">
@@ -406,15 +443,42 @@
                       </div>
                     </div>
                   </div>
+                  }
+
+                  <button
+                    type="button"
+                    class="event-expand-arrow"
+                    (click)="toggleEvent('in-progress', $event)"
+                    [attr.aria-expanded]="isEventExpanded('in-progress')"
+                    [attr.aria-label]="
+                      isEventExpanded('in-progress')
+                        ? 'Collapse in-progress details'
+                        : 'Expand in-progress details'
+                    "
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      @if (isEventExpanded('in-progress')) {
+                        <path d="M7.41 15.41 12 10.83l4.59 4.58L18 14l-6-6-6 6z" />
+                      } @else {
+                        <path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z" />
+                      }
+                    </svg>
+                  </button>
                 </section>
               }
 
-              @for (snapshot of consumerFinalizationHistory(); track snapshot.id ?? snapshot.communicationId ?? snapshot.revisionNumber) {
+              @for (snapshot of consumerFinalizationHistory(); track snapshot.id ?? snapshot.communicationId ?? snapshot.revisionNumber; let finalIndex = $index) {
                 <section
                   class="inquiry-event-card inquiry-event-card--final"
+                  [class.is-collapsed]="!isEventExpanded('final-' + finalIndex)"
                   [attr.aria-label]="finalizationSectionTitle(snapshot)"
                 >
-                  <div class="inquiry-event-header">
+                  <button
+                    type="button"
+                    class="inquiry-event-header inquiry-event-toggle"
+                    (click)="toggleEvent('final-' + finalIndex, $event)"
+                    [attr.aria-expanded]="isEventExpanded('final-' + finalIndex)"
+                  >
                     <h3 class="inquiry-event-title">
                       {{ finalizationSectionTitle(snapshot) }}
                     </h3>
@@ -429,8 +493,9 @@
                         {{ formatFinalizationDate(snapshot.sentAt) }}
                       </span>
                     </div>
-                  </div>
+                  </button>
 
+                  @if (isEventExpanded('final-' + finalIndex)) {
                   <div class="inquiry-event-content">
                     @if (isRevisedFinalizationSnapshot(snapshot)) {
                       <p class="revised-finalization-hint" role="note">
@@ -748,12 +813,42 @@
                       </div>
                     }
                   </div>
+                  }
+
+                  <button
+                    type="button"
+                    class="event-expand-arrow"
+                    (click)="toggleEvent('final-' + finalIndex, $event)"
+                    [attr.aria-expanded]="isEventExpanded('final-' + finalIndex)"
+                    [attr.aria-label]="
+                      isEventExpanded('final-' + finalIndex)
+                        ? 'Collapse final quotation details'
+                        : 'Expand final quotation details'
+                    "
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      @if (isEventExpanded('final-' + finalIndex)) {
+                        <path d="M7.41 15.41 12 10.83l4.59 4.58L18 14l-6-6-6 6z" />
+                      } @else {
+                        <path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z" />
+                      }
+                    </svg>
+                  </button>
                 </section>
               }
 
               @if (showLegacyFinalQuotation()) {
-                <section class="inquiry-event-card inquiry-event-card--final" aria-label="Final quotation ready">
-                  <div class="inquiry-event-header">
+                <section
+                  class="inquiry-event-card inquiry-event-card--final"
+                  [class.is-collapsed]="!isEventExpanded('legacy-final')"
+                  aria-label="Final quotation ready"
+                >
+                  <button
+                    type="button"
+                    class="inquiry-event-header inquiry-event-toggle"
+                    (click)="toggleEvent('legacy-final', $event)"
+                    [attr.aria-expanded]="isEventExpanded('legacy-final')"
+                  >
                     <h3 class="inquiry-event-title">
                       Your final quotation is ready.
                     </h3>
@@ -763,8 +858,9 @@
                         {{ formatPostedDate(finalQuotationOccurredAt() ?? inquiry.updatedAt) }}
                       </span>
                     </div>
-                  </div>
+                  </button>
 
+                  @if (isEventExpanded('legacy-final')) {
                   <div class="inquiry-event-content">
                     @if ((inquiry.items ?? []).some(hasFinalQuotationLine)) {
                       <div class="chat-pricing-table-wrap final-quotation-table-wrap">
@@ -916,8 +1012,30 @@
                       }
                     </div>
                   </div>
+                  }
+
+                  <button
+                    type="button"
+                    class="event-expand-arrow"
+                    (click)="toggleEvent('legacy-final', $event)"
+                    [attr.aria-expanded]="isEventExpanded('legacy-final')"
+                    [attr.aria-label]="
+                      isEventExpanded('legacy-final')
+                        ? 'Collapse final quotation details'
+                        : 'Expand final quotation details'
+                    "
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      @if (isEventExpanded('legacy-final')) {
+                        <path d="M7.41 15.41 12 10.83l4.59 4.58L18 14l-6-6-6 6z" />
+                      } @else {
+                        <path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z" />
+                      }
+                    </svg>
+                  </button>
                 </section>
               }
+              </div>
             </div>
 
             @if (canFollowUp(inquiry)) {

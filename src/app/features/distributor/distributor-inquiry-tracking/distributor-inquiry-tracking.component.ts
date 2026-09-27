@@ -56,7 +56,6 @@ import {
   quotationLineSnapshotFromItem,
   QuotationHighlightField,
 } from '../../../shared/utils/quotation-round-diff.util';
-import { scheduleDetailScrollToLatest, scrollToBottomAfterRender } from '../../../shared/utils/scroll-container.util';
 
 type StatusFilter = 'all' | 'pending' | 'responded' | 'CLOSED';
 type TrackingViewMode = 'tabular' | 'normal';
@@ -103,6 +102,7 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   readonly statusFilter = signal<StatusFilter>('all');
   readonly viewMode = signal<TrackingViewMode>(this.readStoredViewMode());
   readonly selectedId = signal<string | null>(null);
+  readonly expandedEvents = signal<ReadonlySet<string>>(new Set(['initiated']));
 
   readonly timelineLoading = signal(false);
   readonly timelineRefreshing = signal(false);
@@ -329,6 +329,7 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     this.messageError.set(null);
     this.messageText.set('');
     this.clearReplyTarget();
+    this.expandedEvents.set(new Set());
     void this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { inq: null },
@@ -436,6 +437,7 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     this.messageText.set('');
     this.clearReplyTarget();
     this.timelineEntries.set([]);
+    this.resetExpandedEventsForInquiry();
     this.loadSelectedInquiry(id, { scrollDetailToBottom: true });
 
     const summary = this.inquirySummaries().find((item) => item.inquiryUuid === id);
@@ -445,6 +447,35 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
       queryParamsHandling: 'merge',
       replaceUrl: true,
     });
+  }
+
+  latestEventKey(): string {
+    const history = this.quotationHistory();
+    if (history.length > 0) {
+      return `history-${history.length - 1}`;
+    }
+    return 'initiated';
+  }
+
+  isEventExpanded(key: string): boolean {
+    return this.expandedEvents().has(key);
+  }
+
+  toggleEvent(key: string, event?: Event): void {
+    event?.stopPropagation();
+    this.expandedEvents.update((current) => {
+      const next = new Set(current);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  }
+
+  private resetExpandedEventsForInquiry(): void {
+    this.expandedEvents.set(new Set<string>([this.latestEventKey()]));
   }
 
   openChatModal(): void {
@@ -974,6 +1005,7 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
       this.selectedId.set(null);
       this.selectedInquiry.set(null);
       this.timelineEntries.set([]);
+      this.expandedEvents.set(new Set());
       return;
     }
 
@@ -981,9 +1013,11 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     this.selectedId.set(nextId);
     this.selectedInquiry.set(null);
     if (nextId) {
+      this.resetExpandedEventsForInquiry();
       this.loadSelectedInquiry(nextId, { scrollDetailToBottom: true });
     } else {
       this.timelineEntries.set([]);
+      this.expandedEvents.set(new Set());
     }
   }
 
@@ -1047,6 +1081,7 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
       next: (entries) => {
         this.quotationHistory.set(entries);
         this.quotationHistoryLoading.set(false);
+        this.resetExpandedEventsForInquiry();
         if (options?.scrollDetailToBottom) {
           this.scrollDetailPanelToLatest(false);
         }
@@ -1054,6 +1089,7 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
       error: () => {
         this.quotationHistory.set([]);
         this.quotationHistoryLoading.set(false);
+        this.resetExpandedEventsForInquiry();
       },
     });
   }
@@ -1850,13 +1886,15 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   }
 
   private scrollDetailPanelToLatest(animateFromTop = true): void {
-    if (animateFromTop) {
-      scheduleDetailScrollToLatest(() => this.detailScrollRef()?.nativeElement);
-      return;
-    }
-    scrollToBottomAfterRender(() => this.detailScrollRef()?.nativeElement, {
-      durationMs: 0,
-      fromTop: false,
+    // Newest event cards are on top — keep the latest stage in view.
+    void animateFromTop;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const scrollEl = this.detailScrollRef()?.nativeElement;
+        if (scrollEl) {
+          scrollEl.scrollTop = 0;
+        }
+      });
     });
   }
 

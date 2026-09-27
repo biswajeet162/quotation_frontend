@@ -48,7 +48,6 @@ import {
   QuotationHighlightField,
 } from '../../../shared/utils/quotation-round-diff.util';
 import { inquiryHasConsumerDealDone } from '../../../shared/utils/inquiry-deal.util';
-import { scheduleDetailScrollToLatest } from '../../../shared/utils/scroll-container.util';
 import { DealDoneSealComponent } from '../../../shared/components/deal-done-seal/deal-done-seal.component';
 
 type StatusFilter = 'all' | InquiryStatus | 'ACTION_REQUIRED';
@@ -92,6 +91,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   readonly sortBy = signal<SortBy>('date');
   readonly viewMode = signal<TrackingViewMode>(this.readStoredViewMode());
   readonly selectedId = signal<string | null>(null);
+  readonly expandedEvents = signal<ReadonlySet<string>>(new Set(['initiated']));
 
   readonly timelineLoading = signal(false);
   readonly timelineRefreshing = signal(false);
@@ -310,6 +310,45 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     );
   }
 
+  latestEventKey(inquiry: ConsumerInquiry): string {
+    if (this.showLegacyFinalQuotation()) {
+      return 'legacy-final';
+    }
+    const finals = this.consumerFinalizationHistory();
+    if (finals.length > 0) {
+      return `final-${finals.length - 1}`;
+    }
+    if (this.isInReview(inquiry)) {
+      return 'in-progress';
+    }
+    return 'initiated';
+  }
+
+  isEventExpanded(key: string): boolean {
+    return this.expandedEvents().has(key);
+  }
+
+  toggleEvent(key: string, event?: Event): void {
+    event?.stopPropagation();
+    this.expandedEvents.update((current) => {
+      const next = new Set(current);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  }
+
+  private resetExpandedEvents(inquiry: ConsumerInquiry | null | undefined): void {
+    if (!inquiry) {
+      this.expandedEvents.set(new Set());
+      return;
+    }
+    this.expandedEvents.set(new Set<string>([this.latestEventKey(inquiry)]));
+  }
+
   inReviewOccurredAt(inquiry: ConsumerInquiry): string | undefined {
     const timelineTimes = this.timelineEntries()
       .filter(
@@ -413,6 +452,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     this.messageError.set(null);
     this.messageText.set('');
     this.clearReplyTarget();
+    this.resetExpandedEvents(null);
     void this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { inq: null },
@@ -539,9 +579,10 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     this.messageText.set('');
     this.clearReplyTarget();
     this.timelineEntries.set([]);
+    const inquiry = this.inquiries().find((item) => item.id === id);
+    this.resetExpandedEvents(inquiry);
     this.loadTimeline({ scrollDetailToBottom: true });
 
-    const inquiry = this.inquiries().find((item) => item.id === id);
     void this.router.navigate([], {
       relativeTo: this.route,
       queryParams: inquiry ? { inq: inquiry.inquiryId } : { inq: null },
@@ -561,12 +602,17 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     if (this.viewMode() === 'normal') {
       this.selectedId.set(null);
       this.timelineEntries.set([]);
+      this.resetExpandedEvents(null);
       return;
     }
 
     this.selectedId.set(visible[0]?.id ?? null);
     if (this.selectedId()) {
+      const inquiry = this.inquiries().find((item) => item.id === this.selectedId());
+      this.resetExpandedEvents(inquiry);
       this.loadTimeline({ scrollDetailToBottom: true });
+    } else {
+      this.resetExpandedEvents(null);
     }
   }
 
@@ -590,10 +636,13 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
       next: (history) => {
         this.finalizationHistory.set(history ?? []);
         this.finalizationHistoryLoading.set(false);
+        this.resetExpandedEvents(this.selectedInquiry());
+        this.scrollDetailPanelToLatest();
       },
       error: () => {
         this.finalizationHistory.set([]);
         this.finalizationHistoryLoading.set(false);
+        this.resetExpandedEvents(this.selectedInquiry());
       },
     });
   }
@@ -1880,7 +1929,15 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   }
 
   private scrollDetailPanelToLatest(): void {
-    scheduleDetailScrollToLatest(() => this.detailScrollRef()?.nativeElement);
+    // Newest event cards are on top — keep the latest stage in view.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const scrollEl = this.detailScrollRef()?.nativeElement;
+        if (scrollEl) {
+          scrollEl.scrollTop = 0;
+        }
+      });
+    });
   }
 
   private scrollDetailToBottom(): void {

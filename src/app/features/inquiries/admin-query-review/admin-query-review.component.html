@@ -307,11 +307,18 @@
                 <p class="detail-note"><strong>Search term:</strong> {{ inquiry.searchTerm }}</p>
               }
 
+              <div class="inquiry-events-stack">
               <section
                 class="inquiry-event-card inquiry-event-card--initiated"
+                [class.is-collapsed]="!isEventExpanded('initiated')"
                 aria-label="Quotation request received"
               >
-                <div class="inquiry-event-header">
+                <button
+                  type="button"
+                  class="inquiry-event-header inquiry-event-toggle"
+                  (click)="toggleEvent('initiated', $event)"
+                  [attr.aria-expanded]="isEventExpanded('initiated')"
+                >
                   <h3 class="inquiry-event-title">
                     A new quotation request received from customer
                     {{ inquiry.companyName?.trim() || '—' }}.
@@ -322,8 +329,9 @@
                       {{ formatPostedDate(inquiry.createdAt) }}
                     </span>
                   </div>
-                </div>
+                </button>
 
+                @if (isEventExpanded('initiated')) {
                 <div class="inquiry-event-content">
                   @if ((inquiry.items ?? []).length > 0) {
                     <div class="preview-table-wrap admin-pricing-table-wrap">
@@ -443,28 +451,43 @@
                     </div>
                   </div>
                 </div>
+                }
+
+                <button
+                  type="button"
+                  class="event-expand-arrow"
+                  (click)="toggleEvent('initiated', $event)"
+                  [attr.aria-expanded]="isEventExpanded('initiated')"
+                  [attr.aria-label]="
+                    isEventExpanded('initiated') ? 'Collapse initiated details' : 'Expand initiated details'
+                  "
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    @if (isEventExpanded('initiated')) {
+                      <path d="M7.41 15.41 12 10.83l4.59 4.58L18 14l-6-6-6 6z" />
+                    } @else {
+                      <path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z" />
+                    }
+                  </svg>
+                </button>
               </section>
 
               @if (hasSentToDistributors(inquiry)) {
                 <section
                   class="inquiry-event-card inquiry-event-card--in-progress"
+                  [class.is-collapsed]="!isEventExpanded('in-progress')"
                   aria-label="Quotation request sent to distributors"
                 >
-                  <div class="inquiry-event-header inquiry-event-header--sent">
+                  <button
+                    type="button"
+                    class="inquiry-event-header inquiry-event-header--sent inquiry-event-toggle"
+                    (click)="toggleEvent('in-progress', $event)"
+                    [attr.aria-expanded]="isEventExpanded('in-progress')"
+                  >
                     <div class="inquiry-event-title-block">
                       <h3 class="inquiry-event-title">
                         {{ sentToDistributorsTitle(inquiry) }}
                       </h3>
-                      @if (sentDistributorLines(inquiry).length > 0) {
-                        <ol class="sent-distributor-list">
-                          @for (line of sentDistributorLines(inquiry); track line.id) {
-                            <li>
-                              <span class="sent-distributor-index">{{ line.index }}-</span>
-                              <span class="sent-distributor-label">{{ line.label }}</span>
-                            </li>
-                          }
-                        </ol>
-                      }
                     </div>
                     <div class="inquiry-event-status-block">
                       <span class="inquiry-event-status inquiry-event-status--in-progress">In progress</span>
@@ -472,9 +495,20 @@
                         {{ formatPostedDate(sentToDistributorsAt(inquiry)) }}
                       </span>
                     </div>
-                  </div>
+                  </button>
 
+                  @if (isEventExpanded('in-progress')) {
                   <div class="inquiry-event-content">
+                    @if (sentDistributorLines(inquiry).length > 0) {
+                      <ol class="sent-distributor-list sent-distributor-list--in-content">
+                        @for (line of sentDistributorLines(inquiry); track line.id) {
+                          <li>
+                            <span class="sent-distributor-index">{{ line.index }}-</span>
+                            <span class="sent-distributor-label">{{ line.label }}</span>
+                          </li>
+                        }
+                      </ol>
+                    }
                     @if ((inquiry.items ?? []).length > 0) {
                       <div class="preview-table-wrap admin-pricing-table-wrap">
                         <table class="preview-table admin-pricing-table sent-pricing-table">
@@ -589,15 +623,42 @@
                       </div>
                     </div>
                   </div>
+                  }
+
+                  <button
+                    type="button"
+                    class="event-expand-arrow"
+                    (click)="toggleEvent('in-progress', $event)"
+                    [attr.aria-expanded]="isEventExpanded('in-progress')"
+                    [attr.aria-label]="
+                      isEventExpanded('in-progress')
+                        ? 'Collapse in-progress details'
+                        : 'Expand in-progress details'
+                    "
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      @if (isEventExpanded('in-progress')) {
+                        <path d="M7.41 15.41 12 10.83l4.59 4.58L18 14l-6-6-6 6z" />
+                      } @else {
+                        <path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z" />
+                      }
+                    </svg>
+                  </button>
                 </section>
               }
 
               @if (hasFinalQuotationSharedWithConsumer(inquiry)) {
                 <section
                   class="inquiry-event-card inquiry-event-card--final"
+                  [class.is-collapsed]="!isEventExpanded('final')"
                   aria-label="Quotation shared with consumer"
                 >
-                  <div class="inquiry-event-header">
+                  <button
+                    type="button"
+                    class="inquiry-event-header inquiry-event-toggle"
+                    (click)="toggleEvent('final', $event)"
+                    [attr.aria-expanded]="isEventExpanded('final')"
+                  >
                     <h3 class="inquiry-event-title">
                       Quotation shared with consumer for confirmation.
                     </h3>
@@ -607,8 +668,9 @@
                         {{ formatPostedDate(finalQuotationSharedAt(inquiry)) }}
                       </span>
                     </div>
-                  </div>
+                  </button>
 
+                  @if (isEventExpanded('final')) {
                   <div class="inquiry-event-content">
                     @if ((inquiry.items ?? []).some(hasFinalPricingLine)) {
                       <div class="preview-table-wrap admin-pricing-table-wrap">
@@ -735,8 +797,28 @@
                       </div>
                     </div>
                   </div>
+                  }
+
+                  <button
+                    type="button"
+                    class="event-expand-arrow"
+                    (click)="toggleEvent('final', $event)"
+                    [attr.aria-expanded]="isEventExpanded('final')"
+                    [attr.aria-label]="
+                      isEventExpanded('final') ? 'Collapse final details' : 'Expand final details'
+                    "
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      @if (isEventExpanded('final')) {
+                        <path d="M7.41 15.41 12 10.83l4.59 4.58L18 14l-6-6-6 6z" />
+                      } @else {
+                        <path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z" />
+                      }
+                    </svg>
+                  </button>
                 </section>
               }
+              </div>
 
               @if (actionError()) {
                 <div class="alert alert-error" role="alert">{{ actionError() }}</div>
