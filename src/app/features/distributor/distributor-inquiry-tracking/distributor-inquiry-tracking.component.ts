@@ -59,6 +59,9 @@ import {
 import { scheduleDetailScrollToLatest, scrollToBottomAfterRender } from '../../../shared/utils/scroll-container.util';
 
 type StatusFilter = 'all' | 'pending' | 'responded' | 'CLOSED';
+type TrackingViewMode = 'tabular' | 'normal';
+
+const TRACKING_VIEW_MODE_KEY = 'distributor-inquiry-tracking-view-mode';
 
 interface PendingAttachment {
   id: string;
@@ -98,6 +101,7 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   readonly selectedInquiry = signal<DistributorInquiry | null>(null);
   readonly searchQuery = signal('');
   readonly statusFilter = signal<StatusFilter>('all');
+  readonly viewMode = signal<TrackingViewMode>(this.readStoredViewMode());
   readonly selectedId = signal<string | null>(null);
 
   readonly timelineLoading = signal(false);
@@ -290,6 +294,72 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     }
     if (this.quotationPanelOpen()) {
       this.closeQuotationPanel();
+      return;
+    }
+    if (this.viewMode() === 'normal' && this.selectedId()) {
+      this.backToNormalList();
+    }
+  }
+
+  setViewMode(mode: TrackingViewMode): void {
+    if (this.viewMode() === mode) {
+      return;
+    }
+    this.viewMode.set(mode);
+    this.persistViewMode(mode);
+    if (mode === 'normal') {
+      this.backToNormalList();
+      return;
+    }
+    if (!this.selectedId()) {
+      this.syncSelection();
+    }
+  }
+
+  backToNormalList(): void {
+    this.cancelVoiceRecording();
+    this.clearPendingAttachments();
+    this.closeChatModal();
+    this.quotationPanelOpen.set(false);
+    this.closePdfViewer();
+    this.quotationError.set(null);
+    this.selectedId.set(null);
+    this.selectedInquiry.set(null);
+    this.timelineEntries.set([]);
+    this.messageError.set(null);
+    this.messageText.set('');
+    this.clearReplyTarget();
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { inq: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
+  isUnreadSummary(summary: DistributorInquirySummary): boolean {
+    return !summary.responseReceived && summary.status !== 'CLOSED';
+  }
+
+  summaryProductCountLabel(summary: DistributorInquirySummary): string {
+    const count = summary.itemCount ?? 0;
+    return count === 1 ? '1 product' : `${count} products`;
+  }
+
+  private readStoredViewMode(): TrackingViewMode {
+    try {
+      const stored = localStorage.getItem(TRACKING_VIEW_MODE_KEY);
+      return stored === 'tabular' ? 'tabular' : 'normal';
+    } catch {
+      return 'normal';
+    }
+  }
+
+  private persistViewMode(mode: TrackingViewMode): void {
+    try {
+      localStorage.setItem(TRACKING_VIEW_MODE_KEY, mode);
+    } catch {
+      // Ignore storage failures (private mode, quota, etc.).
     }
   }
 
@@ -899,6 +969,14 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
     }
     this.clearPendingAttachments();
     this.closeChatModal();
+
+    if (this.viewMode() === 'normal') {
+      this.selectedId.set(null);
+      this.selectedInquiry.set(null);
+      this.timelineEntries.set([]);
+      return;
+    }
+
     const nextId = visible[0]?.inquiryUuid ?? null;
     this.selectedId.set(nextId);
     this.selectedInquiry.set(null);

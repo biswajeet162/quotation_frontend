@@ -53,6 +53,9 @@ import { DealDoneSealComponent } from '../../../shared/components/deal-done-seal
 
 type StatusFilter = 'all' | InquiryStatus | 'ACTION_REQUIRED';
 type SortBy = 'date' | 'inquiryNumber' | 'productCount';
+type TrackingViewMode = 'tabular' | 'normal';
+
+const TRACKING_VIEW_MODE_KEY = 'inquiry-tracking-view-mode';
 
 interface PendingAttachment {
   id: string;
@@ -87,6 +90,7 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
   readonly searchQuery = signal('');
   readonly statusFilter = signal<StatusFilter>('all');
   readonly sortBy = signal<SortBy>('date');
+  readonly viewMode = signal<TrackingViewMode>(this.readStoredViewMode());
   readonly selectedId = signal<string | null>(null);
 
   readonly timelineLoading = signal(false);
@@ -376,6 +380,70 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     }
     if (this.deleteConfirmOpen()) {
       this.closeDeleteConfirm();
+      return;
+    }
+    if (this.viewMode() === 'normal' && this.selectedId()) {
+      this.backToNormalList();
+    }
+  }
+
+  setViewMode(mode: TrackingViewMode): void {
+    if (this.viewMode() === mode) {
+      return;
+    }
+    this.viewMode.set(mode);
+    this.persistViewMode(mode);
+    if (mode === 'normal') {
+      this.backToNormalList();
+      return;
+    }
+    if (!this.selectedId()) {
+      this.syncSelection();
+    }
+  }
+
+  backToNormalList(): void {
+    this.cancelVoiceRecording();
+    this.clearPendingAttachments();
+    this.closeChatModal();
+    this.selectedId.set(null);
+    this.timelineEntries.set([]);
+    this.deepLinkError.set(null);
+    this.deleteError.set(null);
+    this.messageError.set(null);
+    this.messageText.set('');
+    this.clearReplyTarget();
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { inq: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
+  isUnreadInquiry(inquiry: ConsumerInquiry): boolean {
+    return inquiry.status === 'NEW';
+  }
+
+  productCountLabel(items?: ConsumerInquiry['items']): string {
+    const count = items?.length ?? 0;
+    return count === 1 ? '1 product' : `${count} products`;
+  }
+
+  private readStoredViewMode(): TrackingViewMode {
+    try {
+      const stored = localStorage.getItem(TRACKING_VIEW_MODE_KEY);
+      return stored === 'tabular' ? 'tabular' : 'normal';
+    } catch {
+      return 'normal';
+    }
+  }
+
+  private persistViewMode(mode: TrackingViewMode): void {
+    try {
+      localStorage.setItem(TRACKING_VIEW_MODE_KEY, mode);
+    } catch {
+      // Ignore storage failures (private mode, quota, etc.).
     }
   }
 
@@ -424,8 +492,13 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
         const stillVisible =
           current != null && this.filteredInquiries().some((q) => q.id === current);
         if (!stillVisible) {
-          const first = this.sortedInquiries()[0];
-          this.selectedId.set(first?.id ?? null);
+          if (this.viewMode() === 'normal') {
+            this.selectedId.set(null);
+            this.timelineEntries.set([]);
+          } else {
+            const first = this.sortedInquiries()[0];
+            this.selectedId.set(first?.id ?? null);
+          }
         }
         if (this.selectedId()) {
           this.loadTimeline({ scrollDetailToBottom: true });
@@ -484,6 +557,13 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
       return;
     }
     this.clearPendingAttachments();
+
+    if (this.viewMode() === 'normal') {
+      this.selectedId.set(null);
+      this.timelineEntries.set([]);
+      return;
+    }
+
     this.selectedId.set(visible[0]?.id ?? null);
     if (this.selectedId()) {
       this.loadTimeline({ scrollDetailToBottom: true });
@@ -1233,13 +1313,19 @@ export class InquiryTrackingComponent implements OnInit, OnDestroy {
     this.inquiryService.delete(inquiry.id).subscribe({
       next: () => {
         this.inquiries.update((list) => list.filter((q) => q.id !== inquiry.id));
-        const first = this.filteredInquiries()[0];
-        this.selectedId.set(first?.id ?? null);
         this.deleteLoading.set(false);
         this.deleteConfirmOpen.set(false);
         this.toast.success('Quotation request deleted.');
-        if (this.selectedId()) {
-          this.loadTimeline();
+        if (this.viewMode() === 'normal') {
+          this.backToNormalList();
+        } else {
+          const first = this.filteredInquiries()[0];
+          this.selectedId.set(first?.id ?? null);
+          if (this.selectedId()) {
+            this.loadTimeline();
+          } else {
+            this.timelineEntries.set([]);
+          }
         }
       },
       error: (err: unknown) => {

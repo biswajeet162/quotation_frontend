@@ -27,6 +27,55 @@
   flex-shrink: 0;
 }
 
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.view-toggle {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.view-toggle-btn {
+  margin: 0;
+  padding: 0.5rem 0.85rem;
+  border: none;
+  border-right: 1px solid #cbd5e1;
+  background: #fff;
+  color: #475569;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1.2;
+}
+
+.view-toggle-btn:last-child {
+  border-right: none;
+}
+
+.view-toggle-btn:hover {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.view-toggle-btn.active {
+  background: #0f766e;
+  color: #fff;
+}
+
+.view-toggle-btn.active:hover {
+  background: #0d9488;
+  color: #fff;
+}
+
 .page-card h1 {
   margin: 0;
   font-size: 1.25rem;
@@ -85,6 +134,11 @@
 
 .review-layout > * {
   min-height: 0;
+}
+
+.review-layout--normal-list,
+.review-layout--normal-detail {
+  grid-template-columns: 1fr;
 }
 
 @media (max-width: 900px) {
@@ -151,6 +205,187 @@
 
 .query-item.selected {
   box-shadow: inset 3px 0 0 #0f766e;
+}
+
+.mail-list {
+  border-radius: 10px;
+}
+
+.mail-row {
+  display: grid;
+  grid-template-columns: minmax(130px, 200px) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.7rem 1rem;
+  border: none;
+  border-bottom: 1px solid #e2e8f0;
+  background: #fff;
+  cursor: pointer;
+  color: inherit;
+}
+
+.mail-row:hover {
+  box-shadow: inset 3px 0 0 #0f766e;
+}
+
+.mail-row:hover .mail-row-ref,
+.mail-row:hover .mail-row-company,
+.mail-row:hover .mail-row-products,
+.mail-row:hover .mail-row-date {
+  font-weight: 700;
+  color: #0f766e;
+}
+
+.mail-row.step-initiated {
+  background: var(--inquiry-status-initiated-bg, #eff6ff);
+}
+
+.mail-row.step-in-progress {
+  background: var(--inquiry-status-in-progress-bg, #fffbeb);
+}
+
+.mail-row.step-green {
+  background: var(--inquiry-status-final-bg, #ecfdf5);
+}
+
+.mail-row.step-initiated:hover {
+  background: #dbeafe;
+}
+
+.mail-row.step-in-progress:hover {
+  background: #fef3c7;
+}
+
+.mail-row.step-green:hover {
+  background: #d1fae5;
+}
+
+.mail-row--unread .mail-row-ref,
+.mail-row--unread .mail-row-company {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.mail-row-ref {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mail-row-body {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 0.875rem;
+}
+
+.mail-row-company {
+  flex: 0 1 auto;
+  font-weight: 600;
+  color: #334155;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mail-row-products {
+  flex-shrink: 0;
+  color: #64748b;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.mail-row-end {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-shrink: 0;
+}
+
+.mail-row-date {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.mail-row--unread .mail-row-date {
+  color: #0f766e;
+}
+
+.normal-back-bar {
+  display: flex;
+  align-items: center;
+  padding: 0.55rem 0.85rem 0;
+  flex-shrink: 0;
+}
+
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #334155;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-back svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  fill: currentColor;
+}
+
+.btn-back:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+@media (max-width: 720px) {
+  .mail-row {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      'ref end'
+      'body body';
+    gap: 0.25rem 0.75rem;
+    padding: 0.75rem 0.85rem;
+  }
+
+  .mail-row-ref {
+    grid-area: ref;
+  }
+
+  .mail-row-body {
+    grid-area: body;
+    flex-wrap: wrap;
+  }
+
+  .mail-row-end {
+    grid-area: end;
+  }
+
+  .page-header {
+    flex-wrap: wrap;
+  }
+
+  .page-header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
 }
 
 .query-id {
