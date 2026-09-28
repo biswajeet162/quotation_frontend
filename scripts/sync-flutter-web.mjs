@@ -16,6 +16,7 @@ import {
   cpSync,
   existsSync,
   mkdirSync,
+  readFileSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';
@@ -87,6 +88,12 @@ rmSync(targetDir, { recursive: true, force: true });
 mkdirSync(dirname(targetDir), { recursive: true });
 cpSync(flutterWebOut, targetDir, { recursive: true });
 
+const deployStamp = Date.now().toString(36);
+const buildIdPath = join(targetDir, '.last_build_id');
+const buildId = existsSync(buildIdPath)
+  ? readFileSync(buildIdPath, 'utf8').trim()
+  : deployStamp;
+
 writeFileSync(
   join(targetDir, '.sync-meta.json'),
   JSON.stringify(
@@ -95,11 +102,24 @@ writeFileSync(
       apiTarget,
       baseHref: '/m/',
       source: 'quotation_mobile/build/web',
+      deployStamp,
+      buildId,
     },
     null,
     2,
   ),
 );
+
+// Stamp index.html so each sync is visibly distinct and hard to long-cache.
+const indexPath = join(targetDir, 'index.html');
+if (existsSync(indexPath)) {
+  const html = readFileSync(indexPath, 'utf8');
+  const stampComment = `<!-- aps-flutter-web build=${buildId} synced=${deployStamp} -->`;
+  const stamped = html.includes('aps-flutter-web')
+    ? html.replace(/<!-- aps-flutter-web[\s\S]*?-->/, stampComment)
+    : html.replace('<head>', `<head>\n  ${stampComment}`);
+  writeFileSync(indexPath, stamped);
+}
 
 console.log('\n[sync-flutter-web] Done. Flutter Web is at public/m/');
 console.log(

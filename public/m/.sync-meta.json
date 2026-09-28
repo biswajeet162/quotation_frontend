@@ -1,6 +1,8 @@
 {
-  "syncedAt": "2026-09-28T08:26:47.487Z",
+  "syncedAt": "2026-09-28T08:57:07.724Z",
   "apiTarget": "prod",
   "baseHref": "/m/",
-  "source": "quotation_mobile/build/web"
+  "source": "quotation_mobile/build/web",
+  "deployStamp": "mul0kj2j",
+  "buildId": "74aa4c01608a09487e63d4aac987bac9"
 }
