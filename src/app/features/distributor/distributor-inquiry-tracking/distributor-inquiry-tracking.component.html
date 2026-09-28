@@ -688,10 +688,10 @@
               @if (canMessage(inquiry) && canCreateOrReviseQuotation(inquiry)) {
                 <div class="detail-quotation-action">
                   <button type="button" class="btn-quotation-action" (click)="openQuotationPanel()">
-                    {{
+                      {{
                       inquiry.requotationRequested
                         ? 'Revise your quotation'
-                        : 'Create your quotation'
+                        : 'Share your quotation'
                     }}
                   </button>
                 </div>
@@ -1098,7 +1098,9 @@
     >
       <div class="quotation-dialog-header">
         <div class="quotation-dialog-title-block">
-          <h2 id="quotation-dialog-title">Create your quotation</h2>
+          <h2 id="quotation-dialog-title">
+            {{ inquiry.requotationRequested ? 'Revise your quotation' : 'Share your quotation' }}
+          </h2>
           <p class="quotation-dialog-subtitle">{{ inquiryTitle(inquiry) }} · {{ inquiry.inquiryId }}</p>
         </div>
         <div class="quotation-dialog-header-end">
