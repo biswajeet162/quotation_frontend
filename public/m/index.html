@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!-- aps-flutter-web build=74aa4c01608a09487e63d4aac987bac9 synced=mul0kj2j -->
+  <!-- aps-flutter-web build=16902c715a206b7fe0a03d1aa233036c synced=mul1litc-gemxxy -->
   <!--
     If you are serving your web app in a path other than the root, change the
     href value below to reflect the base path you are serving from.
@@ -42,6 +42,27 @@
     For more details:
     * https://docs.flutter.dev/platform-integration/web/initialization
   -->
-  <script src="flutter_bootstrap.js" async></script>
+  
+  <script>
+    (function () {
+      var stamp = "mul1litc-gemxxy";
+      try {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function (regs) {
+            regs.forEach(function (reg) { reg.unregister(); });
+          });
+        }
+        if (window.caches && caches.keys) {
+          caches.keys().then(function (keys) {
+            keys.forEach(function (key) { caches.delete(key); });
+          });
+        }
+      } catch (e) {}
+      var s = document.createElement('script');
+      s.src = 'flutter_bootstrap.js?v=' + encodeURIComponent(stamp);
+      s.async = true;
+      document.head.appendChild(s);
+    })();
+  </script>
 </body>
 </html>

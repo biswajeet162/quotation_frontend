@@ -31,6 +31,7 @@ const targetDir = join(frontendRoot, 'public', 'm');
 
 const skipBuild = process.argv.includes('--skip-build');
 const apiTarget = process.env.API_TARGET || 'prod';
+const deployStamp = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
 function fail(message) {
   console.error(`\n[sync-flutter-web] ${message}\n`);
@@ -70,6 +71,7 @@ if (!skipBuild) {
       '--base-href',
       '/m/',
       `--dart-define=API_TARGET=${apiTarget}`,
+      `--dart-define=WEB_BUILD_STAMP=${deployStamp}`,
     ],
     repoMobileRoot,
   );
@@ -88,7 +90,6 @@ rmSync(targetDir, { recursive: true, force: true });
 mkdirSync(dirname(targetDir), { recursive: true });
 cpSync(flutterWebOut, targetDir, { recursive: true });
 
-const deployStamp = Date.now().toString(36);
 const buildIdPath = join(targetDir, '.last_build_id');
 const buildId = existsSync(buildIdPath)
   ? readFileSync(buildIdPath, 'utf8').trim()
@@ -110,22 +111,68 @@ writeFileSync(
   ),
 );
 
-// Stamp index.html so each sync is visibly distinct and hard to long-cache.
+// Force a unique service-worker version so phones cannot keep an old SW.
+const bootstrapPath = join(targetDir, 'flutter_bootstrap.js');
+if (existsSync(bootstrapPath)) {
+  let bootstrap = readFileSync(bootstrapPath, 'utf8');
+  bootstrap = bootstrap.replace(
+    /serviceWorkerVersion:\s*"[^"]*"/,
+    `serviceWorkerVersion: "${deployStamp}"`,
+  );
+  writeFileSync(bootstrapPath, bootstrap);
+}
+
+// Hard cache-bust entry HTML: kill old SW/caches, load bootstrap with unique query.
 const indexPath = join(targetDir, 'index.html');
 if (existsSync(indexPath)) {
-  const html = readFileSync(indexPath, 'utf8');
+  let html = readFileSync(indexPath, 'utf8');
   const stampComment = `<!-- aps-flutter-web build=${buildId} synced=${deployStamp} -->`;
-  const stamped = html.includes('aps-flutter-web')
+  html = html.includes('aps-flutter-web')
     ? html.replace(/<!-- aps-flutter-web[\s\S]*?-->/, stampComment)
     : html.replace('<head>', `<head>\n  ${stampComment}`);
-  writeFileSync(indexPath, stamped);
+
+  const cacheBustScript = `
+  <script>
+    (function () {
+      var stamp = ${JSON.stringify(deployStamp)};
+      try {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function (regs) {
+            regs.forEach(function (reg) { reg.unregister(); });
+          });
+        }
+        if (window.caches && caches.keys) {
+          caches.keys().then(function (keys) {
+            keys.forEach(function (key) { caches.delete(key); });
+          });
+        }
+      } catch (e) {}
+      var s = document.createElement('script');
+      s.src = 'flutter_bootstrap.js?v=' + encodeURIComponent(stamp);
+      s.async = true;
+      document.head.appendChild(s);
+    })();
+  </script>`;
+
+  // Replace Flutter's default bootstrap tag with our cache-busting loader.
+  if (html.includes('flutter_bootstrap.js')) {
+    html = html.replace(
+      /<script\s+src="flutter_bootstrap\.js"[^>]*><\/script>/i,
+      cacheBustScript,
+    );
+  } else {
+    html = html.replace('</body>', `${cacheBustScript}\n</body>`);
+  }
+
+  writeFileSync(indexPath, html);
 }
 
 console.log('\n[sync-flutter-web] Done. Flutter Web is at public/m/');
+console.log(`[sync-flutter-web] deployStamp=${deployStamp}`);
 console.log(
   '[sync-flutter-web] Note: build/web now uses base-href /m/. For local Chrome use:',
 );
 console.log(
   '  flutter run -d chrome --release --base-href=/ --dart-define=API_TARGET=prod',
 );
-console.log('Next: commit public/m (if needed) and deploy quotation_frontend to Vercel.\n');
+console.log('Next: commit public/m + push quotation_frontend so Vercel deploys.\n');
