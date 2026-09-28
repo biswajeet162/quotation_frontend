@@ -24,6 +24,11 @@ import { ToastService } from '../../../core/services/toast/toast.service';
 import { InquiryChatAttachmentComponent } from '../../../shared/components/inquiry-chat-attachment/inquiry-chat-attachment.component';
 import { ChatAudioPlayerComponent } from '../../../shared/components/chat-audio-player/chat-audio-player.component';
 import {
+  formatAppChatTime,
+  formatAppDateOnly,
+  formatAppDateTime,
+} from '../../../shared/utils/app-datetime.util';
+import {
   formatExpectedDeliveryDate,
   getRequestSourceLabel,
   distributorInquiryDisplayTitle,
@@ -1480,20 +1485,7 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   }
 
   formatPostedDate(iso?: string): string {
-    if (!iso) {
-      return '—';
-    }
-    const date = new Date(iso);
-    if (Number.isNaN(date.getTime())) {
-      return iso;
-    }
-    return date.toLocaleString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-    });
+    return formatAppDateTime(iso);
   }
 
   startReply(entry: InquiryTimelineEntry, event: Event): void {
@@ -1700,42 +1692,15 @@ export class DistributorInquiryTrackingComponent implements OnInit, OnDestroy {
   }
 
   formatDate(iso?: string): string {
-    if (!iso) {
-      return '—';
-    }
-    const date = new Date(iso);
-    return Number.isNaN(date.getTime()) ? iso : date.toLocaleString();
+    return formatAppDateTime(iso);
   }
 
   formatQuotationDate(iso?: string): string {
-    if (!iso) {
-      return '—';
-    }
-    const date = new Date(iso);
-    if (Number.isNaN(date.getTime())) {
-      return iso;
-    }
-    return date.toLocaleDateString(undefined, {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    });
+    return formatAppDateOnly(iso);
   }
 
   formatChatTime(iso?: string): string {
-    if (!iso) {
-      return '';
-    }
-    const date = new Date(iso);
-    if (Number.isNaN(date.getTime())) {
-      return iso;
-    }
-    return date.toLocaleString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-    });
+    return formatAppChatTime(iso);
   }
 
   private resolveRecordingMimeType(): string | undefined {

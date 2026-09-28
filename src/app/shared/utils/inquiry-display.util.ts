@@ -105,6 +105,11 @@ export function getRequestSourceLabel(source?: InquiryRequestSource): string {
   }
 }
 
+/**
+ * Primary label for distributor tracking rows.
+ * Single-product: brand + designation (e.g. "JK Fanner").
+ * Otherwise: "Quotation request" — product count is shown separately as "(N products)".
+ */
 export function distributorInquiryDisplayTitle(
   title: string,
   itemCount: number,
@@ -118,15 +123,18 @@ export function distributorInquiryDisplayTitle(
     if (brand && name) {
       return `${brand} ${name}`;
     }
-    if (!/^Quotation request \(\d+ products\)$/.test(title.trim())) {
-      return title;
+    if (brand) {
+      return brand;
     }
-    return 'Quotation request (1 product)';
+    if (name) {
+      return name;
+    }
+    const trimmed = title?.trim() ?? '';
+    if (trimmed && !/^Quotation request(\s*\(\d+\s+products?\))?$/i.test(trimmed)) {
+      return trimmed;
+    }
   }
-  if (count > 1) {
-    return `Quotation request (${count} products)`;
-  }
-  return title || 'Quotation request';
+  return 'Quotation request';
 }
 
 export function getInquiryListStep(inquiry: Pick<Inquiry, 'status'>): InquiryListStep {

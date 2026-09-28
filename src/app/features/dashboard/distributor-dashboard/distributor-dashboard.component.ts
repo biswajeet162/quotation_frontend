@@ -5,6 +5,7 @@ import { AuthService } from '../../../core/services/auth/auth.service';
 import { DistributorDashboardService } from '../../../core/services/distributor/distributor-dashboard.service';
 import { ToastService } from '../../../core/services/toast/toast.service';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
+import { formatAppDateTime } from '../../../shared/utils/app-datetime.util';
 
 @Component({
   selector: 'app-distributor-dashboard',
@@ -43,10 +44,6 @@ export class DistributorDashboardComponent implements OnInit {
   }
 
   formatDate(iso?: string): string {
-    if (!iso) {
-      return '—';
-    }
-    const date = new Date(iso);
-    return Number.isNaN(date.getTime()) ? iso : date.toLocaleString();
+    return formatAppDateTime(iso);
   }
 }
