@@ -49,20 +49,160 @@
                 <span>Industry name</span><span class="sort-icon">{{ sortIndicator('companyName') }}</span>
               </button>
             </th>
-            <th [class.sort-active]="isSortedBy('sector')">
-              <button type="button" class="sort-btn" (click)="toggleColumnSort('sector', $event)">
-                <span>Sector</span><span class="sort-icon">{{ sortIndicator('sector') }}</span>
-              </button>
+            <th
+              class="th-filterable"
+              [class.sort-active]="isSortedBy('sector')"
+              [class.filter-on]="!!columnFilters().sector"
+            >
+              <div class="th-inner">
+                <button type="button" class="sort-btn" (click)="toggleColumnSort('sector', $event)">
+                  <span>Sector</span><span class="sort-icon">{{ sortIndicator('sector') }}</span>
+                </button>
+                <button
+                  type="button"
+                  class="col-menu-btn"
+                  [class.open]="openColMenu() === 'sector'"
+                  [class.active]="!!columnFilters().sector"
+                  title="Filter by sector"
+                  aria-label="Filter by sector"
+                  (click)="toggleColMenu('sector', $event)"
+                >
+                  ⋮
+                </button>
+              </div>
+              @if (openColMenu() === 'sector') {
+                <div
+                  class="col-menu"
+                  [style.top.px]="colMenuPos().top"
+                  [style.left.px]="colMenuPos().left"
+                  (click)="$event.stopPropagation()"
+                >
+                  <button
+                    type="button"
+                    class="col-menu-item"
+                    [class.selected]="!columnFilters().sector"
+                    (click)="setSectorFilter(null, $event)"
+                  >
+                    All sectors
+                  </button>
+                  @for (option of sectorOptions(); track option) {
+                    <button
+                      type="button"
+                      class="col-menu-item"
+                      [class.selected]="columnFilters().sector === option"
+                      (click)="setSectorFilter(option, $event)"
+                    >
+                      {{ option }}
+                    </button>
+                  }
+                  @if (sectorOptions().length === 0) {
+                    <p class="col-menu-empty">No sectors yet</p>
+                  }
+                </div>
+              }
             </th>
-            <th [class.sort-active]="isSortedBy('location')">
-              <button type="button" class="sort-btn" (click)="toggleColumnSort('location', $event)">
-                <span>Location</span><span class="sort-icon">{{ sortIndicator('location') }}</span>
-              </button>
+            <th
+              class="th-filterable"
+              [class.sort-active]="isSortedBy('location')"
+              [class.filter-on]="!!columnFilters().location"
+            >
+              <div class="th-inner">
+                <button type="button" class="sort-btn" (click)="toggleColumnSort('location', $event)">
+                  <span>Location</span><span class="sort-icon">{{ sortIndicator('location') }}</span>
+                </button>
+                <button
+                  type="button"
+                  class="col-menu-btn"
+                  [class.open]="openColMenu() === 'location'"
+                  [class.active]="!!columnFilters().location"
+                  title="Filter by location"
+                  aria-label="Filter by location"
+                  (click)="toggleColMenu('location', $event)"
+                >
+                  ⋮
+                </button>
+              </div>
+              @if (openColMenu() === 'location') {
+                <div
+                  class="col-menu"
+                  [style.top.px]="colMenuPos().top"
+                  [style.left.px]="colMenuPos().left"
+                  (click)="$event.stopPropagation()"
+                >
+                  <button
+                    type="button"
+                    class="col-menu-item"
+                    [class.selected]="!columnFilters().location"
+                    (click)="setLocationFilter(null, $event)"
+                  >
+                    All locations
+                  </button>
+                  @for (option of locationOptions(); track option) {
+                    <button
+                      type="button"
+                      class="col-menu-item"
+                      [class.selected]="columnFilters().location === option"
+                      (click)="setLocationFilter(option, $event)"
+                    >
+                      {{ option }}
+                    </button>
+                  }
+                  @if (locationOptions().length === 0) {
+                    <p class="col-menu-empty">No locations yet</p>
+                  }
+                </div>
+              }
             </th>
-            <th class="col-updated" [class.sort-active]="isSortedBy('lastUpdated')">
-              <button type="button" class="sort-btn" (click)="toggleColumnSort('lastUpdated', $event)">
-                <span>Last updated</span><span class="sort-icon">{{ sortIndicator('lastUpdated') }}</span>
-              </button>
+            <th
+              class="th-filterable col-updated"
+              [class.sort-active]="isSortedBy('lastUpdated')"
+              [class.filter-on]="!!(columnFilters().updatedFrom || columnFilters().updatedTo)"
+            >
+              <div class="th-inner">
+                <button type="button" class="sort-btn" (click)="toggleColumnSort('lastUpdated', $event)">
+                  <span>Last updated</span><span class="sort-icon">{{ sortIndicator('lastUpdated') }}</span>
+                </button>
+                <button
+                  type="button"
+                  class="col-menu-btn"
+                  [class.open]="openColMenu() === 'updated'"
+                  [class.active]="!!(columnFilters().updatedFrom || columnFilters().updatedTo)"
+                  title="Filter by last updated range"
+                  aria-label="Filter by last updated range"
+                  (click)="toggleColMenu('updated', $event)"
+                >
+                  ⋮
+                </button>
+              </div>
+              @if (openColMenu() === 'updated') {
+                <div
+                  class="col-menu col-menu-range"
+                  [style.top.px]="colMenuPos().top"
+                  [style.left.px]="colMenuPos().left"
+                  (click)="$event.stopPropagation()"
+                >
+                  <label>
+                    From
+                    <input
+                      type="datetime-local"
+                      [ngModel]="updatedFromDraft()"
+                      (ngModelChange)="updatedFromDraft.set($event)"
+                    />
+                  </label>
+                  <label>
+                    To
+                    <input
+                      type="datetime-local"
+                      [ngModel]="updatedToDraft()"
+                      (ngModelChange)="updatedToDraft.set($event)"
+                    />
+                  </label>
+                  <div class="col-menu-actions">
+                    <button type="button" class="col-menu-clear" (click)="clearUpdatedRange($event)">Clear</button>
+                    <button type="button" class="col-menu-apply" (click)="applyUpdatedRange($event)">Apply</button>
+                  </div>
+                </div>
+              }
             </th>
           </tr>
         </thead>

@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   CdkDragDrop,
@@ -28,8 +28,11 @@ import { ToastService } from '../../../core/services/toast/toast.service';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 import {
   DEFAULT_SALES_SORT,
+  EMPTY_SALES_COLUMN_FILTERS,
   EMPTY_SALES_CUSTOM_FILTER,
   SALES_SORT_OPTIONS,
+  SalesColumnFilters,
+  SalesColumnMenu,
   SalesCrmCustomFilter,
   SalesCrmQuickFilter,
   SalesCrmSortBy,
@@ -38,8 +41,10 @@ import {
   formatSalesCrmDate,
   formatSalesCrmDateTime,
   matchesSalesCrmSearch,
+  passesSalesColumnFilters,
   passesSalesQuickFilter,
   salesQuickFilterLabel,
+  uniqueSalesFieldValues,
 } from '../sales-crm-filters';
 
 type FormMode = 'create' | 'edit';
@@ -91,6 +96,11 @@ export class SalesCrmComponent implements OnInit {
   readonly quickFilter = signal<SalesCrmQuickFilter>('all');
   readonly customFilter = signal<SalesCrmCustomFilter>({ ...EMPTY_SALES_CUSTOM_FILTER });
   readonly sort = signal<SalesCrmSortSelection>({ ...DEFAULT_SALES_SORT });
+  readonly columnFilters = signal<SalesColumnFilters>({ ...EMPTY_SALES_COLUMN_FILTERS });
+  readonly openColMenu = signal<SalesColumnMenu>(null);
+  readonly colMenuPos = signal({ top: 0, left: 0 });
+  readonly updatedFromDraft = signal('');
+  readonly updatedToDraft = signal('');
 
   readonly detailOpen = signal(false);
   readonly editOnly = signal(false);
@@ -120,11 +130,13 @@ export class SalesCrmComponent implements OnInit {
     const q = this.query().trim().toLowerCase();
     const filter = this.quickFilter();
     const custom = this.customFilter();
+    const columns = this.columnFilters();
     const sort = this.sort();
     const list = this.rows().filter((row) => {
       // Done / Follow-up Contacts never appear on the CRM tab.
       if (crmFollowUpEntered(row) || crmWorkflowStatus(row) === 'DONE') return false;
       if (!passesSalesQuickFilter(row, filter, custom)) return false;
+      if (!passesSalesColumnFilters(row, columns)) return false;
       if (!q) return true;
       return matchesSalesCrmSearch(row, q);
     });
@@ -134,6 +146,19 @@ export class SalesCrmComponent implements OnInit {
       ),
     );
   });
+
+  /** Options for ⋮ menus — CRM rows only (before column filters). */
+  readonly columnFilterSourceRows = computed(() =>
+    this.rows().filter((row) => !crmFollowUpEntered(row) && crmWorkflowStatus(row) !== 'DONE'),
+  );
+
+  readonly sectorOptions = computed(() =>
+    uniqueSalesFieldValues(this.columnFilterSourceRows(), 'sector'),
+  );
+
+  readonly locationOptions = computed(() =>
+    uniqueSalesFieldValues(this.columnFilterSourceRows(), 'location'),
+  );
 
   ngOnInit(): void {
     this.load();
@@ -178,6 +203,67 @@ export class SalesCrmComponent implements OnInit {
       return;
     }
     this.sort.set({ sortBy: key, ascending: true });
+  }
+
+  @HostListener('document:click')
+  onDocumentClick(): void {
+    if (this.openColMenu()) this.openColMenu.set(null);
+  }
+
+  @HostListener('window:scroll')
+  @HostListener('window:resize')
+  onViewportChange(): void {
+    if (this.openColMenu()) this.openColMenu.set(null);
+  }
+
+  toggleColMenu(menu: Exclude<SalesColumnMenu, null>, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    if (this.openColMenu() === menu) {
+      this.openColMenu.set(null);
+      return;
+    }
+    const btn = event.currentTarget as HTMLElement;
+    const rect = btn.getBoundingClientRect();
+    const menuWidth = menu === 'updated' ? 260 : 220;
+    const left = Math.min(Math.max(8, rect.right - menuWidth), window.innerWidth - menuWidth - 8);
+    this.colMenuPos.set({ top: rect.bottom + 4, left });
+    if (menu === 'updated') {
+      const f = this.columnFilters();
+      this.updatedFromDraft.set(f.updatedFrom ?? '');
+      this.updatedToDraft.set(f.updatedTo ?? '');
+    }
+    this.openColMenu.set(menu);
+  }
+
+  setSectorFilter(value: string | null, event?: Event): void {
+    event?.stopPropagation();
+    this.columnFilters.update((f) => ({ ...f, sector: value }));
+    this.openColMenu.set(null);
+  }
+
+  setLocationFilter(value: string | null, event?: Event): void {
+    event?.stopPropagation();
+    this.columnFilters.update((f) => ({ ...f, location: value }));
+    this.openColMenu.set(null);
+  }
+
+  applyUpdatedRange(event?: Event): void {
+    event?.stopPropagation();
+    this.columnFilters.update((f) => ({
+      ...f,
+      updatedFrom: this.updatedFromDraft().trim() || null,
+      updatedTo: this.updatedToDraft().trim() || null,
+    }));
+    this.openColMenu.set(null);
+  }
+
+  clearUpdatedRange(event?: Event): void {
+    event?.stopPropagation();
+    this.updatedFromDraft.set('');
+    this.updatedToDraft.set('');
+    this.columnFilters.update((f) => ({ ...f, updatedFrom: null, updatedTo: null }));
+    this.openColMenu.set(null);
   }
 
   onFilterChange(raw: string): void {

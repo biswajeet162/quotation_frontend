@@ -43,6 +43,25 @@ export interface SalesCrmSortSelection {
   ascending: boolean;
 }
 
+/** Header ⋮ filters for Sector / Location / Last updated. */
+export interface SalesColumnFilters {
+  sector: string | null;
+  location: string | null;
+  /** datetime-local value, inclusive start */
+  updatedFrom: string | null;
+  /** datetime-local value, inclusive end */
+  updatedTo: string | null;
+}
+
+export type SalesColumnMenu = 'sector' | 'location' | 'updated' | null;
+
+export const EMPTY_SALES_COLUMN_FILTERS: SalesColumnFilters = {
+  sector: null,
+  location: null,
+  updatedFrom: null,
+  updatedTo: null,
+};
+
 export const EMPTY_SALES_CUSTOM_FILTER: SalesCrmCustomFilter = {
   status: null,
   requireFollowUpDate: false,
@@ -252,4 +271,67 @@ export function matchesSalesCrmSearch(row: CrmCustomerSummary, query: string): b
     .join(' ')
     .toLowerCase()
     .includes(q);
+}
+
+export function uniqueSalesFieldValues(
+  rows: CrmCustomerSummary[],
+  field: 'sector' | 'location',
+): string[] {
+  const seen = new Set<string>();
+  const values: string[] = [];
+  for (const row of rows) {
+    const raw = (field === 'sector' ? row.sector : row.location)?.trim();
+    if (!raw) continue;
+    const key = raw.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    values.push(raw);
+  }
+  return values.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+}
+
+export function salesRowUpdatedAtMs(row: CrmCustomerSummary): number | null {
+  const raw = (row.updatedAt || row.createdAt)?.trim();
+  if (!raw) return null;
+  const ms = Date.parse(raw);
+  return Number.isNaN(ms) ? null : ms;
+}
+
+/** Parse datetime-local (YYYY-MM-DDTHH:mm) to epoch ms. */
+export function salesDateTimeLocalToMs(value?: string | null): number | null {
+  const raw = value?.trim();
+  if (!raw) return null;
+  const ms = Date.parse(raw);
+  return Number.isNaN(ms) ? null : ms;
+}
+
+export function hasActiveSalesColumnFilters(filters: SalesColumnFilters): boolean {
+  return Boolean(
+    filters.sector || filters.location || filters.updatedFrom || filters.updatedTo,
+  );
+}
+
+export function passesSalesColumnFilters(
+  row: CrmCustomerSummary,
+  filters: SalesColumnFilters,
+): boolean {
+  if (filters.sector) {
+    if ((row.sector ?? '').trim().toLowerCase() !== filters.sector.trim().toLowerCase()) {
+      return false;
+    }
+  }
+  if (filters.location) {
+    if ((row.location ?? '').trim().toLowerCase() !== filters.location.trim().toLowerCase()) {
+      return false;
+    }
+  }
+  const rowMs = salesRowUpdatedAtMs(row);
+  const fromMs = salesDateTimeLocalToMs(filters.updatedFrom);
+  const toMs = salesDateTimeLocalToMs(filters.updatedTo);
+  if (fromMs != null || toMs != null) {
+    if (rowMs == null) return false;
+    if (fromMs != null && rowMs < fromMs) return false;
+    if (toMs != null && rowMs > toMs) return false;
+  }
+  return true;
 }
