@@ -1,6 +1,11 @@
 import { Component, computed, ElementRef, inject, OnInit, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
+  CdkDragDrop,
+  DragDropModule,
+  moveItemInArray,
+} from '@angular/cdk/drag-drop';
+import {
   CRM_MAX_CONTACTS,
   CreateCrmCustomerRequest,
   CrmContact,
@@ -121,7 +126,7 @@ type ContactGroup = 'purchasers' | 'maintenanceContacts';
 
 @Component({
   selector: 'app-admin-crm',
-  imports: [FormsModule, LoadingOverlayComponent],
+  imports: [FormsModule, DragDropModule, LoadingOverlayComponent],
   templateUrl: './admin-crm.component.html',
   styleUrl: './admin-crm.component.css',
 })
@@ -449,9 +454,26 @@ export class AdminCrmComponent implements OnInit {
 
   selectCustomer(customer: CrmCustomer): void {
     this.selectedId.set(customer.id);
-    this.selectedDetail.set(null);
-    this.detailOpen.set(true);
-    this.loadDetail(customer.id, true);
+    this.actionError.set(null);
+
+    if (this.isAdmin()) {
+      this.selectedDetail.set(customer);
+      this.openEditWith(customer);
+      return;
+    }
+
+    this.detailLoading.set(true);
+    this.crmService.getById(customer.id).subscribe({
+      next: (detail) => {
+        this.selectedDetail.set(detail);
+        this.detailLoading.set(false);
+        this.openEditWith(detail);
+      },
+      error: (err) => {
+        this.detailLoading.set(false);
+        this.toast.fromApiError(err, 'Could not load customer for edit.');
+      },
+    });
   }
 
   editRow(customer: CrmCustomer, event: Event): void {
@@ -825,6 +847,15 @@ export class AdminCrmComponent implements OnInit {
       const tmp = rows[index];
       rows[index] = rows[target];
       rows[target] = tmp;
+      return { ...current, [group]: rows };
+    });
+  }
+
+  dropContact(group: ContactGroup, event: CdkDragDrop<CrmContactFormRow[]>): void {
+    if (event.previousIndex === event.currentIndex) return;
+    this.form.update((current) => {
+      const rows = [...current[group]];
+      moveItemInArray(rows, event.previousIndex, event.currentIndex);
       return { ...current, [group]: rows };
     });
   }

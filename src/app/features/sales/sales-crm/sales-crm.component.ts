@@ -1,6 +1,11 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
+  CdkDragDrop,
+  DragDropModule,
+  moveItemInArray,
+} from '@angular/cdk/drag-drop';
+import {
   CRM_MAX_CONTACTS,
   CreateCrmCustomerRequest,
   CrmContact,
@@ -64,7 +69,7 @@ const emptyForm = (): FormState => ({
 
 @Component({
   selector: 'app-sales-crm',
-  imports: [FormsModule, LoadingOverlayComponent],
+  imports: [FormsModule, DragDropModule, LoadingOverlayComponent],
   templateUrl: './sales-crm.component.html',
   styleUrl: './sales-crm.component.css',
 })
@@ -198,21 +203,20 @@ export class SalesCrmComponent implements OnInit {
     this.formOpen.set(true);
   }
 
-  openRow(row: CrmCustomerSummary, editOnly = false): void {
-    this.editOnly.set(editOnly);
-    this.detailOpen.set(true);
+  openRow(row: CrmCustomerSummary, _editOnly = false): void {
     this.selectedDetail.set(null);
     this.followUps.set([]);
     this.crmService.getById(row.id).subscribe({
       next: (detail) => {
         this.selectedDetail.set(detail);
+        this.populateEditForm(detail);
+        this.formOpen.set(true);
         this.crmService.listFollowUps(row.id).subscribe({
           next: (entries) => this.followUps.set(entries),
           error: () => this.followUps.set([]),
         });
       },
       error: (err) => {
-        this.detailOpen.set(false);
         this.toast.fromApiError(err, 'Could not load customer details.');
       },
     });
@@ -228,6 +232,11 @@ export class SalesCrmComponent implements OnInit {
   openEdit(): void {
     const detail = this.selectedDetail();
     if (!detail) return;
+    this.populateEditForm(detail);
+    this.formOpen.set(true);
+  }
+
+  private populateEditForm(detail: CrmCustomer): void {
     this.formMode.set('edit');
     this.form.set({
       industryName: detail.industryName ?? '',
@@ -249,7 +258,6 @@ export class SalesCrmComponent implements OnInit {
       remark: detail.remark ?? '',
       isActive: detail.isActive !== false,
     });
-    this.formOpen.set(true);
   }
 
   closeForm(): void {
@@ -300,6 +308,15 @@ export class SalesCrmComponent implements OnInit {
       const tmp = rows[index];
       rows[index] = rows[target];
       rows[target] = tmp;
+      return { ...current, [group]: rows };
+    });
+  }
+
+  dropContact(group: ContactGroup, event: CdkDragDrop<CrmContactFormRow[]>): void {
+    if (event.previousIndex === event.currentIndex) return;
+    this.form.update((current) => {
+      const rows = [...current[group]];
+      moveItemInArray(rows, event.previousIndex, event.currentIndex);
       return { ...current, [group]: rows };
     });
   }

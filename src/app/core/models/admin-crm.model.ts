@@ -8,6 +8,8 @@ export interface CrmContact {
 }
 
 export interface CrmContactFormRow {
+  /** Stable UI key for drag/reorder tracking. */
+  key: string;
   name: string;
   phone: string;
   email: string;
@@ -25,12 +27,19 @@ export const CRM_CONTACT_RANK_LABELS = [
   'Seventh',
 ] as const;
 
+let crmContactKeySeq = 0;
+
+export function nextCrmContactKey(): string {
+  crmContactKeySeq += 1;
+  return `crm-contact-${Date.now()}-${crmContactKeySeq}`;
+}
+
 export function crmContactRankLabel(index: number): string {
   return CRM_CONTACT_RANK_LABELS[index] ?? `Contact ${index + 1}`;
 }
 
 export function emptyCrmContactRow(): CrmContactFormRow {
-  return { name: '', phone: '', email: '' };
+  return { key: nextCrmContactKey(), name: '', phone: '', email: '' };
 }
 
 export function crmContactsToFormRows(
@@ -39,6 +48,7 @@ export function crmContactsToFormRows(
 ): CrmContactFormRow[] {
   if (contacts && contacts.length > 0) {
     return contacts.slice(0, CRM_MAX_CONTACTS).map((c) => ({
+      key: nextCrmContactKey(),
       name: c.name ?? '',
       phone: c.phone ?? '',
       email: c.email ?? '',
@@ -47,6 +57,7 @@ export function crmContactsToFormRows(
   if (fallback && (fallback.name?.trim() || fallback.phone?.trim() || fallback.email?.trim())) {
     return [
       {
+        key: nextCrmContactKey(),
         name: fallback.name ?? '',
         phone: fallback.phone ?? '',
         email: fallback.email ?? '',

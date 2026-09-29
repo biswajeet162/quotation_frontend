@@ -479,23 +479,28 @@
 }
 
 @if (formOpen()) {
-  <div class="modal-backdrop">
-    <div class="modal-panel" role="dialog" aria-modal="true">
-      <header class="modal-header">
-        <h2>{{ formMode() === 'create' ? 'Add CRM customer' : 'Edit CRM customer' }}</h2>
+  <div class="modal-backdrop form-backdrop">
+    <div class="modal-panel form-modal-panel" role="dialog" aria-modal="true">
+      <header class="modal-header form-header">
+        <div class="form-header-text">
+          <p class="form-eyebrow">CRM customer</p>
+          <h2>{{ formMode() === 'create' ? 'Add CRM customer' : 'Edit CRM customer' }}</h2>
+        </div>
         <button type="button" class="modal-close" aria-label="Close" (click)="closeForm()">×</button>
       </header>
 
-      <form class="modal-form" (ngSubmit)="saveForm()">
+      <form class="modal-form form-modal-layout" (ngSubmit)="saveForm()">
+        <div class="form-body">
         <section class="form-block">
           <h3>Industry</h3>
-          <div class="form-grid">
+          <div class="form-grid form-grid-industry">
             <div class="form-field full-width">
               <label for="industry-name">Industry name</label>
               <input
                 id="industry-name"
                 type="text"
                 required
+                placeholder="Company / organization name"
                 [ngModel]="form().industryName"
                 (ngModelChange)="updateFormField('industryName', $event)"
                 name="industryName"
@@ -506,6 +511,7 @@
               <input
                 id="sector"
                 type="text"
+                placeholder="Sector"
                 [ngModel]="form().sector"
                 (ngModelChange)="updateFormField('sector', $event)"
                 name="sector"
@@ -516,6 +522,7 @@
               <input
                 id="location"
                 type="text"
+                placeholder="City / area"
                 [ngModel]="form().location"
                 (ngModelChange)="updateFormField('location', $event)"
                 name="location"
@@ -526,123 +533,159 @@
 
         <section class="form-block">
           <div class="block-head">
-            <h3>Purchaser contacts</h3>
+            <div>
+              <h3>Purchaser contacts</h3>
+              <p class="block-hint">Drag to set Primary / Secondary. Primary is used in lists and Excel.</p>
+            </div>
             <button
               type="button"
               class="btn-add-contact"
               (click)="addContact('purchasers')"
               [disabled]="form().purchasers.length >= maxContacts"
             >
-              +
+              + Add
             </button>
           </div>
-          @for (row of form().purchasers; track $index; let i = $index) {
-            <div class="contact-editor">
-              <div class="contact-editor-head">
-                <span class="contact-rank">{{ rankLabel(i) }}</span>
-                <div class="contact-actions">
-                  <button type="button" class="btn-tiny" (click)="moveContact('purchasers', i, -1)" [disabled]="i === 0">↑</button>
-                  <button type="button" class="btn-tiny" (click)="moveContact('purchasers', i, 1)" [disabled]="i === form().purchasers.length - 1">↓</button>
-                  <button type="button" class="btn-tiny danger" (click)="removeContact('purchasers', i)" [disabled]="form().purchasers.length === 1">×</button>
+          <div
+            class="contact-list"
+            cdkDropList
+            [cdkDropListData]="form().purchasers"
+            (cdkDropListDropped)="dropContact('purchasers', $event)"
+          >
+            @for (row of form().purchasers; track row.key; let i = $index) {
+              <div class="contact-editor" cdkDrag>
+                <div class="contact-editor-head">
+                  <div class="contact-head-left">
+                    <button type="button" class="drag-handle" cdkDragHandle title="Drag to reorder" aria-label="Drag to reorder">
+                      ⋮⋮
+                    </button>
+                    <span class="contact-rank" [class.primary]="i === 0">{{ rankLabel(i) }}</span>
+                  </div>
+                  <div class="contact-actions">
+                    <button type="button" class="btn-tiny" (click)="moveContact('purchasers', i, -1)" [disabled]="i === 0">↑</button>
+                    <button type="button" class="btn-tiny" (click)="moveContact('purchasers', i, 1)" [disabled]="i === form().purchasers.length - 1">↓</button>
+                    <button type="button" class="btn-tiny danger" (click)="removeContact('purchasers', i)" [disabled]="form().purchasers.length === 1">×</button>
+                  </div>
+                </div>
+                <div class="form-grid form-grid-contact">
+                  <div class="form-field">
+                    <label [attr.for]="'purchaser-name-' + i">Name</label>
+                    <input
+                      [id]="'purchaser-name-' + i"
+                      type="text"
+                      placeholder="Full name"
+                      [ngModel]="row.name"
+                      (ngModelChange)="updateContactField('purchasers', i, 'name', $event)"
+                      [name]="'purchaserName' + i"
+                    />
+                  </div>
+                  <div class="form-field">
+                    <label [attr.for]="'purchaser-phone-' + i">Contact</label>
+                    <input
+                      [id]="'purchaser-phone-' + i"
+                      type="text"
+                      placeholder="Phone"
+                      [ngModel]="row.phone"
+                      (ngModelChange)="updateContactField('purchasers', i, 'phone', $event)"
+                      [name]="'purchaserPhone' + i"
+                    />
+                  </div>
+                  <div class="form-field">
+                    <label [attr.for]="'purchaser-email-' + i">Email</label>
+                    <input
+                      [id]="'purchaser-email-' + i"
+                      type="email"
+                      placeholder="Email"
+                      [ngModel]="row.email"
+                      (ngModelChange)="updateContactField('purchasers', i, 'email', $event)"
+                      [name]="'purchaserEmail' + i"
+                    />
+                  </div>
                 </div>
               </div>
-              <div class="form-grid">
-                <div class="form-field">
-                  <label [attr.for]="'purchaser-name-' + i">Name</label>
-                  <input
-                    [id]="'purchaser-name-' + i"
-                    type="text"
-                    [ngModel]="row.name"
-                    (ngModelChange)="updateContactField('purchasers', i, 'name', $event)"
-                    [name]="'purchaserName' + i"
-                  />
-                </div>
-                <div class="form-field">
-                  <label [attr.for]="'purchaser-phone-' + i">Contact</label>
-                  <input
-                    [id]="'purchaser-phone-' + i"
-                    type="text"
-                    [ngModel]="row.phone"
-                    (ngModelChange)="updateContactField('purchasers', i, 'phone', $event)"
-                    [name]="'purchaserPhone' + i"
-                  />
-                </div>
-                <div class="form-field full-width">
-                  <label [attr.for]="'purchaser-email-' + i">Email</label>
-                  <input
-                    [id]="'purchaser-email-' + i"
-                    type="email"
-                    [ngModel]="row.email"
-                    (ngModelChange)="updateContactField('purchasers', i, 'email', $event)"
-                    [name]="'purchaserEmail' + i"
-                  />
-                </div>
-              </div>
-            </div>
-          }
+            }
+          </div>
         </section>
 
         <section class="form-block">
           <div class="block-head">
-            <h3>Maintenance contacts</h3>
+            <div>
+              <h3>Maintenance contacts</h3>
+              <p class="block-hint">Drag to set Primary / Secondary. Up to {{ maxContacts }} contacts.</p>
+            </div>
             <button
               type="button"
               class="btn-add-contact"
               (click)="addContact('maintenanceContacts')"
               [disabled]="form().maintenanceContacts.length >= maxContacts"
             >
-              +
+              + Add
             </button>
           </div>
-          @for (row of form().maintenanceContacts; track $index; let i = $index) {
-            <div class="contact-editor">
-              <div class="contact-editor-head">
-                <span class="contact-rank">{{ rankLabel(i) }}</span>
-                <div class="contact-actions">
-                  <button type="button" class="btn-tiny" (click)="moveContact('maintenanceContacts', i, -1)" [disabled]="i === 0">↑</button>
-                  <button type="button" class="btn-tiny" (click)="moveContact('maintenanceContacts', i, 1)" [disabled]="i === form().maintenanceContacts.length - 1">↓</button>
-                  <button type="button" class="btn-tiny danger" (click)="removeContact('maintenanceContacts', i)" [disabled]="form().maintenanceContacts.length === 1">×</button>
+          <div
+            class="contact-list"
+            cdkDropList
+            [cdkDropListData]="form().maintenanceContacts"
+            (cdkDropListDropped)="dropContact('maintenanceContacts', $event)"
+          >
+            @for (row of form().maintenanceContacts; track row.key; let i = $index) {
+              <div class="contact-editor" cdkDrag>
+                <div class="contact-editor-head">
+                  <div class="contact-head-left">
+                    <button type="button" class="drag-handle" cdkDragHandle title="Drag to reorder" aria-label="Drag to reorder">
+                      ⋮⋮
+                    </button>
+                    <span class="contact-rank" [class.primary]="i === 0">{{ rankLabel(i) }}</span>
+                  </div>
+                  <div class="contact-actions">
+                    <button type="button" class="btn-tiny" (click)="moveContact('maintenanceContacts', i, -1)" [disabled]="i === 0">↑</button>
+                    <button type="button" class="btn-tiny" (click)="moveContact('maintenanceContacts', i, 1)" [disabled]="i === form().maintenanceContacts.length - 1">↓</button>
+                    <button type="button" class="btn-tiny danger" (click)="removeContact('maintenanceContacts', i)" [disabled]="form().maintenanceContacts.length === 1">×</button>
+                  </div>
+                </div>
+                <div class="form-grid form-grid-contact">
+                  <div class="form-field">
+                    <label [attr.for]="'maintenance-name-' + i">Name</label>
+                    <input
+                      [id]="'maintenance-name-' + i"
+                      type="text"
+                      placeholder="Full name"
+                      [ngModel]="row.name"
+                      (ngModelChange)="updateContactField('maintenanceContacts', i, 'name', $event)"
+                      [name]="'maintenanceName' + i"
+                    />
+                  </div>
+                  <div class="form-field">
+                    <label [attr.for]="'maintenance-phone-' + i">Contact</label>
+                    <input
+                      [id]="'maintenance-phone-' + i"
+                      type="text"
+                      placeholder="Phone"
+                      [ngModel]="row.phone"
+                      (ngModelChange)="updateContactField('maintenanceContacts', i, 'phone', $event)"
+                      [name]="'maintenancePhone' + i"
+                    />
+                  </div>
+                  <div class="form-field">
+                    <label [attr.for]="'maintenance-email-' + i">Email</label>
+                    <input
+                      [id]="'maintenance-email-' + i"
+                      type="email"
+                      placeholder="Email"
+                      [ngModel]="row.email"
+                      (ngModelChange)="updateContactField('maintenanceContacts', i, 'email', $event)"
+                      [name]="'maintenanceEmail' + i"
+                    />
+                  </div>
                 </div>
               </div>
-              <div class="form-grid">
-                <div class="form-field">
-                  <label [attr.for]="'maintenance-name-' + i">Name</label>
-                  <input
-                    [id]="'maintenance-name-' + i"
-                    type="text"
-                    [ngModel]="row.name"
-                    (ngModelChange)="updateContactField('maintenanceContacts', i, 'name', $event)"
-                    [name]="'maintenanceName' + i"
-                  />
-                </div>
-                <div class="form-field">
-                  <label [attr.for]="'maintenance-phone-' + i">Contact</label>
-                  <input
-                    [id]="'maintenance-phone-' + i"
-                    type="text"
-                    [ngModel]="row.phone"
-                    (ngModelChange)="updateContactField('maintenanceContacts', i, 'phone', $event)"
-                    [name]="'maintenancePhone' + i"
-                  />
-                </div>
-                <div class="form-field full-width">
-                  <label [attr.for]="'maintenance-email-' + i">Email</label>
-                  <input
-                    [id]="'maintenance-email-' + i"
-                    type="email"
-                    [ngModel]="row.email"
-                    (ngModelChange)="updateContactField('maintenanceContacts', i, 'email', $event)"
-                    [name]="'maintenanceEmail' + i"
-                  />
-                </div>
-              </div>
-            </div>
-          }
+            }
+          </div>
         </section>
 
         <section class="form-block">
           <h3>Follow-up</h3>
-          <div class="form-grid">
+          <div class="form-grid form-grid-followup">
             <div class="form-field">
               <label for="meeting-date">Meeting date</label>
               <input
@@ -668,6 +711,7 @@
               <input
                 id="coordinator-name"
                 type="text"
+                placeholder="Coordinator name"
                 [ngModel]="form().coordinatorName"
                 (ngModelChange)="updateFormField('coordinatorName', $event)"
                 name="coordinatorName"
@@ -677,7 +721,8 @@
               <label for="remark">Remark</label>
               <textarea
                 id="remark"
-                rows="3"
+                rows="4"
+                placeholder="Notes from the visit or call…"
                 [ngModel]="form().remark"
                 (ngModelChange)="updateFormField('remark', $event)"
                 name="remark"
@@ -701,12 +746,13 @@
         @if (actionError()) {
           <div class="alert-error" role="alert">{{ actionError() }}</div>
         }
+        </div>
 
-        <div class="modal-actions">
-          <button type="button" class="btn-secondary" (click)="closeForm()" [disabled]="saving()">
+        <div class="modal-actions form-footer">
+          <button type="button" class="btn-secondary btn-form" (click)="closeForm()" [disabled]="saving()">
             Cancel
           </button>
-          <button type="submit" class="btn-primary" [disabled]="saving()">
+          <button type="submit" class="btn-primary btn-form" [disabled]="saving()">
             {{ saving() ? 'Saving…' : formMode() === 'create' ? 'Create customer' : 'Save changes' }}
           </button>
         </div>
