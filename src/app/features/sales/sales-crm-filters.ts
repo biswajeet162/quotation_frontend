@@ -224,3 +224,32 @@ export function formatSalesCrmDateTime(value?: string | null): string {
   hours = hours % 12 || 12;
   return `${dd}-${mm}-${yyyy}, ${String(hours).padStart(2, '0')}:${minutes} ${ampm}`;
 }
+
+/** Deep search across industry, sector, location, all contacts, phones, emails, remarks, dates, etc. */
+export function matchesSalesCrmSearch(row: CrmCustomerSummary, query: string): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  if (row.searchText?.includes(q)) return true;
+  // Fallback when older payloads lack searchText.
+  return [
+    String(row.serialNumber),
+    row.industryName,
+    row.sector,
+    row.location,
+    row.purchaserName,
+    row.purchaserPhone,
+    row.purchaserEmail,
+    row.maintenanceName,
+    row.maintenancePhone,
+    row.maintenanceEmail,
+    row.coordinatorName,
+    row.remark,
+    row.followUpDate,
+    row.meetingDate,
+    row.workflowStatus,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+    .includes(q);
+}

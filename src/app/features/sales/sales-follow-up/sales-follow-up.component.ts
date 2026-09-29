@@ -33,6 +33,7 @@ import {
   compareSalesCrmRows,
   formatSalesCrmDate,
   formatSalesCrmDateTime,
+  matchesSalesCrmSearch,
   passesSalesQuickFilter,
 } from '../sales-crm-filters';
 
@@ -116,22 +117,7 @@ export class SalesFollowUpComponent implements OnInit {
     list = list.filter((row) => {
       if (!passesSalesQuickFilter(row, filter, custom, false)) return false;
       if (!q) return true;
-      return [
-        String(row.serialNumber),
-        row.industryName,
-        row.sector,
-        row.location,
-        row.purchaserName,
-        row.purchaserPhone,
-        row.coordinatorName,
-        row.remark,
-        row.followUpDate,
-        row.meetingDate,
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase()
-        .includes(q);
+      return matchesSalesCrmSearch(row, q);
     });
 
     if (sort.sortBy === 'serial') {

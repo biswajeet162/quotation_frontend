@@ -955,6 +955,12 @@ export class AdminCrmComponent implements OnInit {
       industryName: row.industryName,
       sector: row.sector,
       location: row.location,
+      purchaserName: row.purchaserName,
+      purchaserPhone: row.purchaserPhone,
+      purchaserEmail: row.purchaserEmail,
+      maintenanceName: row.maintenanceName,
+      maintenancePhone: row.maintenancePhone,
+      maintenanceEmail: row.maintenanceEmail,
       coordinatorName: row.coordinatorName,
       remark: row.remark,
       followUpDate: row.followUpDate,
@@ -963,6 +969,7 @@ export class AdminCrmComponent implements OnInit {
       isActive: row.isActive,
       updatedAt: row.updatedAt,
       createdAt: row.createdAt,
+      lastOpenedAt: row.lastOpenedAt,
     };
   }
 }

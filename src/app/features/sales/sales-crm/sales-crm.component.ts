@@ -36,6 +36,7 @@ import {
   compareSalesCrmRows,
   formatSalesCrmDate,
   formatSalesCrmDateTime,
+  matchesSalesCrmSearch,
   passesSalesQuickFilter,
   salesQuickFilterLabel,
 } from '../sales-crm-filters';
@@ -124,23 +125,7 @@ export class SalesCrmComponent implements OnInit {
       if (crmWorkflowStatus(row) === 'DONE') return false;
       if (!passesSalesQuickFilter(row, filter, custom)) return false;
       if (!q) return true;
-      return [
-        String(row.serialNumber),
-        row.industryName,
-        row.sector,
-        row.location,
-        row.purchaserName,
-        row.purchaserPhone,
-        row.purchaserEmail,
-        row.coordinatorName,
-        row.remark,
-        row.followUpDate,
-        row.meetingDate,
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase()
-        .includes(q);
+      return matchesSalesCrmSearch(row, q);
     });
     return [...list].sort((a, b) =>
       compareSalesCrmRows(a, b, sort, (row) =>

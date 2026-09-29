@@ -91,6 +91,9 @@ export interface CrmCustomerSummary {
   purchaserName?: string | null;
   purchaserPhone?: string | null;
   purchaserEmail?: string | null;
+  maintenanceName?: string | null;
+  maintenancePhone?: string | null;
+  maintenanceEmail?: string | null;
   coordinatorName?: string | null;
   remark?: string | null;
   followUpDate?: string | null;
@@ -98,6 +101,8 @@ export interface CrmCustomerSummary {
   workflowStatus?: 'NONE' | 'REVIEW' | 'DONE' | string | null;
   /** True when purchaser or maintenance contact phone is present. */
   hasContacts?: boolean;
+  /** Server-built blob of all fields + contacts for deep search. */
+  searchText?: string | null;
   isActive: boolean;
   updatedAt?: string;
   createdAt?: string;

@@ -63,8 +63,10 @@
 }
 
 .search {
-  width: 48%;
-  max-width: 22rem;
+  flex: 1 1 50%;
+  width: 50%;
+  min-width: 12rem;
+  max-width: none;
   height: 2.5rem;
   border: 1px solid #cbd5e1;
   border-radius: 10px;
@@ -73,8 +75,8 @@
 }
 
 .filter-select {
-  flex: 1;
-  min-width: 8rem;
+  flex: 1 1 40%;
+  min-width: 10rem;
   height: 2.5rem;
   border: 1px solid #cbd5e1;
   border-radius: 10px;
@@ -565,7 +567,7 @@
 }
 
 @media (max-width: 640px) {
-  .search { width: 42%; }
+  .search { width: 50%; min-width: 0; }
   .form-backdrop { padding: 0.5rem; }
   .form-modal {
     width: 100%;
