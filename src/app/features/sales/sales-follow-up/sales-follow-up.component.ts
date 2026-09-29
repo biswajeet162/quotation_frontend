@@ -1,14 +1,23 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
+  CdkDragDrop,
+  DragDropModule,
+  moveItemInArray,
+} from '@angular/cdk/drag-drop';
+import {
+  CRM_MAX_CONTACTS,
+  CrmContactFormRow,
   CrmCustomer,
   CrmCustomerSummary,
-  CrmFollowUpEntry,
   UpdateCrmCustomerRequest,
-  crmHasContactPhone,
+  crmContactRankLabel,
+  crmContactsToFormRows,
+  crmFormRowsToRequest,
   crmHasFollowUpDate,
   crmHasMeetingDate,
   crmWorkflowStatus,
+  emptyCrmContactRow,
 } from '../../../core/models/admin-crm.model';
 import { AdminCrmService } from '../../../core/services/admin/admin-crm.service';
 import { ToastService } from '../../../core/services/toast/toast.service';
@@ -28,17 +37,14 @@ import {
 } from '../sales-crm-filters';
 
 type FollowTab = 'contacts' | 'follow' | 'meeting';
+type ContactGroup = 'purchasers' | 'maintenanceContacts';
 
 interface FormState {
   industryName: string;
   sector: string;
   location: string;
-  purchaserName: string;
-  purchaserPhone: string;
-  purchaserEmail: string;
-  maintenanceName: string;
-  maintenancePhone: string;
-  maintenanceEmail: string;
+  purchasers: CrmContactFormRow[];
+  maintenanceContacts: CrmContactFormRow[];
   meetingDate: string;
   followUpDate: string;
   coordinatorName: string;
@@ -46,9 +52,22 @@ interface FormState {
   isActive: boolean;
 }
 
+const emptyForm = (): FormState => ({
+  industryName: '',
+  sector: '',
+  location: '',
+  purchasers: [emptyCrmContactRow()],
+  maintenanceContacts: [emptyCrmContactRow()],
+  meetingDate: '',
+  followUpDate: '',
+  coordinatorName: '',
+  remark: '',
+  isActive: true,
+});
+
 @Component({
   selector: 'app-sales-follow-up',
-  imports: [FormsModule, LoadingOverlayComponent],
+  imports: [FormsModule, DragDropModule, LoadingOverlayComponent],
   templateUrl: './sales-follow-up.component.html',
   styleUrl: './sales-follow-up.component.css',
 })
@@ -57,7 +76,6 @@ export class SalesFollowUpComponent implements OnInit {
   private readonly toast = inject(ToastService);
 
   readonly loading = signal(true);
-  readonly statusSaving = signal(false);
   readonly saving = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly rows = signal<CrmCustomerSummary[]>([]);
@@ -67,12 +85,9 @@ export class SalesFollowUpComponent implements OnInit {
   readonly customFilter = signal<SalesCrmCustomFilter>({ ...EMPTY_SALES_CUSTOM_FILTER });
   readonly sort = signal<SalesCrmSortSelection>({ ...DEFAULT_SALES_SORT });
 
-  readonly detailOpen = signal(false);
-  readonly editOnly = signal(false);
   readonly selectedDetail = signal<CrmCustomer | null>(null);
-  readonly followUps = signal<CrmFollowUpEntry[]>([]);
   readonly formOpen = signal(false);
-  readonly form = signal<FormState | null>(null);
+  readonly form = signal<FormState>(emptyForm());
   readonly customOpen = signal(false);
   readonly sortOpen = signal(false);
   readonly customDraft = signal<SalesCrmCustomFilter>({ ...EMPTY_SALES_CUSTOM_FILTER });
@@ -82,6 +97,8 @@ export class SalesFollowUpComponent implements OnInit {
   readonly formatDate = formatSalesCrmDate;
   readonly formatDateTime = formatSalesCrmDateTime;
   readonly workflowStatus = crmWorkflowStatus;
+  readonly rankLabel = crmContactRankLabel;
+  readonly maxContacts = CRM_MAX_CONTACTS;
 
   readonly filteredRows = computed(() => {
     const tab = this.activeTab();
@@ -213,109 +230,130 @@ export class SalesFollowUpComponent implements OnInit {
     this.sortDraft.update((d) => ({ ...d, ascending: value }));
   }
 
+  /** Same as CRM: open the full edit modal on row click. */
   openRow(row: CrmCustomerSummary): void {
-    const editOnly = this.activeTab() === 'contacts';
-    this.editOnly.set(editOnly);
-    this.detailOpen.set(true);
     this.selectedDetail.set(null);
-    this.followUps.set([]);
     this.crmService.getById(row.id).subscribe({
       next: (detail) => {
         this.selectedDetail.set(detail);
-        this.crmService.listFollowUps(row.id).subscribe({
-          next: (entries) => this.followUps.set(entries),
-          error: () => this.followUps.set([]),
-        });
+        this.populateEditForm(detail);
+        this.formOpen.set(true);
       },
       error: (err) => {
-        this.detailOpen.set(false);
         this.toast.fromApiError(err, 'Could not load customer details.');
       },
     });
   }
 
-  closeDetail(): void {
-    this.detailOpen.set(false);
-    this.selectedDetail.set(null);
-    this.followUps.set([]);
-    this.editOnly.set(false);
+  closeForm(): void {
+    if (this.saving()) return;
+    this.formOpen.set(false);
   }
 
-  openEdit(): void {
-    const detail = this.selectedDetail();
-    if (!detail) return;
+  private populateEditForm(detail: CrmCustomer): void {
     this.form.set({
       industryName: detail.industryName ?? '',
       sector: detail.sector ?? '',
       location: detail.location ?? '',
-      purchaserName: detail.purchaserName ?? '',
-      purchaserPhone: detail.purchaserPhone ?? '',
-      purchaserEmail: detail.purchaserEmail ?? '',
-      maintenanceName: detail.maintenanceName ?? '',
-      maintenancePhone: detail.maintenancePhone ?? '',
-      maintenanceEmail: detail.maintenanceEmail ?? '',
+      purchasers: crmContactsToFormRows(detail.purchasers, {
+        name: detail.purchaserName,
+        phone: detail.purchaserPhone,
+        email: detail.purchaserEmail,
+      }),
+      maintenanceContacts: crmContactsToFormRows(detail.maintenanceContacts, {
+        name: detail.maintenanceName,
+        phone: detail.maintenancePhone,
+        email: detail.maintenanceEmail,
+      }),
       meetingDate: detail.meetingDate ?? '',
       followUpDate: detail.followUpDate ?? '',
       coordinatorName: detail.coordinatorName ?? '',
       remark: detail.remark ?? '',
       isActive: detail.isActive !== false,
     });
-    this.formOpen.set(true);
-  }
-
-  closeForm(): void {
-    if (this.saving()) return;
-    this.formOpen.set(false);
-    this.form.set(null);
   }
 
   updateFormField<K extends keyof FormState>(key: K, value: FormState[K]): void {
-    this.form.update((current) => (current ? { ...current, [key]: value } : current));
+    this.form.update((current) => ({ ...current, [key]: value }));
   }
 
-  setWorkflowStatus(status: 'REVIEW' | 'DONE'): void {
-    const detail = this.selectedDetail();
-    if (!detail?.id || this.statusSaving()) return;
-    const next = this.workflowStatus(detail) === status ? 'NONE' : status;
-    if (next === 'DONE' && !crmHasContactPhone(detail)) {
-      this.toast.warning('Add at least one purchaser or maintenance contact before marking Done.');
-      return;
-    }
-    this.statusSaving.set(true);
-    this.crmService.updateWorkflowStatus(detail.id, next).subscribe({
-      next: (updated) => {
-        this.statusSaving.set(false);
-        this.selectedDetail.set(updated);
-        this.load();
-        const label = next === 'NONE' ? 'cleared' : next === 'DONE' ? 'Done' : 'Review';
-        this.toast.success(next === 'NONE' ? 'Status cleared.' : `Marked as ${label}.`);
-      },
-      error: (err) => {
-        this.statusSaving.set(false);
-        this.toast.fromApiError(err, 'Could not update status.');
-      },
+  updateContactField(
+    group: ContactGroup,
+    index: number,
+    field: keyof CrmContactFormRow,
+    value: string,
+  ): void {
+    this.form.update((current) => {
+      const rows = current[group].map((row, i) =>
+        i === index ? { ...row, [field]: value } : row,
+      );
+      return { ...current, [group]: rows };
+    });
+  }
+
+  addContact(group: ContactGroup): void {
+    this.form.update((current) => {
+      if (current[group].length >= CRM_MAX_CONTACTS) return current;
+      return { ...current, [group]: [...current[group], emptyCrmContactRow()] };
+    });
+  }
+
+  removeContact(group: ContactGroup, index: number): void {
+    this.form.update((current) => {
+      const rows = current[group].filter((_, i) => i !== index);
+      return {
+        ...current,
+        [group]: rows.length > 0 ? rows : [emptyCrmContactRow()],
+      };
+    });
+  }
+
+  moveContact(group: ContactGroup, index: number, direction: -1 | 1): void {
+    this.form.update((current) => {
+      const target = index + direction;
+      if (target < 0 || target >= current[group].length) return current;
+      const rows = [...current[group]];
+      const tmp = rows[index];
+      rows[index] = rows[target];
+      rows[target] = tmp;
+      return { ...current, [group]: rows };
+    });
+  }
+
+  dropContact(group: ContactGroup, event: CdkDragDrop<CrmContactFormRow[]>): void {
+    if (event.previousIndex === event.currentIndex) return;
+    this.form.update((current) => {
+      const rows = [...current[group]];
+      moveItemInArray(rows, event.previousIndex, event.currentIndex);
+      return { ...current, [group]: rows };
     });
   }
 
   save(): void {
     const state = this.form();
     const detail = this.selectedDetail();
-    if (!state || !detail?.id) return;
+    if (!detail?.id) return;
     if (!state.industryName.trim()) {
       this.toast.warning('Industry name is required.');
       return;
     }
     this.saving.set(true);
+    const purchasers = crmFormRowsToRequest(state.purchasers);
+    const maintenanceContacts = crmFormRowsToRequest(state.maintenanceContacts);
+    const primaryPurchaser = purchasers[0];
+    const primaryMaintenance = maintenanceContacts[0];
     const body: UpdateCrmCustomerRequest = {
       industryName: state.industryName.trim(),
       sector: state.sector.trim() || undefined,
       location: state.location.trim() || undefined,
-      purchaserName: state.purchaserName.trim() || undefined,
-      purchaserPhone: state.purchaserPhone.trim() || undefined,
-      purchaserEmail: state.purchaserEmail.trim() || undefined,
-      maintenanceName: state.maintenanceName.trim() || undefined,
-      maintenancePhone: state.maintenancePhone.trim() || undefined,
-      maintenanceEmail: state.maintenanceEmail.trim() || undefined,
+      purchaserName: primaryPurchaser?.name,
+      purchaserPhone: primaryPurchaser?.phone,
+      purchaserEmail: primaryPurchaser?.email,
+      maintenanceName: primaryMaintenance?.name,
+      maintenancePhone: primaryMaintenance?.phone,
+      maintenanceEmail: primaryMaintenance?.email,
+      purchasers,
+      maintenanceContacts,
       meetingDate: state.meetingDate || null,
       followUpDate: state.followUpDate || null,
       coordinatorName: state.coordinatorName.trim() || undefined,
@@ -326,14 +364,9 @@ export class SalesFollowUpComponent implements OnInit {
       next: (updated) => {
         this.saving.set(false);
         this.formOpen.set(false);
-        this.form.set(null);
         this.selectedDetail.set(updated);
         this.toast.success('CRM customer updated.');
         this.load();
-        this.crmService.listFollowUps(updated.id).subscribe({
-          next: (entries) => this.followUps.set(entries),
-          error: () => this.followUps.set([]),
-        });
       },
       error: (err) => {
         this.saving.set(false);
