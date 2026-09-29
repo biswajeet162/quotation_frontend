@@ -4,7 +4,7 @@
   <header class="page-header">
     <div>
       <h1>CRM</h1>
-      <p class="muted">Sales customer list — same filters and layout as the mobile app.</p>
+      <p class="muted">Sales customer list — Status, serial, industry, sector, and location.</p>
     </div>
   </header>
 
@@ -33,34 +33,59 @@
 
   @if (!loading() && !errorMessage() && filteredRows().length === 0) {
     <p class="empty">No CRM customers match your filters.</p>
+  } @else if (!loading() && !errorMessage()) {
+    <div class="table-wrap">
+      <table class="crm-table">
+        <thead>
+          <tr>
+            <th class="col-status">Status</th>
+            <th class="col-serial" [class.sort-active]="isSortedBy('serial')">
+              <button type="button" class="sort-btn" (click)="toggleColumnSort('serial', $event)">
+                <span>S.No</span><span class="sort-icon">{{ sortIndicator('serial') }}</span>
+              </button>
+            </th>
+            <th [class.sort-active]="isSortedBy('companyName')">
+              <button type="button" class="sort-btn" (click)="toggleColumnSort('companyName', $event)">
+                <span>Industry name</span><span class="sort-icon">{{ sortIndicator('companyName') }}</span>
+              </button>
+            </th>
+            <th [class.sort-active]="isSortedBy('sector')">
+              <button type="button" class="sort-btn" (click)="toggleColumnSort('sector', $event)">
+                <span>Sector</span><span class="sort-icon">{{ sortIndicator('sector') }}</span>
+              </button>
+            </th>
+            <th [class.sort-active]="isSortedBy('location')">
+              <button type="button" class="sort-btn" (click)="toggleColumnSort('location', $event)">
+                <span>Location</span><span class="sort-icon">{{ sortIndicator('location') }}</span>
+              </button>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of filteredRows(); track row.id) {
+            <tr
+              class="crm-row"
+              [class.inactive-row]="!row.isActive"
+              [class.selected]="selectedDetail()?.id === row.id"
+              (click)="openRow(row)"
+            >
+              <td class="col-status">
+                @if (workflowStatus(row) === 'DONE') {
+                  <span class="status-badge status-done" title="Done" aria-label="Done"></span>
+                } @else if (workflowStatus(row) === 'REVIEW') {
+                  <span class="status-badge status-review" title="Review" aria-label="Review"></span>
+                }
+              </td>
+              <td class="col-serial">{{ row.serialNumber }}</td>
+              <td>{{ row.industryName }}</td>
+              <td>{{ displayValue(row.sector) }}</td>
+              <td>{{ displayValue(row.location) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
   }
-
-  <ul class="crm-list">
-    @for (row of filteredRows(); track row.id) {
-      <li>
-        <button type="button" class="crm-row" (click)="openRow(row)">
-          <div class="crm-row-main">
-            <div class="crm-title">
-              <span class="serial">#{{ row.serialNumber }}</span>
-              <span class="name" [class.inactive]="!row.isActive">{{ row.industryName }}</span>
-            </div>
-            <div class="crm-sub">
-              <span>{{ row.location?.trim() || '—' }}</span>
-              <span class="dot">·</span>
-              <span class="meta">{{ formatDateTime(row.updatedAt || row.createdAt) }}</span>
-            </div>
-          </div>
-          <span class="status-tick" aria-hidden="true">
-            @if (workflowStatus(row) === 'DONE') {
-              <span class="tick done">✓</span>
-            } @else if (workflowStatus(row) === 'REVIEW') {
-              <span class="tick review">●</span>
-            }
-          </span>
-        </button>
-      </li>
-    }
-  </ul>
 </section>
 
 @if (detailOpen()) {
@@ -83,15 +108,20 @@
             >
               {{ workflowStatus(detail) === 'REVIEW' ? '● Review ✓' : '● Review' }}
             </button>
-            <button
-              type="button"
-              class="btn-done"
-              [class.active]="workflowStatus(detail) === 'DONE'"
-              (click)="setWorkflowStatus('DONE')"
-              [disabled]="statusSaving()"
+            <span
+              class="btn-done-wrap"
+              [attr.title]="hasContactPhone(detail) || formHasContactPhone() ? null : doneNeedsPhoneHint"
             >
-              {{ workflowStatus(detail) === 'DONE' ? '✓ Done' : 'Done' }}
-            </button>
+              <button
+                type="button"
+                class="btn-done"
+                [class.active]="workflowStatus(detail) === 'DONE'"
+                (click)="setWorkflowStatus('DONE')"
+                [disabled]="statusSaving() || (!hasContactPhone(detail) && !formHasContactPhone() && workflowStatus(detail) !== 'DONE')"
+              >
+                {{ workflowStatus(detail) === 'DONE' ? '✓ Done' : 'Done' }}
+              </button>
+            </span>
           }
           <button type="button" class="btn-edit" (click)="openEdit()">Edit</button>
         </div>
@@ -327,14 +357,20 @@
           >
             Review
           </button>
-          <button
-            type="button"
-            class="btn-done btn-form"
-            (click)="markDoneFromForm()"
-            [disabled]="saving() || statusSaving()"
+          <span
+            class="btn-done-wrap"
+            [attr.title]="formHasContactPhone() ? null : doneNeedsPhoneHint"
           >
-            Done
-          </button>
+            <button
+              type="button"
+              class="btn-done btn-form"
+              (click)="markDoneFromForm()"
+              [disabled]="saving() || statusSaving() || !formHasContactPhone()"
+              [attr.aria-disabled]="!formHasContactPhone() ? true : null"
+            >
+              Done
+            </button>
+          </span>
         }
         <button type="button" class="btn-primary btn-form" (click)="save()" [disabled]="saving() || statusSaving()">
           {{ formMode() === 'create' ? 'Create customer' : 'Save changes' }}

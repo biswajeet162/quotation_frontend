@@ -88,6 +88,9 @@
 .btn-review.active { background: #b45309; }
 .btn-done { background: #16a34a; color: #fff; flex: 1; }
 .btn-done.active { background: #166534; }
+.btn-done-wrap { display: inline-flex; flex: 1; }
+.btn-done-wrap .btn-done { width: 100%; }
+.btn-done:disabled { opacity: 0.55; cursor: not-allowed; }
 .btn-edit { background: #dc2626; color: #fff; flex: 1; }
 
 .alert-error {
@@ -105,70 +108,158 @@
   padding: 2rem 1rem;
 }
 
-.crm-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  overflow: auto;
+.table-wrap {
   flex: 1;
   min-height: 0;
-  border-top: 1px solid #e2e8f0;
+  overflow: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  -webkit-overflow-scrolling: touch;
 }
 
-.crm-row {
+.crm-table {
   width: 100%;
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding: 0.7rem 0.25rem;
-  border: none;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  min-width: 640px;
+}
+
+.crm-table th,
+.crm-table td {
+  padding: 0.75rem 0.9rem;
+  text-align: left;
   border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.crm-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  padding: 0;
+}
+
+.crm-table th.sort-active {
+  color: #0f766e;
+  background: #f0fdfa;
+}
+
+.crm-table th.col-status {
+  padding: 0.75rem 0.5rem;
+}
+
+.sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+  border: 0;
   background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  letter-spacing: inherit;
+  text-transform: inherit;
   text-align: left;
   cursor: pointer;
 }
 
-.crm-row:hover { background: #f8fafc; }
-
-.crm-row-main { flex: 1; min-width: 0; }
-
-.crm-title {
-  display: flex;
-  gap: 0.35rem;
-  align-items: baseline;
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #0f172a;
+.sort-btn:hover {
+  color: #0f766e;
 }
 
-.serial { color: #64748b; }
-
-.name.inactive {
-  color: #94a3b8;
-  text-decoration: line-through;
+.sort-icon {
+  font-size: 0.7rem;
+  opacity: 0.55;
 }
 
-.crm-sub {
-  margin-top: 0.2rem;
-  font-size: 0.8rem;
-  color: #64748b;
+th.sort-active .sort-icon {
+  opacity: 1;
+  color: #0f766e;
+}
+
+.col-serial {
+  width: 4rem;
+  text-align: center;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.dot { color: #94a3b8; margin: 0 0.25rem; }
-.meta { color: #94a3b8; font-size: 0.72rem; }
-
-.status-tick {
-  width: 1.4rem;
-  display: flex;
-  justify-content: center;
-  padding-top: 0.1rem;
+.col-status {
+  width: 3.25rem;
+  min-width: 3.25rem;
+  text-align: center;
+  vertical-align: middle;
+  padding-left: 0.5rem !important;
+  padding-right: 0.35rem !important;
 }
 
-.tick.done { color: #22c55e; font-weight: 900; }
-.tick.review { color: #f59e0b; font-weight: 900; }
+.status-badge {
+  display: inline-block;
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 2px;
+  border: 1.5px solid #ea580c;
+  background: transparent;
+  vertical-align: middle;
+  box-sizing: border-box;
+}
+
+.status-badge.status-done {
+  background: #ea580c;
+  border-color: #ea580c;
+  position: relative;
+}
+
+.status-badge.status-done::after {
+  content: '';
+  position: absolute;
+  left: 0.18rem;
+  top: 0.02rem;
+  width: 0.28rem;
+  height: 0.48rem;
+  border: solid #fff;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+}
+
+.status-badge.status-review {
+  background: #ea580c;
+  border-color: #ea580c;
+}
+
+.crm-row {
+  cursor: pointer;
+}
+
+.crm-table tbody tr:nth-child(odd) {
+  background: #ffffff;
+}
+
+.crm-table tbody tr:nth-child(even) {
+  background: #f1f5f9;
+}
+
+.crm-row:hover,
+.crm-table tbody tr:nth-child(even):hover {
+  background: #e2e8f0;
+}
+
+.crm-row.selected,
+.crm-table tbody tr.selected:nth-child(even) {
+  background: #ecfdf5;
+}
+
+.inactive-row {
+  opacity: 0.65;
+}
 
 .modal-backdrop {
   position: fixed;
@@ -674,6 +765,16 @@
 .form-footer .btn-done {
   flex: 0 0 auto;
   min-width: 7rem;
+}
+
+.form-footer .btn-done-wrap {
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.form-footer .btn-done:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .btn-form {

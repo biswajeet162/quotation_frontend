@@ -31,6 +31,7 @@ import {
   SALES_SORT_OPTIONS,
   SalesCrmCustomFilter,
   SalesCrmQuickFilter,
+  SalesCrmSortBy,
   SalesCrmSortSelection,
   compareSalesCrmRows,
   formatSalesCrmDate,
@@ -106,8 +107,10 @@ export class SalesCrmComponent implements OnInit {
   readonly formatDateTime = formatSalesCrmDateTime;
   readonly filterLabel = salesQuickFilterLabel;
   readonly workflowStatus = crmWorkflowStatus;
+  readonly hasContactPhone = crmHasContactPhone;
   readonly rankLabel = crmContactRankLabel;
   readonly maxContacts = CRM_MAX_CONTACTS;
+  readonly doneNeedsPhoneHint = 'Must need at least one phone number to mark it Done.';
 
   readonly filteredRows = computed(() => {
     // Depend on localStorage revision so open/edit reorders without a backend call.
@@ -164,6 +167,31 @@ export class SalesCrmComponent implements OnInit {
         this.toast.fromApiError(err, 'Could not load CRM customers.');
       },
     });
+  }
+
+  displayValue(value?: string | null): string {
+    return value?.trim() ? value : '—';
+  }
+
+  isSortedBy(key: SalesCrmSortBy): boolean {
+    return this.sort().sortBy === key;
+  }
+
+  sortIndicator(key: SalesCrmSortBy): string {
+    const current = this.sort();
+    if (current.sortBy !== key) return '↕';
+    return current.ascending ? '▲' : '▼';
+  }
+
+  toggleColumnSort(key: SalesCrmSortBy, event?: Event): void {
+    event?.preventDefault();
+    event?.stopPropagation();
+    const current = this.sort();
+    if (current.sortBy === key) {
+      this.sort.set({ sortBy: key, ascending: !current.ascending });
+      return;
+    }
+    this.sort.set({ sortBy: key, ascending: true });
   }
 
   onFilterChange(raw: string): void {
@@ -372,7 +400,7 @@ export class SalesCrmComponent implements OnInit {
     if (!detail?.id || this.statusSaving()) return;
     const next = this.workflowStatus(detail) === status ? 'NONE' : status;
     if (next === 'DONE' && !crmHasContactPhone(detail) && !this.formHasContactPhone()) {
-      this.toast.warning('Add at least one purchaser or maintenance contact before marking Done.');
+      this.toast.warning(this.doneNeedsPhoneHint);
       return;
     }
     this.statusSaving.set(true);
@@ -417,13 +445,14 @@ export class SalesCrmComponent implements OnInit {
   markDoneFromForm(): void {
     if (this.formMode() !== 'edit') return;
     if (!this.formHasContactPhone()) {
-      this.toast.warning('Add at least one purchaser or maintenance contact before marking Done.');
+      this.toast.warning('Must need at least one phone number to mark it Done.');
       return;
     }
     this.saveAndSetStatus('DONE');
   }
 
-  private formHasContactPhone(): boolean {
+  /** True when any purchaser or maintenance contact has a phone — required to mark Done. */
+  formHasContactPhone(): boolean {
     const state = this.form();
     return state.purchasers.some((c) => c.phone.trim()) || state.maintenanceContacts.some((c) => c.phone.trim());
   }

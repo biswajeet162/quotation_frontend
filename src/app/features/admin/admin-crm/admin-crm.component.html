@@ -256,9 +256,9 @@
                 @if (isAdmin()) {
                   <td class="col-status">
                     @if (workflowStatus(customer) === 'DONE') {
-                      <span class="status-badge status-done" title="Done" aria-label="Done">✓</span>
+                      <span class="status-badge status-done" title="Done" aria-label="Done"></span>
                     } @else if (workflowStatus(customer) === 'REVIEW') {
-                      <span class="status-badge status-review" title="Review" aria-label="Review">●</span>
+                      <span class="status-badge status-review" title="Review" aria-label="Review"></span>
                     }
                   </td>
                   <td class="col-serial">{{ customer.serialNumber }}</td>
@@ -290,9 +290,9 @@
                 } @else {
                   <td class="col-status">
                     @if (workflowStatus(customer) === 'DONE') {
-                      <span class="status-badge status-done" title="Done" aria-label="Done">✓</span>
+                      <span class="status-badge status-done" title="Done" aria-label="Done"></span>
                     } @else if (workflowStatus(customer) === 'REVIEW') {
-                      <span class="status-badge status-review" title="Review" aria-label="Review">●</span>
+                      <span class="status-badge status-review" title="Review" aria-label="Review"></span>
                     }
                   </td>
                   <td class="col-serial">{{ customer.serialNumber }}</td>
