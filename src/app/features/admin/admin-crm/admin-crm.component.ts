@@ -966,6 +966,7 @@ export class AdminCrmComponent implements OnInit {
       followUpDate: row.followUpDate,
       meetingDate: row.meetingDate,
       workflowStatus: row.workflowStatus,
+      followUpEntered: row.followUpEntered,
       isActive: row.isActive,
       updatedAt: row.updatedAt,
       createdAt: row.createdAt,

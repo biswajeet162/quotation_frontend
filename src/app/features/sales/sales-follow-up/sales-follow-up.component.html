@@ -1,10 +1,10 @@
 <section class="sales-follow page-card">
-  <app-loading-overlay [loading]="loading() || saving()" [message]="saving() ? 'Saving…' : 'Loading follow-ups…'" />
+  <app-loading-overlay [loading]="loading() || saving() || statusSaving()" [message]="statusSaving() ? 'Updating status…' : saving() ? 'Saving…' : 'Loading follow-ups…'" />
 
   <header class="page-header">
     <div>
       <h1>Follow-up</h1>
-      <p class="muted">Contacts, Follow, and Meeting — same edit modal as CRM.</p>
+      <p class="muted">Contacts, Follow, and Meeting — same table and filters as CRM.</p>
     </div>
   </header>
 
@@ -18,7 +18,6 @@
     />
     <select class="filter-select" [ngModel]="quickFilter()" (ngModelChange)="onFilterChange($event)">
       <option value="all">All</option>
-      <option value="done">Done</option>
       <option value="review">Review</option>
       <option value="emptyContacts">Empty contacts</option>
       <option value="filledContacts">Filled contacts</option>
@@ -39,34 +38,59 @@
 
   @if (!loading() && !errorMessage() && filteredRows().length === 0) {
     <p class="empty">{{ emptyMessage() }}</p>
+  } @else if (!loading() && !errorMessage()) {
+    <div class="table-wrap">
+      <table class="crm-table">
+        <thead>
+          <tr>
+            <th class="col-status">Status</th>
+            <th class="col-serial" [class.sort-active]="isSortedBy('serial')">
+              <button type="button" class="sort-btn" (click)="toggleColumnSort('serial', $event)">
+                <span>S.No</span><span class="sort-icon">{{ sortIndicator('serial') }}</span>
+              </button>
+            </th>
+            <th [class.sort-active]="isSortedBy('companyName')">
+              <button type="button" class="sort-btn" (click)="toggleColumnSort('companyName', $event)">
+                <span>Industry name</span><span class="sort-icon">{{ sortIndicator('companyName') }}</span>
+              </button>
+            </th>
+            <th [class.sort-active]="isSortedBy('sector')">
+              <button type="button" class="sort-btn" (click)="toggleColumnSort('sector', $event)">
+                <span>Sector</span><span class="sort-icon">{{ sortIndicator('sector') }}</span>
+              </button>
+            </th>
+            <th [class.sort-active]="isSortedBy('location')">
+              <button type="button" class="sort-btn" (click)="toggleColumnSort('location', $event)">
+                <span>Location</span><span class="sort-icon">{{ sortIndicator('location') }}</span>
+              </button>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of filteredRows(); track row.id) {
+            <tr
+              class="crm-row"
+              [class.inactive-row]="!row.isActive"
+              [class.selected]="selectedDetail()?.id === row.id"
+              (click)="openRow(row)"
+            >
+              <td class="col-status">
+                @if (workflowStatus(row) === 'DONE') {
+                  <span class="status-badge status-done" title="Done" aria-label="Done"></span>
+                } @else if (workflowStatus(row) === 'REVIEW') {
+                  <span class="status-badge status-review" title="Review" aria-label="Review"></span>
+                }
+              </td>
+              <td class="col-serial">{{ row.serialNumber }}</td>
+              <td>{{ row.industryName }}</td>
+              <td>{{ displayValue(row.sector) }}</td>
+              <td>{{ displayValue(row.location) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
   }
-
-  <ul class="crm-list">
-    @for (row of filteredRows(); track row.id) {
-      <li>
-        <button type="button" class="crm-row" (click)="openRow(row)">
-          <div class="crm-row-main">
-            <div class="crm-title">
-              <span class="serial">#{{ row.serialNumber }}</span>
-              <span class="name">{{ row.industryName }}</span>
-            </div>
-            <div class="crm-sub">
-              <span>{{ row.location?.trim() || '—' }}</span>
-              <span class="dot">·</span>
-              <span class="meta">{{ dateHint(row) }}</span>
-            </div>
-          </div>
-          <span class="status-tick" aria-hidden="true">
-            @if (workflowStatus(row) === 'DONE') {
-              <span class="tick done">✓</span>
-            } @else if (workflowStatus(row) === 'REVIEW') {
-              <span class="tick review">●</span>
-            }
-          </span>
-        </button>
-      </li>
-    }
-  </ul>
 </section>
 
 @if (formOpen()) {
@@ -202,8 +226,21 @@
       </div>
 
       <footer class="modal-footer form-footer">
-        <button type="button" class="btn-secondary btn-form" (click)="closeForm()">Cancel</button>
-        <button type="button" class="btn-primary btn-form" (click)="save()" [disabled]="saving()">Save changes</button>
+        <button type="button" class="btn-secondary btn-form" (click)="closeForm()" [disabled]="saving() || statusSaving()">
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="btn-review btn-form"
+          [class.active]="selectedDetail() ? workflowStatus(selectedDetail()!) === 'REVIEW' : false"
+          (click)="markReviewFromForm()"
+          [disabled]="saving() || statusSaving()"
+        >
+          Review
+        </button>
+        <button type="button" class="btn-primary btn-form" (click)="save()" [disabled]="saving() || statusSaving()">
+          Save changes
+        </button>
       </footer>
     </div>
   </div>
@@ -211,16 +248,29 @@
 
 @if (customOpen()) {
   <div class="modal-backdrop" (click)="customOpen.set(false)">
-    <div class="modal form-modal-sm" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+    <div class="modal form-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
       <header class="modal-header">
         <h2>Custom filter</h2>
         <button type="button" class="btn-secondary" (click)="customOpen.set(false)">Close</button>
       </header>
       <div class="custom-body">
+        <p class="muted">Combine status, dates, and fields to narrow the list.</p>
+        <div class="chip-row">
+          <button type="button" class="chip" [class.selected]="customDraft().status === null" (click)="setCustomStatus(null)">Any</button>
+          <button type="button" class="chip" [class.selected]="customDraft().status === 'NONE'" (click)="setCustomStatus('NONE')">Open</button>
+          <button type="button" class="chip" [class.selected]="customDraft().status === 'REVIEW'" (click)="setCustomStatus('REVIEW')">Review</button>
+          <button type="button" class="chip" [class.selected]="customDraft().status === 'DONE'" (click)="setCustomStatus('DONE')">Done</button>
+        </div>
         <label class="checkbox"><input type="checkbox" [ngModel]="customDraft().requireFollowUpDate" (ngModelChange)="patchCustomDraft('requireFollowUpDate', $event)" /> Has follow-up date</label>
+        <label class="checkbox"><input type="checkbox" [ngModel]="customDraft().missingFollowUpDate" (ngModelChange)="patchCustomDraft('missingFollowUpDate', $event)" /> Missing follow-up date</label>
         <label class="checkbox"><input type="checkbox" [ngModel]="customDraft().requireMeetingDate" (ngModelChange)="patchCustomDraft('requireMeetingDate', $event)" /> Has meeting date</label>
+        <label class="checkbox"><input type="checkbox" [ngModel]="customDraft().missingMeetingDate" (ngModelChange)="patchCustomDraft('missingMeetingDate', $event)" /> Missing meeting date</label>
         <label class="checkbox"><input type="checkbox" [ngModel]="customDraft().requireCoordinator" (ngModelChange)="patchCustomDraft('requireCoordinator', $event)" /> Has coordinator</label>
+        <label class="checkbox"><input type="checkbox" [ngModel]="customDraft().requireAddress" (ngModelChange)="patchCustomDraft('requireAddress', $event)" /> Has address</label>
+        <label class="checkbox"><input type="checkbox" [ngModel]="customDraft().requireRemark" (ngModelChange)="patchCustomDraft('requireRemark', $event)" /> Has remarks</label>
+        <label>Sector contains<input [ngModel]="customDraft().sectorQuery" (ngModelChange)="patchCustomDraft('sectorQuery', $event)" /></label>
         <label>Address contains<input [ngModel]="customDraft().locationQuery" (ngModelChange)="patchCustomDraft('locationQuery', $event)" /></label>
+        <label>Coordinator contains<input [ngModel]="customDraft().coordinatorQuery" (ngModelChange)="patchCustomDraft('coordinatorQuery', $event)" /></label>
       </div>
       <footer class="modal-footer">
         <button type="button" class="btn-secondary" (click)="resetCustom()">Reset</button>
@@ -232,7 +282,7 @@
 
 @if (sortOpen()) {
   <div class="modal-backdrop" (click)="sortOpen.set(false)">
-    <div class="modal form-modal-sm" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+    <div class="modal form-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
       <header class="modal-header">
         <h2>Sort by</h2>
         <button type="button" class="btn-secondary" (click)="sortOpen.set(false)">Close</button>
@@ -246,7 +296,7 @@
         }
         <label class="checkbox">
           <input type="checkbox" [ngModel]="sortDraft().ascending" (ngModelChange)="patchSortAscending($event)" />
-          Ascending
+          Ascending (A→Z / oldest first)
         </label>
       </div>
       <footer class="modal-footer">

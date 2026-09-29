@@ -18,6 +18,7 @@ import {
   crmContactsToFormRows,
   crmFormRowsToRequest,
   crmHasContactPhone,
+  crmFollowUpEntered,
   crmWorkflowStatus,
   emptyCrmContactRow,
 } from '../../../core/models/admin-crm.model';
@@ -121,8 +122,8 @@ export class SalesCrmComponent implements OnInit {
     const custom = this.customFilter();
     const sort = this.sort();
     const list = this.rows().filter((row) => {
-      // Done customers live under Follow-up → Contacts, not the CRM tab.
-      if (crmWorkflowStatus(row) === 'DONE') return false;
+      // Done / Follow-up Contacts never appear on the CRM tab.
+      if (crmFollowUpEntered(row) || crmWorkflowStatus(row) === 'DONE') return false;
       if (!passesSalesQuickFilter(row, filter, custom)) return false;
       if (!q) return true;
       return matchesSalesCrmSearch(row, q);
@@ -420,13 +421,16 @@ export class SalesCrmComponent implements OnInit {
     });
   }
 
-  /** Review from form: save data, set REVIEW, stay on CRM list. */
+  /** Review from form: save data then toggle Review (click again clears it). */
   markReviewFromForm(): void {
     if (this.formMode() !== 'edit') return;
-    this.saveAndSetStatus('REVIEW');
+    const detail = this.selectedDetail();
+    if (!detail) return;
+    const next = this.workflowStatus(detail) === 'REVIEW' ? 'NONE' : 'REVIEW';
+    this.saveAndSetStatus(next);
   }
 
-  /** Done from form: save data, set DONE, leave CRM (shows under Follow-up → Contacts). */
+  /** Done from form: save data, set DONE (clears Review), leave CRM → Follow-up Contacts. */
   markDoneFromForm(): void {
     if (this.formMode() !== 'edit') return;
     if (!this.formHasContactPhone()) {
@@ -442,7 +446,7 @@ export class SalesCrmComponent implements OnInit {
     return state.purchasers.some((c) => c.phone.trim()) || state.maintenanceContacts.some((c) => c.phone.trim());
   }
 
-  private saveAndSetStatus(status: 'REVIEW' | 'DONE'): void {
+  private saveAndSetStatus(status: 'NONE' | 'REVIEW' | 'DONE'): void {
     const state = this.form();
     const detail = this.selectedDetail();
     if (!detail?.id) return;
@@ -460,11 +464,13 @@ export class SalesCrmComponent implements OnInit {
           next: (withStatus) => {
             this.saving.set(false);
             this.selectedDetail.set(withStatus);
-            this.toast.success(
+            const message =
               status === 'DONE'
                 ? 'Saved and marked Done — moved to Follow-up Contacts.'
-                : 'Saved and marked Review.',
-            );
+                : status === 'REVIEW'
+                  ? 'Saved and marked Review.'
+                  : 'Saved and cleared Review.';
+            this.toast.success(message);
             this.formOpen.set(false);
             this.load();
           },

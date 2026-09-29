@@ -99,6 +99,8 @@ export interface CrmCustomerSummary {
   followUpDate?: string | null;
   meetingDate?: string | null;
   workflowStatus?: 'NONE' | 'REVIEW' | 'DONE' | string | null;
+  /** True once marked Done — permanently under Follow-up, never CRM. */
+  followUpEntered?: boolean;
   /** True when purchaser or maintenance contact phone is present. */
   hasContacts?: boolean;
   /** Server-built blob of all fields + contacts for deep search. */
@@ -129,6 +131,8 @@ export interface CrmCustomer {
   coordinatorName?: string | null;
   remark?: string | null;
   workflowStatus?: 'NONE' | 'REVIEW' | 'DONE' | string | null;
+  /** True once marked Done — permanently under Follow-up, never CRM. */
+  followUpEntered?: boolean;
   isActive: boolean;
   createdByUserId?: string | null;
   createdByName?: string | null;
@@ -234,6 +238,15 @@ export function crmWorkflowStatus(
     return value;
   }
   return 'NONE';
+}
+
+/** Permanently in Follow-up after first Done — never returns to CRM. */
+export function crmFollowUpEntered(customer: {
+  followUpEntered?: boolean | null;
+  workflowStatus?: string | null;
+}): boolean {
+  if (customer.followUpEntered === true) return true;
+  return crmWorkflowStatus(customer) === 'DONE';
 }
 
 export function crmHasContactPhone(customer: {
