@@ -123,7 +123,7 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 0.875rem;
-  min-width: 640px;
+  min-width: 760px;
 }
 
 .crm-table th,
@@ -192,6 +192,12 @@ th.sort-active .sort-icon {
   width: 4rem;
   text-align: center;
   white-space: nowrap;
+}
+
+.col-updated {
+  white-space: nowrap;
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
 }
 
 .col-status {

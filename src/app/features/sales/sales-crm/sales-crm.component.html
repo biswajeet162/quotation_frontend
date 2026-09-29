@@ -59,6 +59,11 @@
                 <span>Location</span><span class="sort-icon">{{ sortIndicator('location') }}</span>
               </button>
             </th>
+            <th class="col-updated" [class.sort-active]="isSortedBy('lastUpdated')">
+              <button type="button" class="sort-btn" (click)="toggleColumnSort('lastUpdated', $event)">
+                <span>Last updated</span><span class="sort-icon">{{ sortIndicator('lastUpdated') }}</span>
+              </button>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -80,6 +85,7 @@
               <td>{{ row.industryName }}</td>
               <td>{{ displayValue(row.sector) }}</td>
               <td>{{ displayValue(row.location) }}</td>
+              <td class="col-updated">{{ formatDateTime(row.updatedAt || row.createdAt) }}</td>
             </tr>
           }
         </tbody>
