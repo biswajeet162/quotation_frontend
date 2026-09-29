@@ -1,13 +1,20 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
+  CRM_MAX_CONTACTS,
   CreateCrmCustomerRequest,
+  CrmContact,
+  CrmContactFormRow,
   CrmCustomer,
   CrmCustomerSummary,
   CrmFollowUpEntry,
   UpdateCrmCustomerRequest,
+  crmContactRankLabel,
+  crmContactsToFormRows,
+  crmFormRowsToRequest,
   crmHasContactPhone,
   crmWorkflowStatus,
+  emptyCrmContactRow,
 } from '../../../core/models/admin-crm.model';
 import { AdminCrmService } from '../../../core/services/admin/admin-crm.service';
 import { ToastService } from '../../../core/services/toast/toast.service';
@@ -27,17 +34,14 @@ import {
 } from '../sales-crm-filters';
 
 type FormMode = 'create' | 'edit';
+type ContactGroup = 'purchasers' | 'maintenanceContacts';
 
 interface FormState {
   industryName: string;
   sector: string;
   location: string;
-  purchaserName: string;
-  purchaserPhone: string;
-  purchaserEmail: string;
-  maintenanceName: string;
-  maintenancePhone: string;
-  maintenanceEmail: string;
+  purchasers: CrmContactFormRow[];
+  maintenanceContacts: CrmContactFormRow[];
   meetingDate: string;
   followUpDate: string;
   coordinatorName: string;
@@ -49,12 +53,8 @@ const emptyForm = (): FormState => ({
   industryName: '',
   sector: '',
   location: '',
-  purchaserName: '',
-  purchaserPhone: '',
-  purchaserEmail: '',
-  maintenanceName: '',
-  maintenancePhone: '',
-  maintenanceEmail: '',
+  purchasers: [emptyCrmContactRow()],
+  maintenanceContacts: [emptyCrmContactRow()],
   meetingDate: '',
   followUpDate: '',
   coordinatorName: '',
@@ -99,6 +99,8 @@ export class SalesCrmComponent implements OnInit {
   readonly formatDateTime = formatSalesCrmDateTime;
   readonly filterLabel = salesQuickFilterLabel;
   readonly workflowStatus = crmWorkflowStatus;
+  readonly rankLabel = crmContactRankLabel;
+  readonly maxContacts = CRM_MAX_CONTACTS;
 
   readonly filteredRows = computed(() => {
     const q = this.query().trim().toLowerCase();
@@ -231,12 +233,16 @@ export class SalesCrmComponent implements OnInit {
       industryName: detail.industryName ?? '',
       sector: detail.sector ?? '',
       location: detail.location ?? '',
-      purchaserName: detail.purchaserName ?? '',
-      purchaserPhone: detail.purchaserPhone ?? '',
-      purchaserEmail: detail.purchaserEmail ?? '',
-      maintenanceName: detail.maintenanceName ?? '',
-      maintenancePhone: detail.maintenancePhone ?? '',
-      maintenanceEmail: detail.maintenanceEmail ?? '',
+      purchasers: crmContactsToFormRows(detail.purchasers, {
+        name: detail.purchaserName,
+        phone: detail.purchaserPhone,
+        email: detail.purchaserEmail,
+      }),
+      maintenanceContacts: crmContactsToFormRows(detail.maintenanceContacts, {
+        name: detail.maintenanceName,
+        phone: detail.maintenancePhone,
+        email: detail.maintenanceEmail,
+      }),
       meetingDate: detail.meetingDate ?? '',
       followUpDate: detail.followUpDate ?? '',
       coordinatorName: detail.coordinatorName ?? '',
@@ -253,6 +259,83 @@ export class SalesCrmComponent implements OnInit {
 
   updateFormField<K extends keyof FormState>(key: K, value: FormState[K]): void {
     this.form.update((current) => ({ ...current, [key]: value }));
+  }
+
+  updateContactField(
+    group: ContactGroup,
+    index: number,
+    field: keyof CrmContactFormRow,
+    value: string,
+  ): void {
+    this.form.update((current) => {
+      const rows = current[group].map((row, i) =>
+        i === index ? { ...row, [field]: value } : row,
+      );
+      return { ...current, [group]: rows };
+    });
+  }
+
+  addContact(group: ContactGroup): void {
+    this.form.update((current) => {
+      if (current[group].length >= CRM_MAX_CONTACTS) return current;
+      return { ...current, [group]: [...current[group], emptyCrmContactRow()] };
+    });
+  }
+
+  removeContact(group: ContactGroup, index: number): void {
+    this.form.update((current) => {
+      const rows = current[group].filter((_, i) => i !== index);
+      return {
+        ...current,
+        [group]: rows.length > 0 ? rows : [emptyCrmContactRow()],
+      };
+    });
+  }
+
+  moveContact(group: ContactGroup, index: number, direction: -1 | 1): void {
+    this.form.update((current) => {
+      const target = index + direction;
+      if (target < 0 || target >= current[group].length) return current;
+      const rows = [...current[group]];
+      const tmp = rows[index];
+      rows[index] = rows[target];
+      rows[target] = tmp;
+      return { ...current, [group]: rows };
+    });
+  }
+
+  detailContacts(
+    detail: CrmCustomer,
+    group: 'purchasers' | 'maintenance',
+  ): CrmContact[] {
+    if (group === 'purchasers') {
+      if (detail.purchasers?.length) return detail.purchasers;
+      if (detail.purchaserName || detail.purchaserPhone || detail.purchaserEmail) {
+        return [
+          {
+            sortOrder: 1,
+            rankLabel: 'Primary',
+            name: detail.purchaserName,
+            phone: detail.purchaserPhone,
+            email: detail.purchaserEmail,
+          },
+        ];
+      }
+      return [];
+    }
+    if (detail.maintenanceContacts?.length) return detail.maintenanceContacts;
+    if (detail.maintenanceName || detail.maintenancePhone || detail.maintenanceEmail) {
+      return [
+        {
+          sortOrder: 1,
+          rankLabel: 'Primary',
+          name: detail.maintenanceName,
+          phone: detail.maintenancePhone,
+          email: detail.maintenanceEmail,
+        },
+      ];
+    }
+    return [];
   }
 
   setWorkflowStatus(status: 'REVIEW' | 'DONE'): void {
@@ -337,16 +420,22 @@ export class SalesCrmComponent implements OnInit {
   }
 
   private toCreateRequest(state: FormState): CreateCrmCustomerRequest {
+    const purchasers = crmFormRowsToRequest(state.purchasers);
+    const maintenanceContacts = crmFormRowsToRequest(state.maintenanceContacts);
+    const primaryPurchaser = purchasers[0];
+    const primaryMaintenance = maintenanceContacts[0];
     return {
       industryName: state.industryName.trim(),
       sector: state.sector.trim() || undefined,
       location: state.location.trim() || undefined,
-      purchaserName: state.purchaserName.trim() || undefined,
-      purchaserPhone: state.purchaserPhone.trim() || undefined,
-      purchaserEmail: state.purchaserEmail.trim() || undefined,
-      maintenanceName: state.maintenanceName.trim() || undefined,
-      maintenancePhone: state.maintenancePhone.trim() || undefined,
-      maintenanceEmail: state.maintenanceEmail.trim() || undefined,
+      purchaserName: primaryPurchaser?.name,
+      purchaserPhone: primaryPurchaser?.phone,
+      purchaserEmail: primaryPurchaser?.email,
+      maintenanceName: primaryMaintenance?.name,
+      maintenancePhone: primaryMaintenance?.phone,
+      maintenanceEmail: primaryMaintenance?.email,
+      purchasers,
+      maintenanceContacts,
       meetingDate: state.meetingDate || null,
       followUpDate: state.followUpDate || null,
       coordinatorName: state.coordinatorName.trim() || undefined,

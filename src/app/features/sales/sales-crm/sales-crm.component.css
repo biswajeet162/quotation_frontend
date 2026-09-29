@@ -191,7 +191,7 @@
   border: 1px solid #e2e8f0;
 }
 
-.form-modal { width: min(720px, 100%); }
+.form-modal { width: min(760px, 100%); }
 
 .modal-header {
   display: flex;
@@ -212,39 +212,173 @@
   margin-bottom: 1rem;
 }
 
-.detail-section {
-  border: 1px solid #e2e8f0;
+.btn-icon-close {
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 8px;
+  background: #e2e8f0;
+  color: #0f172a;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  font-weight: 700;
+}
+
+.detail-block,
+.form-block {
+  border: 2px solid #0f172a;
   border-radius: 10px;
-  padding: 0.85rem;
-  margin-bottom: 0.75rem;
+  padding: 0.9rem;
+  margin-bottom: 0.85rem;
+  background: #fff;
 }
 
-.detail-section h3 {
-  margin: 0 0 0.6rem;
-  font-size: 0.75rem;
-  letter-spacing: 0.04em;
+.detail-block h3,
+.form-block h3 {
+  margin: 0 0 0.65rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #64748b;
+  color: #0f172a;
+  font-weight: 800;
 }
 
-.detail-section dl {
+.detail-block dl,
+.contact-card dl {
   margin: 0;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.55rem 0.75rem;
 }
 
-.detail-section dt {
+.detail-block dt,
+.contact-card dt {
   font-size: 0.72rem;
   color: #64748b;
   font-weight: 600;
 }
 
-.detail-section dd {
+.detail-block dd,
+.contact-card dd {
   margin: 0.1rem 0 0;
   font-size: 0.9rem;
   font-weight: 600;
   color: #0f172a;
+}
+
+.contact-card {
+  border: 1px solid #0f172a;
+  border-radius: 8px;
+  padding: 0.7rem;
+  margin-bottom: 0.55rem;
+  background: #f8fafc;
+}
+
+.contact-card:last-child {
+  margin-bottom: 0;
+}
+
+.contact-rank {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #0f172a;
+  margin-bottom: 0.45rem;
+}
+
+.block-empty {
+  margin: 0;
+}
+
+.block-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.65rem;
+}
+
+.block-head h3 {
+  margin: 0;
+}
+
+.btn-add-contact {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 8px;
+  border: 2px solid #0f172a;
+  background: #fff;
+  color: #0f172a;
+  font-size: 1.2rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.btn-add-contact:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.contact-editor {
+  border: 1px solid #0f172a;
+  border-radius: 8px;
+  padding: 0.7rem;
+  margin-bottom: 0.55rem;
+  background: #f8fafc;
+}
+
+.contact-editor:last-child {
+  margin-bottom: 0;
+}
+
+.contact-editor-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.contact-editor-head .contact-rank {
+  margin-bottom: 0;
+}
+
+.contact-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.btn-tiny {
+  width: 1.7rem;
+  height: 1.7rem;
+  border: 1px solid #0f172a;
+  border-radius: 6px;
+  background: #fff;
+  color: #0f172a;
+  font-weight: 800;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.btn-tiny:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.btn-tiny.danger {
+  color: #b91c1c;
+  border-color: #b91c1c;
+}
+
+.form-sections {
+  display: flex;
+  flex-direction: column;
 }
 
 .history-list {
@@ -333,7 +467,8 @@
 
 @media (max-width: 640px) {
   .search { width: 42%; }
-  .detail-section dl,
+  .detail-block dl,
+  .contact-card dl,
   .form-grid,
   .custom-body {
     grid-template-columns: 1fr;

@@ -1,3 +1,76 @@
+export interface CrmContact {
+  id?: string | null;
+  sortOrder: number;
+  rankLabel?: string | null;
+  name?: string | null;
+  phone?: string | null;
+  email?: string | null;
+}
+
+export interface CrmContactFormRow {
+  name: string;
+  phone: string;
+  email: string;
+}
+
+export const CRM_MAX_CONTACTS = 7;
+
+export const CRM_CONTACT_RANK_LABELS = [
+  'Primary',
+  'Secondary',
+  'Tertiary',
+  'Fourth',
+  'Fifth',
+  'Sixth',
+  'Seventh',
+] as const;
+
+export function crmContactRankLabel(index: number): string {
+  return CRM_CONTACT_RANK_LABELS[index] ?? `Contact ${index + 1}`;
+}
+
+export function emptyCrmContactRow(): CrmContactFormRow {
+  return { name: '', phone: '', email: '' };
+}
+
+export function crmContactsToFormRows(
+  contacts: CrmContact[] | null | undefined,
+  fallback?: { name?: string | null; phone?: string | null; email?: string | null },
+): CrmContactFormRow[] {
+  if (contacts && contacts.length > 0) {
+    return contacts.slice(0, CRM_MAX_CONTACTS).map((c) => ({
+      name: c.name ?? '',
+      phone: c.phone ?? '',
+      email: c.email ?? '',
+    }));
+  }
+  if (fallback && (fallback.name?.trim() || fallback.phone?.trim() || fallback.email?.trim())) {
+    return [
+      {
+        name: fallback.name ?? '',
+        phone: fallback.phone ?? '',
+        email: fallback.email ?? '',
+      },
+    ];
+  }
+  return [emptyCrmContactRow()];
+}
+
+export function crmFormRowsToRequest(rows: CrmContactFormRow[]): Array<{
+  name?: string;
+  phone?: string;
+  email?: string;
+}> {
+  return rows
+    .map((row) => ({
+      name: row.name.trim() || undefined,
+      phone: row.phone.trim() || undefined,
+      email: row.email.trim() || undefined,
+    }))
+    .filter((row) => row.name || row.phone || row.email)
+    .slice(0, CRM_MAX_CONTACTS);
+}
+
 export interface CrmCustomerSummary {
   id: string;
   serialNumber: number;
@@ -31,6 +104,8 @@ export interface CrmCustomer {
   maintenanceName?: string | null;
   maintenancePhone?: string | null;
   maintenanceEmail?: string | null;
+  purchasers?: CrmContact[] | null;
+  maintenanceContacts?: CrmContact[] | null;
   meetingDate?: string | null;
   followUpDate?: string | null;
   coordinatorName?: string | null;
@@ -57,6 +132,8 @@ export interface CreateCrmCustomerRequest {
   maintenanceName?: string;
   maintenancePhone?: string;
   maintenanceEmail?: string;
+  purchasers?: Array<{ name?: string; phone?: string; email?: string }>;
+  maintenanceContacts?: Array<{ name?: string; phone?: string; email?: string }>;
   meetingDate?: string | null;
   followUpDate?: string | null;
   coordinatorName?: string;
@@ -143,8 +220,15 @@ export function crmWorkflowStatus(
 export function crmHasContactPhone(customer: {
   purchaserPhone?: string | null;
   maintenancePhone?: string | null;
+  purchasers?: CrmContact[] | null;
+  maintenanceContacts?: CrmContact[] | null;
 }): boolean {
-  return Boolean(customer.purchaserPhone?.trim() || customer.maintenancePhone?.trim());
+  if (customer.purchaserPhone?.trim() || customer.maintenancePhone?.trim()) {
+    return true;
+  }
+  const fromPurchasers = customer.purchasers?.some((c) => c.phone?.trim());
+  const fromMaintenance = customer.maintenanceContacts?.some((c) => c.phone?.trim());
+  return Boolean(fromPurchasers || fromMaintenance);
 }
 
 export function crmHasFollowUpDate(row: { followUpDate?: string | null }): boolean {

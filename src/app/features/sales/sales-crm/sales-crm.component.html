@@ -65,12 +65,12 @@
 </section>
 
 @if (detailOpen()) {
-  <div class="modal-backdrop" (click)="closeDetail()">
-    <div class="modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+  <div class="modal-backdrop">
+    <div class="modal" role="dialog" aria-modal="true">
       @if (selectedDetail(); as detail) {
         <header class="modal-header">
           <h2>{{ detail.industryName }}</h2>
-          <button type="button" class="btn-secondary" (click)="closeDetail()">Close</button>
+          <button type="button" class="btn-icon-close" aria-label="Close" (click)="closeDetail()">×</button>
         </header>
 
         <div class="action-row">
@@ -97,7 +97,7 @@
           <button type="button" class="btn-edit" (click)="openEdit()">Edit</button>
         </div>
 
-        <section class="detail-section">
+        <section class="detail-block">
           <h3>Industry</h3>
           <dl>
             <div><dt>Industry name</dt><dd>{{ detail.industryName }}</dd></div>
@@ -105,23 +105,44 @@
             <div><dt>Location</dt><dd>{{ detail.location || '—' }}</dd></div>
           </dl>
         </section>
-        <section class="detail-section">
-          <h3>Purchaser</h3>
-          <dl>
-            <div><dt>Name</dt><dd>{{ detail.purchaserName || '—' }}</dd></div>
-            <div><dt>Contact</dt><dd>{{ detail.purchaserPhone || '—' }}</dd></div>
-            <div><dt>Email</dt><dd>{{ detail.purchaserEmail || '—' }}</dd></div>
-          </dl>
+
+        <section class="detail-block">
+          <h3>Purchaser contacts</h3>
+          @if (detailContacts(detail, 'purchasers').length === 0) {
+            <p class="muted block-empty">No purchaser contacts.</p>
+          } @else {
+            @for (contact of detailContacts(detail, 'purchasers'); track $index) {
+              <div class="contact-card">
+                <div class="contact-rank">{{ contact.rankLabel || rankLabel($index) }}</div>
+                <dl>
+                  <div><dt>Name</dt><dd>{{ contact.name || '—' }}</dd></div>
+                  <div><dt>Contact</dt><dd>{{ contact.phone || '—' }}</dd></div>
+                  <div><dt>Email</dt><dd>{{ contact.email || '—' }}</dd></div>
+                </dl>
+              </div>
+            }
+          }
         </section>
-        <section class="detail-section">
-          <h3>Maintenance</h3>
-          <dl>
-            <div><dt>Name</dt><dd>{{ detail.maintenanceName || '—' }}</dd></div>
-            <div><dt>Contact</dt><dd>{{ detail.maintenancePhone || '—' }}</dd></div>
-            <div><dt>Email</dt><dd>{{ detail.maintenanceEmail || '—' }}</dd></div>
-          </dl>
+
+        <section class="detail-block">
+          <h3>Maintenance contacts</h3>
+          @if (detailContacts(detail, 'maintenance').length === 0) {
+            <p class="muted block-empty">No maintenance contacts.</p>
+          } @else {
+            @for (contact of detailContacts(detail, 'maintenance'); track $index) {
+              <div class="contact-card">
+                <div class="contact-rank">{{ contact.rankLabel || rankLabel($index) }}</div>
+                <dl>
+                  <div><dt>Name</dt><dd>{{ contact.name || '—' }}</dd></div>
+                  <div><dt>Contact</dt><dd>{{ contact.phone || '—' }}</dd></div>
+                  <div><dt>Email</dt><dd>{{ contact.email || '—' }}</dd></div>
+                </dl>
+              </div>
+            }
+          }
         </section>
-        <section class="detail-section">
+
+        <section class="detail-block">
           <h3>Follow-up</h3>
           <dl>
             <div><dt>Coordinator</dt><dd>{{ detail.coordinatorName || '—' }}</dd></div>
@@ -134,7 +155,7 @@
         </section>
 
         @if (followUps().length > 0) {
-          <section class="detail-section">
+          <section class="detail-block">
             <h3>Follow-up history ({{ followUps().length }})</h3>
             <ul class="history-list">
               @for (entry of followUps(); track entry.id) {
@@ -160,33 +181,104 @@
 }
 
 @if (formOpen()) {
-  <div class="modal-backdrop" (click)="closeForm()">
-    <div class="modal form-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+  <div class="modal-backdrop">
+    <div class="modal form-modal" role="dialog" aria-modal="true">
       <header class="modal-header">
         <h2>{{ formMode() === 'create' ? 'Add customer' : 'Edit customer' }}</h2>
-        <button type="button" class="btn-secondary" (click)="closeForm()">Close</button>
+        <button type="button" class="btn-icon-close" aria-label="Close" (click)="closeForm()">×</button>
       </header>
-      <div class="form-grid">
-        <label>Industry name *<input [ngModel]="form().industryName" (ngModelChange)="updateFormField('industryName', $event)" /></label>
-        <label>Sector<input [ngModel]="form().sector" (ngModelChange)="updateFormField('sector', $event)" /></label>
-        <label>Location<input [ngModel]="form().location" (ngModelChange)="updateFormField('location', $event)" /></label>
-        <label>Purchaser name<input [ngModel]="form().purchaserName" (ngModelChange)="updateFormField('purchaserName', $event)" /></label>
-        <label>Purchaser contact<input [ngModel]="form().purchaserPhone" (ngModelChange)="updateFormField('purchaserPhone', $event)" /></label>
-        <label>Purchaser email<input type="email" [ngModel]="form().purchaserEmail" (ngModelChange)="updateFormField('purchaserEmail', $event)" /></label>
-        <label>Maintenance name<input [ngModel]="form().maintenanceName" (ngModelChange)="updateFormField('maintenanceName', $event)" /></label>
-        <label>Maintenance contact<input [ngModel]="form().maintenancePhone" (ngModelChange)="updateFormField('maintenancePhone', $event)" /></label>
-        <label>Maintenance email<input type="email" [ngModel]="form().maintenanceEmail" (ngModelChange)="updateFormField('maintenanceEmail', $event)" /></label>
-        <label>Coordinator<input [ngModel]="form().coordinatorName" (ngModelChange)="updateFormField('coordinatorName', $event)" /></label>
-        <label>Follow-up date<input type="date" [ngModel]="form().followUpDate" (ngModelChange)="updateFormField('followUpDate', $event)" /></label>
-        <label>Meeting date<input type="date" [ngModel]="form().meetingDate" (ngModelChange)="updateFormField('meetingDate', $event)" /></label>
-        <label class="full">Remarks<textarea rows="3" [ngModel]="form().remark" (ngModelChange)="updateFormField('remark', $event)"></textarea></label>
-        @if (formMode() === 'edit') {
-          <label class="checkbox full">
-            <input type="checkbox" [ngModel]="form().isActive" (ngModelChange)="updateFormField('isActive', $event)" />
-            Active
-          </label>
-        }
+
+      <div class="form-sections">
+        <section class="form-block">
+          <h3>Industry</h3>
+          <div class="form-grid">
+            <label class="full">Industry name *<input [ngModel]="form().industryName" (ngModelChange)="updateFormField('industryName', $event)" /></label>
+            <label>Sector<input [ngModel]="form().sector" (ngModelChange)="updateFormField('sector', $event)" /></label>
+            <label>Location<input [ngModel]="form().location" (ngModelChange)="updateFormField('location', $event)" /></label>
+          </div>
+        </section>
+
+        <section class="form-block">
+          <div class="block-head">
+            <h3>Purchaser contacts</h3>
+            <button
+              type="button"
+              class="btn-add-contact"
+              (click)="addContact('purchasers')"
+              [disabled]="form().purchasers.length >= maxContacts"
+              title="Add purchaser"
+            >
+              +
+            </button>
+          </div>
+          @for (row of form().purchasers; track $index; let i = $index) {
+            <div class="contact-editor">
+              <div class="contact-editor-head">
+                <span class="contact-rank">{{ rankLabel(i) }}</span>
+                <div class="contact-actions">
+                  <button type="button" class="btn-tiny" (click)="moveContact('purchasers', i, -1)" [disabled]="i === 0" title="Move up">↑</button>
+                  <button type="button" class="btn-tiny" (click)="moveContact('purchasers', i, 1)" [disabled]="i === form().purchasers.length - 1" title="Move down">↓</button>
+                  <button type="button" class="btn-tiny danger" (click)="removeContact('purchasers', i)" [disabled]="form().purchasers.length === 1" title="Remove">×</button>
+                </div>
+              </div>
+              <div class="form-grid">
+                <label>Name<input [ngModel]="row.name" (ngModelChange)="updateContactField('purchasers', i, 'name', $event)" /></label>
+                <label>Contact<input [ngModel]="row.phone" (ngModelChange)="updateContactField('purchasers', i, 'phone', $event)" /></label>
+                <label class="full">Email<input type="email" [ngModel]="row.email" (ngModelChange)="updateContactField('purchasers', i, 'email', $event)" /></label>
+              </div>
+            </div>
+          }
+        </section>
+
+        <section class="form-block">
+          <div class="block-head">
+            <h3>Maintenance contacts</h3>
+            <button
+              type="button"
+              class="btn-add-contact"
+              (click)="addContact('maintenanceContacts')"
+              [disabled]="form().maintenanceContacts.length >= maxContacts"
+              title="Add maintenance contact"
+            >
+              +
+            </button>
+          </div>
+          @for (row of form().maintenanceContacts; track $index; let i = $index) {
+            <div class="contact-editor">
+              <div class="contact-editor-head">
+                <span class="contact-rank">{{ rankLabel(i) }}</span>
+                <div class="contact-actions">
+                  <button type="button" class="btn-tiny" (click)="moveContact('maintenanceContacts', i, -1)" [disabled]="i === 0" title="Move up">↑</button>
+                  <button type="button" class="btn-tiny" (click)="moveContact('maintenanceContacts', i, 1)" [disabled]="i === form().maintenanceContacts.length - 1" title="Move down">↓</button>
+                  <button type="button" class="btn-tiny danger" (click)="removeContact('maintenanceContacts', i)" [disabled]="form().maintenanceContacts.length === 1" title="Remove">×</button>
+                </div>
+              </div>
+              <div class="form-grid">
+                <label>Name<input [ngModel]="row.name" (ngModelChange)="updateContactField('maintenanceContacts', i, 'name', $event)" /></label>
+                <label>Contact<input [ngModel]="row.phone" (ngModelChange)="updateContactField('maintenanceContacts', i, 'phone', $event)" /></label>
+                <label class="full">Email<input type="email" [ngModel]="row.email" (ngModelChange)="updateContactField('maintenanceContacts', i, 'email', $event)" /></label>
+              </div>
+            </div>
+          }
+        </section>
+
+        <section class="form-block">
+          <h3>Follow-up</h3>
+          <div class="form-grid">
+            <label>Coordinator<input [ngModel]="form().coordinatorName" (ngModelChange)="updateFormField('coordinatorName', $event)" /></label>
+            <label>Follow-up date<input type="date" [ngModel]="form().followUpDate" (ngModelChange)="updateFormField('followUpDate', $event)" /></label>
+            <label>Meeting date<input type="date" [ngModel]="form().meetingDate" (ngModelChange)="updateFormField('meetingDate', $event)" /></label>
+            <label class="full">Remarks<textarea rows="3" [ngModel]="form().remark" (ngModelChange)="updateFormField('remark', $event)"></textarea></label>
+            @if (formMode() === 'edit') {
+              <label class="checkbox full">
+                <input type="checkbox" [ngModel]="form().isActive" (ngModelChange)="updateFormField('isActive', $event)" />
+                Active
+              </label>
+            }
+          </div>
+        </section>
       </div>
+
       <footer class="modal-footer">
         <button type="button" class="btn-secondary" (click)="closeForm()">Cancel</button>
         <button type="button" class="btn-primary" (click)="save()" [disabled]="saving()">
