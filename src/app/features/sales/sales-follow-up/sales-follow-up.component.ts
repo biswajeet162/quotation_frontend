@@ -163,11 +163,11 @@ export class SalesFollowUpComponent implements OnInit {
   readonly emptyMessage = computed(() => {
     switch (this.activeTab()) {
       case 'contacts':
-        return 'No contacts here. Done customers without a follow-up or meeting date appear in Contacts.';
+        return 'No contacts yet. Mark a CRM customer as Done — they stay here forever (never back to CRM).';
       case 'follow':
-        return 'No customers with a follow-up date (and no meeting date).';
+        return 'No open CRM customers with a follow-up date (and no meeting date).';
       case 'meeting':
-        return 'No customers with a meeting date.';
+        return 'No open CRM customers with a meeting date.';
     }
   });
 
@@ -433,8 +433,8 @@ export class SalesFollowUpComponent implements OnInit {
 
   /**
    * Review toggle in Follow-up:
-   * - If already in Contacts (followUpEntered): REVIEW ↔ DONE (never back to CRM).
-   * - Otherwise (Follow/Meeting from CRM): REVIEW ↔ NONE.
+   * - Contacts (followUpEntered): REVIEW ↔ DONE — always stays in Contacts, never CRM.
+   * - Follow/Meeting (still on CRM): REVIEW ↔ NONE.
    */
   markReviewFromForm(): void {
     const detail = this.selectedDetail();
@@ -455,20 +455,28 @@ export class SalesFollowUpComponent implements OnInit {
     }
     const entered = crmFollowUpEntered(detail);
     const noPhones = !this.formHasContactPhone();
-    // Empty phones in Contacts → stay here and auto-mark Review.
+    // Empty phones in Contacts → stay in Contacts and auto-mark Review (never CRM).
     const autoReview = entered && noPhones;
 
     this.saving.set(true);
     this.crmService.update(detail.id, this.toUpdateRequest(state)).subscribe({
       next: (updated) => {
-        this.selectedDetail.set(updated);
-        if (autoReview && this.workflowStatus(updated) !== 'REVIEW') {
-          this.crmService.updateWorkflowStatus(updated.id, 'REVIEW').subscribe({
+        // Preserve sticky lock if API omitted the flag.
+        const locked: CrmCustomer = {
+          ...updated,
+          followUpEntered: updated.followUpEntered === true || entered,
+        };
+        this.selectedDetail.set(locked);
+        if (autoReview && this.workflowStatus(locked) !== 'REVIEW') {
+          this.crmService.updateWorkflowStatus(locked.id, 'REVIEW').subscribe({
             next: (withStatus) => {
               this.saving.set(false);
-              this.selectedDetail.set(withStatus);
+              this.selectedDetail.set({
+                ...withStatus,
+                followUpEntered: true,
+              });
               this.formOpen.set(false);
-              this.toast.success('Saved — no phone numbers, marked Review in Contacts.');
+              this.toast.success('Saved — still in Contacts (Review). Never returns to CRM.');
               this.load();
             },
             error: (err) => {
@@ -481,7 +489,7 @@ export class SalesFollowUpComponent implements OnInit {
         }
         this.saving.set(false);
         this.formOpen.set(false);
-        this.toast.success('CRM customer updated.');
+        this.toast.success(entered ? 'Saved — still in Contacts.' : 'CRM customer updated.');
         this.load();
       },
       error: (err) => {
@@ -499,16 +507,23 @@ export class SalesFollowUpComponent implements OnInit {
       this.toast.warning('Industry name is required.');
       return;
     }
+    const entered = crmFollowUpEntered(detail);
     this.saving.set(true);
     this.crmService.update(detail.id, this.toUpdateRequest(state)).subscribe({
       next: (updated) => {
-        this.selectedDetail.set(updated);
+        this.selectedDetail.set({
+          ...updated,
+          followUpEntered: updated.followUpEntered === true || entered,
+        });
         this.statusSaving.set(true);
         this.crmService.updateWorkflowStatus(updated.id, status).subscribe({
           next: (withStatus) => {
             this.saving.set(false);
             this.statusSaving.set(false);
-            this.selectedDetail.set(withStatus);
+            this.selectedDetail.set({
+              ...withStatus,
+              followUpEntered: withStatus.followUpEntered === true || entered || status === 'DONE',
+            });
             this.formOpen.set(false);
             this.toast.success(successMessage);
             this.load();
