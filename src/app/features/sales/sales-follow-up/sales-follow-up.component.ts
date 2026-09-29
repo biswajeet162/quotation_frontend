@@ -14,9 +14,8 @@ import {
   crmContactRankLabel,
   crmContactsToFormRows,
   crmFollowUpEntered,
+  crmFollowUpTab,
   crmFormRowsToRequest,
-  crmHasFollowUpDate,
-  crmHasMeetingDate,
   crmWorkflowStatus,
   emptyCrmContactRow,
 } from '../../../core/models/admin-crm.model';
@@ -121,12 +120,7 @@ export class SalesFollowUpComponent implements OnInit {
     const columns = this.columnFilters();
     const sort = this.sort();
 
-    let list = this.rows().filter((row) => {
-      // Contacts: everyone who entered Follow-up via Done (even with empty phones / Review).
-      if (tab === 'contacts') return crmFollowUpEntered(row);
-      if (tab === 'follow') return crmHasFollowUpDate(row);
-      return crmHasMeetingDate(row);
-    });
+    let list = this.rows().filter((row) => crmFollowUpTab(row) === tab);
 
     list = list.filter((row) => {
       if (!passesSalesQuickFilter(row, filter, custom, false)) return false;
@@ -138,14 +132,24 @@ export class SalesFollowUpComponent implements OnInit {
     return [...list].sort((a, b) => compareSalesCrmRows(a, b, sort));
   });
 
+  /** Exclusive tab totals (before search / column filters). */
+  readonly tabCounts = computed(() => {
+    let contacts = 0;
+    let follow = 0;
+    let meeting = 0;
+    for (const row of this.rows()) {
+      const tab = crmFollowUpTab(row);
+      if (tab === 'contacts') contacts += 1;
+      else if (tab === 'follow') follow += 1;
+      else if (tab === 'meeting') meeting += 1;
+    }
+    return { contacts, follow, meeting };
+  });
+
   /** Options for ⋮ menus — current Follow-up tab before column filters. */
   readonly columnFilterSourceRows = computed(() => {
     const tab = this.activeTab();
-    return this.rows().filter((row) => {
-      if (tab === 'contacts') return crmFollowUpEntered(row);
-      if (tab === 'follow') return crmHasFollowUpDate(row);
-      return crmHasMeetingDate(row);
-    });
+    return this.rows().filter((row) => crmFollowUpTab(row) === tab);
   });
 
   readonly sectorOptions = computed(() =>
@@ -159,9 +163,9 @@ export class SalesFollowUpComponent implements OnInit {
   readonly emptyMessage = computed(() => {
     switch (this.activeTab()) {
       case 'contacts':
-        return 'No Done contacts yet. Mark a CRM customer as Done to move them here.';
+        return 'No contacts here. Done customers without a follow-up or meeting date appear in Contacts.';
       case 'follow':
-        return 'No customers with a follow-up date.';
+        return 'No customers with a follow-up date (and no meeting date).';
       case 'meeting':
         return 'No customers with a meeting date.';
     }

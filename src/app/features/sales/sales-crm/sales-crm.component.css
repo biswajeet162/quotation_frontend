@@ -24,6 +24,12 @@
   color: #0f172a;
 }
 
+.title-count {
+  font-size: 0.85em;
+  font-weight: 700;
+  color: #64748b;
+}
+
 .muted {
   margin: 0.25rem 0 0;
   color: #64748b;

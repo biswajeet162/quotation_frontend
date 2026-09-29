@@ -4,7 +4,7 @@
   <header class="page-header">
     <div>
       <h1>Follow-up</h1>
-      <p class="muted">Contacts, Follow, and Meeting — same table and filters as CRM.</p>
+      <p class="muted">One place only — Meeting first, then Follow, then Contacts. Never back to CRM once Done.</p>
     </div>
   </header>
 
@@ -27,9 +27,15 @@
   </div>
 
   <div class="tabs" role="tablist">
-    <button type="button" role="tab" [class.active]="activeTab() === 'contacts'" (click)="setTab('contacts')">Contacts</button>
-    <button type="button" role="tab" [class.active]="activeTab() === 'follow'" (click)="setTab('follow')">Follow</button>
-    <button type="button" role="tab" [class.active]="activeTab() === 'meeting'" (click)="setTab('meeting')">Meeting</button>
+    <button type="button" role="tab" [class.active]="activeTab() === 'contacts'" (click)="setTab('contacts')">
+      Contacts <span class="tab-count">({{ tabCounts().contacts }})</span>
+    </button>
+    <button type="button" role="tab" [class.active]="activeTab() === 'follow'" (click)="setTab('follow')">
+      Follow <span class="tab-count">({{ tabCounts().follow }})</span>
+    </button>
+    <button type="button" role="tab" [class.active]="activeTab() === 'meeting'" (click)="setTab('meeting')">
+      Meeting <span class="tab-count">({{ tabCounts().meeting }})</span>
+    </button>
   </div>
 
   @if (errorMessage()) {

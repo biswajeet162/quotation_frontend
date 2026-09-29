@@ -270,3 +270,20 @@ export function crmHasFollowUpDate(row: { followUpDate?: string | null }): boole
 export function crmHasMeetingDate(row: { meetingDate?: string | null }): boolean {
   return Boolean(row.meetingDate?.trim());
 }
+
+/**
+ * Exclusive Follow-up bucket (one place only):
+ * Meeting (highest) → Follow → Contacts (Done with no dates).
+ * Returns null when the row does not belong in Follow-up tabs.
+ */
+export function crmFollowUpTab(row: {
+  followUpEntered?: boolean | null;
+  workflowStatus?: string | null;
+  followUpDate?: string | null;
+  meetingDate?: string | null;
+}): 'contacts' | 'follow' | 'meeting' | null {
+  if (crmHasMeetingDate(row)) return 'meeting';
+  if (crmHasFollowUpDate(row)) return 'follow';
+  if (crmFollowUpEntered(row)) return 'contacts';
+  return null;
+}
