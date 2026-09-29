@@ -1,8 +1,8 @@
 {
-  "syncedAt": "2026-09-28T11:18:24.832Z",
+  "syncedAt": "2026-09-28T12:38:52.389Z",
   "apiTarget": "prod",
   "baseHref": "/m/",
   "source": "quotation_mobile/build/web",
-  "deployStamp": "mul5lgp1-hdtvdx",
-  "buildId": "24ae84ae68a6b43d7d3ccb73c52c4340"
+  "deployStamp": "mul8glzr-b7cbmb",
+  "buildId": "87dc633f8fd09a7f95baa97b8279314b"
 }
