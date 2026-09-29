@@ -18,7 +18,6 @@
     />
     <select class="filter-select" [ngModel]="quickFilter()" (ngModelChange)="onFilterChange($event)">
       <option value="all">All</option>
-      <option value="done">Done</option>
       <option value="review">Review</option>
       <option value="emptyContacts">Empty contacts</option>
       <option value="filledContacts">Filled contacts</option>
@@ -315,8 +314,29 @@
       </div>
 
       <footer class="modal-footer form-footer">
-        <button type="button" class="btn-secondary btn-form" (click)="closeForm()">Cancel</button>
-        <button type="button" class="btn-primary btn-form" (click)="save()" [disabled]="saving()">
+        <button type="button" class="btn-secondary btn-form" (click)="closeForm()" [disabled]="saving() || statusSaving()">
+          Cancel
+        </button>
+        @if (formMode() === 'edit') {
+          <button
+            type="button"
+            class="btn-review btn-form"
+            [class.active]="selectedDetail() ? workflowStatus(selectedDetail()!) === 'REVIEW' : false"
+            (click)="markReviewFromForm()"
+            [disabled]="saving() || statusSaving()"
+          >
+            Review
+          </button>
+          <button
+            type="button"
+            class="btn-done btn-form"
+            (click)="markDoneFromForm()"
+            [disabled]="saving() || statusSaving()"
+          >
+            Done
+          </button>
+        }
+        <button type="button" class="btn-primary btn-form" (click)="save()" [disabled]="saving() || statusSaving()">
           {{ formMode() === 'create' ? 'Create customer' : 'Save changes' }}
         </button>
       </footer>
@@ -337,7 +357,6 @@
           <button type="button" class="chip" [class.selected]="customDraft().status === null" (click)="setCustomStatus(null)">Any</button>
           <button type="button" class="chip" [class.selected]="customDraft().status === 'NONE'" (click)="setCustomStatus('NONE')">Open</button>
           <button type="button" class="chip" [class.selected]="customDraft().status === 'REVIEW'" (click)="setCustomStatus('REVIEW')">Review</button>
-          <button type="button" class="chip" [class.selected]="customDraft().status === 'DONE'" (click)="setCustomStatus('DONE')">Done</button>
         </div>
         <label class="checkbox"><input type="checkbox" [ngModel]="customDraft().requireFollowUpDate" (ngModelChange)="patchCustomDraft('requireFollowUpDate', $event)" /> Has follow-up date</label>
         <label class="checkbox"><input type="checkbox" [ngModel]="customDraft().missingFollowUpDate" (ngModelChange)="patchCustomDraft('missingFollowUpDate', $event)" /> Missing follow-up date</label>

@@ -666,6 +666,14 @@
   border-top: 1px solid #e2e8f0;
   background: #fff;
   gap: 0.65rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.form-footer .btn-review,
+.form-footer .btn-done {
+  flex: 0 0 auto;
+  min-width: 7rem;
 }
 
 .btn-form {

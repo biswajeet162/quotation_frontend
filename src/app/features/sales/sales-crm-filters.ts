@@ -15,6 +15,7 @@ export type SalesCrmSortBy =
   | 'location'
   | 'followUpDate'
   | 'meetingDate'
+  | 'lastOpened'
   | 'lastUpdated'
   | 'coordinator'
   | 'purchaserName'
@@ -57,12 +58,14 @@ export const EMPTY_SALES_CUSTOM_FILTER: SalesCrmCustomFilter = {
   coordinatorQuery: '',
 };
 
+/** CRM default: most recently opened first. */
 export const DEFAULT_SALES_SORT: SalesCrmSortSelection = {
-  sortBy: 'serial',
-  ascending: true,
+  sortBy: 'lastOpened',
+  ascending: false,
 };
 
 export const SALES_SORT_OPTIONS: { value: SalesCrmSortBy; label: string }[] = [
+  { value: 'lastOpened', label: 'Recently opened' },
   { value: 'serial', label: 'Serial #' },
   { value: 'companyName', label: 'Company name' },
   { value: 'sector', label: 'Sector' },
@@ -139,6 +142,7 @@ export function compareSalesCrmRows(
   a: CrmCustomerSummary,
   b: CrmCustomerSummary,
   sort: SalesCrmSortSelection,
+  effectiveOpenedAt?: (row: CrmCustomerSummary) => string,
 ): number {
   let cmp = 0;
   switch (sort.sortBy) {
@@ -160,6 +164,14 @@ export function compareSalesCrmRows(
     case 'meetingDate':
       cmp = (a.meetingDate ?? '').localeCompare(b.meetingDate ?? '');
       break;
+    case 'lastOpened': {
+      const aOpen =
+        effectiveOpenedAt?.(a) ?? a.lastOpenedAt ?? a.updatedAt ?? a.createdAt ?? '';
+      const bOpen =
+        effectiveOpenedAt?.(b) ?? b.lastOpenedAt ?? b.updatedAt ?? b.createdAt ?? '';
+      cmp = aOpen.localeCompare(bOpen);
+      break;
+    }
     case 'lastUpdated':
       cmp = (a.updatedAt ?? a.createdAt ?? '').localeCompare(b.updatedAt ?? b.createdAt ?? '');
       break;

@@ -101,6 +101,8 @@ export interface CrmCustomerSummary {
   isActive: boolean;
   updatedAt?: string;
   createdAt?: string;
+  /** When the row was last opened in CRM — newer floats to top. */
+  lastOpenedAt?: string | null;
 }
 
 export interface CrmCustomer {
@@ -131,6 +133,7 @@ export interface CrmCustomer {
   updatedByRole?: string | null;
   createdAt?: string;
   updatedAt?: string;
+  lastOpenedAt?: string | null;
 }
 
 export interface CreateCrmCustomerRequest {

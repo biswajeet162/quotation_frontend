@@ -33,6 +33,18 @@ export class AdminCrmService {
     return this.http.get<CrmCustomer>(`${this.baseUrl}/${id}`);
   }
 
+  /** Bumps lastOpenedAt so the row floats to the top of CRM. */
+  markOpened(id: string): Observable<CrmCustomer> {
+    return this.http.post<CrmCustomer>(`${this.baseUrl}/${id}/opened`, {});
+  }
+
+  /** Hourly sync of locally tracked opens for peer visibility. */
+  syncOpenedBatch(body: {
+    opens: Array<{ customerId: string; openedAt: string }>;
+  }): Observable<{ updated: number }> {
+    return this.http.post<{ updated: number }>(`${this.baseUrl}/opened-batch`, body);
+  }
+
   listFollowUps(id: string): Observable<CrmFollowUpEntry[]> {
     return this.http.get<CrmFollowUpEntry[]>(`${this.baseUrl}/${id}/follow-ups`);
   }
