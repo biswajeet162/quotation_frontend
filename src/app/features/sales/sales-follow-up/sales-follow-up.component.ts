@@ -163,11 +163,11 @@ export class SalesFollowUpComponent implements OnInit {
   readonly emptyMessage = computed(() => {
     switch (this.activeTab()) {
       case 'contacts':
-        return 'No contacts yet. Mark a CRM customer as Done — they stay here forever (never back to CRM).';
+        return 'No contacts yet. Done customers with no follow-up or meeting date appear here.';
       case 'follow':
-        return 'No open CRM customers with a follow-up date (and no meeting date).';
+        return 'No customers with a follow-up date (and no meeting date).';
       case 'meeting':
-        return 'No open CRM customers with a meeting date.';
+        return 'No customers with a meeting date.';
     }
   });
 

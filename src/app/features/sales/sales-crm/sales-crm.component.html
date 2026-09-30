@@ -215,9 +215,7 @@
               (click)="openRow(row)"
             >
               <td class="col-status">
-                @if (workflowStatus(row) === 'DONE') {
-                  <span class="status-badge status-done" title="Done" aria-label="Done"></span>
-                } @else if (workflowStatus(row) === 'REVIEW') {
+                @if (workflowStatus(row) === 'REVIEW') {
                   <span class="status-badge status-review" title="Review" aria-label="Review"></span>
                 }
               </td>

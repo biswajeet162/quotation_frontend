@@ -552,7 +552,7 @@ export class SalesCrmComponent implements OnInit {
             this.selectedDetail.set(withStatus);
             const message =
               status === 'DONE'
-                ? 'Saved and marked Done — moved to Follow-up Contacts.'
+                ? 'Saved and marked Done — moved to Contacts (not Review).'
                 : status === 'REVIEW'
                   ? 'Saved and marked Review.'
                   : 'Saved and cleared Review.';

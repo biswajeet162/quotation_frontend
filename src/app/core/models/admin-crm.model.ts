@@ -272,9 +272,11 @@ export function crmHasMeetingDate(row: { meetingDate?: string | null }): boolean
 }
 
 /**
- * Exclusive Follow-up bucket (one place only).
- * - Once Done / follow-up entered → always Contacts (never CRM, never Follow/Meeting).
- * - Otherwise Meeting wins over Follow for CRM rows that still have those dates.
+ * Exclusive Follow-up bucket (one place only):
+ * 1. Meeting date → Meeting (even if follow-up date is also set)
+ * 2. Else follow-up date → Follow
+ * 3. Else Done / follow-up entered → Contacts
+ * Never returns to CRM once follow-up entered.
  */
 export function crmFollowUpTab(row: {
   followUpEntered?: boolean | null;
@@ -282,9 +284,8 @@ export function crmFollowUpTab(row: {
   followUpDate?: string | null;
   meetingDate?: string | null;
 }): 'contacts' | 'follow' | 'meeting' | null {
-  // Permanent Contacts lock after Done — review / empty phones / dates do not move it.
-  if (crmFollowUpEntered(row)) return 'contacts';
   if (crmHasMeetingDate(row)) return 'meeting';
   if (crmHasFollowUpDate(row)) return 'follow';
+  if (crmFollowUpEntered(row)) return 'contacts';
   return null;
 }

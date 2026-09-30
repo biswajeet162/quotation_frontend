@@ -4,7 +4,7 @@
   <header class="page-header">
     <div>
       <h1>Follow-up</h1>
-      <p class="muted">Done customers stay in Contacts forever. Follow / Meeting are for open CRM rows with those dates.</p>
+      <p class="muted">Meeting date wins, then Follow date, else Contacts. Once Done, never back to CRM.</p>
     </div>
   </header>
 
@@ -226,9 +226,7 @@
               (click)="openRow(row)"
             >
               <td class="col-status">
-                @if (workflowStatus(row) === 'DONE') {
-                  <span class="status-badge status-done" title="Done" aria-label="Done"></span>
-                } @else if (workflowStatus(row) === 'REVIEW') {
+                @if (workflowStatus(row) === 'REVIEW') {
                   <span class="status-badge status-review" title="Review" aria-label="Review"></span>
                 }
               </td>
