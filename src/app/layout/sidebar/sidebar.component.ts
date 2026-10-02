@@ -96,6 +96,7 @@ export class SidebarComponent {
     { label: 'CRM', path: '/admin/crm', icon: '▤', roles: ['ADMIN'] },
     { label: 'CRM', path: '/sales/crm', icon: '▤', roles: ['SALES'] },
     { label: 'Follow-up', path: '/sales/follow-up', icon: '☎', roles: ['SALES'] },
+    { label: 'Backup', path: '/sales/backup', icon: '⇩', roles: ['SALES'] },
     { label: 'History', path: '/sales/history', icon: '◷', roles: ['SALES'] },
     { label: 'Gmail inbox', path: '/admin/gmail-inbox', icon: '✉', roles: ['ADMIN'] },
     { label: 'Company profile', path: '/profile', icon: '◇', roles: ['DISTRIBUTOR'] },

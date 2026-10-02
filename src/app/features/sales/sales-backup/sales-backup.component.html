@@ -1,0 +1,74 @@
+<section class="page-card backup-page">
+  <app-loading-overlay [loading]="overlayLoading()" [message]="overlayMessage()" />
+
+  <div class="toolbar">
+    <div class="toolbar-copy">
+      <h1 class="toolbar-title">Backup</h1>
+      <p class="toolbar-subtitle">
+        Download all CRM and Follow-up data as one Excel sheet, or upload a sheet to restore it.
+      </p>
+    </div>
+    <div class="toolbar-actions">
+      <a routerLink="/sales/crm" class="btn-secondary btn-compact">Back to CRM</a>
+      <a routerLink="/sales/follow-up" class="btn-secondary btn-compact">Follow-up</a>
+    </div>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="alert-error" role="alert">{{ errorMessage() }}</div>
+  }
+
+  @if (lastImportMessage()) {
+    <div class="alert-success" role="status">{{ lastImportMessage() }}</div>
+  }
+
+  <div class="backup-grid">
+    <article class="backup-panel">
+      <h2>Download Excel</h2>
+      <p>
+        One click exports every active customer into a single sheet — CRM rows plus Follow-up
+        (Contacts, Follow, and Meeting), using Status and dates.
+      </p>
+      <ul class="backup-notes">
+        <li>Status: NONE stays in CRM; DONE moves permanently into Follow-up.</li>
+        <li>Meeting date → Meeting · Follow-up date → Follow · Done with no dates → Contacts.</li>
+      </ul>
+      <button
+        type="button"
+        class="btn-primary"
+        (click)="downloadBackup()"
+        [disabled]="downloading() || uploading()"
+      >
+        {{ downloading() ? 'Downloading…' : 'Download all as Excel' }}
+      </button>
+    </article>
+
+    <article class="backup-panel">
+      <h2>Upload Excel</h2>
+      <p>
+        Import a .xlsx / .xls backup. It becomes the active dataset and appears in CRM and Follow-up
+        according to each row’s Status and dates.
+      </p>
+      <ul class="backup-notes">
+        <li>Required column: Industry Name.</li>
+        <li>Optional: Status (NONE / REVIEW / DONE), Follow-up Entered, contacts, and dates.</li>
+        <li>This replaces the current active sheet (previous uploads stay in History).</li>
+      </ul>
+      <input
+        #excelInput
+        type="file"
+        class="visually-hidden"
+        accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+        (change)="onExcelSelected($event)"
+      />
+      <button
+        type="button"
+        class="btn-secondary"
+        (click)="triggerExcelPicker()"
+        [disabled]="uploading() || downloading()"
+      >
+        {{ uploading() ? 'Uploading…' : 'Upload Excel sheet' }}
+      </button>
+    </article>
+  </div>
+</section>

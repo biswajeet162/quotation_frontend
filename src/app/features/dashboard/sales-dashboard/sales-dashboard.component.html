@@ -12,6 +12,7 @@
     <div class="header-actions">
       <a routerLink="/sales/crm" class="btn-primary">Open CRM</a>
       <a routerLink="/sales/follow-up" class="btn-secondary">Follow-up</a>
+      <a routerLink="/sales/backup" class="btn-secondary">Backup</a>
       <a routerLink="/sales/history" class="btn-secondary">History</a>
       <a routerLink="/profile" class="btn-secondary">Profile</a>
       <button type="button" class="btn-secondary" (click)="load()" [disabled]="loading()">
@@ -61,6 +62,11 @@
           <span class="quick-icon">◷</span>
           <span class="quick-title">Follow-up</span>
           <span class="quick-desc">Contacts, Follow, and Meeting lists</span>
+        </a>
+        <a routerLink="/sales/backup" class="quick-card">
+          <span class="quick-icon">⇩</span>
+          <span class="quick-title">Backup</span>
+          <span class="quick-desc">Download or upload CRM Excel</span>
         </a>
         <a routerLink="/sales/history" class="quick-card">
           <span class="quick-icon">◷</span>

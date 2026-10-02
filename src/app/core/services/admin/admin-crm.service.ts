@@ -68,12 +68,17 @@ export class AdminCrmService {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
 
-  /** Admin-only Excel bulk upload. */
+  /** Bulk import from Excel — Sales Backup + Admin CRM. */
   uploadExcel(file: File, replaceExisting = false): Observable<CrmExcelUploadResult> {
     const formData = new FormData();
     formData.append('file', file);
     const params = new HttpParams().set('replaceExisting', String(replaceExisting));
     return this.http.post<CrmExcelUploadResult>(`${this.baseUrl}/upload`, formData, { params });
+  }
+
+  /** Download active CRM + Follow-up data as a single Excel sheet. */
+  downloadExcel(): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/export`, { responseType: 'blob' });
   }
 
   /** Admin-only: Excel upload history. */

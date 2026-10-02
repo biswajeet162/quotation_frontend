@@ -246,6 +246,14 @@ export const routes: Routes = [
         canActivate: [roleGuard(['SALES'])],
       },
       {
+        path: 'sales/backup',
+        loadComponent: () =>
+          import('./features/sales/sales-backup/sales-backup.component').then(
+            (m) => m.SalesBackupComponent,
+          ),
+        canActivate: [roleGuard(['SALES'])],
+      },
+      {
         path: 'sales/history',
         loadComponent: () =>
           import('./features/sales/sales-crm-history/sales-crm-history.component').then(
